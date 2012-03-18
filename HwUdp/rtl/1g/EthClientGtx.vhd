@@ -115,13 +115,16 @@ architecture EthClientGtx of EthClientGtx is
    constant EMAC0_LINKTIMERVAL : bit_vector := x"13D";
    signal emacRst           : std_logic;
    signal reset_r           : std_logic_vector(3 downto 0);
+   signal zeros             : std_logic_vector(31 downto 0);
    
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
    
 
 begin     
-          
+         
+   zeros <= (others=>'0');
+ 
    -- Connect GTX Electrical Idle to EMAC Signal Detect
    emacSignalDetect <= not gtxRxElecIdle after tpd;
    
@@ -621,6 +624,8 @@ begin
         ---------------- Transmit Ports - 8b10b Encoder Control Ports --------------
         TXBYPASS8B10B0                  =>      (others => '0'),
         TXBYPASS8B10B1                  =>      (others => '0'),
+        TXCHARDISPMODE0(3)              =>      '0',
+        TXCHARDISPMODE0(2)              =>      '0',
         TXCHARDISPMODE0(1)              =>      '0',
         TXCHARDISPMODE0(0)              =>      emacTxCharDispMode,
         TXCHARDISPMODE1                 =>      (others => '0'),
@@ -741,7 +746,7 @@ begin
         EMAC0CLIENTRXCLIENTCLKOUT       => open,
         CLIENTEMAC0RXCLIENTCLKIN        => gtxClk,
         EMAC0CLIENTRXD(15 downto 8)     => open,
-        EMAC0CLIENTRXD(7  downto 0)     => emacRxData,
+        EMAC0CLIENTRXD(7 downto 0)      => emacRxData,
         EMAC0CLIENTRXDVLD               => emacRxValid,
         EMAC0CLIENTRXDVLDMSW            => open,
         EMAC0CLIENTRXGOODFRAME          => emacRxGoodFrame,
@@ -753,8 +758,8 @@ begin
 
         EMAC0CLIENTTXCLIENTCLKOUT       => open,
         CLIENTEMAC0TXCLIENTCLKIN        => gtxClk,
-        CLIENTEMAC0TXD(15 downto 8)     => (OTHERS => '0'),
-        CLIENTEMAC0TXD(7  downto 0)     => emacTxData,
+        CLIENTEMAC0TXD(15 downto 8)     => zeros(15 downto 8),
+        CLIENTEMAC0TXD(7 downto 0)      => emacTxData,
         CLIENTEMAC0TXDVLD               => emacTxValid,
         CLIENTEMAC0TXDVLDMSW            => '0',
         EMAC0CLIENTTXACK                => emacTxAck,
@@ -796,7 +801,7 @@ begin
         EMAC0PHYSYNCACQSTATUS           => open,
         PHYEMAC0RXCLKCORCNT             => gtxRxClkCorCnt,
         PHYEMAC0RXBUFSTATUS(1)          => gtxRxBuffStatus(2),
-        PHYEMAC0RXBUFSTATUS(0)          => open,
+        PHYEMAC0RXBUFSTATUS(0)          => '0',
         PHYEMAC0RXBUFERR                => '0',
         PHYEMAC0RXCHARISCOMMA           => gtxRxCharIsComma(0),
         PHYEMAC0RXCHARISK               => gtxRxCharIsK(0),
