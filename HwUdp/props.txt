@@ -1,0 +1,1 @@
+eth  svn+ssh://ppa-pc87444.slac.stanford.edu/afs/slac/g/reseng/svn/repos/eth_client_core/trunk

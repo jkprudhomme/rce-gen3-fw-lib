@@ -1,0 +1,234 @@
+-------------------------------------------------------------------------------
+-- Title         : Pretty Good Protocol, V2, GTP RX Reset Control
+-- Project       : General Purpose Core
+-------------------------------------------------------------------------------
+-- File          : EthClientGtpRxRst.vhd
+-- Author        : Ryan Herbst, rherbst@slac.stanford.edu
+-- Created       : 08/18/2009
+-------------------------------------------------------------------------------
+-- Description:
+-- This module contains the logic to control the reset of the RX GTP.
+-------------------------------------------------------------------------------
+-- Copyright (c) 2009 by Ryan Herbst. All rights reserved.
+-------------------------------------------------------------------------------
+-- Modification history:
+-- 08/18/2009: created.
+-- 01/13/2010: Added received init line to help linking.
+-- 04/20/2010: Elec idle will no longer cause general reset.
+-- 10/27/2010: Removed gtpRxInit as it was not needed.
+-------------------------------------------------------------------------------
+
+LIBRARY ieee;
+use work.all;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+use work.EthClientPackage.all;
+library UNISIM;
+use UNISIM.VCOMPONENTS.ALL;
+
+
+entity EthClientGtpRxRst is 
+   port (
+
+      -- Clock and reset
+      gtpRxClk          : in  std_logic;
+      gtpRxRst          : in  std_logic;
+
+      -- RX Side is ready
+      gtpRxReady        : out std_logic;
+      
+      -- GTP Status
+      gtpLockDetect     : in  std_logic;
+      gtpRxElecIdle     : in  std_logic;
+      gtpRxBuffStatus   : in  std_logic_vector(1  downto 0);
+      gtpRstDone        : in  std_logic;
+
+      -- Reset Control
+      gtpRxElecIdleRst  : out std_logic;
+      gtpRxReset        : out std_logic;
+      gtpRxCdrReset     : out std_logic;
+
+      -- Debug
+      cScopeCtrl        : inout std_logic_vector(35 downto 0)
+   );
+
+end EthClientGtpRxRst;
+
+
+-- Define architecture
+architecture EthClientGtpRxRst of EthClientGtpRxRst is
+
+   -- Local Signals
+   signal intRxElecIdleRst  : std_logic;
+   signal intRxReset        : std_logic;
+   signal intRxCdrReset     : std_logic;
+   signal rxStateCnt        : std_logic_vector(1 downto 0);
+   signal rxStateCntRst     : std_logic;
+   signal rxClockReady      : std_logic;
+
+   -- RX Reset State Machine
+   constant RX_SYSTEM_RESET : std_logic_vector(2 downto 0) := "000";
+   constant RX_WAIT_LOCK    : std_logic_vector(2 downto 0) := "001";
+   constant RX_RESET        : std_logic_vector(2 downto 0) := "010";
+   constant RX_WAIT_DONE    : std_logic_vector(2 downto 0) := "011";
+   constant RX_READY        : std_logic_vector(2 downto 0) := "100";
+   signal   curRxState      : std_logic_vector(2 downto 0);
+   signal   nxtRxState      : std_logic_vector(2 downto 0);
+
+   -- Debug
+   signal   cScopeTrig   : std_logic_vector(63 downto 0);
+   signal locEmacTxData  : std_logic_vector(7 downto 0);
+   constant enChipScope  : std_logic := '0';
+
+   -- Register delay for simulation
+   constant tpd:time := 0.5 ns;
+
+begin
+   -----------------------------
+   -- Chipscope for debug
+   -----------------------------
+
+   -- Debug Signals
+   cScopeTrig (63)           <= gtpRxRst;
+   cScopeTrig (47 downto 0)  <= (OTHERS => '0');
+   cScopeTrig (62 downto 60) <= curRxState;
+   cScopeTrig (59)           <= intRxElecIdleRst;
+   cScopeTrig (58)           <= intRxReset;
+   cScopeTrig (57)           <= intRxCdrReset;
+   cScopeTrig (56)           <= rxStateCntRst;
+   cScopeTrig (55 downto 54) <= rxStateCnt;
+   cScopeTrig (53)           <= rxClockReady;
+   cScopeTrig (52 downto 51) <= gtpRxBuffStatus;
+   cScopeTrig (50)           <= gtpRxElecIdle;
+   cScopeTrig (49)           <= gtpLockDetect;
+   cScopeTrig (48)           <= gtpRstDone;
+   
+   -- Chipscope logic analyzer
+   chipscope : if (enChipScope = '1') generate
+   U_EthClientGtp_ila : v5_Ila port map ( control => cScopeCtrl,
+                                          clk     => gtpRxClk,
+                                          trig0   => cscopeTrig);
+   end generate chipscope;
+
+
+   -- RX State Machine Synchronous Logic
+   process ( gtpRxClk, gtpRxRst ) begin
+      if gtpRxRst = '1' then
+         curRxState       <= RX_SYSTEM_RESET after tpd;
+         rxStateCnt       <= (others=>'0')   after tpd;
+         gtpRxReady       <= '0'             after tpd;
+         gtpRxElecIdleRst <= '1'             after tpd;
+         gtpRxReset       <= '1'             after tpd;
+         gtpRxCdrReset    <= '1'             after tpd;
+      elsif rising_edge(gtpRxClk) then
+
+         -- Drive PIB Lock 
+         gtpRxReady <= rxClockReady after tpd;
+
+         -- Pass on reset signals
+         gtpRxElecIdleRst <= intRxElecIdleRst after tpd;
+         gtpRxReset       <= intRxReset       after tpd;
+         gtpRxCdrReset    <= intRxCdrReset    after tpd;
+
+         -- Rx State Counter
+         if rxStateCntRst = '1' then
+            rxStateCnt <= (others=>'0') after tpd;
+         else
+            rxStateCnt <= rxStateCnt + 1 after tpd;
+         end if;
+
+         -- Assign Next State
+         curRxState    <= nxtRxState after tpd;
+      end if;
+   end process;
+
+
+   -- Async RX State Logic
+   process ( curRxState, rxStateCnt, gtpLockDetect, gtpRxBuffStatus, gtpRstDone ) begin
+      case curRxState is 
+
+         -- System Reset State
+         when RX_SYSTEM_RESET =>
+            rxStateCntRst    <= '1';
+            intRxReset       <= '1';
+            intRxCdrReset    <= '1';
+            rxClockReady     <= '0';
+            nxtRxState       <= RX_WAIT_LOCK;
+
+         -- Wait for PLL lock
+         when RX_WAIT_LOCK =>
+            rxStateCntRst    <= '1';
+            intRxReset       <= '1';
+            intRxCdrReset    <= '0';
+            rxClockReady     <= '0';
+
+            -- Wait for lock
+            if gtpLockDetect = '1' then
+               nxtRxState    <= RX_RESET;
+            else
+               nxtRxState    <= curRxState;
+            end if;
+
+         -- RX Reset State
+         when RX_RESET =>
+            intRxReset       <= '1';
+            intRxCdrReset    <= '0';
+            rxClockReady     <= '0';
+            rxStateCntRst    <= '0';
+
+            -- Wait for three clocks
+            if rxStateCnt = 3 then
+               nxtRxState    <= RX_WAIT_DONE;
+            else
+               nxtRxState    <= curRxState;
+            end if;
+
+         -- RX Wait Reset Done
+         when RX_WAIT_DONE =>
+            intRxReset       <= '0';
+            intRxCdrReset    <= '0';
+            rxClockReady     <= '0';
+            rxStateCntRst    <= '1';
+
+            -- Wait for reset done
+            if gtpRstDone = '1' then
+               nxtRxState    <= RX_READY;
+            else
+               nxtRxState    <= curRxState;
+            end if;
+
+         -- RX Ready
+         when RX_READY =>
+            intRxReset       <= '0';
+            intRxCdrReset    <= '0';
+            rxClockReady     <= '1';
+            rxStateCntRst    <= '1';
+
+            -- Look for unlock error
+            if gtpLockDetect = '0' then
+               nxtRxState <= RX_WAIT_LOCK;
+
+            -- Look For Buffer Error
+            elsif gtpRxBuffStatus(1) = '1' then
+               nxtRxState <= RX_RESET;
+
+            else
+               nxtRxState <= curRxState;
+            end if;
+
+         -- Default
+         when others =>
+            intRxReset       <= '0';
+            intRxCdrReset    <= '0';
+            rxClockReady     <= '0';
+            rxStateCntRst    <= '1';
+            nxtRxState       <= RX_SYSTEM_RESET;
+      end case;
+   end process;
+
+   -- Elec idle reset
+   intRxElecIdleRst <= gtpRxElecIdle and gtpRstDone;
+
+end EthClientGtpRxRst;
+

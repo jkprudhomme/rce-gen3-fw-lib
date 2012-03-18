@@ -1,0 +1,13 @@
+# Output products list for <eth_fifo_19x8k>
+_xmsgs/pn_parser.xmsgs
+eth_fifo_19x8k.asy
+eth_fifo_19x8k.gise
+eth_fifo_19x8k.ngc
+eth_fifo_19x8k.vhd
+eth_fifo_19x8k.vho
+eth_fifo_19x8k.xco
+eth_fifo_19x8k.xise
+eth_fifo_19x8k_flist.txt
+eth_fifo_19x8k_xmdf.tcl
+fifo_generator_readme.txt
+fifo_generator_ug175.pdf
