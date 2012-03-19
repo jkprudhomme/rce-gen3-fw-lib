@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!--
+########################################################################
+##
+## Copyright (c) 2005 Xilinx, Inc.  All rights reserved.
+##
+########################################################################
+-->
+
+<!DOCTYPE doc SYSTEM "../../ipdialog.dtd" [
+	<!ENTITY C_DEV_BLK_ID '
+	<widget id="C_DEV_BLK_ID">
+		<key>C_DEV_BLK_ID</key>
+		<label>Device Block ID </label>
+		<tip></tip>
+	</widget>
+	'>
+	<!ENTITY C_DEV_MIR_ENABLE '
+	<widget id="C_DEV_MIR_ENABLE">
+		<key>C_DEV_MIR_ENABLE</key>
+		<label>Enable Module Identification Register </label>
+		<tip></tip>
+	</widget>
+	'>
+	<!ENTITY C_IS_A_16550 '
+	<widget id="C_IS_A_16550">
+		<key>C_IS_A_16550</key>
+		<label>Uart Configuration </label>
+		<tip></tip>
+	</widget>
+	'>
+	<!ENTITY C_HAS_EXTERNAL_XIN '
+	<widget id="C_HAS_EXTERNAL_XIN">
+		<key>C_HAS_EXTERNAL_XIN</key>
+		<label>External XIN is Present</label>
+		<tip></tip>
+	</widget>
+	'>
+	<!ENTITY C_HAS_EXTERNAL_RCLK '
+	<widget id="C_HAS_EXTERNAL_RCLK">
+		<key>C_HAS_EXTERNAL_RCLK</key>
+		<label>External RCLK is Present</label>
+		<tip></tip>
+	</widget>
+	'>
+	<!ENTITY C_EXTERNAL_XIN_CLK_HZ '
+	<widget id="C_EXTERNAL_XIN_CLK_HZ">
+		<key>C_EXTERNAL_XIN_CLK_HZ</key>
+		<label>XIN Clock Frequency</label>
+		<tip></tip>
+	</widget>
+	'>
+]>
+
+<doc>
+	<view id="User">
+		<display>User</display>
+		<group id="Uart">
+			<display>UART</display>
+			<item>&C_IS_A_16550;</item>
+			<item>&C_HAS_EXTERNAL_XIN;</item>
+			<item>&C_HAS_EXTERNAL_RCLK;</item>
+			<item>&C_EXTERNAL_XIN_CLK_HZ;</item>
+		</group>
+	</view>
+	<view id="System">
+		<display>System</display>
+		<group id="Addresses">
+			<display>Addresses</display>
+			<item>&C_BASEADDR;</item>
+			<item>&C_HIGHADDR;</item>
+		</group>
+		<group id="PLB">
+			<display>PLB</display>
+			<item>&C_SPLB_DWIDTH;</item>
+			<item>&C_SPLB_AWIDTH;</item>
+			<item>&C_SPLB_P2P;</item>
+			<item>&C_SPLB_MID_WIDTH;</item>
+			<item>&C_SPLB_NATIVE_DWIDTH;</item>
+			<item>&C_SPLB_NUM_MASTERS;</item>
+			<item>&C_SPLB_SUPPORT_BURSTS;</item>
+		</group>
+		<group id="Hidden">
+			<display>Hidden</display>
+			<item>&C_FAMILY;</item>
+		</group>
+        </view>
+        <view id="Wizard">
+                <display>Wizard</display>
+                <group id="All">
+                        <display>All</display>
+                        <item>
+                           <widget id="Configure_Combo">
+                              <key>G_CONFIG_MODE</key>
+                              <label>Configure Mode</label>
+                              <tip>Configure Mode</tip>
+                              <value type="enum" default="Configure_as_UART_16550">
+                                 <range>
+                                   <discrete data="Configure_as_UART_16550">Configure as UART 16550</discrete>
+                                   <discrete data="Configure_as_UART_16450">Configure as UART 16450</discrete>
+                                 </range>
+                              </value>
+                           </widget>
+                        </item>
+                        <item>&G_USE_INTERRUPT;</item>
+                </group>
+	</view>
+</doc>

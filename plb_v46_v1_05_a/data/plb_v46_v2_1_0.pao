@@ -1,0 +1,91 @@
+################################################################################
+##
+## Copyright (c) 1995-2002 Xilinx, Inc.  All rights reserved.
+##
+## Xilinx, Inc.
+##
+## plb_v46.pao
+##
+## Peripheral Analyze Order
+##
+################################################################################
+
+lib proc_common_v3_00_a family.vhd vhdl
+lib proc_common_v3_00_a family_support.vhd vhdl
+lib proc_common_v3_00_a coregen_comp_defs.vhd vhdl
+lib proc_common_v3_00_a common_types_pkg.vhd vhdl
+lib proc_common_v3_00_a proc_common_pkg.vhd vhdl
+lib proc_common_v3_00_a conv_funs_pkg.vhd vhdl
+lib proc_common_v3_00_a ipif_pkg.vhd vhdl
+lib proc_common_v3_00_a async_fifo_fg.vhd vhdl
+lib proc_common_v3_00_a sync_fifo_fg.vhd vhdl
+lib proc_common_v3_00_a addsub.vhd vhdl
+lib proc_common_v3_00_a counter_bit.vhd vhdl
+lib proc_common_v3_00_a counter.vhd vhdl
+lib proc_common_v3_00_a direct_path_cntr.vhd vhdl
+lib proc_common_v3_00_a direct_path_cntr_ai.vhd vhdl
+lib proc_common_v3_00_a down_counter.vhd vhdl
+lib proc_common_v3_00_a eval_timer.vhd vhdl
+lib proc_common_v3_00_a inferred_lut4.vhd vhdl
+lib proc_common_v3_00_a ipif_steer.vhd vhdl
+lib proc_common_v3_00_a ipif_steer128.vhd vhdl
+lib proc_common_v3_00_a ipif_mirror128.vhd vhdl
+lib proc_common_v3_00_a ld_arith_reg.vhd vhdl
+lib proc_common_v3_00_a ld_arith_reg2.vhd vhdl
+lib proc_common_v3_00_a mux_onehot.vhd vhdl
+lib proc_common_v3_00_a mux_onehot_f.vhd vhdl
+lib proc_common_v3_00_a or_muxcy.vhd vhdl
+lib proc_common_v3_00_a or_gate.vhd vhdl
+lib proc_common_v3_00_a or_gate128.vhd vhdl
+lib proc_common_v3_00_a pf_adder_bit.vhd vhdl
+lib proc_common_v3_00_a pf_adder.vhd vhdl
+lib proc_common_v3_00_a pf_counter_bit.vhd vhdl
+lib proc_common_v3_00_a pf_counter.vhd vhdl
+lib proc_common_v3_00_a pf_counter_top.vhd vhdl
+lib proc_common_v3_00_a pf_occ_counter.vhd vhdl
+lib proc_common_v3_00_a pf_occ_counter_top.vhd vhdl
+lib proc_common_v3_00_a pf_dpram_select.vhd vhdl
+lib proc_common_v3_00_a pselect.vhd vhdl
+lib proc_common_v3_00_a pselect_mask.vhd vhdl
+lib proc_common_v3_00_a srl16_fifo.vhd vhdl
+lib proc_common_v3_00_a srl_fifo.vhd vhdl
+lib proc_common_v3_00_a srl_fifo2.vhd vhdl
+lib proc_common_v3_00_a srl_fifo3.vhd vhdl
+lib proc_common_v3_00_a srl_fifo_rbu.vhd vhdl
+lib proc_common_v3_00_a valid_be.vhd vhdl
+lib proc_common_v3_00_a or_with_enable_f.vhd vhdl
+lib proc_common_v3_00_a muxf_struct_f.vhd vhdl
+lib proc_common_v3_00_a cntr_incr_decr_addn_f.vhd vhdl
+lib proc_common_v3_00_a dynshreg_f.vhd vhdl
+lib proc_common_v3_00_a dynshreg_i_f.vhd vhdl
+lib proc_common_v3_00_a mux_onehot_f.vhd vhdl
+lib proc_common_v3_00_a srl_fifo_rbu_f.vhd vhdl
+lib proc_common_v3_00_a srl_fifo_f.vhd vhdl
+lib proc_common_v3_00_a compare_vectors_f.vhd vhdl
+lib proc_common_v3_00_a pselect_f.vhd vhdl
+lib proc_common_v3_00_a counter_f.vhd vhdl
+lib proc_common_v3_00_a or_muxcy_f.vhd vhdl
+lib proc_common_v3_00_a soft_reset.vhd vhdl
+
+lib plb_v46_v1_05_a or_bits.vhd vhdl
+lib plb_v46_v1_05_a or_gate.vhd vhdl
+lib plb_v46_v1_05_a arb_control_sm.vhd vhdl
+lib plb_v46_v1_05_a dcr_regs.vhd vhdl
+lib plb_v46_v1_05_a gen_qual_req.vhd vhdl
+lib plb_v46_v1_05_a muxed_signals.vhd vhdl
+lib plb_v46_v1_05_a pend_request.vhd vhdl
+lib plb_v46_v1_05_a qual_priority.vhd vhdl
+lib plb_v46_v1_05_a pending_priority.vhd vhdl
+lib plb_v46_v1_05_a qual_request.vhd vhdl
+lib plb_v46_v1_05_a priority_encoder.vhd vhdl
+lib plb_v46_v1_05_a rr_select.vhd vhdl
+lib plb_v46_v1_05_a plb_arb_encoder.vhd vhdl
+lib plb_v46_v1_05_a watchdog_timer.vhd vhdl
+lib plb_v46_v1_05_a plb_wr_datapath.vhd vhdl
+lib plb_v46_v1_05_a plb_rd_datapath.vhd vhdl
+lib plb_v46_v1_05_a plb_addrpath.vhd vhdl
+lib plb_v46_v1_05_a plb_slave_ors.vhd vhdl
+lib plb_v46_v1_05_a plb_interrupt.vhd vhdl
+lib plb_v46_v1_05_a plb_arbiter_logic.vhd vhdl
+lib plb_v46_v1_05_a plb_p2p.vhd vhdl
+lib plb_v46_v1_05_a plb_v46.vhd vhdl

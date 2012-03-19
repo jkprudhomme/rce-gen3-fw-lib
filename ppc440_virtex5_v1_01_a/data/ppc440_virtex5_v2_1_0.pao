@@ -1,0 +1,18 @@
+#################################################################################
+##
+## Copyright (c) 2004 Xilinx, Inc. All Rights Reserved.
+## You may copy and modify these files for your own internal use solely with
+## Xilinx programmable logic devices and  Xilinx EDK system or create IP
+## modules solely for Xilinx programmable logic devices and Xilinx EDK system.
+## No rights are granted to distribute any files unless they are distributed in
+## Xilinx programmable logic devices.
+##
+################################################################################
+##
+## Name     : ppc440_virtex5_v2_1_0.pao
+## Desc     : Peripheral Analyze Order
+##
+################################################################################
+
+lib ppc440_virtex5_v1_01_a ppc440_virtex5
+
