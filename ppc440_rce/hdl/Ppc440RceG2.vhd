@@ -10,7 +10,7 @@ library unisim;
 use unisim.vcomponents.all;
 
 
-entity ppc440_rce is
+entity Ppc440RceG2 is
    port (
 
       -- Clock inputs
@@ -41,33 +41,49 @@ entity ppc440_rce is
       mcmiRowConflict           : out std_logic
 
    );
-end ppc440_rce;
+end Ppc440RceG2;
 
-architecture structure of ppc440_rce is
+architecture structure of Ppc440RceG2 is
 
-   component ppc440_rce_bram 
+   -- Boot ram
+   component Ppc440Boot is
       port (
-         BRAM_Rst_A : in std_logic;
-         BRAM_Clk_A : in std_logic;
-         BRAM_EN_A : in std_logic;
-         BRAM_WEN_A : in std_logic_vector(0 to 7);
-         BRAM_Addr_A : in std_logic_vector(0 to 31);
-         BRAM_Din_A : out std_logic_vector(0 to 63);
-         BRAM_Dout_A : in std_logic_vector(0 to 63);
-         BRAM_Rst_B : in std_logic;
-         BRAM_Clk_B : in std_logic;
-         BRAM_EN_B : in std_logic;
-         BRAM_WEN_B : in std_logic_vector(0 to 7);
-         BRAM_Addr_B : in std_logic_vector(0 to 31);
-         BRAM_Din_B : out std_logic_vector(0 to 63);
-         BRAM_Dout_B : in std_logic_vector(0 to 63)
+         cpuClk156_25Mhz           : in  std_logic;
+         cpuRstChip                : in  std_logic;
+         plbPpcmMBusy              : out std_logic;
+         plbPpcmAddrAck            : out std_logic;
+         plbPpcmRdDack             : out std_logic;
+         plbPpcmRdDbus             : out std_logic(0 to 127);
+         plbPpcmRdWdAddr           : out std_logic(0 to 3);
+         plbPpcmTimeout            : out std_logic;
+         plbPpcmWrDack             : out std_logic;
+         ppcMplbAbus               : in  std_logic(0 to 31);
+         ppcMplbBe                 : in  std_logic;
+         ppcMplbRequest            : in  std_logic;
+         ppcMplbRnW                : in  std_logic;
+         ppcMplbSize               : in  std_logic(0 to 1);
+         ppcMplbWrDBus             : in  std_logic(0 to 127)
       );
+   end component;
 
    -- Local signals
-   signal JTGC440TCK        : std_logic;
-   signal JTGC440TDI        : std_logic;
-   signal JTGC440TMS        : std_logic;
-   signal C440JTGTDO        : std_logic;
+   signal jtgC440Tck        : std_logic;
+   signal jtgC440Tdi        : std_logic;
+   signal jtgC440Tms        : std_logic;
+   signal c440JtgTdo        : std_logic;
+   signal plbPpcmMBusy      : std_logic;
+   signal plbPpcmAddrAck    : std_logic;
+   signal plbPpcmRdDack     : std_logic;
+   signal plbPpcmRdDbus     : std_logic(0 to 127);
+   signal plbPpcmRdWdAddr   : std_logic(0 to 3);
+   signal plbPpcmTimeout    : std_logic;
+   signal plbPpcmWrDack     : std_logic;
+   signal ppcMplbAbus       : std_logic(0 to 31);
+   signal ppcMplbBe         : std_logic;
+   signal ppcMplbRequest    : std_logic;
+   signal ppcMplbRnW        : std_logic;
+   signal ppcMplbSize       : std_logic(0 to 1);
+   signal ppcMplbWrDBus     : std_logic(0 to 127);
 
 begin
 
@@ -166,40 +182,40 @@ begin
          C440MACHINECHECK            => open,
           
          -- MPLB 
-         PLBPPCMMBUSY                => PLBPPCMMBUSY,
-         PLBPPCMMIRQ                 => PLBPPCMMIRQ,
-         PLBPPCMMRDERR               => PLBPPCMMRDERR,
-         PLBPPCMMWRERR               => PLBPPCMMWRERR,
-         PLBPPCMADDRACK              => PLBPPCMADDRACK,
-         PLBPPCMRDBTERM              => PLBPPCMRDBTERM,
-         PLBPPCMRDDACK               => PLBPPCMRDDACK,
-         PLBPPCMRDDBUS               => PLBPPCMRDDBUS,
-         PLBPPCMRDWDADDR             => PLBPPCMRDWDADDR,
-         PLBPPCMREARBITRATE          => PLBPPCMREARBITRATE,
-         PLBPPCMSSIZE                => PLBPPCMSSIZE,
-         --PLBPPCMTIMEOUT              => PLBPPCMTIMEOUT,
-         PLBPPCMWRBTERM              => PLBPPCMWRBTERM,
-         PLBPPCMWRDACK               => PLBPPCMWRDACK,
-         PLBPPCMRDPENDPRI            => PLBPPCMRDPENDPRI,
-         PLBPPCMRDPENDREQ            => PLBPPCMRDPENDREQ,
-         PLBPPCMREQPRI               => PLBPPCMREQPRI,
-         PLBPPCMWRPENDPRI            => PLBPPCMWRPENDPRI,
-         PLBPPCMWRPENDREQ            => PLBPPCMWRPENDREQ,
-         PPCMPLBABORT                => PPCMPLBABORT,
-         PPCMPLBABUS                 => PPCMPLBABUS,
-         PPCMPLBBE                   => PPCMPLBBE,
-         PPCMPLBBUSLOCK              => PPCMPLBBUSLOCK,
-         PPCMPLBLOCKERR              => PPCMPLBLOCKERR,
-         --PPCMPLBPRIORITY             => PPCMPLBPRIORITY,
-         PPCMPLBRDBURST              => PPCMPLBRDBURST,
-         --PPCMPLBREQUEST              => PPCMPLBREQUEST,
-         PPCMPLBRNW                  => PPCMPLBRNW,
-         PPCMPLBSIZE                 => PPCMPLBSIZE,
-         --PPCMPLBTATTRIBUTE           => PPCMPLBTATTRIBUTE,
-         PPCMPLBTYPE                 => PPCMPLBTYPE,
-         PPCMPLBUABUS                => PPCMPLBUABUS,
-         PPCMPLBWRBURST              => PPCMPLBWRBURST,
-         PPCMPLBWRDBUS               => PPCMPLBWRDBUS,
+         PLBPPCMMBUSY                => plbPpcmMBusy,
+         PLBPPCMMIRQ                 => '0',
+         PLBPPCMMRDERR               => '0',
+         PLBPPCMMWRERR               => '0',
+         PLBPPCMADDRACK              => plbPpcmAddrAck,
+         PLBPPCMRDBTERM              => '0',
+         PLBPPCMRDDACK               => plbPpcmRdDack,
+         PLBPPCMRDDBUS               => plbPpcmRdDbus,
+         PLBPPCMRDWDADDR             => plbPpcmRdWdAddr,
+         PLBPPCMREARBITRATE          => '0',
+         PLBPPCMSSIZE                => "01",
+         PLBPPCMTIMEOUT              => plbPpcmTimeout,
+         PLBPPCMWRBTERM              => '0',
+         PLBPPCMWRDACK               => plbPpcmWrDack,
+         PLBPPCMRDPENDPRI            => "00",
+         PLBPPCMRDPENDREQ            => open,
+         PLBPPCMREQPRI               => "00",
+         PLBPPCMWRPENDPRI            => "00",
+         PLBPPCMWRPENDREQ            => open,
+         PPCMPLBABORT                => open,
+         PPCMPLBABUS                 => ppcMplbAbus,
+         PPCMPLBBE                   => ppcMplbBe,
+         PPCMPLBBUSLOCK              => open,
+         PPCMPLBLOCKERR              => open,
+         PPCMPLBPRIORITY             => open,
+         PPCMPLBRDBURST              => open,
+         PPCMPLBREQUEST              => ppcMplbRequest,
+         PPCMPLBRNW                  => ppcMplbRnW,
+         PPCMPLBSIZE                 => ppcMplbSize,
+         PPCMPLBTATTRIBUTE           => open,
+         PPCMPLBTYPE                 => open,
+         PPCMPLBUABUS                => open,
+         PPCMPLBWRBURST              => open,
+         PPCMPLBWRDBUS               => ppcMplbWrDBus
 
          -- SPLB 0
          PLBPPCS0MASTERID            => "0",
@@ -506,30 +522,31 @@ begin
    -- JTAG Controller
    U_JTAGPPC440 : JTAGPPC440 
       port map (
-         TCK      => JTGC440TCK,
-         TDIPPC   => JTGC440TDI,
-         TMS      => JTGC440TMS,
-         TDOPPC   => C440JTGTDO 
+         TCK      => jtgC440Tck,
+         TDIPPC   => jtgC440Tdi,
+         TMS      => jtgC440Tms,
+         TDOPPC   => c440JtgTdo 
       );
 
    -- Boot Ram
-   U_ppc400_rce_bram : ppc440_rce_bram 
+   U_Ppc440Boot : Ppc440Boot 
       port map (
-         BRAM_Rst_A   =>
-         BRAM_Clk_A   =>
-         BRAM_EN_A    =>
-         BRAM_WEN_A   =>
-         BRAM_Addr_A  =>
-         BRAM_Din_A   =>
-         BRAM_Dout_A  =>
-         BRAM_Rst_B   =>
-         BRAM_Clk_B   =>
-         BRAM_EN_B    =>
-         BRAM_WEN_B   =>
-         BRAM_Addr_B  =>
-         BRAM_Din_B   =>
-         BRAM_Dout_B  =>
+         bramClk           => cpuClk156_25Mhz,
+         bramClkRst        => cpuRstChip,
+         plbPpcmMBusy      => plbPpcmMBusy,
+         plbPpcmAddrAck    => plbPpcmAddrAck,
+         plbPpcmRdDack     => plbPpcmRdDack,
+         plbPpcmRdDbus     => plbPpcmRdDbus,
+         plbPpcmRdWdAddr   => plbPpcmRdWdAddr,
+         plbPpcmTimeout    => plbPpcmTimeout,
+         plbPpcmWrDack     => plbPpcmWrDack,
+         ppcMplbAbus       => ppcMplbAbus,
+         ppcMplbBe         => ppcMplbBe,
+         ppcMplbRequest    => ppcMplbRequest,
+         ppcMplbRnW        => ppcMplbRnW,
+         ppcMplbSize       => ppcMplbSize,
+         ppcMplbWrDBus     => ppcMplbWrDBus
       );
 
-end ppc440_rce;
+end Ppc440RceG2;
 
