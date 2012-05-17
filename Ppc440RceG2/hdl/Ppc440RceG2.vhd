@@ -51,6 +51,7 @@ architecture structure of Ppc440RceG2 is
       port (
          bramClk                   : in  std_logic;
          bramClkRst                : in  std_logic;
+         resetReq                  : out std_logic;
          plbPpcmMBusy              : out std_logic;
          plbPpcmAddrAck            : out std_logic;
          plbPpcmRdDack             : out std_logic;
@@ -72,6 +73,7 @@ architecture structure of Ppc440RceG2 is
       port (
          refClk125Mhz               : in std_logic;
          masterReset                : in std_logic;
+         pllLocked                  : out std_logic;
          cpuClk312_5Mhz             : out std_logic; 
          cpuClk312_5MhzAdj          : out std_logic;
          cpuClk312_5Mhz90DegAdj     : out std_logic;
@@ -94,41 +96,43 @@ architecture structure of Ppc440RceG2 is
    end component;
 
    -- Local signals
-   signal jtgC440Tck                 : std_logic;
-   signal jtgC440Tdi                 : std_logic;
-   signal jtgC440Tms                 : std_logic;
-   signal c440JtgTdo                 : std_logic;
-   signal plbPpcmMBusy               : std_logic;
-   signal plbPpcmAddrAck             : std_logic;
-   signal plbPpcmRdDack              : std_logic;
-   signal plbPpcmRdDbus              : std_logic_vector(0 to 127);
-   signal plbPpcmRdWdAddr            : std_logic_vector(0 to 3);
-   signal plbPpcmTimeout             : std_logic;
-   signal plbPpcmWrDack              : std_logic;
-   signal ppcMplbAbus                : std_logic_vector(0 to 31);
-   signal ppcMplbBe                  : std_logic_vector(0 to 15);
-   signal ppcMplbRequest             : std_logic;
-   signal ppcMplbRnW                 : std_logic;
-   signal ppcMplbSize                : std_logic_vector(0 to 3);
-   signal ppcMplbWrDBus              : std_logic_vector(0 to 127);
-   signal cpuRstCore                 : std_logic;
-   signal cpuRstChip                 : std_logic;
-   signal cpuRstSystem               : std_logic;
-   signal cpuRstCoreReq              : std_logic;
-   signal cpuRstChipReq              : std_logic;
-   signal cpuRstSystemReq            : std_logic;
-   signal intClk312_5MhzAdj          : std_logic;
-   signal intClk312_5Mhz90DegAdj     : std_logic;
-   signal intClk156_25MhzAdj         : std_logic;
-   signal intClk200MhzAdj            : std_logic;
-   signal intClk312_5Mhz             : std_logic;
-   signal intClk468_75Mhz            : std_logic;
-   signal intClk312_5MhzAdjRst       : std_logic;
-   signal intClk312_5Mhz90DegAdjRst  : std_logic;
-   signal intClk156_25MhzAdjRst      : std_logic;
-   signal intClk200MhzAdjRst         : std_logic;
-   signal intClk312_5MhzRst          : std_logic;
-   signal intClk468_75MhzRst         : std_logic;
+   signal jtgC440Tck                   : std_logic;
+   signal jtgC440Tdi                   : std_logic;
+   signal jtgC440Tms                   : std_logic;
+   signal c440JtgTdo                   : std_logic;
+   signal plbPpcmMBusy                 : std_logic;
+   signal plbPpcmAddrAck               : std_logic;
+   signal plbPpcmRdDack                : std_logic;
+   signal plbPpcmRdDbus                : std_logic_vector(0 to 127);
+   signal plbPpcmRdWdAddr              : std_logic_vector(0 to 3);
+   signal plbPpcmTimeout               : std_logic;
+   signal plbPpcmWrDack                : std_logic;
+   signal ppcMplbAbus                  : std_logic_vector(0 to 31);
+   signal ppcMplbBe                    : std_logic_vector(0 to 15);
+   signal ppcMplbRequest               : std_logic;
+   signal ppcMplbRnW                   : std_logic;
+   signal ppcMplbSize                  : std_logic_vector(0 to 3);
+   signal ppcMplbWrDBus                : std_logic_vector(0 to 127);
+   signal cpuRstCore                   : std_logic;
+   signal cpuRstChip                   : std_logic;
+   signal cpuRstSystem                 : std_logic;
+   signal cpuRstCoreReq                : std_logic;
+   signal cpuRstChipReq                : std_logic;
+   signal cpuRstSystemReq              : std_logic;
+   signal intClk312_5MhzAdj            : std_logic;
+   signal intClk312_5Mhz90DegAdj       : std_logic;
+   signal intClk156_25MhzAdj           : std_logic;
+   signal intClk200MhzAdj              : std_logic;
+   signal intClk312_5Mhz               : std_logic;
+   signal intClk468_75Mhz              : std_logic;
+   signal intClk312_5MhzAdjRst         : std_logic;
+   signal intClk312_5Mhz90DegAdjRst    : std_logic;
+   signal intClk156_25MhzAdjRst        : std_logic;
+   signal intClk200MhzAdjRst           : std_logic;
+   signal intClk312_5MhzRst            : std_logic;
+   signal intClk468_75MhzRst           : std_logic;
+   signal intReset                     : std_logic;
+   signal resetReq                     : std_logic;
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -144,6 +148,7 @@ begin
    cpuClk156_25MhzRst         <= intClk156_25MhzAdjRst;
    cpuClk200Mhz               <= intClk200MhzAdj;
    cpuClk200MhzRst            <= intClk200MhzAdjRst;
+   intReset                   <= masterReset or resetReq;
 
    ----------------------------------------------------------------------------
    -- Instantiate PPC440 Processor Block Primitive
@@ -151,7 +156,7 @@ begin
    U_PPC440 : PPC440
       generic map (
          INTERCONNECT_IMASK    => x"FFFFFFFF",
-         XBAR_ADDRMAP_TMPL0    => x"0000FFFF",
+         XBAR_ADDRMAP_TMPL0    => x"FFFF0000",
          XBAR_ADDRMAP_TMPL1    => x"00000000",
          XBAR_ADDRMAP_TMPL2    => x"00000000",
          XBAR_ADDRMAP_TMPL3    => x"00000000",
@@ -176,20 +181,20 @@ begin
          APU_UDI15             => B"000000000000000000000000",
          MI_ROWCONFLICT_MASK   => X"00FFFE00",
          MI_BANKCONFLICT_MASK  => X"07000000",
-         MI_ARBCONFIG          => X"00432010",
+         MI_ARBCONFIG          => X"00432010", -- double check
          MI_CONTROL            => X"F820008F" & "11",
-         PPCM_CONTROL          => X"8000009F",
+         PPCM_CONTROL          => X"8000009F", -- double check
          PPCM_COUNTER          => X"00000500",
-         PPCM_ARBCONFIG        => X"00432010",
-         PPCS0_CONTROL         => x"8033336C",
+         PPCM_ARBCONFIG        => X"00432010", -- double check
+         PPCS0_CONTROL         => x"8033336C", -- double check
          PPCS0_WIDTH_128N64    => TRUE ,
-         PPCS0_ADDRMAP_TMPL0   => x"00000000",
+         PPCS0_ADDRMAP_TMPL0   => x"00000000", -- double check
          PPCS0_ADDRMAP_TMPL1   => x"00000000",
          PPCS0_ADDRMAP_TMPL2   => x"00000000",
          PPCS0_ADDRMAP_TMPL3   => x"00000000",
-         PPCS1_CONTROL         => x"8033336C",
+         PPCS1_CONTROL         => x"8033336C", -- double check
          PPCS1_WIDTH_128N64    => TRUE ,
-         PPCS1_ADDRMAP_TMPL0   => x"00000000",
+         PPCS1_ADDRMAP_TMPL0   => x"00000000", -- double check
          PPCS1_ADDRMAP_TMPL1   => x"00000000",
          PPCS1_ADDRMAP_TMPL2   => x"00000000",
          PPCS1_ADDRMAP_TMPL3   => x"00000000",
@@ -212,10 +217,10 @@ begin
          DMA3_RXCHANNELCTRL    => X"01010000",
          DMA3_CONTROL          => B"00000000",
          DMA3_TXIRQTIMER       => B"1111111111",
-         DMA3_RXIRQTIMER       => B"1111111111"
-         --DCR_AUTOLOCK_ENABLE   => 1,
-         --PPCDM_ASYNCMODE       => 0,
-         --PPCDS_ASYNCMODE       => 0
+         DMA3_RXIRQTIMER       => B"1111111111",
+         DCR_AUTOLOCK_ENABLE   => TRUE,
+         PPCDM_ASYNCMODE       => FALSE,
+         PPCDS_ASYNCMODE       => FALSE
       )
       port map (
 
@@ -397,7 +402,7 @@ begin
          CPMDMA0LLCLK                => '1',
          CPMDMA1LLCLK                => '1',
          CPMDMA2LLCLK                => '1',
-         CPMDMA3LLCLK                => '1',
+         CPMDMA3LLCLK                => '0',
          C440CPMCORESLEEPREQ         => open,
          C440CPMDECIRPTREQ           => open,
          C440CPMFITIRPTREQ           => open,
@@ -592,7 +597,8 @@ begin
    U_Ppc440RceG2Boot : Ppc440RceG2Boot 
       port map (
          bramClk           => intClk156_25MhzAdj,
-         bramClkRst        => intClk156_25MhzAdj,
+         bramClkRst        => intClk156_25MhzAdjRst,
+         resetReq          => resetReq,
          plbPpcmMBusy      => plbPpcmMBusy,
          plbPpcmAddrAck    => plbPpcmAddrAck,
          plbPpcmRdDack     => plbPpcmRdDack,
@@ -614,7 +620,8 @@ begin
    ----------------------------------------------------------------------------
    U_Ppc440RceG2Clk : Ppc440RceG2Clk port map (
       refClk125Mhz               => refClk125Mhz,
-      masterReset                => masterReset,
+      masterReset                => intReset,
+      pllLocked                  => open,
       cpuClk312_5Mhz             => intClk312_5Mhz,
       cpuClk312_5MhzAdj          => intClk312_5MhzAdj,
       cpuClk312_5Mhz90DegAdj     => intClk312_5Mhz90DegAdj,
@@ -636,5 +643,4 @@ begin
    );
 
 end architecture structure;
-
 

@@ -53,7 +53,7 @@ begin
 
          else
             syncReset <= '1'        after tpd;
-            rstCnt    <= rstCnt + 1 after tpd;
+            rstCnt    <= rstCnt - 1 after tpd;
          end if;
       end if;
    end process;
