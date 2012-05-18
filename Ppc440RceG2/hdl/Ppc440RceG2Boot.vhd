@@ -144,7 +144,7 @@ begin
          plbPpcmMBusy     <= nextPpcmMBusy    after tpd;
          plbPpcmAddrAck   <= nextPpcmAddrAck  after tpd;
          plbPpcmRdDack    <= nextPpcmRdDack   after tpd;
-         --plbPpcmRdDbus    <= nextPpcmRdDbus   after tpd;
+         plbPpcmRdDbus    <= nextPpcmRdDbus   after tpd;
          intPpcmRdWdAddr  <= nextPpcmRdWdAddr after tpd;
          plbPpcmTimeout   <= nextPpcmTimeout  after tpd;
          plbPpcmWrDack    <= nextPpcmWrDack   after tpd;

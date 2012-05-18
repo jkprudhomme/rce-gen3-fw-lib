@@ -156,9 +156,9 @@ begin
       ) port map (
          CLKFBDCM               => open,
          CLKFBOUT               => pll0Fb,
-         CLKOUT0                => pllClk312_5Mhz,
-         CLKOUT1                => pllClk312_5MhzAdj,
-         CLKOUT2                => pllClk312_5Mhz90DegAdj,
+         CLKOUT0                => pllClk312_5MhzAdj,
+         CLKOUT1                => pllClk312_5Mhz90DegAdj,
+         CLKOUT2                => pllClk312_5Mhz,
          CLKOUT3                => pllClk156_25MhzAdj,
          CLKOUT4                => pllClk468_75Mhz,
          CLKOUT5                => open,

@@ -16,6 +16,7 @@ entity Ppc440RceG2 is
       -- Clock & Reset Inputs
       refClk125Mhz               : in  std_logic;
       masterReset                : in  std_logic;
+      pllLocked                  : out std_logic;
 
       -- Clock & Reset Outputs
       cpuClk312_5Mhz             : out std_logic;
@@ -181,20 +182,20 @@ begin
          APU_UDI15             => B"000000000000000000000000",
          MI_ROWCONFLICT_MASK   => X"00FFFE00",
          MI_BANKCONFLICT_MASK  => X"07000000",
-         MI_ARBCONFIG          => X"00432010", -- double check
-         MI_CONTROL            => X"F820008F" & "11",
-         PPCM_CONTROL          => X"8000009F", -- double check
+         MI_ARBCONFIG          => X"00432010",
+         MI_CONTROL            => X"F820008F",
+         PPCM_CONTROL          => X"8000009F",
          PPCM_COUNTER          => X"00000500",
-         PPCM_ARBCONFIG        => X"00432010", -- double check
-         PPCS0_CONTROL         => x"8033336C", -- double check
+         PPCM_ARBCONFIG        => X"00432010",
+         PPCS0_CONTROL         => x"8033336C",
          PPCS0_WIDTH_128N64    => TRUE ,
-         PPCS0_ADDRMAP_TMPL0   => x"00000000", -- double check
+         PPCS0_ADDRMAP_TMPL0   => x"00000000",
          PPCS0_ADDRMAP_TMPL1   => x"00000000",
          PPCS0_ADDRMAP_TMPL2   => x"00000000",
          PPCS0_ADDRMAP_TMPL3   => x"00000000",
-         PPCS1_CONTROL         => x"8033336C", -- double check
+         PPCS1_CONTROL         => x"8033336C",
          PPCS1_WIDTH_128N64    => TRUE ,
-         PPCS1_ADDRMAP_TMPL0   => x"00000000", -- double check
+         PPCS1_ADDRMAP_TMPL0   => x"00000000",
          PPCS1_ADDRMAP_TMPL1   => x"00000000",
          PPCS1_ADDRMAP_TMPL2   => x"00000000",
          PPCS1_ADDRMAP_TMPL3   => x"00000000",
@@ -424,7 +425,7 @@ begin
          DCRPPCDMACK                 => '0',
          DCRPPCDMDBUSIN              => x"00000000",
          DCRPPCDMTIMEOUTWAIT         => '0',
-         TIEDCRBASEADDR              => "00",
+         TIEDCRBASEADDR              => "11",
          PPCDMDCRREAD                => open,
          PPCDMDCRWRITE               => open,
          PPCDMDCRABUS                => open,
@@ -514,7 +515,7 @@ begin
          DMA0TXIRQ                   => open,
          DMA0RXIRQ                   => open,
           
-         -- DMA Controller 3 
+         -- DMA Controller 1 
          LLDMA1TXDSTRDYN             => '1',
          LLDMA1RXD                   => x"00000000",
          LLDMA1RXREM                 => "0000",
@@ -621,7 +622,7 @@ begin
    U_Ppc440RceG2Clk : Ppc440RceG2Clk port map (
       refClk125Mhz               => refClk125Mhz,
       masterReset                => intReset,
-      pllLocked                  => open,
+      pllLocked                  => pllLocked,
       cpuClk312_5Mhz             => intClk312_5Mhz,
       cpuClk312_5MhzAdj          => intClk312_5MhzAdj,
       cpuClk312_5Mhz90DegAdj     => intClk312_5Mhz90DegAdj,
@@ -643,4 +644,5 @@ begin
    );
 
 end architecture structure;
+
 
