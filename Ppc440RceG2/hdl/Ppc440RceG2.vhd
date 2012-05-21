@@ -16,7 +16,7 @@ entity Ppc440RceG2 is
 
       -- Clock & Reset Inputs
       refClk125Mhz               : in  std_logic;
-      masterReset                : in  std_logic;
+      powerOnReset               : in  std_logic;
       pllLocked                  : out std_logic;
 
       -- Clock & Reset Outputs
@@ -41,7 +41,7 @@ entity Ppc440RceG2 is
       mcmiWriteDataValid         : out std_logic;
       mcmiByteEnable             : out std_logic_vector(0 to 15);
       mcmiBankConflict           : out std_logic;
-      mcmiRowConflict            : out std_logic
+      mcmiRowConflict            : out std_logic;
 
       -- I2C
       modScl                     : inout std_logic;
@@ -84,10 +84,10 @@ architecture structure of Ppc440RceG2 is
    signal intClk312_5MhzAdjRst         : std_logic;
    signal intClk312_5Mhz90DegAdjRst    : std_logic;
    signal intClk156_25MhzAdjRst        : std_logic;
+   signal intClk156_25MhzAdjRstPon     : std_logic;
    signal intClk200MhzAdjRst           : std_logic;
    signal intClk312_5MhzRst            : std_logic;
    signal intClk468_75MhzRst           : std_logic;
-   signal intReset                     : std_logic;
    signal resetReq                     : std_logic;
    signal iicClkO                      : std_logic;
    signal iicClkI                      : std_logic;
@@ -115,7 +115,6 @@ begin
    cpuClk156_25MhzRst         <= intClk156_25MhzAdjRst;
    cpuClk200Mhz               <= intClk200MhzAdj;
    cpuClk200MhzRst            <= intClk200MhzAdjRst;
-   intReset                   <= masterReset or resetReq;
 
    ----------------------------------------------------------------------------
    -- Instantiate PPC440 Processor Block Primitive
@@ -428,36 +427,36 @@ begin
          C440TRCTRIGGEREVENTTYPE     => open,
 
          -- APU Interface
-         FCMAPUCR                    => fcmApu.CR,
-         FCMAPUDONE                  => fcmApu.DONE,
-         FCMAPUEXCEPTION             => fcmApu.EXC,
-         FCMAPUFPSCRFEX              => fcmApu.FPSCREXC,
-         FCMAPURESULT                => fcmApu.RESULT,
-         FCMAPURESULTVALID           => fcmApu.RESULTVALID,
-         FCMAPUSLEEPNOTREADY         => fcmApu.SLEEPNRDY,
-         FCMAPUCONFIRMINSTR          => fcmApu.CONFIRMINSTR,
-         FCMAPUSTOREDATA             => fcmApu.STOREDATA,
-         APUFCMDECNONAUTON           => apuFcm.DECNONAUTON,
-         APUFCMDECFPUOP              => apuFcm.DECFPU,
-         APUFCMDECLDSTXFERSIZE       => apuFcm.DECLDSTXFERSZ,
-         APUFCMDECLOAD               => apuFcm.DECLOAD,
-         APUFCMNEXTINSTRREADY        => apuFcm.NEXTINSTRRDY,
-         APUFCMDECSTORE              => apuFcm.DECSTORE,
-         APUFCMDECUDI                => apuFcm.DECUDI,
-         APUFCMDECUDIVALID           => apuFcm.DECUDIVALID,
-         APUFCMENDIAN                => apuFcm.ENDIAN,
-         APUFCMFLUSH                 => apuFcm.FLUSH,
-         APUFCMINSTRUCTION           => apuFcm.INSTRUCTION,
-         APUFCMINSTRVALID            => apuFcm.INSTRVALID,
-         APUFCMLOADBYTEADDR          => apuFcm.LOADBYTEADDR,
-         APUFCMLOADDATA              => apuFcm.LOADDATA,
-         APUFCMLOADDVALID            => apuFcm.LOADDVALID,
-         APUFCMOPERANDVALID          => apuFcm.OPERVALID,
-         APUFCMRADATA                => apuFcm.RADATA,
-         APUFCMRBDATA                => apuFcm.RBDATA,
-         APUFCMWRITEBACKOK           => apuFcm.WRITEBACKOK,
-         APUFCMMSRFE0                => apuFcm.MSRFE0,
-         APUFCMMSRFE1                => apuFcm.MSRFE1,
+         FCMAPUCR                    => fcmApu.cr,
+         FCMAPUDONE                  => fcmApu.done,
+         FCMAPUEXCEPTION             => fcmApu.exc,
+         FCMAPUFPSCRFEX              => fcmApu.fpscrexc,
+         FCMAPURESULT                => fcmApu.result,
+         FCMAPURESULTVALID           => fcmApu.resultvalid,
+         FCMAPUSLEEPNOTREADY         => fcmApu.sleepnrdy,
+         FCMAPUCONFIRMINSTR          => fcmApu.confirminstr,
+         FCMAPUSTOREDATA             => fcmApu.storedata,
+         APUFCMDECNONAUTON           => apuFcm.decnonauton,
+         APUFCMDECFPUOP              => apuFcm.decfpu,
+         APUFCMDECLDSTXFERSIZE       => apuFcm.decldstxfersz,
+         APUFCMDECLOAD               => apuFcm.decload,
+         APUFCMNEXTINSTRREADY        => apuFcm.nextinstrrdy,
+         APUFCMDECSTORE              => apuFcm.decstore,
+         APUFCMDECUDI                => apuFcm.decudi,
+         APUFCMDECUDIVALID           => apuFcm.decudivalid,
+         APUFCMENDIAN                => apuFcm.endian,
+         APUFCMFLUSH                 => apuFcm.flush,
+         APUFCMINSTRUCTION           => apuFcm.instruction,
+         APUFCMINSTRVALID            => apuFcm.instrvalid,
+         APUFCMLOADBYTEADDR          => apuFcm.loadbyteaddr,
+         APUFCMLOADDATA              => apuFcm.loaddata,
+         APUFCMLOADDVALID            => apuFcm.loaddvalid,
+         APUFCMOPERANDVALID          => apuFcm.opervalid,
+         APUFCMRADATA                => apuFcm.radata,
+         APUFCMRBDATA                => apuFcm.rbdata,
+         APUFCMWRITEBACKOK           => apuFcm.writebackok,
+         APUFCMMSRFE0                => apuFcm.msrfe0,
+         APUFCMMSRFE1                => apuFcm.msrfe1,
 
          -- DMA Controller 0
          LLDMA0TXDSTRDYN             => '1',
@@ -565,7 +564,6 @@ begin
       port map (
          bramClk           => intClk156_25MhzAdj,
          bramClkRst        => intClk156_25MhzAdjRst,
-         resetReq          => resetReq,
          plbPpcmMBusy      => plbPpcmMBusy,
          plbPpcmAddrAck    => plbPpcmAddrAck,
          plbPpcmRdDack     => plbPpcmRdDack,
@@ -587,7 +585,8 @@ begin
    ----------------------------------------------------------------------------
    U_Ppc440RceG2Clk : Ppc440RceG2Clk port map (
       refClk125Mhz               => refClk125Mhz,
-      masterReset                => intReset,
+      powerOnReset               => powerOnReset,
+      masterReset                => resetReq,
       pllLocked                  => pllLocked,
       cpuClk312_5Mhz             => intClk312_5Mhz,
       cpuClk312_5MhzAdj          => intClk312_5MhzAdj,
@@ -599,6 +598,7 @@ begin
       cpuClk312_5MhzAdjRst       => intClk312_5MhzAdjRst,
       cpuClk312_5Mhz90DegAdjRst  => intClk312_5Mhz90DegAdjRst,
       cpuClk156_25MhzAdjRst      => intClk156_25MhzAdjRst,
+      cpuClk156_25MhzAdjRstPon   => intClk156_25MhzAdjRstPon,
       cpuClk468_75MhzRst         => intClk468_75MhzRst,
       cpuClk200MhzAdjRst         => intClk200MhzAdjRst,
       cpuRstCore                 => cpuRstCore,
@@ -613,8 +613,8 @@ begin
    -- I2C Slave
    ----------------------------------------------------------------------------
    U_Ppc440RceG2I2c : Ppc440RceG2I2c port map (
-      rst_i       => intClk156_25MhzAdjRst,
-      --rst_o       => sys_rst_q,
+      rst_i       => intClk156_25MhzAdjRstPon,
+      rst_o       => resetReq,
       interrupt   => extIrq,
       clk32       => intClk156_25MhzAdj,
       fcm_clk     => intClk156_25MhzAdj,

@@ -14,6 +14,7 @@ entity Ppc440RceG2Clk is
 
       -- Inputs
       refClk125Mhz               : in  std_logic;
+      powerOnReset               : in  std_logic;
       masterReset                : in  std_logic;
       pllLocked                  : out std_logic;
 
@@ -30,6 +31,7 @@ entity Ppc440RceG2Clk is
       cpuClk312_5MhzAdjRst       : out std_logic;
       cpuClk312_5Mhz90DegAdjRst  : out std_logic;
       cpuClk156_25MhzAdjRst      : out std_logic;
+      cpuClk156_25MhzAdjRstPon   : out std_logic;
       cpuClk468_75MhzRst         : out std_logic;
       cpuClk200MhzAdjRst         : out std_logic;
 
@@ -83,6 +85,7 @@ architecture STRUCTURE of Ppc440RceG2Clk is
    signal intClk312_5MhzAdjRst       : std_logic;
    signal intClk312_5Mhz90DegAdjRst  : std_logic;
    signal intClk156_25MhzAdjRst      : std_logic;
+   signal intClk156_25MhzAdjRstPon   : std_logic;
    signal intClk468_75MhzRst         : std_logic;
    signal intClk200MhzAdjRst         : std_logic;
    signal intNotReady                : std_logic;
@@ -173,7 +176,7 @@ begin
          DI                     => "0000000000000000",
          DWE                    => '0',
          REL                    => '0',
-         RST                    => masterReset
+         RST                    => powerOnReset
       );
 
    -- Clock buffer
@@ -276,7 +279,7 @@ begin
          DI                     => "0000000000000000",
          DWE                    => '0',
          REL                    => '0',
-         RST                    => masterReset
+         RST                    => powerOnReset
       );
 
    -- Clock buffer
@@ -293,15 +296,16 @@ begin
    cpuClk312_5MhzAdjRst       <= intClk312_5MhzAdjRst;
    cpuClk312_5Mhz90DegAdjRst  <= intClk312_5Mhz90DegAdjRst;
    cpuClk156_25MhzAdjRst      <= intClk156_25MhzAdjRst;
+   cpuClk156_25MhzAdjRstPon   <= intClk156_25MhzAdjRstPon;
    cpuClk468_75MhzRst         <= intClk468_75MhzRst;
    cpuClk200MhzAdjRst         <= intClk200MhzAdjRst;
-   asyncReset                 <= masterReset;
+   asyncReset                 <= masterReset or powerOnReset;
    intNotReady                <= intClk312_5MhzRst or intClk312_5MhzAdjRst or
                                  intClk312_5Mhz90DegAdjRst or intClk156_25MhzAdjRst or
-                                 intClk468_75MhzRst or intClk200MhzAdjRst;
-   asyncResetCore             <= masterReset or intNotReady or cpuRstCoreReqEdge;
-   asyncResetChip             <= masterReset or intNotReady or cpuRstChipReqEdge;
-   asyncResetSystem           <= masterReset or intNotReady or cpuRstSystemReqEdge;
+                                 intClk156_25MhzAdjRstPon or intClk468_75MhzRst or intClk200MhzAdjRst;
+   asyncResetCore             <= masterReset or powerOnReset or intNotReady or cpuRstCoreReqEdge;
+   asyncResetChip             <= masterReset or powerOnReset or intNotReady or cpuRstChipReqEdge;
+   asyncResetSystem           <= masterReset or powerOnReset or intNotReady or cpuRstSystemReqEdge;
 
    -- Edge detect core reset requests
    process ( intClk312_5Mhz ) begin
@@ -395,6 +399,14 @@ begin
       asyncReset  => asyncResetSystem,
       pllLocked   => intLocked,
       syncReset   => cpuRstSystem
+   );
+
+   -- Reset block
+   U_Rst9 :  Ppc440RceG2Rst port map (
+      syncClk     => intClk156_25MhzAdj,
+      asyncReset  => powerOnReset,
+      pllLocked   => intLocked,
+      syncReset   => intClk156_25MhzAdjRstPon
    );
 
 end architecture STRUCTURE;

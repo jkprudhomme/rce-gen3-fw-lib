@@ -17,7 +17,6 @@ entity Ppc440RceG2Boot is
       -- Clock inputs
       bramClk                   : in  std_logic;
       bramClkRst                : in  std_logic;
-      resetReq                  : out std_logic;
 
       -- MPLB Bus
       plbPpcmMBusy              : out std_logic;
