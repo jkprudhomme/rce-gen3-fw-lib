@@ -9,6 +9,7 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
+use work.Ppc440RceG2Pkg.all;
 
 entity Ppc440RceG2 is
    port (
@@ -42,59 +43,13 @@ entity Ppc440RceG2 is
       mcmiBankConflict           : out std_logic;
       mcmiRowConflict            : out std_logic
 
+      -- I2C
+      modScl                     : inout std_logic;
+      modSda                     : inout std_logic
    );
 end Ppc440RceG2;
 
 architecture structure of Ppc440RceG2 is
-
-   -- Boot ram
-   component Ppc440RceG2Boot is
-      port (
-         bramClk                   : in  std_logic;
-         bramClkRst                : in  std_logic;
-         resetReq                  : out std_logic;
-         plbPpcmMBusy              : out std_logic;
-         plbPpcmAddrAck            : out std_logic;
-         plbPpcmRdDack             : out std_logic;
-         plbPpcmRdDbus             : out std_logic_vector(0 to 127);
-         plbPpcmRdWdAddr           : out std_logic_vector(0 to 3);
-         plbPpcmTimeout            : out std_logic;
-         plbPpcmWrDack             : out std_logic;
-         ppcMplbAbus               : in  std_logic_vector(0 to 31);
-         ppcMplbBe                 : in  std_logic_vector(0 to 15);
-         ppcMplbRequest            : in  std_logic;
-         ppcMplbRnW                : in  std_logic;
-         ppcMplbSize               : in  std_logic_vector(0 to 3);
-         ppcMplbWrDBus             : in  std_logic_vector(0 to 127)
-      );
-   end component;
-
-   -- Clock & Reset
-   component Ppc440RceG2Clk is
-      port (
-         refClk125Mhz               : in std_logic;
-         masterReset                : in std_logic;
-         pllLocked                  : out std_logic;
-         cpuClk312_5Mhz             : out std_logic; 
-         cpuClk312_5MhzAdj          : out std_logic;
-         cpuClk312_5Mhz90DegAdj     : out std_logic;
-         cpuClk156_25MhzAdj         : out std_logic;
-         cpuClk468_75Mhz            : out std_logic;
-         cpuClk200MhzAdj            : out std_logic;
-         cpuClk312_5MhzRst          : out std_logic;
-         cpuClk312_5MhzAdjRst       : out std_logic;
-         cpuClk312_5Mhz90DegAdjRst  : out std_logic;
-         cpuClk156_25MhzAdjRst      : out std_logic;
-         cpuClk468_75MhzRst         : out std_logic;
-         cpuClk200MhzAdjRst         : out std_logic;
-         cpuRstCore                 : out std_logic;
-         cpuRstChip                 : out std_logic;
-         cpuRstSystem               : out std_logic;
-         cpuRstCoreReq              : in  std_logic;
-         cpuRstChipReq              : in  std_logic;
-         cpuRstSystemReq            : in  std_logic
-      );
-   end component;
 
    -- Local signals
    signal jtgC440Tck                   : std_logic;
@@ -134,6 +89,17 @@ architecture structure of Ppc440RceG2 is
    signal intClk468_75MhzRst           : std_logic;
    signal intReset                     : std_logic;
    signal resetReq                     : std_logic;
+   signal iicClkO                      : std_logic;
+   signal iicClkI                      : std_logic;
+   signal iicClkT                      : std_logic; 
+   signal iicDataO                     : std_logic;
+   signal iicDataI                     : std_logic;
+   signal iicDataT                     : std_logic; 
+   signal fcmApu                       : FCMAPU_440;
+   signal apuFcm                       : APUFCM_440;
+   signal extIrq                       : std_logic;
+
+   constant iicSlaveAddr               : std_logic_vector(6 downto 0) := "1001001"; 
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -395,7 +361,7 @@ begin
          PPCCPMINTERCONNECTBUSY      => open,
          CPMC440CLK                  => intClk468_75Mhz,
          CPMDCRCLK                   => '1',
-         CPMFCMCLK                   => '1',
+         CPMFCMCLK                   => intClk156_25MhzAdj,
          CPMMCCLK                    => intClk312_5MhzAdj,
          CPMPPCS1PLBCLK              => '1',
          CPMPPCS0PLBCLK              => '1',
@@ -434,7 +400,7 @@ begin
 
          -- Interupt Controller
          EICC440CRITIRQ              => '0',
-         EICC440EXTIRQ               => '0',
+         EICC440EXTIRQ               => extIrq,
          PPCEICINTERCONNECTIRQ       => open,
 
          -- JTAG Interface
@@ -462,36 +428,36 @@ begin
          C440TRCTRIGGEREVENTTYPE     => open,
 
          -- APU Interface
-         FCMAPUCR                    => "0000",
-         FCMAPUDONE                  => '0',
-         FCMAPUEXCEPTION             => '0',
-         FCMAPUFPSCRFEX              => '0',
-         FCMAPURESULT                => x"00000000",
-         FCMAPURESULTVALID           => '0',
-         FCMAPUSLEEPNOTREADY         => '0',
-         FCMAPUCONFIRMINSTR          => '0',
-         FCMAPUSTOREDATA             => x"00000000000000000000000000000000",
-         APUFCMDECNONAUTON           => open,
-         APUFCMDECFPUOP              => open,
-         APUFCMDECLDSTXFERSIZE       => open,
-         APUFCMDECLOAD               => open,
-         APUFCMNEXTINSTRREADY        => open,
-         APUFCMDECSTORE              => open,
-         APUFCMDECUDI                => open,
-         APUFCMDECUDIVALID           => open,
-         APUFCMENDIAN                => open,
-         APUFCMFLUSH                 => open,
-         APUFCMINSTRUCTION           => open,
-         APUFCMINSTRVALID            => open,
-         APUFCMLOADBYTEADDR          => open,
-         APUFCMLOADDATA              => open,
-         APUFCMLOADDVALID            => open,
-         APUFCMOPERANDVALID          => open,
-         APUFCMRADATA                => open,
-         APUFCMRBDATA                => open,
-         APUFCMWRITEBACKOK           => open,
-         APUFCMMSRFE0                => open,
-         APUFCMMSRFE1                => open,
+         FCMAPUCR                    => fcmApu.CR,
+         FCMAPUDONE                  => fcmApu.DONE,
+         FCMAPUEXCEPTION             => fcmApu.EXC,
+         FCMAPUFPSCRFEX              => fcmApu.FPSCREXC,
+         FCMAPURESULT                => fcmApu.RESULT,
+         FCMAPURESULTVALID           => fcmApu.RESULTVALID,
+         FCMAPUSLEEPNOTREADY         => fcmApu.SLEEPNRDY,
+         FCMAPUCONFIRMINSTR          => fcmApu.CONFIRMINSTR,
+         FCMAPUSTOREDATA             => fcmApu.STOREDATA,
+         APUFCMDECNONAUTON           => apuFcm.DECNONAUTON,
+         APUFCMDECFPUOP              => apuFcm.DECFPU,
+         APUFCMDECLDSTXFERSIZE       => apuFcm.DECLDSTXFERSZ,
+         APUFCMDECLOAD               => apuFcm.DECLOAD,
+         APUFCMNEXTINSTRREADY        => apuFcm.NEXTINSTRRDY,
+         APUFCMDECSTORE              => apuFcm.DECSTORE,
+         APUFCMDECUDI                => apuFcm.DECUDI,
+         APUFCMDECUDIVALID           => apuFcm.DECUDIVALID,
+         APUFCMENDIAN                => apuFcm.ENDIAN,
+         APUFCMFLUSH                 => apuFcm.FLUSH,
+         APUFCMINSTRUCTION           => apuFcm.INSTRUCTION,
+         APUFCMINSTRVALID            => apuFcm.INSTRVALID,
+         APUFCMLOADBYTEADDR          => apuFcm.LOADBYTEADDR,
+         APUFCMLOADDATA              => apuFcm.LOADDATA,
+         APUFCMLOADDVALID            => apuFcm.LOADDVALID,
+         APUFCMOPERANDVALID          => apuFcm.OPERVALID,
+         APUFCMRADATA                => apuFcm.RADATA,
+         APUFCMRBDATA                => apuFcm.RBDATA,
+         APUFCMWRITEBACKOK           => apuFcm.WRITEBACKOK,
+         APUFCMMSRFE0                => apuFcm.MSRFE0,
+         APUFCMMSRFE1                => apuFcm.MSRFE1,
 
          -- DMA Controller 0
          LLDMA0TXDSTRDYN             => '1',
@@ -642,6 +608,37 @@ begin
       cpuRstChipReq              => cpuRstChipReq,
       cpuRstSystemReq            => cpuRstSystemReq
    );
+
+   ----------------------------------------------------------------------------
+   -- I2C Slave
+   ----------------------------------------------------------------------------
+   U_Ppc440RceG2I2c : Ppc440RceG2I2c port map (
+      rst_i       => intClk156_25MhzAdjRst,
+      --rst_o       => sys_rst_q,
+      interrupt   => extIrq,
+      clk32       => intClk156_25MhzAdj,
+      fcm_clk     => intClk156_25MhzAdj,
+      fcm_apu     => fcmApu,
+      apu_fcm     => apuFcm,
+      iic_addr    => iicSlaveAddr,
+      iic_clki    => iicClkI,
+      iic_clko    => iicClkO,
+      iic_clkt    => iicClkT,
+      iic_datai   => iicDataI,
+      iic_datao   => iicDataO,
+      iic_datat   => iicDataT,
+      debug       => open 
+   );
+
+   U_I2cScl : IOBUF port map ( IO => modScl,
+                               I  => iicClkO,
+                               O  => iicClkI,
+                               T  => iicClkT);
+
+   U_I2cSda : IOBUF port map ( IO => modSda,
+                               I  => iicDataO,
+                               O  => iicDataI,
+                               T  => iicDataT);
 
 end architecture structure;
 

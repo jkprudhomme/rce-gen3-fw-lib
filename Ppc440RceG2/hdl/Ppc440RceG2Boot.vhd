@@ -9,6 +9,7 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
+use work.Ppc440RceG2Pkg.all;
 
 entity Ppc440RceG2Boot is
    port (
@@ -37,58 +38,16 @@ end Ppc440RceG2Boot;
 
 architecture behavioral of Ppc440RceG2Boot is
 
-   -- Icon
-   component chipscope_icon2
-      PORT (
-         CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-         CONTROL1 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0)
-      );
-   end component;
-
-   -- ILA
-   component chipscope_ila
-      PORT (
-         CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-         CLK     : IN    STD_LOGIC;
-         TRIG0   : IN    STD_LOGIC_VECTOR(127 DOWNTO 0)
-      );
-   end component;
-
-   component chipscope_vio
-      PORT (
-         CONTROL   : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-         ASYNC_OUT : OUT   STD_LOGIC_VECTOR(7 DOWNTO 0)
-      );
-   end component;
-
-   -- Boot Ram
-   component Ppc440RceG2Bram 
-      port (
-         bramRstA  : in  std_logic;
-         bramClkA  : in  std_logic;
-         bramEnA   : in  std_logic;
-         bramWenA  : in  std_logic_vector(0 to 7);
-         bramAddrA : in  std_logic_vector(0 to 31);
-         bramDinA  : out std_logic_vector(0 to 63);
-         bramDoutA : in  std_logic_vector(0 to 63);
-         bramRstB  : in  std_logic;
-         bramClkB  : in  std_logic;
-         bramEnB   : in  std_logic;
-         bramWenB  : in  std_logic_vector(0 to 7);
-         bramAddrB : in  std_logic_vector(0 to 31);
-         bramDinB  : out std_logic_vector(0 to 63);
-         bramDoutB : in  std_logic_vector(0 to 63)
-      );
-   end component;
-
    -- Signals
    signal bramWenA         : std_logic_vector(0 to 7);
    signal nextWenA         : std_logic_vector(0 to 7);
    signal bramAddrA        : std_logic_vector(0 to 31);
    signal nextAddrA        : std_logic_vector(0 to 31);
    signal bramDinA         : std_logic_vector(0 to 63);
-   signal nextDinA         : std_logic_vector(0 to 63);
+   signal nextDoutA        : std_logic_vector(0 to 63);
    signal bramDoutA        : std_logic_vector(0 to 63);
+   signal saveBe           : std_logic_vector(0 to 15);
+   signal nextBe           : std_logic_vector(0 to 15);
    signal nextPpcmMBusy    : std_logic;
    signal nextPpcmAddrAck  : std_logic;
    signal nextPpcmRdDack   : std_logic;
@@ -98,10 +57,6 @@ architecture behavioral of Ppc440RceG2Boot is
    signal nextPpcmTimeout  : std_logic;
    signal nextPpcmWrDack   : std_logic;
    signal stateCount       : std_logic_vector(3 downto 0);
-   signal csControl0       : std_logic_vector(35 downto 0);
-   signal csControl1       : std_logic_vector(35 downto 0);
-   signal csTrig           : std_logic_vector(127 downto 0);
-   signal csVo             : std_logic_vector(7 downto 0);
 
    -- States
    constant ST_IDLE      : std_logic_vector(3 downto 0) := "0000";
@@ -133,9 +88,10 @@ begin
          intPpcmRdWdAddr  <= (others=>'0')    after tpd;
          plbPpcmTimeout   <= '0'              after tpd;
          plbPpcmWrDack    <= '0'              after tpd;
+         saveBe           <= (others=>'0')    after tpd;
          bramWenA         <= (others=>'0')    after tpd;
          bramAddrA        <= (others=>'0')    after tpd;
-         bramDinA         <= (others=>'0')    after tpd;
+         bramDoutA        <= (others=>'0')    after tpd;
          stateCount       <= (others=>'0')    after tpd;
          curState         <= ST_IDLE          after tpd;
       elsif rising_edge(bramClk) then
@@ -150,9 +106,10 @@ begin
          plbPpcmWrDack    <= nextPpcmWrDack   after tpd;
 
          -- Block ram
+         saveBe           <= nextBe           after tpd;
          bramWenA         <= nextWenA         after tpd;
          bramAddrA        <= nextAddrA        after tpd;
-         bramDinA         <= nextDinA         after tpd;
+         bramDoutA        <= nextDoutA        after tpd;
 
          -- State counter
          if nxtState /= curState then
@@ -169,7 +126,7 @@ begin
 
    -- ASync state logic
    process (curState, ppcMplbAbus, ppcMplbBe, ppcMplbRequest, bramDoutA,
-            ppcMplbRnW, ppcMplbSize, ppcMplbWrDBus, stateCount ) begin
+            ppcMplbRnW, ppcMplbSize, ppcMplbWrDBus, stateCount, saveBe ) begin
 
       case curState is 
 
@@ -183,7 +140,8 @@ begin
             nextPpcmWrDack   <= '0';
             nextWenA         <= (others=>'0');
             nextAddrA        <= (others=>'0');
-            nextDinA         <= (others=>'0');
+            nextDoutA        <= (others=>'0');
+            nextBe           <= (others=>'0');
 
             -- Bus request
             if ppcMplbRequest = '1' then
@@ -210,7 +168,8 @@ begin
             nextPpcmRdWdAddr <= (others=>'0');
             nextPpcmTimeout  <= '0';
             nextWenA         <= x"00";
-            nextDinA         <= ppcMplbWrDBus(0 to 63);
+            nextDoutA        <= ppcMplbWrDBus(64 to 127);
+            nextBe           <= ppcMplbBe;
 
             -- Four word cache line
             if ppcMplbSize = "0001" then
@@ -249,12 +208,12 @@ begin
                -- Write
                if ppcMplbRnW = '0' then
                   nextPpcmWrDack <= '1';
-                  nxtState       <= ST_IDLE;
+                  nxtState       <= ST_WR_SNGL;
 
                -- Read
                else
                   nextPpcmWrDack <= '0';
-                  nxtState       <= ST_IDLE;
+                  nxtState       <= ST_RD_SNGL;
                end if;
 
             end if;
@@ -262,16 +221,23 @@ begin
          -- Single Write
          when ST_WR_SNGL =>
             nextPpcmAddrAck  <= '0';
-            nextPpcmRdDbus   <= bramDoutA & x"0000000000000000";
+            nextPpcmRdDbus   <= (others=>'0');
             nextPpcmMBusy    <= '1';
             nextPpcmWrDack   <= '0';
             nextPpcmTimeout  <= '0';
             nextAddrA        <= bramAddrA;
-            nextDinA         <= bramDinA;
-            nextWenA         <= x"00";
             nextPpcmRdDack   <= '0';
             nextPpcmRdWdAddr <= (others=>'0');
+            nextBe           <= (others=>'0');
+            nextDoutA        <= ppcMplbWrDBus(0 to 63);
             nxtState         <= ST_IDLE;
+
+            -- Choose which 64-bits to look at
+            if bramAddrA(28) = '1' then
+               nextWenA  <= saveBe(8 to 15);
+            else
+               nextWenA  <= saveBe(0 to 7);
+            end if;
 
          -- Cache line write (4 word) 
          when ST_WR_CLN4 =>
@@ -280,9 +246,10 @@ begin
             nextPpcmRdDbus   <= (others=>'0');
             nextPpcmRdWdAddr <= intPpcmRdWdAddr + 1;
             nextPpcmTimeout  <= '0';
-            nextDinA         <= ppcMplbWrDBus(0 to 63);
+            nextDoutA        <= ppcMplbWrDBus(0 to 63);
             nextWenA         <= x"FF";
             nextPpcmMBusy    <= '1';
+            nextBe           <= (others=>'0');
 
             if stateCount = 0 then
                nxtState       <= curState;
@@ -301,9 +268,10 @@ begin
             nextPpcmRdDbus   <= (others=>'0');
             nextPpcmRdWdAddr <= intPpcmRdWdAddr + 1;
             nextPpcmTimeout  <= '0';
-            nextDinA         <= ppcMplbWrDBus(0 to 63);
+            nextDoutA        <= ppcMplbWrDBus(0 to 63);
             nextPpcmMBusy    <= '1';
             nextWenA         <= x"FF";
+            nextBe           <= (others=>'0');
 
             if stateCount = 0 then
                nxtState       <= curState;
@@ -322,14 +290,15 @@ begin
          -- Single read
          when ST_RD_SNGL =>
             nextPpcmAddrAck  <= '0';
-            nextPpcmRdDbus   <= bramDoutA & x"0000000000000000";
+            nextPpcmRdDbus   <= bramDinA & bramDinA;
             nextPpcmMBusy    <= '1';
             nextPpcmWrDack   <= '0';
             nextPpcmTimeout  <= '0';
             nextAddrA        <= bramAddrA;
-            nextDinA         <= bramDinA;
+            nextDoutA        <= (others=>'0');
             nextWenA         <= x"00";
             nextPpcmRdWdAddr <= (others=>'0');
+            nextBe           <= (others=>'0');
 
             if stateCount = 0 then
                nxtState       <= curState;
@@ -345,13 +314,14 @@ begin
          -- Cache line read (4 word) 
          when ST_RD_CLN4 =>
             nextPpcmAddrAck  <= '0';
-            nextPpcmRdDbus   <= bramDoutA & x"0000000000000000";
+            nextPpcmRdDbus   <= bramDinA & bramDinA;
             nextPpcmMBusy    <= '1';
             nextPpcmWrDack   <= '0';
             nextPpcmTimeout  <= '0';
             nextAddrA        <= bramAddrA + 8;
-            nextDinA         <= ppcMplbWrDBus(0 to 63);
+            nextDoutA        <= (others=>'0');
             nextWenA         <= x"00";
+            nextBe           <= (others=>'0');
 
             if stateCount = 0 then
                nextPpcmRdWdAddr <= (others=>'0');
@@ -373,13 +343,14 @@ begin
          -- Cache line read (8 word) 
          when ST_RD_CLN8 =>
             nextPpcmAddrAck  <= '0';
-            nextPpcmRdDbus   <= bramDoutA & x"0000000000000000";
+            nextPpcmRdDbus   <= bramDinA & bramDinA;
             nextPpcmMBusy    <= '1';
             nextPpcmWrDack   <= '0';
             nextPpcmTimeout  <= '0';
             nextAddrA        <= bramAddrA + 8;
-            nextDinA         <= ppcMplbWrDBus(0 to 63);
+            nextDoutA        <= (others=>'0');
             nextWenA         <= x"00";
+            nextBe           <= (others=>'0');
 
             if stateCount = 0 then
                nextPpcmRdWdAddr <= (others=>'0');
@@ -407,8 +378,9 @@ begin
             nextPpcmWrDack   <= '0';
             nextWenA         <= (others=>'0');
             nextAddrA        <= (others=>'0');
-            nextDinA         <= (others=>'0');
+            nextDoutA        <= (others=>'0');
             nextPpcmAddrAck  <= '1';
+            nextBe           <= (others=>'0');
 
             if stateCount = 15 then
                nxtState         <= ST_IDLE;
@@ -427,8 +399,9 @@ begin
             nextPpcmWrDack   <= '0';
             nextWenA         <= (others=>'0');
             nextAddrA        <= (others=>'0');
-            nextDinA         <= (others=>'0');
+            nextDoutA        <= (others=>'0');
             nextPpcmAddrAck  <= '1';
+            nextBe           <= (others=>'0');
             nxtState         <= ST_IDLE;
 
       end case;
@@ -452,53 +425,6 @@ begin
          bramDinB  => open,
          bramDoutB => (others=>'0')
       );
-
-
-
-   -- Icon
-   U_icon : chipscope_icon2
-      PORT map (
-         CONTROL0 => csControl0,
-         CONTROL1 => csControl1
-      );
-
-   -- ILA
-   U_ila : chipscope_ila
-      PORT map (
-         CONTROL => csControl0,
-         CLK     => bramClk,
-         TRIG0   => csTrig
-      );
-
-   U_vio : chipscope_vio
-      PORT map (
-         CONTROL   => csControl1,
-         ASYNC_OUT => csVo
-      );
-
-   csTrig(127 downto 111) <= (others=>'0');
-   csTrig(110 downto 107) <= curState;
-   csTrig(106 downto  75) <= ppcMplbAbus;
-   csTrig(74  downto  59) <= ppcMplbBe;
-   csTrig(58)             <= ppcMplbRequest;
-   csTrig(57)             <= ppcMplbRnW;
-   csTrig(56  downto  53) <= ppcMplbSize;
-   csTrig(52  downto  45) <= bramWenA;
-   csTrig(44  downto  13) <= bramAddrA;
-   csTrig(12)             <= nextPpcmMBusy;
-   csTrig(11)             <= nextPpcmAddrAck;
-   csTrig(10)             <= nextPpcmRdDack;
-   csTrig(9 downto  6)    <= nextPpcmRdWdAddr;
-   csTrig(5)              <= nextPpcmTimeout;
-   csTrig(4)              <= nextPpcmWrDack;
-   csTrig(3  downto 0)    <= stateCount;
-
-   resetReq <= csVo(0);
-
-   --csTrig(3 downto 0) <= ppcMplbWrDBus             : in  std_logic_vector(0 to 127)
-   --csTrig(3)          <= signal nextPpcmRdDbus   : std_logic_vector(0 to 127);
-   --csTrig(3 downto 0) <= signal bramDinA         : std_logic_vector(0 to 63);
-   --csTrig(3 downto 0) <= signal bramDoutA        : std_logic_vector(0 to 63);
 
 end architecture behavioral;
 

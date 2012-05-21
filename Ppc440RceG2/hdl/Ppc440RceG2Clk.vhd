@@ -7,6 +7,8 @@ use IEEE.numeric_std.all;
 library Unisim;
 use Unisim.vcomponents.all;
 
+use work.Ppc440RceG2Pkg.all;
+
 entity Ppc440RceG2Clk is
    port (
 
@@ -42,16 +44,6 @@ entity Ppc440RceG2Clk is
 end Ppc440RceG2Clk;
 
 architecture STRUCTURE of Ppc440RceG2Clk is
-
-   -- Reset block
-   component Ppc440RceG2Rst 
-      port (
-         syncClk     : in std_logic;
-         asyncReset  : in std_logic;
-         pllLocked   : in std_logic;
-         syncReset   : out std_logic
-      );
-   end component;
 
    -- Local signals
    signal pll0Fb                     : std_logic;
