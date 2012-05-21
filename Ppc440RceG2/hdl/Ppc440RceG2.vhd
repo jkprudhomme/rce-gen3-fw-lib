@@ -98,15 +98,6 @@ architecture structure of Ppc440RceG2 is
    signal apuFcm                       : APUFCM_440;
    signal extIrq                       : std_logic;
    signal resetReq                     : std_logic;
-   signal iicClkO                      : std_logic;
-   signal iicClkI                      : std_logic;
-   signal iicClkT                      : std_logic; 
-   signal iicDataO                     : std_logic;
-   signal iicDataI                     : std_logic;
-   signal iicDataT                     : std_logic; 
-   signal fcmApu                       : FCMAPU_440;
-   signal apuFcm                       : APUFCM_440;
-   signal extIrq                       : std_logic;
 
    constant iicSlaveAddr               : std_logic_vector(6 downto 0) := "1001001"; 
 
@@ -573,8 +564,6 @@ begin
       port map (
          bramClk           => intClk156_25MhzAdj,
          bramClkRst        => intClk156_25MhzAdjRst,
-         --resetReq          => resetReq,
-         resetReq          => open,
          plbPpcmMBusy      => plbPpcmMBusy,
          plbPpcmAddrAck    => plbPpcmAddrAck,
          plbPpcmRdDack     => plbPpcmRdDack,
@@ -597,7 +586,8 @@ begin
    U_Ppc440RceG2Clk : Ppc440RceG2Clk port map (
       refClk125Mhz               => refClk125Mhz,
       powerOnReset               => powerOnReset,
-      masterReset                => resetReq,
+      --masterReset                => resetReq,
+      masterReset                => powerOnReset,
       pllLocked                  => pllLocked,
       cpuClk312_5Mhz             => intClk312_5Mhz,
       cpuClk312_5MhzAdj          => intClk312_5MhzAdj,
@@ -652,6 +642,8 @@ begin
                                T  => iicDataT);
 
 end architecture structure;
+
+
 
 
 
