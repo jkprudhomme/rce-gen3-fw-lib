@@ -40,6 +40,7 @@ package Ppc440RceG2Pkg is
     port (
       bramClk                   : in  std_logic;
       bramClkRst                : in  std_logic;
+      resetReq                  : out std_logic;
       plbPpcmMBusy              : out std_logic;
       plbPpcmAddrAck            : out std_logic;
       plbPpcmRdDack             : out std_logic;

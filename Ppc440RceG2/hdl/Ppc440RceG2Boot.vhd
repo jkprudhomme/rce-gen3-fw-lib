@@ -37,6 +37,30 @@ end Ppc440RceG2Boot;
 
 architecture behavioral of Ppc440RceG2Boot is
 
+   -- Icon
+   component chipscope_icon2
+      PORT (
+         CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+         CONTROL1 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0)
+      );
+   end component;
+
+   -- ILA
+   component chipscope_ila
+      PORT (
+         CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+         CLK     : IN    STD_LOGIC;
+         TRIG0   : IN    STD_LOGIC_VECTOR(255 DOWNTO 0)
+      );
+   end component;
+
+   component chipscope_vio
+      PORT (
+         CONTROL   : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+         ASYNC_OUT : OUT   STD_LOGIC_VECTOR(7 DOWNTO 0)
+      );
+   end component;
+
    -- Signals
    signal bramWenA         : std_logic_vector(0 to 7);
    signal nextWenA         : std_logic_vector(0 to 7);
@@ -56,6 +80,10 @@ architecture behavioral of Ppc440RceG2Boot is
    signal nextPpcmTimeout  : std_logic;
    signal nextPpcmWrDack   : std_logic;
    signal stateCount       : std_logic_vector(3 downto 0);
+   signal csControl0       : std_logic_vector(35 downto 0);
+   signal csControl1       : std_logic_vector(35 downto 0);
+   signal csTrig           : std_logic_vector(255 downto 0);
+   signal csVo             : std_logic_vector(7 downto 0);
 
    -- States
    constant ST_IDLE      : std_logic_vector(3 downto 0) := "0000";
@@ -425,5 +453,55 @@ begin
          bramDoutB => (others=>'0')
       );
 
+
+
+   -- Icon
+   U_icon : chipscope_icon2
+      PORT map (
+         CONTROL0 => csControl0,
+         CONTROL1 => csControl1
+      );
+
+   -- ILA
+   U_ila : chipscope_ila
+      PORT map (
+         CONTROL => csControl0,
+         CLK     => bramClk,
+         TRIG0   => csTrig
+      );
+
+   U_vio : chipscope_vio
+      PORT map (
+         CONTROL   => csControl1,
+         ASYNC_OUT => csVo
+      );
+
+   csTrig(255 downto 128) <= ppcMplbWrDBus;
+   csTrig(127 downto 112) <= bramDoutA(48 to 63);
+   csTrig(111)            <= '0';
+   csTrig(110 downto 107) <= curState;
+   csTrig(106 downto  75) <= ppcMplbAbus;
+   csTrig(74  downto  59) <= ppcMplbBe;
+   csTrig(58)             <= ppcMplbRequest;
+   csTrig(57)             <= ppcMplbRnW;
+   csTrig(56  downto  53) <= ppcMplbSize;
+   csTrig(52  downto  45) <= bramWenA;
+   csTrig(44  downto  13) <= bramAddrA;
+   csTrig(12)             <= nextPpcmMBusy;
+   csTrig(11)             <= nextPpcmAddrAck;
+   csTrig(10)             <= nextPpcmRdDack;
+   csTrig(9 downto  6)    <= nextPpcmRdWdAddr;
+   csTrig(5)              <= nextPpcmTimeout;
+   csTrig(4)              <= nextPpcmWrDack;
+   csTrig(3  downto 0)    <= stateCount;
+
+   resetReq <= csVo(0);
+
+   --csTrig(3 downto 0) <= ppcMplbWrDBus             : in  std_logic_vector(0 to 127)
+   --csTrig(3)          <= signal nextPpcmRdDbus   : std_logic_vector(0 to 127);
+   --csTrig(3 downto 0) <= signal bramDinA         : std_logic_vector(0 to 63);
+   --csTrig(3 downto 0) <= signal bramDoutA        : std_logic_vector(0 to 63);
+
 end architecture behavioral;
+
 

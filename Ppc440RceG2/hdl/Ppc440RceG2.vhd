@@ -88,6 +88,15 @@ architecture structure of Ppc440RceG2 is
    signal intClk200MhzAdjRst           : std_logic;
    signal intClk312_5MhzRst            : std_logic;
    signal intClk468_75MhzRst           : std_logic;
+   signal iicClkO                      : std_logic;
+   signal iicClkI                      : std_logic;
+   signal iicClkT                      : std_logic; 
+   signal iicDataO                     : std_logic;
+   signal iicDataI                     : std_logic;
+   signal iicDataT                     : std_logic; 
+   signal fcmApu                       : FCMAPU_440;
+   signal apuFcm                       : APUFCM_440;
+   signal extIrq                       : std_logic;
    signal resetReq                     : std_logic;
    signal iicClkO                      : std_logic;
    signal iicClkI                      : std_logic;
@@ -564,6 +573,8 @@ begin
       port map (
          bramClk           => intClk156_25MhzAdj,
          bramClkRst        => intClk156_25MhzAdjRst,
+         --resetReq          => resetReq,
+         resetReq          => open,
          plbPpcmMBusy      => plbPpcmMBusy,
          plbPpcmAddrAck    => plbPpcmAddrAck,
          plbPpcmRdDack     => plbPpcmRdDack,
@@ -641,5 +652,8 @@ begin
                                T  => iicDataT);
 
 end architecture structure;
+
+
+
 
 
