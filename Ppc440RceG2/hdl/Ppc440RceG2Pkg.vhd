@@ -31,6 +31,7 @@ package Ppc440RceG2Pkg is
       mcmiByteEnable             : out std_logic_vector(0 to 15);
       mcmiBankConflict           : out std_logic;
       mcmiRowConflict            : out std_logic;
+      memReady                   : in  std_logic;
       dcrPpcDmAck                : in  std_logic;
       dcrppcDmDbusIn             : in  std_logic_vector(0 to 31);
       dcrPpcDmTimeoutWait        : in  std_logic;
@@ -89,6 +90,7 @@ package Ppc440RceG2Pkg is
       powerOnReset               : in  std_logic;
       masterReset                : in  std_logic;
       pllLocked                  : out std_logic;
+      memReady                   : in  std_logic;
       cpuClk312_5Mhz             : out std_logic; 
       cpuClk312_5MhzAdj          : out std_logic;
       cpuClk312_5Mhz90DegAdj     : out std_logic;

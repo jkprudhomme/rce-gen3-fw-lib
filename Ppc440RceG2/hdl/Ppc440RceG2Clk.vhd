@@ -17,6 +17,7 @@ entity Ppc440RceG2Clk is
       powerOnReset               : in  std_logic;
       masterReset                : in  std_logic;
       pllLocked                  : out std_logic;
+      memReady                   : in  std_logic;
 
       -- Clock Outputs
       cpuClk312_5Mhz             : out std_logic; 
@@ -300,7 +301,7 @@ begin
    cpuClk468_75MhzRst         <= intClk468_75MhzRst;
    cpuClk200MhzAdjRst         <= intClk200MhzAdjRst;
    asyncReset                 <= masterReset or powerOnReset;
-   intNotReady                <= intClk312_5MhzRst or intClk312_5MhzAdjRst or
+   intNotReady                <= (not memReady) or intClk312_5MhzRst or intClk312_5MhzAdjRst or
                                  intClk312_5Mhz90DegAdjRst or intClk156_25MhzAdjRst or
                                  intClk156_25MhzAdjRstPon or intClk468_75MhzRst or intClk200MhzAdjRst;
    asyncResetCore             <= masterReset or powerOnReset or intNotReady or cpuRstCoreReqEdge;

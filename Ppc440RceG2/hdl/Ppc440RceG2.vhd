@@ -42,6 +42,7 @@ entity Ppc440RceG2 is
       mcmiByteEnable             : out std_logic_vector(0 to 15);
       mcmiBankConflict           : out std_logic;
       mcmiRowConflict            : out std_logic;
+      memReady                   : in  std_logic;
 
       -- DCR Master Port
       dcrPpcDmAck                : in  std_logic;
@@ -596,6 +597,7 @@ begin
       powerOnReset               => powerOnReset,
       --masterReset                => resetReq,
       masterReset                => powerOnReset,
+      memReady                   => memReady,
       pllLocked                  => pllLocked,
       cpuClk312_5Mhz             => intClk312_5Mhz,
       cpuClk312_5MhzAdj          => intClk312_5MhzAdj,
