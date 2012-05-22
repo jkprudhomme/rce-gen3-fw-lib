@@ -137,7 +137,7 @@ begin
          INTERCONNECT_TMPL_SEL => x"3FFFFFFF",
          CLOCK_DELAY           => TRUE,
          APU_CONTROL           => B"10010000000100001",
-         APU_UDI0              => x"C08501", -- UDI0 I2C slave read
+         APU_UDI0              => x"C07501", -- UDI0 I2C slave read
          APU_UDI1              => x"C47601", -- UDI1 I2C slave write
          APU_UDI2              => x"C86581", -- UDI2 I2C with CR0
          APU_UDI3              => x"000000",
