@@ -10,6 +10,7 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.Ppc440RceG2Pkg.all;
+use work.Version.all;
 
 entity Ppc440RceG2Boot is
    port (
@@ -56,6 +57,8 @@ architecture behavioral of Ppc440RceG2Boot is
    signal nextPpcmTimeout  : std_logic;
    signal nextPpcmWrDack   : std_logic;
    signal stateCount       : std_logic_vector(3 downto 0);
+   signal readVersion      : std_logic;
+   signal nextVersion      : std_logic;
 
    -- States
    constant ST_IDLE      : std_logic_vector(3 downto 0) := "0000";
@@ -66,7 +69,6 @@ architecture behavioral of Ppc440RceG2Boot is
    constant ST_RD_SNGL   : std_logic_vector(3 downto 0) := "0101";
    constant ST_RD_CLN4   : std_logic_vector(3 downto 0) := "0110";
    constant ST_RD_CLN8   : std_logic_vector(3 downto 0) := "0111";
-   constant ST_TIMEOUT   : std_logic_vector(3 downto 0) := "1000";
    signal   curState     : std_logic_vector(3 downto 0);
    signal   nxtState     : std_logic_vector(3 downto 0);
 
@@ -92,6 +94,7 @@ begin
          bramAddrA        <= (others=>'0')    after tpd;
          bramDoutA        <= (others=>'0')    after tpd;
          stateCount       <= (others=>'0')    after tpd;
+         readVersion      <= '0'              after tpd;
          curState         <= ST_IDLE          after tpd;
       elsif rising_edge(bramClk) then
 
@@ -109,6 +112,7 @@ begin
          bramWenA         <= nextWenA         after tpd;
          bramAddrA        <= nextAddrA        after tpd;
          bramDoutA        <= nextDoutA        after tpd;
+         readVersion      <= nextVersion      after tpd;
 
          -- State counter
          if nxtState /= curState then
@@ -124,7 +128,7 @@ begin
    end process;
 
    -- ASync state logic
-   process (curState, ppcMplbAbus, ppcMplbBe, ppcMplbRequest, bramDoutA,
+   process (curState, ppcMplbAbus, ppcMplbBe, ppcMplbRequest, bramDoutA, readVersion,
             ppcMplbRnW, ppcMplbSize, ppcMplbWrDBus, stateCount, saveBe ) begin
 
       case curState is 
@@ -144,22 +148,22 @@ begin
 
             -- Bus request
             if ppcMplbRequest = '1' then
+                nextPpcmAddrAck <= '1';
+                nxtState        <= ST_ADDR;
 
                -- Address matches
                if ppcMplbAbus(0 to 15) = x"FFFF" then
-                  nextPpcmAddrAck <= '1';
-                  nxtState        <= ST_ADDR;
+                  nextVersion     <= '0';
                else
-                  nextPpcmAddrAck <= '0';
-                  nxtState        <= ST_TIMEOUT;
+                  nextVersion     <= '1';
                end if;
             else
                nextPpcmAddrAck <= '0';
-               nxtState        <= curState;
             end if;
 
          -- Address ack
          when ST_ADDR =>
+            nextVersion      <= readVersion;
             nextPpcmAddrAck  <= '0';
             nextPpcmMBusy    <= '1';
             nextPpcmRdDack   <= '0';
@@ -219,6 +223,7 @@ begin
 
          -- Single Write
          when ST_WR_SNGL =>
+            nextVersion      <= readVersion;
             nextPpcmAddrAck  <= '0';
             nextPpcmRdDbus   <= (others=>'0');
             nextPpcmMBusy    <= '1';
@@ -232,7 +237,9 @@ begin
             nxtState         <= ST_IDLE;
 
             -- Choose which 64-bits to look at
-            if bramAddrA(28) = '1' then
+            if readVersion = '1' then
+               nextWenA  <= (others=>'0');
+            elsif bramAddrA(28) = '1' then
                nextWenA  <= saveBe(8 to 15);
             else
                nextWenA  <= saveBe(0 to 7);
@@ -240,15 +247,21 @@ begin
 
          -- Cache line write (4 word) 
          when ST_WR_CLN4 =>
+            nextVersion      <= readVersion;
             nextPpcmAddrAck  <= '0';
             nextPpcmRdDack   <= '0';
             nextPpcmRdDbus   <= (others=>'0');
             nextPpcmRdWdAddr <= intPpcmRdWdAddr + 1;
             nextPpcmTimeout  <= '0';
             nextDoutA        <= ppcMplbWrDBus(0 to 63);
-            nextWenA         <= x"FF";
             nextPpcmMBusy    <= '1';
             nextBe           <= (others=>'0');
+
+            if readVersion = '1' then
+               nextWenA  <= (others=>'0');
+            else
+               nextWenA  <= x"FF";
+            end if;
 
             if stateCount = 0 then
                nxtState       <= curState;
@@ -262,6 +275,7 @@ begin
 
          -- Cache line write (8 word) 
          when ST_WR_CLN8 =>
+            nextVersion      <= readVersion;
             nextPpcmAddrAck  <= '0';
             nextPpcmRdDack   <= '0';
             nextPpcmRdDbus   <= (others=>'0');
@@ -269,8 +283,13 @@ begin
             nextPpcmTimeout  <= '0';
             nextDoutA        <= ppcMplbWrDBus(0 to 63);
             nextPpcmMBusy    <= '1';
-            nextWenA         <= x"FF";
             nextBe           <= (others=>'0');
+
+            if readVersion = '1' then
+               nextWenA  <= (others=>'0');
+            else
+               nextWenA  <= x"FF";
+            end if;
 
             if stateCount = 0 then
                nxtState       <= curState;
@@ -288,8 +307,8 @@ begin
 
          -- Single read
          when ST_RD_SNGL =>
+            nextVersion      <= readVersion;
             nextPpcmAddrAck  <= '0';
-            nextPpcmRdDbus   <= bramDinA & bramDinA;
             nextPpcmMBusy    <= '1';
             nextPpcmWrDack   <= '0';
             nextPpcmTimeout  <= '0';
@@ -298,6 +317,12 @@ begin
             nextWenA         <= x"00";
             nextPpcmRdWdAddr <= (others=>'0');
             nextBe           <= (others=>'0');
+
+            if readVersion = '1' then
+               nextPpcmRdDbus   <= FpgaVersion & FpgaVersion & FpgaVersion & FpgaVersion;
+            else
+               nextPpcmRdDbus   <= bramDinA & bramDinA;
+            end if;
 
             if stateCount = 0 then
                nxtState       <= curState;
@@ -312,8 +337,8 @@ begin
 
          -- Cache line read (4 word) 
          when ST_RD_CLN4 =>
+            nextVersion      <= readVersion;
             nextPpcmAddrAck  <= '0';
-            nextPpcmRdDbus   <= bramDinA & bramDinA;
             nextPpcmMBusy    <= '1';
             nextPpcmWrDack   <= '0';
             nextPpcmTimeout  <= '0';
@@ -321,6 +346,12 @@ begin
             nextDoutA        <= (others=>'0');
             nextWenA         <= x"00";
             nextBe           <= (others=>'0');
+
+            if readVersion = '1' then
+               nextPpcmRdDbus   <= FpgaVersion & FpgaVersion & FpgaVersion & FpgaVersion;
+            else
+               nextPpcmRdDbus   <= bramDinA & bramDinA;
+            end if;
 
             if stateCount = 0 then
                nextPpcmRdWdAddr <= (others=>'0');
@@ -341,8 +372,8 @@ begin
 
          -- Cache line read (8 word) 
          when ST_RD_CLN8 =>
+            nextVersion      <= readVersion;
             nextPpcmAddrAck  <= '0';
-            nextPpcmRdDbus   <= bramDinA & bramDinA;
             nextPpcmMBusy    <= '1';
             nextPpcmWrDack   <= '0';
             nextPpcmTimeout  <= '0';
@@ -350,6 +381,12 @@ begin
             nextDoutA        <= (others=>'0');
             nextWenA         <= x"00";
             nextBe           <= (others=>'0');
+
+            if readVersion = '1' then
+               nextPpcmRdDbus   <= FpgaVersion & FpgaVersion & FpgaVersion & FpgaVersion;
+            else
+               nextPpcmRdDbus   <= bramDinA & bramDinA;
+            end if;
 
             if stateCount = 0 then
                nextPpcmRdWdAddr <= (others=>'0');
@@ -368,28 +405,8 @@ begin
                nxtState <= curState;
             end if;
 
-         -- Timeout
-         when ST_TIMEOUT =>
-            nextPpcmMBusy    <= '0';
-            nextPpcmRdDack   <= '0';
-            nextPpcmRdDbus   <= (others=>'0');
-            nextPpcmRdWdAddr <= (others=>'0');
-            nextPpcmWrDack   <= '0';
-            nextWenA         <= (others=>'0');
-            nextAddrA        <= (others=>'0');
-            nextDoutA        <= (others=>'0');
-            nextPpcmAddrAck  <= '1';
-            nextBe           <= (others=>'0');
-
-            if stateCount = 15 then
-               nxtState         <= ST_IDLE;
-               nextPpcmTimeout  <= '1';
-            else
-               nxtState         <= curState;
-               nextPpcmTimeout  <= '0';
-            end if;
-
          when others =>
+            nextVersion      <= '0';
             nextPpcmMBusy    <= '0';
             nextPpcmRdDack   <= '0';
             nextPpcmRdDbus   <= (others=>'0');
