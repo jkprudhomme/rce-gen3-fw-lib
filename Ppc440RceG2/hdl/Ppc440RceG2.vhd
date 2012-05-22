@@ -43,6 +43,16 @@ entity Ppc440RceG2 is
       mcmiBankConflict           : out std_logic;
       mcmiRowConflict            : out std_logic;
 
+      -- DCR Master Port
+      dcrPpcDmAck                : in  std_logic;
+      dcrppcDmDbusIn             : in  std_logic_vector(0 to 31);
+      dcrPpcDmTimeoutWait        : in  std_logic;
+      ppcDmDcrRead               : out std_logic;
+      ppcDmDcrWrite              : out std_logic;
+      ppcDmDcrAbus               : out std_logic_vector(0 to 9);
+      ppcDmDcrUAbus              : out std_logic_vector(20 to 21);
+      ppcDmDcrDbusOut            : out std_logic_vector(0 to 31);
+
       -- I2C
       modScl                     : inout std_logic;
       modSda                     : inout std_logic
@@ -206,6 +216,7 @@ begin
          TIEC440DCUWRFLUSHPLBPRIO    => B"00",
          TIEC440DCUWRSTOREPLBPRIO    => B"00",
          TIEC440DCUWRURGENTPLBPRIO   => B"00",
+         TIEDCRBASEADDR              => "11",
 
          -- Control
          C440MACHINECHECK            => open,
@@ -359,7 +370,7 @@ begin
          CPMINTERCONNECTCLKNTO1      => '0',
          PPCCPMINTERCONNECTBUSY      => open,
          CPMC440CLK                  => intClk468_75Mhz,
-         CPMDCRCLK                   => '1',
+         CPMDCRCLK                   => intClk156_25MhzAdj,
          CPMFCMCLK                   => intClk156_25MhzAdj,
          CPMMCCLK                    => intClk312_5MhzAdj,
          CPMPPCS1PLBCLK              => '1',
@@ -387,15 +398,14 @@ begin
          PPCDSDCRTIMEOUTWAIT         => open,
 
          -- DCR Master Port
-         DCRPPCDMACK                 => '0',
-         DCRPPCDMDBUSIN              => x"00000000",
-         DCRPPCDMTIMEOUTWAIT         => '0',
-         TIEDCRBASEADDR              => "11",
-         PPCDMDCRREAD                => open,
-         PPCDMDCRWRITE               => open,
-         PPCDMDCRABUS                => open,
-         PPCDMDCRUABUS               => open,
-         PPCDMDCRDBUSOUT             => open,
+         DCRPPCDMACK                 => dcrPpcDmAck,
+         DCRPPCDMDBUSIN              => dcrppcDmDbusIn,
+         DCRPPCDMTIMEOUTWAIT         => dcrPpcDmTimeoutWait,
+         PPCDMDCRREAD                => ppcDmDcrRead,
+         PPCDMDCRWRITE               => ppcDmDcrWrite,
+         PPCDMDCRABUS                => ppcDmDcrAbus,
+         PPCDMDCRUABUS               => ppcDmDcrUAbus,
+         PPCDMDCRDBUSOUT             => ppcDmDcrDbusOut,
 
          -- Interupt Controller
          EICC440CRITIRQ              => '0',

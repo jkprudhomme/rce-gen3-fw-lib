@@ -31,6 +31,14 @@ package Ppc440RceG2Pkg is
       mcmiByteEnable             : out std_logic_vector(0 to 15);
       mcmiBankConflict           : out std_logic;
       mcmiRowConflict            : out std_logic;
+      dcrPpcDmAck                : in  std_logic;
+      dcrppcDmDbusIn             : in  std_logic_vector(0 to 31);
+      dcrPpcDmTimeoutWait        : in  std_logic;
+      ppcDmDcrRead               : out std_logic;
+      ppcDmDcrWrite              : out std_logic;
+      ppcDmDcrAbus               : out std_logic_vector(0 to 9);
+      ppcDmDcrUAbus              : out std_logic_vector(20 to 21);
+      ppcDmDcrDbusOut            : out std_logic_vector(0 to 31);
       modScl                     : inout std_logic;
       modSda                     : inout std_logic
     );
@@ -175,5 +183,6 @@ package Ppc440RceG2Pkg is
   end component;
 
 end Ppc440RceG2Pkg;
+
 
 
