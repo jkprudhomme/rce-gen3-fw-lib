@@ -34,24 +34,41 @@ architecture STRUCTURE of Ppc440RceG2Bram is
 
   attribute BMM_INFO : STRING;
 
-  attribute BMM_INFO of ramb36_0: label is " ";
-  attribute BMM_INFO of ramb36_1: label is " ";
-  attribute BMM_INFO of ramb36_2: label is " ";
-  attribute BMM_INFO of ramb36_3: label is " ";
-  attribute BMM_INFO of ramb36_4: label is " ";
-  attribute BMM_INFO of ramb36_5: label is " ";
-  attribute BMM_INFO of ramb36_6: label is " ";
-  attribute BMM_INFO of ramb36_7: label is " ";
-  attribute BMM_INFO of ramb36_8: label is " ";
-  attribute BMM_INFO of ramb36_9: label is " ";
+  attribute BMM_INFO of ramb36_0:  label is " ";
+  attribute BMM_INFO of ramb36_1:  label is " ";
+  attribute BMM_INFO of ramb36_2:  label is " ";
+  attribute BMM_INFO of ramb36_3:  label is " ";
+  attribute BMM_INFO of ramb36_4:  label is " ";
+  attribute BMM_INFO of ramb36_5:  label is " ";
+  attribute BMM_INFO of ramb36_6:  label is " ";
+  attribute BMM_INFO of ramb36_7:  label is " ";
+  attribute BMM_INFO of ramb36_8:  label is " ";
+  attribute BMM_INFO of ramb36_9:  label is " ";
   attribute BMM_INFO of ramb36_10: label is " ";
   attribute BMM_INFO of ramb36_11: label is " ";
   attribute BMM_INFO of ramb36_12: label is " ";
   attribute BMM_INFO of ramb36_13: label is " ";
   attribute BMM_INFO of ramb36_14: label is " ";
   attribute BMM_INFO of ramb36_15: label is " ";
-  -- Internal signals
 
+  --attribute BMM_INFO of ramb36_0:  label is "[63:60]";
+  --attribute BMM_INFO of ramb36_1:  label is "[59:56]";
+  --attribute BMM_INFO of ramb36_2:  label is "[55:52]";
+  --attribute BMM_INFO of ramb36_3:  label is "[51:48]";
+  --attribute BMM_INFO of ramb36_4:  label is "[47:44]";
+  --attribute BMM_INFO of ramb36_5:  label is "[43:40]";
+  --attribute BMM_INFO of ramb36_6:  label is "[39:36]";
+  --attribute BMM_INFO of ramb36_7:  label is "[35:32]";
+  --attribute BMM_INFO of ramb36_8:  label is "[31:28]";
+  --attribute BMM_INFO of ramb36_9:  label is "[27:24]";
+  --attribute BMM_INFO of ramb36_10: label is "[23:20]";
+  --attribute BMM_INFO of ramb36_11: label is "[19:16]";
+  --attribute BMM_INFO of ramb36_12: label is "[15:12]";
+  --attribute BMM_INFO of ramb36_13: label is "[11:8]";
+  --attribute BMM_INFO of ramb36_14: label is "[7:4]";
+  --attribute BMM_INFO of ramb36_15: label is "[3:0]";
+
+  -- Internal signals
   signal net_gnd0 : std_logic;
   signal net_gnd4 : std_logic_vector(3 downto 0);
   signal pgassign1 : std_logic_vector(0 to 0);
@@ -520,7 +537,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_0.mem",
+      INIT_FILE => "boot_combined_0.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -563,7 +580,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_1.mem",
+      INIT_FILE => "boot_combined_1.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -606,7 +623,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_2.mem",
+      INIT_FILE => "boot_combined_2.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -649,7 +666,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_3.mem",
+      INIT_FILE => "boot_combined_3.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -692,7 +709,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_4.mem",
+      INIT_FILE => "boot_combined_4.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -735,7 +752,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_5.mem",
+      INIT_FILE => "boot_combined_5.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -778,7 +795,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_6.mem",
+      INIT_FILE => "boot_combined_6.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -821,7 +838,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_7.mem",
+      INIT_FILE => "boot_combined_7.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -864,7 +881,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_8.mem",
+      INIT_FILE => "boot_combined_8.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -907,7 +924,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_9.mem",
+      INIT_FILE => "boot_combined_9.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -950,7 +967,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_10.mem",
+      INIT_FILE => "boot_combined_10.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -993,7 +1010,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_11.mem",
+      INIT_FILE => "boot_combined_11.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -1036,7 +1053,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_12.mem",
+      INIT_FILE => "boot_combined_12.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -1079,7 +1096,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_13.mem",
+      INIT_FILE => "boot_combined_13.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -1122,7 +1139,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_14.mem",
+      INIT_FILE => "boot_combined_14.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
@@ -1165,7 +1182,7 @@ begin
     generic map (
       WRITE_MODE_A => "WRITE_FIRST",
       WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "xps_bram_if_cntlr_1_bram_combined_15.mem",
+      INIT_FILE => "boot_combined_15.mem",
       READ_WIDTH_A => 4,
       READ_WIDTH_B => 4,
       WRITE_WIDTH_A => 4,
