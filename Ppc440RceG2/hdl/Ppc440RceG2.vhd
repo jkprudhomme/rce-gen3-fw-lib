@@ -109,8 +109,6 @@ architecture structure of Ppc440RceG2 is
    signal extIrq                       : std_logic;
    signal resetReq                     : std_logic;
 
-   constant iicSlaveAddr               : std_logic_vector(6 downto 0) := "1001001"; 
-
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
 
@@ -138,23 +136,23 @@ begin
          XBAR_ADDRMAP_TMPL3    => x"00000000",
          INTERCONNECT_TMPL_SEL => x"3FFFFFFF",
          CLOCK_DELAY           => TRUE,
-         APU_CONTROL           => B"00010000000000000",
-         APU_UDI0              => B"000000000000000000000000",
-         APU_UDI1              => B"000000000000000000000000",
-         APU_UDI2              => B"000000000000000000000000",
-         APU_UDI3              => B"000000000000000000000000",
-         APU_UDI4              => B"000000000000000000000000",
-         APU_UDI5              => B"000000000000000000000000",
-         APU_UDI6              => B"000000000000000000000000",
-         APU_UDI7              => B"000000000000000000000000",
-         APU_UDI8              => B"000000000000000000000000",
-         APU_UDI9              => B"000000000000000000000000",
-         APU_UDI10             => B"000000000000000000000000",
-         APU_UDI11             => B"000000000000000000000000",
-         APU_UDI12             => B"000000000000000000000000",
-         APU_UDI13             => B"000000000000000000000000",
-         APU_UDI14             => B"000000000000000000000000",
-         APU_UDI15             => B"000000000000000000000000",
+         APU_CONTROL           => B"10010000000100001",
+         APU_UDI0              => x"C08501", -- UDI0 I2C slave read
+         APU_UDI1              => x"C47601", -- UDI1 I2C slave write
+         APU_UDI2              => x"C86581", -- UDI2 I2C with CR0
+         APU_UDI3              => x"000000",
+         APU_UDI4              => x"000000",
+         APU_UDI5              => x"000000",
+         APU_UDI6              => x"000000",
+         APU_UDI7              => x"000000",
+         APU_UDI8              => x"000000",
+         APU_UDI9              => x"000000",
+         APU_UDI10             => x"000000",
+         APU_UDI11             => x"000000",
+         APU_UDI12             => x"000000",
+         APU_UDI13             => x"000000",
+         APU_UDI14             => x"000000",
+         APU_UDI15             => x"000000",
          MI_ROWCONFLICT_MASK   => X"00FFFE00",
          MI_BANKCONFLICT_MASK  => X"07000000",
          MI_ARBCONFIG          => X"00432010",
@@ -631,7 +629,7 @@ begin
       fcm_clk     => intClk156_25MhzAdj,
       fcm_apu     => fcmApu,
       apu_fcm     => apuFcm,
-      iic_addr    => iicSlaveAddr,
+      iic_addr    => "1001001",
       iic_clki    => iicClkI,
       iic_clko    => iicClkO,
       iic_clkt    => iicClkT,
