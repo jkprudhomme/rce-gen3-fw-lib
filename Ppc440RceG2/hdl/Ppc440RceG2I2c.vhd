@@ -106,10 +106,8 @@ architecture IMP of Ppc440RceG2I2c is
   signal rst_b : std_logic;
   signal rst_b_next : std_logic;
 
-  type WriteStateType is (WriteIdle, WriteDecoded, WriteDone);
-  type ReadStateType is (ReadIdle, ReadDecoded, ReadDone);
-  signal writeState, writeState_next : WriteStateType;
-  signal readState , readState_next  : ReadStateType;
+  signal dec_read , read_done , read_done_next  : std_logic;
+  signal dec_write, write_done, write_done_next : std_logic;
   
   function INIT_FN ( REG_INIT : reg_vector;
                      index    : unsigned(7 downto 0) )
@@ -212,45 +210,39 @@ begin  -- IMP
       datao       => iic_bram_din );
   
   apu_bram_clk  <= fcm_clk;
-  apu_bram_en   <= '1' when (readState_next=ReadDone or writeState_next=WriteDone) else
-                   '0';
-  apu_bram_wr   <= '1' when (writeState_next=WriteDone) else
-                   '0';
+  apu_bram_en   <= dec_read or dec_write;
+  apu_bram_wr   <= dec_write;
   apu_bram_addr <= apu_fcm.radata(16 to 31);
   apu_bram_din  <= apu_fcm.rbdata;
   
---  readState_next <= ReadIdle when (readState=ReadDone or
---                                   apu_fcm.flush='1') else
-  readState_next <= ReadIdle when (apu_fcm.flush='1') else
-                    ReadDone when ((readState=ReadDecoded or
-                                    (apu_fcm.decudivalid='1' and
-                                     (apu_fcm.decudi="0000" or
-                                      apu_fcm.decudi="0010"))) and
-                                   apu_fcm.opervalid='1') else
-                    ReadDecoded when (apu_fcm.decudivalid='1' and
+  dec_read <= '1' when (apu_fcm.decudivalid='1' and
+--                        apu_fcm.decudi="0000" and
                                       (apu_fcm.decudi="0000" or
-                                       apu_fcm.decudi="0010")) else
-                    ReadIdle;
+                         apu_fcm.decudi="0010") and
+                        apu_fcm.opervalid='1' and
+                        read_done='0') else
+              '0';
 
---  writeState_next <= WriteIdle when (writeState=WriteDone or
---                                     apu_fcm.flush='1') else
-  writeState_next <= WriteIdle when (apu_fcm.flush='1') else
-                     WriteDone when ((writeState=WriteDecoded or
-                                      (apu_fcm.decudivalid='1' and
-                                       apu_fcm.decudi="0001")) and
-                                     apu_fcm.opervalid='1') else
-                     WriteDecoded when (apu_fcm.decudivalid='1' and
-                                        apu_fcm.decudi="0001") else
-                     WriteIdle;
+  read_done_next  <= '1' when (dec_read='1' and apu_fcm.flush='0') else
+                     '0';        
+  
+  dec_write <= '1' when (apu_fcm.decudivalid='1' and
+                         apu_fcm.decudi="0001" and
+                         apu_fcm.opervalid='1' and
+                         write_done='0') else
+               '0';
+
+  write_done_next <= '1' when (dec_write='1' and apu_fcm.flush='0') else
+                     '0';        
   
   fcm_p : process ( rst_i, fcm_clk )
   begin
     if rst_i='1' then
-      readState   <= ReadIdle;
-      writeState  <= WriteIdle;
+      read_done             <= '0';
+      write_done            <= '0';
     elsif rising_edge(fcm_clk) then
-      readState   <= readState_next;
-      writeState  <= writeState_next;
+      read_done             <= read_done_next;
+      write_done            <= write_done_next;
     end if;
   end process fcm_p;
 
@@ -260,20 +252,10 @@ begin  -- IMP
   fcm_apu.fpscrexc     <= '0';
   fcm_apu.result       <= apu_bram_dout;
   fcm_apu.sleepnrdy    <= '0';
-  fcm_apu.resultvalid  <= '1' when (readState=ReadDone) else '0';
+  fcm_apu.resultvalid  <= read_done;
   fcm_apu.storedata    <= (others=>'0');
-  fcm_apu.done         <= '1' when (readState=ReadDone or writeState=WriteDone) else '0';
+  fcm_apu.done         <= read_done or write_done;
 
-  debug(15 downto 7) <= (others=>'0');
-  debug( 6 downto 4) <= "001" when readState=ReadDecoded else
-                        "010" when readState=ReadDone    else
-                        "101" when writeState=WriteDecoded else
-                        "110" when writeState=WriteDone else
-                        "000";
-  debug( 3 downto 0) <= apu_fcm.flush &
-                        apu_fcm.decudivalid &
-                        apu_fcm.opervalid &
-                        fcm_clk;
 end IMP;
 
 
