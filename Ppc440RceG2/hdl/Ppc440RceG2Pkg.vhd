@@ -6,6 +6,41 @@ use IEEE.numeric_std.all;
 
 package Ppc440RceG2Pkg is
 
+  ----------------------------------
+  -- Constants
+  ----------------------------------
+  constant ApuCount    : integer := 1;
+  constant ApuSubCount : integer := 4;
+
+  ----------------------------------
+  -- Types
+  ----------------------------------
+  subtype i2c_reg_type is bit_vector(0 to 31);
+  type i2c_reg_vector is array (integer range<>) of i2c_reg_type;
+
+  ----------------------------------
+  -- Records
+  ----------------------------------
+  type ApuFromPpcType is record
+    writeData    : std_logic_vector(0 to 127);
+    writeEn      : std_logic_vector(0 to ApuSubCount-1);
+    readEn       : std_logic_vector(0 to ApuSubCount-1);
+  end record;
+  type ApuFromPpcVector is array (integer range<>) of ApuFromPpcType;
+
+  type ApuToPpcType is record
+    readData     : std_logic_vector(0 to 127);
+    empty        : std_logic_vector(0 to ApuSubCount-1);
+    almostEmpty  : std_logic_vector(0 to ApuSubCount-1);
+    full         : std_logic_vector(0 to ApuSubCount-1);
+    almostFull   : std_logic_vector(0 to ApuSubCount-1);
+  end record;
+  type ApuToPpcVector is array (integer range<>) of ApuToPpcType;
+
+  ----------------------------------
+  -- Components
+  ----------------------------------
+
   component Ppc440RceG2 is
     port (
       refClk125Mhz               : in  std_logic;
@@ -122,57 +157,16 @@ package Ppc440RceG2Pkg is
     );
   end component;
 
-  type APUFCM_440 is record
-    decudi        : std_logic_vector(0 to 3);
-    decudivalid   : std_logic;
-    decfpu        : std_logic;            -- FPU op decoded
-    decldstxfersz : std_logic_vector(0 to 2);  -- decoded load/store xfersz
-    decload       : std_logic;          -- decoded load
-    decnonauton   : std_logic;          -- decoded nonautonomous instr
-    decstore      : std_logic;          -- decoded store instr
-    instrvalid    : std_logic;
-    instruction   : std_logic_vector(0 to 31);
-    nextinstrrdy  : std_logic;
-    radata        : std_logic_vector(0 to 31);
-    rbdata        : std_logic_vector(0 to 31);
-    opervalid     : std_logic;    -- operand valid
-    endian        : std_logic;    -- little endian
-    writebackok   : std_logic;     -- commit
-    flush         : std_logic;     -- no commit
-    loaddvalid    : std_logic;
-    loaddata      : std_logic_vector(0 to 127);
-    loadbyteaddr  : std_logic_vector(0 to 3);
-    msrfe0        : std_logic;           -- MSR(FE0)
-    msrfe1        : std_logic;           -- MSR(FE1)
-  end record;
-
-  type FCMAPU_440 is record
-    confirminstr  : std_logic;          -- no exception (nonauton instr w/late
-    result        : std_logic_vector(0 to 31);   -- result data
-    storedata     : std_logic_vector(0 to 127);  -- store data
-    done          : std_logic;    -- instr execution done
-    sleepnrdy     : std_logic;    -- CPU cannot sleep
-    resultvalid   : std_logic;
-    cr            : std_logic_vector(0 to 3);  -- cond reg bits
-    exc           : std_logic;    -- generate program exception
-    fpscrexc      : std_logic;    -- generate FPSCR(FEX) exception
-  end record;
-
-  type APU_UDI_CFG_Type is array (0 to 7) of std_logic_vector(0 to 23);
-
-  subtype reg_type is bit_vector(0 to 31);
-  type reg_vector is array (integer range<>) of reg_type;
-
   component Ppc440RceG2I2c is
-    generic ( REG_INIT     : reg_vector(4 to 511) := (others=>x"00000000") );
+    generic ( REG_INIT     : i2c_reg_vector(4 to 511) := (others=>x"00000000") );
     port (
       rst_i       : in  std_logic;
       rst_o       : out std_logic;
       interrupt   : out std_logic;
       clk32       : in  std_logic;
       fcm_clk     : in  std_logic;
-      apu_fcm     : in  APUFCM_440;
-      fcm_apu     : out FCMAPU_440;
+      apuFromPpc  : in  ApuFromPpcType;
+      apuToPpc    : out ApuToPpcType;
       iic_addr    : in  std_logic_vector(6 downto 0);
       iic_clki    : in  std_logic;
       iic_clko    : out std_logic;
@@ -184,7 +178,44 @@ package Ppc440RceG2Pkg is
     );
   end component;
 
+  component Ppc440RceG2Apu is
+    port (
+      apuClk                     : in  std_logic;
+      apuClkRst                  : in  std_logic;
+      fcmApuConfirmInstr         : out std_logic;
+      fcmApuCr                   : out std_logic_vector(0 to 3);
+      fcmApuDone                 : out std_logic;
+      fcmApuException            : out std_logic;
+      fcmApuFpsCrFex             : out std_logic;
+      fcmApuResult               : out std_logic_vector(0 to 31);
+      fcmApuResultValid          : out std_logic;
+      fcmApuSleepNotReady        : out std_logic;
+      fcmApuStoreData            : out std_logic_vector(0 to 127);
+      apuFcmDecFpuOp             : in  std_logic;
+      apuFcmDecLdsTxferSize      : in  std_logic_vector(0 to 2);
+      apuFcmDecLoad              : in  std_logic;
+      apuFcmDecNonAuton          : in  std_logic;
+      apuFcmDecStore             : in  std_logic;
+      apuFcmDecUdi               : in  std_logic_vector(0 to 3);
+      apuFcmDecUdiValid          : in  std_logic;
+      apuFcmEndian               : in  std_logic;
+      apuFcmFlush                : in  std_logic;
+      apuFcmInstruction          : in  std_logic_vector(0 to 31);
+      apuFcmInstrValid           : in  std_logic;
+      apuFcmLoadByteAddr         : in  std_logic_vector(0 to 3);
+      apuFcmLoadData             : in  std_logic_vector(0 to 127);
+      apuFcmLoadDValid           : in  std_logic;
+      apuFcmMsrFe0               : in  std_logic;
+      apuFcmMsrFe1               : in  std_logic;
+      apuFcmNextInstrReady       : in  std_logic;
+      apuFcmOperandValid         : in  std_logic;
+      apuFcmRaData               : in  std_logic_vector(0 to 31);
+      apuFcmRbData               : in  std_logic_vector(0 to 31);
+      apuFcmWriteBackOk          : in  std_logic;
+      apuFromPpc                 : out ApuFromPpcVector(0 to ApuCount-1);
+      apuToPpc                   : in  ApuToPpcVector(0 to ApuCount-1)
+    );
+  end component;
+
 end Ppc440RceG2Pkg;
-
-
 

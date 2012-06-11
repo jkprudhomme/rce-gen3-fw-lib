@@ -1,6 +1,4 @@
 
-
-
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
@@ -105,10 +103,40 @@ architecture structure of Ppc440RceG2 is
    signal iicDataO                     : std_logic;
    signal iicDataI                     : std_logic;
    signal iicDataT                     : std_logic; 
-   signal fcmApu                       : FCMAPU_440;
-   signal apuFcm                       : APUFCM_440;
    signal extIrq                       : std_logic;
    signal resetReq                     : std_logic;
+   signal fcmApuConfirmInstr           : std_logic;
+   signal fcmApuCr                     : std_logic_vector(0 to 3);
+   signal fcmApuDone                   : std_logic;
+   signal fcmApuException              : std_logic;
+   signal fcmApuFpsCrFex               : std_logic;
+   signal fcmApuResult                 : std_logic_vector(0 to 31);
+   signal fcmApuResultValid            : std_logic;
+   signal fcmApuSleepNotReady          : std_logic;
+   signal fcmApuStoreData              : std_logic_vector(0 to 127);
+   signal apuFcmDecFpuOp               : std_logic;
+   signal apuFcmDecLdsTxferSize        : std_logic_vector(0 to 2);
+   signal apuFcmDecLoad                : std_logic;
+   signal apuFcmDecNonAuton            : std_logic;
+   signal apuFcmDecStore               : std_logic;
+   signal apuFcmDecUdi                 : std_logic_vector(0 to 3);
+   signal apuFcmDecUdiValid            : std_logic;
+   signal apuFcmEndian                 : std_logic;
+   signal apuFcmFlush                  : std_logic;
+   signal apuFcmInstruction            : std_logic_vector(0 to 31);
+   signal apuFcmInstrValid             : std_logic;
+   signal apuFcmLoadByteAddr           : std_logic_vector(0 to 3);
+   signal apuFcmLoadData               : std_logic_vector(0 to 127);
+   signal apuFcmLoadDValid             : std_logic;
+   signal apuFcmMsrFe0                 : std_logic;
+   signal apuFcmMsrFe1                 : std_logic;
+   signal apuFcmNextInstrReady         : std_logic;
+   signal apuFcmOperandValid           : std_logic;
+   signal apuFcmRaData                 : std_logic_vector(0 to 31);
+   signal apuFcmRbData                 : std_logic_vector(0 to 31);
+   signal apuFcmWriteBackOk            : std_logic;
+   signal iapuFromPpc                  : ApuFromPpcVector(0 to ApuCount-1);
+   signal iapuToPpc                    : ApuToPpcVector(0 to ApuCount-1);
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -436,36 +464,36 @@ begin
          C440TRCTRIGGEREVENTTYPE     => open,
 
          -- APU Interface
-         FCMAPUCR                    => fcmApu.cr,
-         FCMAPUDONE                  => fcmApu.done,
-         FCMAPUEXCEPTION             => fcmApu.exc,
-         FCMAPUFPSCRFEX              => fcmApu.fpscrexc,
-         FCMAPURESULT                => fcmApu.result,
-         FCMAPURESULTVALID           => fcmApu.resultvalid,
-         FCMAPUSLEEPNOTREADY         => fcmApu.sleepnrdy,
-         FCMAPUCONFIRMINSTR          => fcmApu.confirminstr,
-         FCMAPUSTOREDATA             => fcmApu.storedata,
-         APUFCMDECNONAUTON           => apuFcm.decnonauton,
-         APUFCMDECFPUOP              => apuFcm.decfpu,
-         APUFCMDECLDSTXFERSIZE       => apuFcm.decldstxfersz,
-         APUFCMDECLOAD               => apuFcm.decload,
-         APUFCMNEXTINSTRREADY        => apuFcm.nextinstrrdy,
-         APUFCMDECSTORE              => apuFcm.decstore,
-         APUFCMDECUDI                => apuFcm.decudi,
-         APUFCMDECUDIVALID           => apuFcm.decudivalid,
-         APUFCMENDIAN                => apuFcm.endian,
-         APUFCMFLUSH                 => apuFcm.flush,
-         APUFCMINSTRUCTION           => apuFcm.instruction,
-         APUFCMINSTRVALID            => apuFcm.instrvalid,
-         APUFCMLOADBYTEADDR          => apuFcm.loadbyteaddr,
-         APUFCMLOADDATA              => apuFcm.loaddata,
-         APUFCMLOADDVALID            => apuFcm.loaddvalid,
-         APUFCMOPERANDVALID          => apuFcm.opervalid,
-         APUFCMRADATA                => apuFcm.radata,
-         APUFCMRBDATA                => apuFcm.rbdata,
-         APUFCMWRITEBACKOK           => apuFcm.writebackok,
-         APUFCMMSRFE0                => apuFcm.msrfe0,
-         APUFCMMSRFE1                => apuFcm.msrfe1,
+         FCMAPUCONFIRMINSTR          => fcmApuConfirmInstr,
+         FCMAPUCR                    => fcmApuCr,
+         FCMAPUDONE                  => fcmApuDone,
+         FCMAPUEXCEPTION             => fcmApuException,
+         FCMAPUFPSCRFEX              => fcmApuFpsCrFex,
+         FCMAPURESULT                => fcmApuResult,
+         FCMAPURESULTVALID           => fcmApuResultValid,
+         FCMAPUSLEEPNOTREADY         => fcmApuSleepNotReady,
+         FCMAPUSTOREDATA             => fcmApuStoreData,
+         APUFCMDECFPUOP              => apuFcmDecFpuOp,
+         APUFCMDECLDSTXFERSIZE       => apuFcmDecLdsTxferSize,
+         APUFCMDECLOAD               => apuFcmDecLoad,
+         APUFCMDECNONAUTON           => apuFcmDecNonAuton,
+         APUFCMDECSTORE              => apuFcmDecStore,
+         APUFCMDECUDI                => apuFcmDecUdi,
+         APUFCMDECUDIVALID           => apuFcmDecUdiValid,
+         APUFCMENDIAN                => apuFcmEndian,
+         APUFCMFLUSH                 => apuFcmFlush,
+         APUFCMINSTRUCTION           => apuFcmInstruction,
+         APUFCMINSTRVALID            => apuFcmInstrValid,
+         APUFCMLOADBYTEADDR          => apuFcmLoadByteAddr,
+         APUFCMLOADDATA              => apuFcmLoadData,
+         APUFCMLOADDVALID            => apuFcmLoadDValid,
+         APUFCMMSRFE0                => apuFcmMsrFe0,
+         APUFCMMSRFE1                => apuFcmMsrFe1,
+         APUFCMNEXTINSTRREADY        => apuFcmNextInstrReady,
+         APUFCMOPERANDVALID          => apuFcmOperandValid,
+         APUFCMRADATA                => apuFcmRaData,
+         APUFCMRBDATA                => apuFcmRbData,
+         APUFCMWRITEBACKOK           => apuFcmWriteBackOk,
 
          -- DMA Controller 0
          LLDMA0TXDSTRDYN             => '1',
@@ -629,8 +657,8 @@ begin
       interrupt   => extIrq,
       clk32       => intClk156_25MhzAdj,
       fcm_clk     => intClk156_25MhzAdj,
-      fcm_apu     => fcmApu,
-      apu_fcm     => apuFcm,
+      apuFromPpc  => iapuFromPpc(0),
+      apuToPpc    => iapuToPpc(0),
       iic_addr    => "1001001",
       iic_clki    => iicClkI,
       iic_clko    => iicClkO,
@@ -651,11 +679,45 @@ begin
                                O  => iicDataI,
                                T  => iicDataT);
 
+   ----------------------------------------------------------------------------
+   -- APU Interface
+   ----------------------------------------------------------------------------
+   U_Ppc440RceG2Apu : Ppc440RceG2Apu port map (
+      apuClk                => intClk156_25MhzAdj,
+      apuClkRst             => intClk156_25MhzAdjRst,
+      fcmApuConfirmInstr    => fcmApuConfirmInstr,
+      fcmApuCr              => fcmApuCr,
+      fcmApuDone            => fcmApuDone,
+      fcmApuException       => fcmApuException,
+      fcmApuFpsCrFex        => fcmApuFpsCrFex,
+      fcmApuResult          => fcmApuResult,
+      fcmApuResultValid     => fcmApuResultValid,
+      fcmApuSleepNotReady   => fcmApuSleepNotReady,
+      fcmApuStoreData       => fcmApuStoreData,
+      apuFcmDecFpuOp        => apuFcmDecFpuOp,
+      apuFcmDecLdsTxferSize => apuFcmDecLdsTxferSize,
+      apuFcmDecLoad         => apuFcmDecLoad,
+      apuFcmDecNonAuton     => apuFcmDecNonAuton,
+      apuFcmDecStore        => apuFcmDecStore,
+      apuFcmDecUdi          => apuFcmDecUdi,
+      apuFcmDecUdiValid     => apuFcmDecUdiValid,
+      apuFcmEndian          => apuFcmEndian,
+      apuFcmFlush           => apuFcmFlush,
+      apuFcmInstruction     => apuFcmInstruction,
+      apuFcmInstrValid      => apuFcmInstrValid,
+      apuFcmLoadByteAddr    => apuFcmLoadByteAddr,
+      apuFcmLoadData        => apuFcmLoadData,
+      apuFcmLoadDValid      => apuFcmLoadDValid,
+      apuFcmMsrFe0          => apuFcmMsrFe0,
+      apuFcmMsrFe1          => apuFcmMsrFe1,
+      apuFcmNextInstrReady  => apuFcmNextInstrReady,
+      apuFcmOperandValid    => apuFcmOperandValid,
+      apuFcmRaData          => apuFcmRaData,
+      apuFcmRbData          => apuFcmRbData,
+      apuFcmWriteBackOk     => apuFcmWriteBackOk,
+      apuFromPpc            => iapuFromPpc,
+      apuToPpc              => iapuToPpc
+   );
+
 end architecture structure;
-
-
-
-
-
-
 

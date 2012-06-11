@@ -34,7 +34,7 @@ use unisim.vcomponents.all;
 use work.Ppc440RceG2Pkg.all;
 
 entity Ppc440RceG2I2c is
-  generic ( REG_INIT     : reg_vector(4 to 511) := (others=>x"00000000") );
+  generic ( REG_INIT     : i2c_reg_vector(4 to 511) := (others=>x"00000000") );
   port (
     rst_i     : in  std_logic;
     -- Client interface
@@ -43,8 +43,9 @@ entity Ppc440RceG2I2c is
     clk32     : in  std_logic;
     -- APU Interface
     fcm_clk     : in  std_logic;
-    apu_fcm     : in  APUFCM_440;
-    fcm_apu     : out FCMAPU_440;
+    apuFromPpc  : in  ApuFromPpcType;
+    apuToPpc    : out ApuToPpcType;
+
     -- IIC Interface
     iic_addr    : in  std_logic_vector(6 downto 0);
     iic_clki    : in  std_logic;
@@ -92,8 +93,6 @@ architecture IMP of Ppc440RceG2I2c is
   signal iic_bram_dout : std_logic_vector( 7 downto 0);
   signal iic_bram_din  : std_logic_vector( 7 downto 0);
 
-  signal apu_bram_clk  : std_logic;
-  signal apu_bram_en   : std_logic;
   signal apu_bram_wr   : std_logic;
   signal apu_bram_addr : std_logic_vector(15 downto 0);
   signal apu_bram_dout : std_logic_vector(31 downto 0);
@@ -106,10 +105,7 @@ architecture IMP of Ppc440RceG2I2c is
   signal rst_b : std_logic;
   signal rst_b_next : std_logic;
 
-  signal dec_read , read_done , read_done_next  : std_logic;
-  signal dec_write, write_done, write_done_next : std_logic;
-  
-  function INIT_FN ( REG_INIT : reg_vector;
+  function INIT_FN ( REG_INIT : i2c_reg_vector;
                      index    : unsigned(7 downto 0) )
     return bit_vector is
     variable i : integer := conv_integer(index & "000");
@@ -168,10 +164,10 @@ begin  -- IMP
                           port map ( DOB  => apu_bram_dout,
                                      DOPB => open,
                                      ADDRB=> apu_bram_addr(8 downto 0),
-                                     CLKB => apu_bram_clk,
+                                     CLKB => fcm_clk,
                                      DIB  => apu_bram_din,
                                      DIPB => x"0",
-                                     ENB  => apu_bram_en,
+                                     ENB  => '1',
                                      SSRB => rst_i,
                                      WEB  => apu_bram_wr,
                                      DOA  => iic_bram_dout,
@@ -208,54 +204,16 @@ begin  -- IMP
       addr        => iic_bram_addr,
       datai       => iic_bram_dout,
       datao       => iic_bram_din );
-  
-  apu_bram_clk  <= fcm_clk;
-  apu_bram_en   <= dec_read or dec_write;
-  apu_bram_wr   <= dec_write;
-  apu_bram_addr <= apu_fcm.radata(16 to 31);
-  apu_bram_din  <= apu_fcm.rbdata;
-  
-  dec_read <= '1' when (apu_fcm.decudivalid='1' and
---                        apu_fcm.decudi="0000" and
-                                      (apu_fcm.decudi="0000" or
-                         apu_fcm.decudi="0010") and
-                        apu_fcm.opervalid='1' and
-                        read_done='0') else
-              '0';
 
-  read_done_next  <= '1' when (dec_read='1' and apu_fcm.flush='0') else
-                     '0';        
+  -- Interface
+  apu_bram_wr          <= apuFromPpc.writeEn(0);
+  apu_bram_addr        <= apuFromPpc.writeData(80 to 95);
+  apu_bram_din         <= apuFromPpc.writeData(96 to 127);
+  apuToPpc.readData    <= x"000000000000000000000000" & apu_bram_dout;
+  apuToPpc.empty       <= (others=>'0');
+  apuToPpc.almostEmpty <= (others=>'0');
+  apuToPpc.full        <= (others=>'0');
+  apuToPpc.almostFull  <= (others=>'0');
   
-  dec_write <= '1' when (apu_fcm.decudivalid='1' and
-                         apu_fcm.decudi="0001" and
-                         apu_fcm.opervalid='1' and
-                         write_done='0') else
-               '0';
-
-  write_done_next <= '1' when (dec_write='1' and apu_fcm.flush='0') else
-                     '0';        
-  
-  fcm_p : process ( rst_i, fcm_clk )
-  begin
-    if rst_i='1' then
-      read_done             <= '0';
-      write_done            <= '0';
-    elsif rising_edge(fcm_clk) then
-      read_done             <= read_done_next;
-      write_done            <= write_done_next;
-    end if;
-  end process fcm_p;
-
-  fcm_apu.confirminstr <= '0';
-  fcm_apu.cr           <= apu_fcm.radata(28 to 31);
-  fcm_apu.exc          <= '0';
-  fcm_apu.fpscrexc     <= '0';
-  fcm_apu.result       <= apu_bram_dout;
-  fcm_apu.sleepnrdy    <= '0';
-  fcm_apu.resultvalid  <= read_done;
-  fcm_apu.storedata    <= (others=>'0');
-  fcm_apu.done         <= read_done or write_done;
-
 end IMP;
-
 
