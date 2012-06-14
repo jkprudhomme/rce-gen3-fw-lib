@@ -126,25 +126,52 @@ architecture EthMac1GCntrl of EthMac1GCntrl is
   END COMPONENT;
 
    -- Local signals
-   signal txFifoRd     : std_logic;
-   signal txFifoEmpty  : std_logic;
-   signal txFifoDout   : std_logic_vector(63 downto 0);
-   signal cmdFifoRd    : std_logic;
-   signal cmdFifoEmpty : std_logic;
-   signal cmdFifoDout  : std_logic_vector(63 downto 0);
-   signal rxFifoWr     : std_logic;
-   signal rxFifoFull   : std_logic;
-   signal rxFifoAFull  : std_logic;
-   signal rxFifoDin    : std_logic_vector(31 downto 0);
-   signal resFifoWr    : std_logic;
-   signal resFifoFull  : std_logic;
-   signal resFifoAFull : std_logic;
-   signal resFifoDin   : std_logic_vector(31 downto 0);
-   
+   signal txFifoRd       : std_logic;
+   signal txFifoDout     : std_logic_vector(63 downto 0);
+   signal cmdFifoRd      : std_logic;
+   signal cmdFifoEmpty   : std_logic;
+   signal cmdFifoDout    : std_logic_vector(63 downto 0);
+   signal rxFifoWr       : std_logic;
+   signal rxFifoDin      : std_logic_vector(31 downto 0);
+   signal resFifoWr      : std_logic;
+   signal resFifoDin     : std_logic_vector(31 downto 0);
+   signal txLength       : std_logic_vector(15 downto 0);
+   signal txCount        : std_logic_vector(15 downto 0);
+   signal txCountEn      : std_logic;
+   signal txCountRst     : std_logic;
+   signal txSequence     : std_logic_vector(11 downto 0);
+   signal txOpCode       : std_logic_vector(3  downto 0);
+   signal txRespReq      : std_logic;
+   signal txRespAck      : std_logic;
+   signal rxCount        : std_logic_vector(15 downto 0);
+   signal rxCountRst     : std_logic;
+   signal emacRxValidReg : std_logic;
+   signal rxFrameCnt     : std_logic_vector(11 downto 0);
+  
+   -- State machines
+   constant ST_TX_IDLE   : std_logic_vector(2 downto 0) := "000";
+   constant ST_TX_RD     : std_logic_vector(2 downto 0) := "001";
+   constant ST_TX_CMD    : std_logic_vector(2 downto 0) := "010";
+   constant ST_TX_REQ    : std_logic_vector(2 downto 0) := "011";
+   constant ST_TX_DATA   : std_logic_vector(2 downto 0) := "100";
+   constant ST_TX_RESP   : std_logic_vector(2 downto 0) := "101";
+   signal   curTxState   : std_logic_vector(2 downto 0);
+   signal   nxtTxState   : std_logic_vector(2 downto 0);
+ 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
 
 begin     
+
+
+   -----------------------------------------
+   ---- Transmit Control
+   -----------------------------------------
+   -- 64-bit command
+   --   15:0  = Transmit length 
+   --   27:16 = Sequence Number
+   --   31:28 = OpCode 5 = Transmit
+   --   63:32 = Zeros
 
    -- Transmit FIFO
    U_TxFifo : EthMac1G_afifo_64x2048_fwft
@@ -158,7 +185,7 @@ begin
          dout         => txFifoDout,
          full         => txFifoFull,
          almost_full  => txFifoAlmostFull,
-         empty        => txFifoEmpty,
+         empty        => open,
          almost_empty => open
       );
 
@@ -178,6 +205,179 @@ begin
          almost_empty => open,
       );
 
+   -- Sync state logic
+   process (gtxClk, gtxClkRst ) begin
+      if gtxClkRst = '1' then
+         txLength     <= (others=>'0') after tpd;
+         txCount      <= (others=>'0') after tpd;
+         txSequence   <= (others=>'0') after tpd;
+         txOpCode     <= (others=>'0') after tpd;
+         curTxState   <= ST_TX_IDLE    after tpd;
+      elsif rising_edge(gtxClk) then
+
+         -- Transmit counter
+         if txCountRst = '1' then
+            txCount <= (others=>'0') after tpd;
+         elsif txCountEn = '1' then
+            txCount <= txCount + 1 after tpd;
+         end if;
+
+         -- Store command
+         if cmdFifoRd = '1' then
+            txLength     <= cmdFifoDout(15 downto  0) after tpd;
+            txSequence   <= cmdFifoDout(27 downto 16) after tpd;
+            txOpCode     <= cmdFifoDout(31 downto  0) after tpd;
+         end if;
+
+         -- State
+         curTxState <= nxtTxState after tpd;
+
+      end if;
+   end process;
+
+   -- Data mux
+   emacTxData <= txFifoData(63 downto 56) when txCount(2 downto 0) = "000" else
+                 txFifoData(55 downto 48) when txCount(2 downto 0) = "001" else
+                 txFifoData(47 downto 40) when txCount(2 downto 0) = "010" else
+                 txFifoData(39 downto 32) when txCount(2 downto 0) = "011" else
+                 txFifoData(31 downto 24) when txCount(2 downto 0) = "100" else
+                 txFifoData(23 downto 16) when txCount(2 downto 0) = "101" else
+                 txFifoData(15 downto  8) when txCount(2 downto 0) = "110" else
+                 txFifoData(7  downto  0);
+
+   -- ASync state logic
+   process ( curTxState, emacTxAck, cmdFifoEmpty, txOpCode, txCount, txRespAck ) begin
+      case ( curTxState ) is
+     
+         -- Idle 
+         when ST_TX_IDLE =>
+            txCountRst  <= '1';
+            txCountEn   <= '0';
+            emacTxValid <= '0';
+            emacTxFirst <= '0';
+            cmdFifoRd   <= '0';
+            txFifoRd    <= '0';
+            txRespReq   <= '0';
+
+            -- Fifo has data
+            if cmdFifoEmpty = '0' then
+               nxtTxState <= ST_TX_RD;
+            else
+               nxtTxState <= curTxState;
+            end if;
+
+         -- Read Command
+         when ST_TX_RD =>
+            txCountRst  <= '1';
+            txCountEn   <= '0';
+            emacTxValid <= '0';
+            emacTxFirst <= '0';
+            cmdFifoRd   <= '1';
+            txFifoRd    <= '0';
+            txRespReq   <= '0';
+            nxtTxState  <= ST_TX_CMD;
+
+         -- Process command
+         when ST_TX_CMD =>
+            txCountRst  <= '1';
+            txCountEn   <= '0';
+            emacTxValid <= '0';
+            emacTxFirst <= '0';
+            cmdFifoRd   <= '0';
+            txFifoRd    <= '0';
+            txRespReq   <= '0';
+
+            if txOpCode = 5 then
+               nxtTxState <= ST_TX_REQ;
+            else
+               nxtTxState <= ST_TX_ACK;
+            end if;
+
+         -- Send first byte
+         when ST_TX_REQ =>
+            txCountRst  <= '0';
+            emacTxValid <= '1';
+            emacTxFirst <= '1';
+            cmdFifoRd   <= '0';
+            txFifoRd    <= '0';
+            txRespReq   <= '0';
+
+            if emacTxAck = '1' then
+               nxtTxState <= ST_TX_DATA;
+               txCountEn  <= '1';
+            else
+               nxtTxState <= curTxState;
+               txCountEn  <= '0';
+            end if;
+
+         -- Send data
+         when ST_TX_DATA =>
+            txCountRst  <= '0';
+            txCountEn   <= '1';
+            emacTxFirst <= '0';
+            cmdFifoRd   <= '0';
+            txRespReq   <= '0';
+
+            -- We just sent the last byte
+            if txCount = txLength
+               emacTxValid <= '0';
+               nxtTxState  <= ST_TX_ACK;
+
+               -- Don't read if we just read from FIFO
+               if txCount(2 downto 0) = "000" then
+                  txFifoRd    <= '0';
+               else
+                  txFifoRd    <= '1';
+               end if;
+
+            -- All bytes of fifo have been sent
+            elsif txCount(2 downto 0) = "111" then
+               emacTxValid <= '1';
+               txFifoRd    <= '1';
+               nxtTxState  <= curTxState;
+           else
+               emacTxValid <= '1';
+               txFifoRd    <= '0';
+               nxtTxState  <= curTxState;
+           end if;
+
+         -- Send response
+         when ST_TX_RESP =>
+            txCountRst  <= '0';
+            txCountEn   <= '0';
+            emacTxValid <= '0';
+            emacTxFirst <= '0';
+            cmdFifoRd   <= '0';
+            txFifoRd    <= '0';
+            txRespReq   <= '1';
+
+            if txRespAck = '1' then
+               nxtTxState <= ST_TX_IDLE;
+            else
+               nxtTxState <= curTxState;
+            end if;
+
+         when others =>
+            txCountRst  <= '0';
+            txCountEn   <= '0';
+            emacTxValid <= '0';
+            emacTxFirst <= '0';
+            cmdFifoRd   <= '0';
+            txFifoRd    <= '0';
+            txRespReq   <= '0';
+            nxtTxState  <= ST_TX_IDLE;
+      end case;
+   end process;
+
+
+   -----------------------------------------
+   ---- Receive Control
+   -----------------------------------------
+   -- 32-bit result
+   --   15:0  = Length 
+   --   27:16 = Sequence Number
+   --   31:28 = OpCode 7 = Receive Ok, 6 = Receive Bad, 5 = Tx Ack
+
    -- Rx FIFO
    U_RxFifo : EthMac1G_afifo_32x16384_fwft
       PORT MAP (
@@ -188,8 +388,8 @@ begin
          wr_en        => rxFifoWr,
          rd_en        => rxFifoRd,
          dout         => rxFifoData,
-         full         => rxFifoFull,
-         almost_full  => rxFifoAFull,
+         full         => open,
+         almost_full  => open,
          empty        => rxFifoEmpty,
          almost_empty => rxFifoAlmostEmpty
       );
@@ -204,34 +404,104 @@ begin
          wr_en        => resFifoWr,
          rd_en        => resFifoRd,
          dout         => resFifoData,
-         full         => resFifoFull,
-         almost_full  => resFifoAFull,
+         full         => open,
+         almost_full  => open,
          empty        => resFifoEmpty,
          almost_empty => resFifoAlmostEmpty
       );
 
 
+   -- Rx FIFO write control
+   process (gtxClk, gtxClkRst ) begin
+      if gtxClkRst = '1' then
+         rxCount        <= (others=>'0') after tpd;
+         rxFifoWr       <= '0'           after tpd;
+         rxFifoData     <= '0'           after tpd;
+         emacRxValidReg <= '0'           after tpd;
+      elsif rising_edge(gtxClk) then
 
+         -- Delayed copy of valid
+         emacRxValidReg <= emacRxValid   after tpd;
 
+         -- rxCounter
+         if rxCountRst = '1' then
+            rxCount <= (others=>'0') after tpd;
+         elsif emacRxValid = '1' then
+            rxCount <= rxCount + 1 after tpd;
+         end if;
 
+         -- Mux data
+         case rxCount(1 downto 0) is
+            when "00"   => rxFifoData(31 downto 24) <= emacRxData    after tpd;
+            when "01"   => rxFifoData(23 downto 16) <= emacRxData    after tpd;
+            when "10"   => rxFifoData(15 downto  8) <= emacRxData    after tpd;
+            when "11"   => rxFifoData(7  downto  0) <= emacRxData    after tpd;
+            when others => rxFifoData               <= (others=>'0') after tpd;
+         end case;
 
+         -- Control writes
+         if emacRxValid = '1' and rxCount(1 downto 0) = "11" then
+            rxFifoWr <= '1' 
+         elsif emacRxValid = '0' and emacRxValidReg = '1' and rxCount(1 downto 0) /= "00" then
+            rxFifoWr <= '1' 
+         else
+            rxFifoWr <= '0' 
+         end if;
 
+      end if;
+   end process;
 
+   -- Res FIFO write control
+   process (gtxClk, gtxClkRst ) begin
+      if gtxClkRst = '1' then
+         resFifoWr      <= '0'           after tpd;
+         resFifoData    <= '0'           after tpd;
+         rxCountRst     <= '0'           after tpd;
+         rxFrameCnt     <= (others=>'0') after tpd;
+         txRespAck      <= '0'           after tpd;
+      elsif rising_edge(gtxClk) then
 
+         -- Counter
+         if emacRxGoodFrame = '1' or emcRxBadFrame = '1' then
+            rxFrameCnt <= rxFrameCnt + 1 after tpd;
+            rxCountRst <= '1'            after tpd;
+         else
+            rxCountRst <= '0'            after tpd;
+         end if;
 
+         -- Good frame received
+         if emacRxGoodFrame = '1' then
+            resFifoDin(31 downto 28) <= "0111"     after tpd;
+            resFifoDin(27 downto 16) <= rxFrameCnt after tpd;
+            resFifoDin(15 downto  9) <= rxCount    after tpd;
+            resFifoWr                <= '1'        after tpd;
+            txRespAck                <= '0'        after tpd;
 
+         -- Bad frame received
+         elsif emacRxBadFrame = '1' then
+            resFifoDin(31 downto 28) <= "0110"     after tpd;
+            resFifoDin(27 downto 16) <= rxFrameCnt after tpd;
+            resFifoDin(15 downto  9) <= rxCount    after tpd;
+            resFifoWr                <= '1'        after tpd;
+            txRespAck                <= '0'        after tpd;
 
+         -- Tx resp
+         elsif txRespReq = '1' and txRespAck = '0' then
+            resFifoDin(31 downto 28) <= txOpCode   after tpd;
+            resFifoDin(27 downto 16) <= txSequence after tpd;
+            resFifoDin(15 downto  9) <= txLength   after tpd;
+            resFifoWr                <= '1'        after tpd;
+            txRespAck                <= '1'        after tpd;
+         
+         -- Idle
+         else
+            resFifoDin <= (others=>'0') after tpd;
+            resFifoWr  <= '0'           after tpd;
+            txRespAck  <= '0'           after tpd;
+         end if;
 
-
-
-
-
-
-
-
-
-
-
+      end if;
+   end process;
 
 end EthMac1GCntrl;
 
