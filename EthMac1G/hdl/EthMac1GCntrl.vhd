@@ -150,7 +150,7 @@ begin
    -----------------------------------------
    ---- Transmit Control
    -----------------------------------------
-   -- 64-bit command
+   -- 32-bit command
    --   15:0  = Transmit length 
    --   27:16 = Sequence Number
    --   31:28 = OpCode 5 = Transmit
