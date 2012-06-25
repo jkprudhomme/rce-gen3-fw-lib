@@ -76,6 +76,7 @@ architecture EthMac1GCore of EthMac1GCore is
    signal emacTxCharDispMode   : std_logic;
    signal emacRst              : std_logic;
    signal reset_r              : std_logic_vector(3 downto 0);
+   signal zeros             : std_logic_vector(31 downto 0);
 
    -- Constants
    constant EMAC0_LINKTIMERVAL : bit_vector := x"13D";
@@ -85,6 +86,8 @@ architecture EthMac1GCore of EthMac1GCore is
 
 begin     
 
+   zeros <= (others=>'0');
+ 
    -- Connect GTX Electrical Idle to EMAC Signal Detect
    emacSignalDetect <= not gtxRxElecIdle after tpd;
 
@@ -584,6 +587,8 @@ begin
         ---------------- Transmit Ports - 8b10b Encoder Control Ports --------------
         TXBYPASS8B10B0                  =>      (others => '0'),
         TXBYPASS8B10B1                  =>      (others => '0'),
+        TXCHARDISPMODE0(3)              =>      '0',
+        TXCHARDISPMODE0(2)              =>      '0',
         TXCHARDISPMODE0(1)              =>      '0',
         TXCHARDISPMODE0(0)              =>      emacTxCharDispMode,
         TXCHARDISPMODE1                 =>      (others => '0'),
@@ -716,7 +721,7 @@ begin
 
         EMAC0CLIENTTXCLIENTCLKOUT       => open,
         CLIENTEMAC0TXCLIENTCLKIN        => gtxClk,
-        CLIENTEMAC0TXD(15 downto 8)     => (OTHERS => '0'),
+        CLIENTEMAC0TXD(15 downto 8)     => zeros(15 downto 8),
         CLIENTEMAC0TXD(7  downto 0)     => emacTxData,
         CLIENTEMAC0TXDVLD               => emacTxValid,
         CLIENTEMAC0TXDVLDMSW            => '0',
@@ -759,7 +764,7 @@ begin
         EMAC0PHYSYNCACQSTATUS           => open,
         PHYEMAC0RXCLKCORCNT             => gtxRxClkCorCnt,
         PHYEMAC0RXBUFSTATUS(1)          => gtxRxBuffStatus(2),
-        PHYEMAC0RXBUFSTATUS(0)          => open,
+        PHYEMAC0RXBUFSTATUS(0)          => '0',
         PHYEMAC0RXBUFERR                => '0',
         PHYEMAC0RXCHARISCOMMA           => gtxRxCharIsComma(0),
         PHYEMAC0RXCHARISK               => gtxRxCharIsK(0),

@@ -9,8 +9,6 @@ package Ppc440RceG2Pkg is
   ----------------------------------
   -- Constants
   ----------------------------------
-  constant ApuCount    : integer := 1;
-  constant ApuSubCount : integer := 4;
 
   ----------------------------------
   -- Types
@@ -21,21 +19,89 @@ package Ppc440RceG2Pkg is
   ----------------------------------
   -- Records
   ----------------------------------
-  type ApuFromPpcType is record
-    writeData    : std_logic_vector(0 to 127);
-    writeEn      : std_logic_vector(0 to ApuSubCount-1);
-    readEn       : std_logic_vector(0 to ApuSubCount-1);
-  end record;
-  type ApuFromPpcVector is array (integer range<>) of ApuFromPpcType;
 
-  type ApuToPpcType is record
-    readData     : std_logic_vector(0 to 127);
-    empty        : std_logic_vector(0 to ApuSubCount-1);
-    almostEmpty  : std_logic_vector(0 to ApuSubCount-1);
-    full         : std_logic_vector(0 to ApuSubCount-1);
-    almostFull   : std_logic_vector(0 to ApuSubCount-1);
+  -- Write command. Signals from PPC.
+  type ApuWriteFromPpcType is record
+     regA   : std_logic_vector(0 to 31);
+     regB   : std_logic_vector(0 to 31);
+     enable : std_logic;
   end record;
-  type ApuToPpcVector is array (integer range<>) of ApuToPpcType;
+
+  type ApuWriteFromPpcVector is array (integer range<>) of ApuWriteFromPpcType;
+
+  constant ApuWriteFromPpcInit : ApuWriteFromPpcType := ( regA => (others=>'0'), regB => (others=>'0'), enable => '0');
+
+  -- Write command. Signals to PPC.
+  type ApuWriteToPpcType is record
+     status : std_logic_vector(0 to 3);
+  end record;
+
+  type ApuWriteToPpcVector is array (integer range<>) of ApuWriteToPpcType;
+
+  constant ApuWriteToPpcInit : ApuWriteToPpcType := ( status => (others=>'0') );
+
+  -- Read command. Signals from PPC.
+  type ApuReadFromPpcType is record
+     regA   : std_logic_vector(0 to 31);
+     regB   : std_logic_vector(0 to 31);
+     enable : std_logic;
+  end record;
+
+  type ApuReadFromPpcVector is array (integer range<>) of ApuReadFromPpcType;
+
+  constant ApuReadFromPpcInit : ApuReadFromPpcType := ( regA => (others=>'0'), regB => (others=>'0'), enable => '0');
+
+  -- Read command. Signals to PPC.
+  type ApuReadToPpcType is record
+     result : std_logic_vector(0 to 31);
+     status : std_logic_vector(0 to 3);
+  end record;
+
+  type ApuReadToPpcVector is array (integer range<>) of ApuReadToPpcType;
+
+  constant ApuReadToPpcInit : ApuReadToPpcType := ( result => (others=>'0'), status => (others=>'0') );
+
+  -- Load command. Signals from PPC.
+  -- Size: 100 = Byte
+  --       010 = Halfword
+  --       001 = Word
+  --       011 = Doubleword
+  --       111 = Quadword
+  type ApuLoadFromPpcType is record
+     size   : std_logic_vector(0 to 2);
+     data   : std_logic_vector(0 to 127);
+     enable : std_logic;
+  end record;
+
+  type ApuLoadFromPpcVector is array (integer range<>) of ApuLoadFromPpcType;
+
+  constant ApuLoadFromPpcInit : ApuLoadFromPpcType := ( size   => (others=>'0'), 
+                                                        data   => (others=>'0'), 
+                                                        enable => '0' );
+
+  -- Store command. Signals from PPC.
+  -- Size: 100 = Byte
+  --       010 = Halfword
+  --       001 = Word
+  --       011 = Doubleword
+  --       111 = Quadword
+  type ApuStoreFromPpcType is record
+     size   : std_logic_vector(0 to 2);
+     enable : std_logic;
+  end record;
+
+  type ApuStoreFromPpcVector is array (integer range<>) of ApuStoreFromPpcType;
+
+  constant ApuStoreFromPpcInit : ApuStoreFromPpcType := ( size => (others=>'0'), enable => '0' );
+
+  -- Store command. Signals to PPC.
+  type ApuStoreToPpcType is record
+     data   : std_logic_vector(0 to 127);
+  end record;
+
+  type ApuStoreToPpcVector is array (integer range<>) of ApuStoreToPpcType;
+
+  constant ApuStoreToPpcInit : ApuStoreToPpcType := ( data => (others=>'0') );
 
   ----------------------------------
   -- Components
@@ -54,6 +120,8 @@ package Ppc440RceG2Pkg is
       cpuClk156_25MhzRst         : out std_logic;
       cpuClk200Mhz               : out std_logic;
       cpuClk200MhzRst            : out std_logic;
+      cpuClk234_375Mhz           : out std_logic;
+      cpuClk234_375MhzRst        : out std_logic;
       mcmiReadData               : in  std_logic_vector(0 to 127);
       mcmiReadDataValid          : in  std_logic;
       mcmiReadDataErr            : in  std_logic;
@@ -75,6 +143,13 @@ package Ppc440RceG2Pkg is
       ppcDmDcrAbus               : out std_logic_vector(0 to 9);
       ppcDmDcrUAbus              : out std_logic_vector(20 to 21);
       ppcDmDcrDbusOut            : out std_logic_vector(0 to 31);
+      apuReadFromPpc             : out ApuReadFromPpcVector(0 to 3);
+      apuReadToPpc               : in  ApuReadToPpcVector(0 to 3);
+      apuWriteFromPpc            : out ApuWriteFromPpcVector(0 to 3);
+      apuWriteToPpc              : in  ApuWriteToPpcVector(0 to 3);
+      apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 15);
+      apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 15);
+      apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 15);
       modScl                     : inout std_logic;
       modSda                     : inout std_logic
     );
@@ -131,6 +206,7 @@ package Ppc440RceG2Pkg is
       cpuClk312_5Mhz90DegAdj     : out std_logic;
       cpuClk156_25MhzAdj         : out std_logic;
       cpuClk468_75Mhz            : out std_logic;
+      cpuClk234_375MhzAdj        : out std_logic;
       cpuClk200MhzAdj            : out std_logic;
       cpuClk312_5MhzRst          : out std_logic;
       cpuClk312_5MhzAdjRst       : out std_logic;
@@ -138,6 +214,7 @@ package Ppc440RceG2Pkg is
       cpuClk156_25MhzAdjRst      : out std_logic;
       cpuClk156_25MhzAdjRstPon   : out std_logic;
       cpuClk468_75MhzRst         : out std_logic;
+      cpuClk234_375MhzAdjRst     : out std_logic;
       cpuClk200MhzAdjRst         : out std_logic;
       cpuRstCore                 : out std_logic;
       cpuRstChip                 : out std_logic;
@@ -160,21 +237,23 @@ package Ppc440RceG2Pkg is
   component Ppc440RceG2I2c is
     generic ( REG_INIT     : i2c_reg_vector(4 to 511) := (others=>x"00000000") );
     port (
-      rst_i       : in  std_logic;
-      rst_o       : out std_logic;
-      interrupt   : out std_logic;
-      clk32       : in  std_logic;
-      fcm_clk     : in  std_logic;
-      apuFromPpc  : in  ApuFromPpcType;
-      apuToPpc    : out ApuToPpcType;
-      iic_addr    : in  std_logic_vector(6 downto 0);
-      iic_clki    : in  std_logic;
-      iic_clko    : out std_logic;
-      iic_clkt    : out std_logic;
-      iic_datai   : in  std_logic;
-      iic_datao   : out std_logic;
-      iic_datat   : out std_logic;
-      debug       : out std_logic_vector(15 downto 0)
+      rst_i           : in  std_logic;
+      rst_o           : out std_logic;
+      interrupt       : out std_logic;
+      clk32           : in  std_logic;
+      apuClk          : in  std_logic;
+      apuWriteFromPpc : in  ApuWriteFromPpcType;
+      apuWriteToPpc   : out ApuWriteToPpcType;
+      apuReadFromPpc  : in  ApuReadFromPpcType;
+      apuReadToPpc    : out ApuReadToPpcType;
+      iic_addr        : in  std_logic_vector(6 downto 0);
+      iic_clki        : in  std_logic;
+      iic_clko        : out std_logic;
+      iic_clkt        : out std_logic;
+      iic_datai       : in  std_logic;
+      iic_datao       : out std_logic;
+      iic_datat       : out std_logic;
+      debug           : out std_logic_vector(15 downto 0)
     );
   end component;
 
@@ -212,8 +291,15 @@ package Ppc440RceG2Pkg is
       apuFcmRaData               : in  std_logic_vector(0 to 31);
       apuFcmRbData               : in  std_logic_vector(0 to 31);
       apuFcmWriteBackOk          : in  std_logic;
-      apuFromPpc                 : out ApuFromPpcVector(0 to ApuCount-1);
-      apuToPpc                   : in  ApuToPpcVector(0 to ApuCount-1)
+      apuReadFromPpc             : out ApuReadFromPpcVector(0 to 7);
+      apuReadToPpc               : in  ApuReadToPpcVector(0 to 7);
+      apuWriteFromPpc            : out ApuWriteFromPpcVector(0 to 7);
+      apuWriteToPpc              : in  ApuWriteToPpcVector(0 to 7);
+      apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 31);
+      apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 31);
+      apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 31);
+      apuReadStatus              : out std_logic_vector(0 to 31);
+      apuWriteStatus             : out std_logic_vector(0 to 31)
     );
   end component;
 

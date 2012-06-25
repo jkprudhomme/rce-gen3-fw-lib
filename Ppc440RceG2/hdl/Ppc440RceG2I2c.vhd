@@ -37,14 +37,18 @@ entity Ppc440RceG2I2c is
   generic ( REG_INIT     : i2c_reg_vector(4 to 511) := (others=>x"00000000") );
   port (
     rst_i     : in  std_logic;
+
     -- Client interface
     rst_o     : out std_logic;
     interrupt : out std_logic;
     clk32     : in  std_logic;
+
     -- APU Interface
-    fcm_clk     : in  std_logic;
-    apuFromPpc  : in  ApuFromPpcType;
-    apuToPpc    : out ApuToPpcType;
+    apuClk           : in  std_logic;
+    apuWriteFromPpc  : in  ApuWriteFromPpcType;
+    apuWriteToPpc    : out ApuWriteToPpcType;
+    apuReadFromPpc   : in  ApuReadFromPpcType;
+    apuReadToPpc     : out ApuReadToPpcType;
 
     -- IIC Interface
     iic_addr    : in  std_logic_vector(6 downto 0);
@@ -164,7 +168,7 @@ begin  -- IMP
                           port map ( DOB  => apu_bram_dout,
                                      DOPB => open,
                                      ADDRB=> apu_bram_addr(8 downto 0),
-                                     CLKB => fcm_clk,
+                                     CLKB => apuClk,
                                      DIB  => apu_bram_din,
                                      DIPB => x"0",
                                      ENB  => '1',
@@ -206,14 +210,12 @@ begin  -- IMP
       datao       => iic_bram_din );
 
   -- Interface
-  apu_bram_wr          <= apuFromPpc.writeEn(0);
-  apu_bram_addr        <= apuFromPpc.writeData(80 to 95);
-  apu_bram_din         <= apuFromPpc.writeData(96 to 127);
-  apuToPpc.readData    <= x"000000000000000000000000" & apu_bram_dout;
-  apuToPpc.empty       <= (others=>'0');
-  apuToPpc.almostEmpty <= (others=>'0');
-  apuToPpc.full        <= (others=>'0');
-  apuToPpc.almostFull  <= (others=>'0');
-  
+  apu_bram_wr          <= apuWriteFromPpc.enable;
+  apu_bram_addr        <= apuWriteFromPpc.regA(16 to 31);
+  apu_bram_din         <= apuWriteFromPpc.regB;
+  apuWriteToPpc.status <= (others=>'0');
+  apuReadToPpc.result  <= apu_bram_dout;
+  apuReadToPpc.status  <= (others=>'0');
+
 end IMP;
 

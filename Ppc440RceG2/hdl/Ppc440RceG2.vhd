@@ -26,6 +26,8 @@ entity Ppc440RceG2 is
       cpuClk156_25MhzRst         : out std_logic;
       cpuClk200Mhz               : out std_logic;
       cpuClk200MhzRst            : out std_logic;
+      cpuClk234_375Mhz           : out std_logic;
+      cpuClk234_375MhzRst        : out std_logic;
 
       -- Memory Controller
       mcmiReadData               : in  std_logic_vector(0 to 127);
@@ -51,6 +53,15 @@ entity Ppc440RceG2 is
       ppcDmDcrAbus               : out std_logic_vector(0 to 9);
       ppcDmDcrUAbus              : out std_logic_vector(20 to 21);
       ppcDmDcrDbusOut            : out std_logic_vector(0 to 31);
+
+      -- APU Components
+      apuReadFromPpc             : out ApuReadFromPpcVector(0 to 3);
+      apuReadToPpc               : in  ApuReadToPpcVector(0 to 3);
+      apuWriteFromPpc            : out ApuWriteFromPpcVector(0 to 3);
+      apuWriteToPpc              : in  ApuWriteToPpcVector(0 to 3);
+      apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 15);
+      apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 15);
+      apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 15);
 
       -- I2C
       modScl                     : inout std_logic;
@@ -90,6 +101,7 @@ architecture structure of Ppc440RceG2 is
    signal intClk200MhzAdj              : std_logic;
    signal intClk312_5Mhz               : std_logic;
    signal intClk468_75Mhz              : std_logic;
+   signal intClk234_375MhzAdj          : std_logic;
    signal intClk312_5MhzAdjRst         : std_logic;
    signal intClk312_5Mhz90DegAdjRst    : std_logic;
    signal intClk156_25MhzAdjRst        : std_logic;
@@ -97,6 +109,7 @@ architecture structure of Ppc440RceG2 is
    signal intClk200MhzAdjRst           : std_logic;
    signal intClk312_5MhzRst            : std_logic;
    signal intClk468_75MhzRst           : std_logic;
+   signal intClk234_375MhzAdjRst       : std_logic;
    signal iicClkO                      : std_logic;
    signal iicClkI                      : std_logic;
    signal iicClkT                      : std_logic; 
@@ -135,8 +148,15 @@ architecture structure of Ppc440RceG2 is
    signal apuFcmRaData                 : std_logic_vector(0 to 31);
    signal apuFcmRbData                 : std_logic_vector(0 to 31);
    signal apuFcmWriteBackOk            : std_logic;
-   signal iapuFromPpc                  : ApuFromPpcVector(0 to ApuCount-1);
-   signal iapuToPpc                    : ApuToPpcVector(0 to ApuCount-1);
+   signal iapuReadFromPpc              : ApuReadFromPpcVector(0 to 7);
+   signal iapuReadToPpc                : ApuReadToPpcVector(0 to 7);
+   signal iapuWriteFromPpc             : ApuWriteFromPpcVector(0 to 7);
+   signal iapuWriteToPpc               : ApuWriteToPpcVector(0 to 7);
+   signal iapuLoadFromPpc              : ApuLoadFromPpcVector(0 to 31);
+   signal iapuStoreFromPpc             : ApuStoreFromPpcVector(0 to 31);
+   signal iapuStoreToPpc               : ApuStoreToPpcVector(0 to 31);
+   signal apuReadStatus                : std_logic_vector(0 to 31);
+   signal apuWriteStatus               : std_logic_vector(0 to 31);
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -152,6 +172,17 @@ begin
    cpuClk156_25MhzRst         <= intClk156_25MhzAdjRst;
    cpuClk200Mhz               <= intClk200MhzAdj;
    cpuClk200MhzRst            <= intClk200MhzAdjRst;
+   cpuClk234_375Mhz           <= intClk234_375MhzAdj;
+   cpuClk234_375MhzRst        <= intClk234_375MhzAdjRst;
+
+   -- External APU interfaces
+   apuReadFromPpc          <= iapuReadFromPpc(0 to 3);
+   iapuReadToPpc(0 to 3)   <= apuReadToPpc;
+   apuWriteFromPpc         <= iapuWriteFromPpc(0 to 3);
+   iapuWriteToPpc(0 to 3)  <= apuWriteToPpc;
+   apuLoadFromPpc          <= iapuLoadFromPpc(0 to 15);
+   apuStoreFromPpc         <= iapuStoreFromPpc(0 to 15);
+   iapuStoreToPpc(0 to 15) <= apuStoreToPpc;
 
    ----------------------------------------------------------------------------
    -- Instantiate PPC440 Processor Block Primitive
@@ -165,23 +196,46 @@ begin
          XBAR_ADDRMAP_TMPL3    => x"00000000",
          INTERCONNECT_TMPL_SEL => x"3FFFFFFF",
          CLOCK_DELAY           => TRUE,
-         APU_CONTROL           => B"10010000000100001",
-         APU_UDI0              => x"C07501", -- UDI0 I2C slave read
-         APU_UDI1              => x"C47601", -- UDI1 I2C slave write
-         APU_UDI2              => x"C86581", -- UDI2 I2C with CR0
-         APU_UDI3              => x"000000",
-         APU_UDI4              => x"000000",
-         APU_UDI5              => x"000000",
-         APU_UDI6              => x"000000",
-         APU_UDI7              => x"000000",
-         APU_UDI8              => x"000000",
-         APU_UDI9              => x"000000",
-         APU_UDI10             => x"000000",
-         APU_UDI11             => x"000000",
-         APU_UDI12             => x"000000",
-         APU_UDI13             => x"000000",
-         APU_UDI14             => x"000000",
-         APU_UDI15             => x"000000",
+         APU_CONTROL           => B"00010000000100001",
+
+--LD/ST Decode Disable               5 0     0
+--UDI Decode Disable                 6 1     0
+--Force UDI Non-auton, late confirm  7 2     0
+--FPU Decode Disable                 8 3     1
+
+--FPU Complex Arith. Disable         9 4     0
+--FPU Convert Disable               10 5     0
+--FPU Estimate/Select Disable       11 6     0
+--FPU Single Precision Disable      12 7     0
+
+--FPU Double Precision Disable      13 8     0
+--FPU FPSCR Disable                 14 9     0
+--Force FPU Non-auton, late confirm 15 10    0
+--Store WriteBack OK                16 11    1
+
+--Ld/St Priv. Op                    17 12    0
+--Force Align                       20 13    0
+--LE Trap                           21 14    0
+--BE Trap                           22 15    0
+
+--FCM Enable                        31 16    1
+
+         APU_UDI0              => x"C06781", -- UDI0  read, cr en, non-auto, early confirm
+         APU_UDI1              => x"C47609", -- UDI1  write, autonomous
+         APU_UDI2              => x"C86781", -- UDI2  read, cr en, non-auto, early confirm
+         APU_UDI3              => x"CC7609", -- UDI3  write, autonomous
+         APU_UDI4              => x"D06781", -- UDI4  read, cr en, non-auto, early confirm
+         APU_UDI5              => x"D47609", -- UDI5  write, autonomous
+         APU_UDI6              => x"D86781", -- UDI6  read, cr en, non-auto, early confirm
+         APU_UDI7              => x"DC7609", -- UDI7  write, autonomous
+         APU_UDI8              => x"E06781", -- UDI8  read, cr en, non-auto, early confirm
+         APU_UDI9              => x"E47609", -- UDI9  write, autonomous
+         APU_UDI10             => x"E86781", -- UDI10 read, cr en, non-auto, early confirm
+         APU_UDI11             => x"EC7609", -- UDI11 write, autonomous
+         APU_UDI12             => x"F06781", -- UDI12 read, cr en, non-auto, early confirm
+         APU_UDI13             => x"F47609", -- UDI13 write, autonomous
+         APU_UDI14             => x"F86781", -- UDI14 read, cr en, non-auto, early confirm
+         APU_UDI15             => x"FC7609", -- UDI15 write, autonomous
          MI_ROWCONFLICT_MASK   => X"00FFFE00",
          MI_BANKCONFLICT_MASK  => X"07000000",
          MI_ARBCONFIG          => X"00432010",
@@ -398,7 +452,7 @@ begin
          PPCCPMINTERCONNECTBUSY      => open,
          CPMC440CLK                  => intClk468_75Mhz,
          CPMDCRCLK                   => intClk156_25MhzAdj,
-         CPMFCMCLK                   => intClk156_25MhzAdj,
+         CPMFCMCLK                   => intClk234_375MhzAdj,
          CPMMCCLK                    => intClk312_5MhzAdj,
          CPMPPCS1PLBCLK              => '1',
          CPMPPCS0PLBCLK              => '1',
@@ -632,6 +686,7 @@ begin
       cpuClk312_5Mhz90DegAdj     => intClk312_5Mhz90DegAdj,
       cpuClk156_25MhzAdj         => intClk156_25MhzAdj,
       cpuClk468_75Mhz            => intClk468_75Mhz,
+      cpuClk234_375MhzAdj        => intClk234_375MhzAdj,
       cpuClk200MhzAdj            => intClk200MhzAdj,
       cpuClk312_5MhzRst          => intClk312_5MhzRst,
       cpuClk312_5MhzAdjRst       => intClk312_5MhzAdjRst,
@@ -639,6 +694,7 @@ begin
       cpuClk156_25MhzAdjRst      => intClk156_25MhzAdjRst,
       cpuClk156_25MhzAdjRstPon   => intClk156_25MhzAdjRstPon,
       cpuClk468_75MhzRst         => intClk468_75MhzRst,
+      cpuClk234_375MhzAdjRst     => intClk234_375MhzAdjRst,
       cpuClk200MhzAdjRst         => intClk200MhzAdjRst,
       cpuRstCore                 => cpuRstCore,
       cpuRstChip                 => cpuRstChip,
@@ -652,21 +708,23 @@ begin
    -- I2C Slave
    ----------------------------------------------------------------------------
    U_Ppc440RceG2I2c : Ppc440RceG2I2c port map (
-      rst_i       => intClk156_25MhzAdjRstPon,
-      rst_o       => resetReq,
-      interrupt   => extIrq,
-      clk32       => intClk156_25MhzAdj,
-      fcm_clk     => intClk156_25MhzAdj,
-      apuFromPpc  => iapuFromPpc(0),
-      apuToPpc    => iapuToPpc(0),
-      iic_addr    => "1001001",
-      iic_clki    => iicClkI,
-      iic_clko    => iicClkO,
-      iic_clkt    => iicClkT,
-      iic_datai   => iicDataI,
-      iic_datao   => iicDataO,
-      iic_datat   => iicDataT,
-      debug       => open 
+      rst_i           => intClk156_25MhzAdjRstPon,
+      rst_o           => resetReq,
+      interrupt       => extIrq,
+      clk32           => intClk156_25MhzAdj,
+      apuClk          => intClk234_375MhzAdj,
+      apuWriteFromPpc => iapuWriteFromPpc(7),
+      apuWriteToPpc   => iapuWriteToPpc(7),
+      apuReadFromPpc  => iapuReadFromPpc(7),
+      apuReadToPpc    => iapuReadToPpc(7),
+      iic_addr        => "1001001",
+      iic_clki        => iicClkI,
+      iic_clko        => iicClkO,
+      iic_clkt        => iicClkT,
+      iic_datai       => iicDataI,
+      iic_datao       => iicDataO,
+      iic_datat       => iicDataT,
+      debug           => open 
    );
 
    U_I2cScl : IOBUF port map ( IO => modScl,
@@ -683,8 +741,8 @@ begin
    -- APU Interface
    ----------------------------------------------------------------------------
    U_Ppc440RceG2Apu : Ppc440RceG2Apu port map (
-      apuClk                => intClk156_25MhzAdj,
-      apuClkRst             => intClk156_25MhzAdjRst,
+      apuClk                => intClk234_375MhzAdj,
+      apuClkRst             => intClk234_375MhzAdjRst,
       fcmApuConfirmInstr    => fcmApuConfirmInstr,
       fcmApuCr              => fcmApuCr,
       fcmApuDone            => fcmApuDone,
@@ -715,9 +773,21 @@ begin
       apuFcmRaData          => apuFcmRaData,
       apuFcmRbData          => apuFcmRbData,
       apuFcmWriteBackOk     => apuFcmWriteBackOk,
-      apuFromPpc            => iapuFromPpc,
-      apuToPpc              => iapuToPpc
+      apuReadFromPpc        => iapuReadFromPpc,
+      apuReadToPpc          => iapuReadToPpc,
+      apuWriteFromPpc       => iapuWriteFromPpc,
+      apuWriteToPpc         => iapuWriteToPpc,
+      apuLoadFromPpc        => iapuLoadFromPpc,
+      apuStoreFromPpc       => iapuStoreFromPpc,
+      apuStoreToPpc         => iapuStoreToPpc,
+      apuReadStatus         => apuReadStatus,
+      apuWriteStatus        => apuWriteStatus
    );
+
+   -- Unused APU interfaces
+   iapuReadToPpc(4 to 6)    <= (others=>ApuReadToPpcInit);
+   iapuWriteToPpc(4 to 6)   <= (others=>ApuWriteToPpcInit);
+   iapuStoreToPpc(16 to 31) <= (others=>ApuStoreToPpcInit);
 
 end architecture structure;
 

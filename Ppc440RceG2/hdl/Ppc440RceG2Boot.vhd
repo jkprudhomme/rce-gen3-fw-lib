@@ -128,8 +128,8 @@ begin
    end process;
 
    -- ASync state logic
-   process (curState, ppcMplbAbus, ppcMplbBe, ppcMplbRequest, bramDoutA, readVersion,
-            ppcMplbRnW, ppcMplbSize, ppcMplbWrDBus, stateCount, saveBe ) begin
+   process (curState, ppcMplbAbus, ppcMplbBe, ppcMplbRequest, bramDoutA, readVersion, bramAddrA, 
+            intPpcmRdWdAddr, bramDinA, ppcMplbRnW, ppcMplbSize, ppcMplbWrDBus, stateCount, saveBe ) begin
 
       case curState is 
 

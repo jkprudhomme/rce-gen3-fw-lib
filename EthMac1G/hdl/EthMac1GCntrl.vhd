@@ -29,10 +29,10 @@ entity EthMac1GCntrl is
       emacTxData         : out std_logic_vector(7  downto 0);
       emacTxValid        : out std_logic;
       emacTxAck          : in  std_logic;
-      emacTxFirst        : out std_logic
+      emacTxFirst        : out std_logic;
 
       -- Command FIFO
-      cmdFifoData        : in  std_logic_vector(63 downto 0);
+      cmdFifoData        : in  std_logic_vector(31 downto 0);
       cmdFifoWr          : in  std_logic;
       cmdFifoFull        : out std_logic;
       cmdFifoAlmostFull  : out std_logic;
@@ -50,7 +50,7 @@ entity EthMac1GCntrl is
       txFifoAlmostFull   : out std_logic;
 
       -- Receive data FIFO
-      rxFifoData         : out std_logic_vector(31 downto 0);
+      rxFifoData         : out std_logic_vector(63 downto 0);
       rxFifoRd           : in  std_logic;
       rxFifoEmpty        : out std_logic;
       rxFifoAlmostEmpty  : out std_logic
@@ -60,54 +60,6 @@ end EthMac1GCntrl;
 
 -- Define architecture
 architecture EthMac1GCntrl of EthMac1GCntrl is
-
-  COMPONENT EthMac1G_afifo_64x2048_fwft
-    PORT (
-      rst : IN STD_LOGIC;
-      wr_clk : IN STD_LOGIC;
-      rd_clk : IN STD_LOGIC;
-      din : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
-      wr_en : IN STD_LOGIC;
-      rd_en : IN STD_LOGIC;
-      dout : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
-      full : OUT STD_LOGIC;
-      almost_full : OUT STD_LOGIC;
-      empty : OUT STD_LOGIC;
-      almost_empty : OUT STD_LOGIC
-    );
-  END COMPONENT;
-
-  COMPONENT EthMac1G_afifo_64x512_fwft
-    PORT (
-      rst : IN STD_LOGIC;
-      wr_clk : IN STD_LOGIC;
-      rd_clk : IN STD_LOGIC;
-      din : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
-      wr_en : IN STD_LOGIC;
-      rd_en : IN STD_LOGIC;
-      dout : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
-      full : OUT STD_LOGIC;
-      almost_full : OUT STD_LOGIC;
-      empty : OUT STD_LOGIC;
-      almost_empty : OUT STD_LOGIC
-    );
-  END COMPONENT;
-
-  COMPONENT EthMac1G_afifo_32x16384_fwft
-    PORT (
-      rst : IN STD_LOGIC;
-      wr_clk : IN STD_LOGIC;
-      rd_clk : IN STD_LOGIC;
-      din : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-      wr_en : IN STD_LOGIC;
-      rd_en : IN STD_LOGIC;
-      dout : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
-      full : OUT STD_LOGIC;
-      almost_full : OUT STD_LOGIC;
-      empty : OUT STD_LOGIC;
-      almost_empty : OUT STD_LOGIC
-    );
-  END COMPONENT;
 
   COMPONENT EthMac1G_afifo_32x1024_fwft
     PORT (
@@ -125,14 +77,46 @@ architecture EthMac1GCntrl of EthMac1GCntrl is
     );
   END COMPONENT;
 
+  COMPONENT EthMac1G_afifo_64x2048_fwft
+    PORT (
+      rst : IN STD_LOGIC;
+      wr_clk : IN STD_LOGIC;
+      rd_clk : IN STD_LOGIC;
+      din : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+      wr_en : IN STD_LOGIC;
+      rd_en : IN STD_LOGIC;
+      dout : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+      full : OUT STD_LOGIC;
+      almost_full : OUT STD_LOGIC;
+      empty : OUT STD_LOGIC;
+      almost_empty : OUT STD_LOGIC
+    );
+  END COMPONENT;
+
+  COMPONENT EthMac1G_afifo_64x8192_fwft
+    PORT (
+      rst : IN STD_LOGIC;
+      wr_clk : IN STD_LOGIC;
+      rd_clk : IN STD_LOGIC;
+      din : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+      wr_en : IN STD_LOGIC;
+      rd_en : IN STD_LOGIC;
+      dout : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+      full : OUT STD_LOGIC;
+      almost_full : OUT STD_LOGIC;
+      empty : OUT STD_LOGIC;
+      almost_empty : OUT STD_LOGIC
+    );
+  END COMPONENT;
+
    -- Local signals
    signal txFifoRd       : std_logic;
    signal txFifoDout     : std_logic_vector(63 downto 0);
    signal cmdFifoRd      : std_logic;
    signal cmdFifoEmpty   : std_logic;
-   signal cmdFifoDout    : std_logic_vector(63 downto 0);
+   signal cmdFifoDout    : std_logic_vector(31 downto 0);
    signal rxFifoWr       : std_logic;
-   signal rxFifoDin      : std_logic_vector(31 downto 0);
+   signal rxFifoDin      : std_logic_vector(63 downto 0);
    signal resFifoWr      : std_logic;
    signal resFifoDin     : std_logic_vector(31 downto 0);
    signal txLength       : std_logic_vector(15 downto 0);
@@ -163,7 +147,6 @@ architecture EthMac1GCntrl of EthMac1GCntrl is
 
 begin     
 
-
    -----------------------------------------
    ---- Transmit Control
    -----------------------------------------
@@ -171,7 +154,6 @@ begin
    --   15:0  = Transmit length 
    --   27:16 = Sequence Number
    --   31:28 = OpCode 5 = Transmit
-   --   63:32 = Zeros
 
    -- Transmit FIFO
    U_TxFifo : EthMac1G_afifo_64x2048_fwft
@@ -190,7 +172,7 @@ begin
       );
 
    -- Cmd FIFO
-   U_CmdFifo : EthMac1G_afifo_64x512_fwft
+   U_CmdFifo : EthMac1G_afifo_32x1024_fwft
       PORT MAP (
          rst          => sysClkRst,
          wr_clk       => sysClk,
@@ -202,7 +184,7 @@ begin
          full         => cmdFifoFull,
          almost_full  => cmdFifoAlmostFull,
          empty        => cmdFifoEmpty,
-         almost_empty => open,
+         almost_empty => open
       );
 
    -- Sync state logic
@@ -226,7 +208,7 @@ begin
          if cmdFifoRd = '1' then
             txLength     <= cmdFifoDout(15 downto  0) after tpd;
             txSequence   <= cmdFifoDout(27 downto 16) after tpd;
-            txOpCode     <= cmdFifoDout(31 downto  0) after tpd;
+            txOpCode     <= cmdFifoDout(31 downto 28) after tpd;
          end if;
 
          -- State
@@ -246,7 +228,7 @@ begin
                  txFifoData(7  downto  0);
 
    -- ASync state logic
-   process ( curTxState, emacTxAck, cmdFifoEmpty, txOpCode, txCount, txRespAck ) begin
+   process ( curTxState, emacTxAck, cmdFifoEmpty, txOpCode, txCount, txRespAck, txLength ) begin
       case ( curTxState ) is
      
          -- Idle 
@@ -290,7 +272,7 @@ begin
             if txOpCode = 5 then
                nxtTxState <= ST_TX_REQ;
             else
-               nxtTxState <= ST_TX_ACK;
+               nxtTxState <= ST_TX_RESP;
             end if;
 
          -- Send first byte
@@ -319,9 +301,9 @@ begin
             txRespReq   <= '0';
 
             -- We just sent the last byte
-            if txCount = txLength
+            if txCount = txLength then
                emacTxValid <= '0';
-               nxtTxState  <= ST_TX_ACK;
+               nxtTxState  <= ST_TX_RESP;
 
                -- Don't read if we just read from FIFO
                if txCount(2 downto 0) = "000" then
@@ -379,7 +361,7 @@ begin
    --   31:28 = OpCode 7 = Receive Ok, 6 = Receive Bad, 5 = Tx Ack
 
    -- Rx FIFO
-   U_RxFifo : EthMac1G_afifo_32x16384_fwft
+   U_RxFifo : EthMac1G_afifo_64x8192_fwft
       PORT MAP (
          rst          => sysClkRst,
          wr_clk       => gtxClk,
@@ -416,7 +398,7 @@ begin
       if gtxClkRst = '1' then
          rxCount        <= (others=>'0') after tpd;
          rxFifoWr       <= '0'           after tpd;
-         rxFifoData     <= '0'           after tpd;
+         rxFifoDin      <= (others=>'0') after tpd;
          emacRxValidReg <= '0'           after tpd;
       elsif rising_edge(gtxClk) then
 
@@ -431,21 +413,25 @@ begin
          end if;
 
          -- Mux data
-         case rxCount(1 downto 0) is
-            when "00"   => rxFifoData(31 downto 24) <= emacRxData    after tpd;
-            when "01"   => rxFifoData(23 downto 16) <= emacRxData    after tpd;
-            when "10"   => rxFifoData(15 downto  8) <= emacRxData    after tpd;
-            when "11"   => rxFifoData(7  downto  0) <= emacRxData    after tpd;
-            when others => rxFifoData               <= (others=>'0') after tpd;
+         case rxCount(2 downto 0) is
+            when "000"   => rxFifoDin(63 downto 56) <= emacRxData    after tpd;
+            when "001"   => rxFifoDin(55 downto 48) <= emacRxData    after tpd;
+            when "010"   => rxFifoDin(47 downto 40) <= emacRxData    after tpd;
+            when "011"   => rxFifoDin(39 downto 32) <= emacRxData    after tpd;
+            when "100"   => rxFifoDin(31 downto 24) <= emacRxData    after tpd;
+            when "101"   => rxFifoDin(23 downto 16) <= emacRxData    after tpd;
+            when "110"   => rxFifoDin(15 downto  8) <= emacRxData    after tpd;
+            when "111"   => rxFifoDin(7  downto  0) <= emacRxData    after tpd;
+            when others  => rxFifoDin               <= (others=>'0') after tpd;
          end case;
 
          -- Control writes
-         if emacRxValid = '1' and rxCount(1 downto 0) = "11" then
-            rxFifoWr <= '1' 
-         elsif emacRxValid = '0' and emacRxValidReg = '1' and rxCount(1 downto 0) /= "00" then
-            rxFifoWr <= '1' 
+         if emacRxValid = '1' and rxCount(2 downto 0) = "111" then
+            rxFifoWr <= '1';
+         elsif emacRxValid = '0' and emacRxValidReg = '1' and rxCount(2 downto 0) /= "000" then
+            rxFifoWr <= '1';
          else
-            rxFifoWr <= '0' 
+            rxFifoWr <= '0';
          end if;
 
       end if;
@@ -455,14 +441,14 @@ begin
    process (gtxClk, gtxClkRst ) begin
       if gtxClkRst = '1' then
          resFifoWr      <= '0'           after tpd;
-         resFifoData    <= '0'           after tpd;
+         resFifoDin     <= (others=>'0') after tpd;
          rxCountRst     <= '0'           after tpd;
          rxFrameCnt     <= (others=>'0') after tpd;
          txRespAck      <= '0'           after tpd;
       elsif rising_edge(gtxClk) then
 
          -- Counter
-         if emacRxGoodFrame = '1' or emcRxBadFrame = '1' then
+         if emacRxGoodFrame = '1' or emacRxBadFrame = '1' then
             rxFrameCnt <= rxFrameCnt + 1 after tpd;
             rxCountRst <= '1'            after tpd;
          else
@@ -473,7 +459,7 @@ begin
          if emacRxGoodFrame = '1' then
             resFifoDin(31 downto 28) <= "0111"     after tpd;
             resFifoDin(27 downto 16) <= rxFrameCnt after tpd;
-            resFifoDin(15 downto  9) <= rxCount    after tpd;
+            resFifoDin(15 downto  0) <= rxCount    after tpd;
             resFifoWr                <= '1'        after tpd;
             txRespAck                <= '0'        after tpd;
 
@@ -481,7 +467,7 @@ begin
          elsif emacRxBadFrame = '1' then
             resFifoDin(31 downto 28) <= "0110"     after tpd;
             resFifoDin(27 downto 16) <= rxFrameCnt after tpd;
-            resFifoDin(15 downto  9) <= rxCount    after tpd;
+            resFifoDin(15 downto  0) <= rxCount    after tpd;
             resFifoWr                <= '1'        after tpd;
             txRespAck                <= '0'        after tpd;
 
@@ -489,7 +475,7 @@ begin
          elsif txRespReq = '1' and txRespAck = '0' then
             resFifoDin(31 downto 28) <= txOpCode   after tpd;
             resFifoDin(27 downto 16) <= txSequence after tpd;
-            resFifoDin(15 downto  9) <= txLength   after tpd;
+            resFifoDin(15 downto  0) <= txLength   after tpd;
             resFifoWr                <= '1'        after tpd;
             txRespAck                <= '1'        after tpd;
          
