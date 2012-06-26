@@ -403,8 +403,8 @@ begin
     port map 
     (
         ------------------------ Loopback and Powerdown Ports ----------------------
-        LOOPBACK0(0)                    =>      emacLoopback,
-        LOOPBACK0(1)                    =>      '0',
+        LOOPBACK0(0)                    =>      '0',
+        LOOPBACK0(1)                    =>      '1',
         LOOPBACK0(2)                    =>      '0',
         LOOPBACK1                       =>      "000",
         RXPOWERDOWN0(1)                 =>      emacPowerDown,

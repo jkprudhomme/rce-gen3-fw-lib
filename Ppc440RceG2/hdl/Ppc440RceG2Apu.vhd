@@ -1,4 +1,20 @@
-
+-- UDI Command Mapping:
+-- read  port 0 = APU_udi0fcm
+-- write port 0 = APU_udi1fcm
+-- read  port 1 = APU_udi2fcm
+-- write port 1 = APU_udi3fcm
+-- read  port 2 = APU_udi4fcm
+-- write port 2 = APU_udi5fcm
+-- read  port 3 = APU_udi6fcm
+-- write port 3 = APU_udi7fcm
+-- read  port 4 = APU_udi8fcm
+-- write port 4 = APU_udi9fcm
+-- read  port 5 = APU_udi10fcm
+-- write port 5 = APU_udi11fcm
+-- read  port 6 = APU_udi12fcm
+-- write port 6 = APU_udi13fcm
+-- read  port 7 = APU_udi14fcm
+-- write port 7 = APU_udi15fcm
 
 library ieee;
 use ieee.std_logic_1164.all;
