@@ -72,13 +72,12 @@ module usr_rd #
    parameter integer DQS_WIDTH      = 2,
    parameter integer READ_DATA_PIPELINE = 1,
    parameter integer APPDATA_WIDTH  = 128,
-   parameter integer ECC_ENABLE     = 0
+   parameter integer ECC_ENABLE     = 1
    )   
   (
    input                               clk90,
    input                               clk0,
    input                               rst90,
-   input                               rst270,
    input                               rst0,
    input [(DQS_WIDTH*DQ_PER_DQS)-1:0]  rd_data_in_rise,
    input [(DQS_WIDTH*DQ_PER_DQS)-1:0]  rd_data_in_fall,
@@ -298,7 +297,7 @@ endgenerate
 
 
 always@(negedge clk90) begin  
-    if (rst270)
+    if (rst0)
       rmw_rden_r0 <= #TCQ 1'b0;
     else if (ctrl_rmw_data_sel)
       rmw_rden_r0 <= #TCQ data_valid;

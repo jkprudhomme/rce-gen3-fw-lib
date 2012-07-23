@@ -76,7 +76,6 @@ module usr_wr #
    input                                     clk0,
    input                                     clk90,
    input                                     rst90,
-   input                                     rst270,
    // Write data FIFO interface
    input                                     app_wdf_wren,
    input [APPDATA_WIDTH-1:0]                 app_wdf_data,

@@ -76,7 +76,7 @@ module usr_top #
    parameter integer DQS_WIDTH      = 2,
    parameter integer ROW_WIDTH      = 13,
    parameter integer READ_DATA_PIPELINE = 0,
-   parameter integer ECC_ENABLE     = 0,
+   parameter integer ECC_ENABLE     = 1,
    parameter integer APPDATA_WIDTH  = 128,
    parameter integer EN_WIDTH         = 16,
    parameter integer SIM_ONLY         =1
@@ -86,7 +86,6 @@ module usr_top #
    input                                     clk90,
    input                                     rst0,
    input                                     rst90,
-   input                                     rst270,
    input [(DQS_WIDTH*DQ_PER_DQS)-1:0]        rd_data_in_rise,
    input [(DQS_WIDTH*DQ_PER_DQS)-1:0]        rd_data_in_fall,
    input [DQS_WIDTH-1:0]                     phy_calib_rden,
@@ -114,7 +113,6 @@ module usr_top #
   
   reg 		      rst0_r;
   reg 		      rst90_r;
-  reg 		      rst270_r;
   reg 		      wdf_rden_r;
   reg 		      rmw_state_flag270;
   reg 		      rmw_state_flag90;
@@ -160,7 +158,7 @@ module usr_top #
   generate
   if (ECC_ENABLE) begin
     always @ (negedge clk90) begin
-      if (rst270_r || ~rmw_flag_r)
+      if (rst0_r || ~rmw_flag_r)
 	rmw_flag270_r <= #TCQ 1'd0;
       else if (rmw_wr_flag)
         rmw_flag270_r <= #TCQ rmw_flag_r;
@@ -196,10 +194,6 @@ module usr_top #
   end
 
   always @ (negedge clk90) begin
-      rst270_r <= #TCQ rst270;
-  end
-
-  always @ (negedge clk90) begin
     rmw_state_flag270  <= #TCQ rmw_state_flag;
     rmw_state2_flag270 <= #TCQ rmw_state2_flag;     
   end
@@ -229,7 +223,6 @@ module usr_top #
        .clk90            (clk90),
        .clk0             (clk0),
        .rst90            (rst90_r),
-       .rst270           (rst270_r),
        .rst0             (rst0_r),
        .rd_data_in_rise  (rd_data_in_rise),
        .rd_data_in_fall  (rd_data_in_fall),
@@ -267,7 +260,6 @@ module usr_top #
        .clk0              (clk0),
        .clk90             (clk90),
        .rst90             (rst90_r),
-       .rst270            (rst270_r),
        .app_wdf_wren      (app_wdf_wren),
        .app_wdf_data      (i_app_wdf_data),
        .app_wdf_mask_data (i_app_wdf_mask_data),

@@ -68,7 +68,7 @@
 `timescale 1ns/1ps
 
 module usr_wr_fifo #
-   (parameter integer ECC_ENABLE    = 0,
+   (parameter integer ECC_ENABLE    = 1,
     parameter integer SIM_ONLY      = 1
    )
   (
@@ -89,17 +89,11 @@ module usr_wr_fifo #
   wire [7:0]      wdf_parity_out;
   wire            i_wdf_wren;
 
-  wire		  i_wr_fifo_empty;
-  wire		  wdf_empty;
-  
-
    
    
 
   //***************************************************************************
   
-  assign wdf_empty = i_wr_fifo_empty;
-
   assign i_wdf_wren = app_wdf_wren;
   assign i_wdf_data_in = app_wdf_data;
   assign i_wdf_mask_data_in = app_wdf_mask_data;
@@ -169,7 +163,7 @@ module usr_wr_fifo #
     end
     for (mask_i = 0; mask_i < 8; mask_i = mask_i+1) begin : mask_block
       assign tmp_mask_in[mask_i] = i_wdf_mask_data_in[mask_i];
-      assign wdf_mask_data[mask_i] = tmp_mask_out[mask_i] && ~wdf_empty;
+      assign wdf_mask_data[mask_i] = tmp_mask_out[mask_i];
     end
 
   
@@ -191,7 +185,7 @@ module usr_wr_fifo #
        .DO          (tmp_data_out),
        .DOP         (tmp_mask_out),
        .ECCPARITY   (),
-       .EMPTY       (i_wr_fifo_empty),
+       .EMPTY       (),
        .FULL        (),
        .RDCOUNT     (),
        .RDERR       (),
