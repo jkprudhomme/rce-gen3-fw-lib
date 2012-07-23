@@ -82,7 +82,6 @@ module u_ctrl #
    parameter BURST_LEN     = 4,
    parameter CAS_LAT       = 5,
    parameter ECC_ENABLE    = 0,
-   parameter SIM_ONLY      = 1,
    parameter MIB_CLK_RATIO = 2,
    parameter TREFI_NS      = 7800,
    parameter TRAS          = 40000,
@@ -96,9 +95,7 @@ module u_ctrl #
    )
   (
    input                   clk,
-   input                   clk90,
    input                   rst,
-   input                   rst270,
    input                   phy_init_done,
    input                   mi_mcwritedatavalid,
    input                   mi_mc_add_val,
@@ -150,7 +147,7 @@ module u_ctrl #
   localparam CMP_CS_RANGE_END     = CS_BITS + CMP_CS_RANGE_START - 1;
 
   localparam BURST_LEN_DIV2      = BURST_LEN / 2;
-  localparam OPEN_BANK_NUM       = 8;
+  localparam OPEN_BANK_NUM       = 4;
 
   // calculation counters based on clock cycle and memory parameters
   // TRAS: ACTIVE->PRECHARGE interval - 2
@@ -221,7 +218,6 @@ module u_ctrl #
    
 
   reg 			                   rst_r;
-  reg 			                   rst270_r;
   reg                                      rst_180r;
   wire [(CS_BITS+BANK_WIDTH)-1:0]          af_addr_bank_cmp;
   reg [30:0]                               af_addr_r;
@@ -233,8 +229,7 @@ module u_ctrl #
   reg                                      auto_ref_r2;
   reg                                      auto_ref_r3;
   reg                                      auto_ref_r4;
-  reg                                      auto_ref_r5;
-  reg                                      auto_ref_t;
+  reg                                      auto_ref_r5; 
   reg                                      bank_conf;
   reg                                      bank_conf_r;
   reg [(OPEN_BANK_NUM*CMP_WIDTH)-1:0]      bank_cmp_addr_r
@@ -305,7 +300,6 @@ module u_ctrl #
   reg [35:0]                               mi_mc_add_c_r;
   reg [35:0] 				   mi_mc_add_c_r1;
   reg [35:0] 				   mi_mc_add_c_r2;
-  reg [35:0] 				   mi_mc_add_c_r3;
   reg [4:0]                                next_state;
   reg                                      no_precharge_r;
   reg                                      no_precharge_wait_r;
@@ -334,8 +328,6 @@ module u_ctrl #
   reg 					   rtp_ok_r;
   reg [4:0]                                state_r;
   reg [4:0]                                state_r1;
-  reg [2:0]                                two_t_enable_r;
-  reg [CS_NUM-1:0]                         two_t_enable_r1;
   reg [2:0]                                wrburst_cnt_r;
   reg 					   wrburst_ok_r;
   wire                                     wr_flag;
@@ -374,15 +366,11 @@ module u_ctrl #
       rst_180r <= #TCQ rst;
     end
    
-    always @ (negedge clk90) begin
-      rst270_r <= #TCQ rst270;
-    end
-
   //*****************************************************************
   // register inputs from MIB
   //*****************************************************************
 
-   always @ (posedge clk or posedge rst_r) begin
+   always @ (posedge clk) begin
      if (rst_r) begin
          mi_mc_add_r       <= #TCQ {32{1'bx}};
          mi_mc_bank_conf_r <= #TCQ 1'bx;
@@ -435,14 +423,12 @@ module u_ctrl #
 
 // register inputs from MIB
 // register address outputs
-   always @ (posedge clk or posedge rst_r) begin
+   always @ (posedge clk) begin
      if (rst_r) begin
          mi_mc_add_val_r     <= #TCQ 1'd0;
          mi_mc_add_val_r1    <= #TCQ 1'd0;
          mi_mc_add_c_r       <= #TCQ 36'd0;
 	 mi_mc_add_c_r1      <= #TCQ 36'd0;
-	 mi_mc_add_c_r2      <= #TCQ 36'd0;
-	 mi_mc_add_c_r3      <= #TCQ 36'd0;
          mi_mc_bank_conf_c_r <= #TCQ 1'd0;
          mi_mc_rd_c_r        <= #TCQ 1'd0;
          mi_mc_wr_c_r        <= #TCQ 1'd0;
@@ -458,8 +444,6 @@ module u_ctrl #
          mi_mc_add_val_r1    <= #TCQ mi_mc_add_val_r;
          mi_mc_add_c_r       <= #TCQ mi_mc_add_c;
 	 mi_mc_add_c_r1      <= #TCQ mi_mc_add_c_r;
-	 mi_mc_add_c_r2      <= #TCQ mi_mc_add_c_r1;
-	 mi_mc_add_c_r3      <= #TCQ mi_mc_add_c_r2;
          mi_mc_bank_conf_c_r <= #TCQ mi_mc_bank_conf_c;
          mi_mc_rd_c_r        <= #TCQ mi_mc_rd_c;
          mi_mc_wr_c_r        <= #TCQ mi_mc_wr_c;
@@ -492,10 +476,12 @@ module u_ctrl #
          bank_i = bank_i + 1) begin: gen_bank_hit
       // asserted if bank address match + open bank entry is valid
       always @(posedge clk) begin
-        bank_hit_r[bank_i] <= #TCQ ((bank_cmp_addr_r[(CMP_WIDTH*(bank_i+1))-1:(CMP_WIDTH*bank_i)+ROW_WIDTH] == af_addr_bank_cmp) && bank_valid_r[bank_i]);
+        bank_hit_r[bank_i]
+          <= #TCQ ((bank_cmp_addr_r[(CMP_WIDTH*(bank_i+1))-1:(CMP_WIDTH*bank_i)+ROW_WIDTH] == af_addr_bank_cmp) && bank_valid_r[bank_i]);
         // asserted if row address match (no check for bank entry valid, rely
         // on this term to be used in conjunction with BANK_HIT[])
-        row_miss_r[bank_i] <= #TCQ (bank_cmp_addr_r[(CMP_WIDTH*bank_i)+ROW_WIDTH-1:(CMP_WIDTH*bank_i)] != af_addr_row_cmp);
+        row_miss_r[bank_i]
+          <= #TCQ (bank_cmp_addr_r[(CMP_WIDTH*bank_i)+ROW_WIDTH-1:(CMP_WIDTH*bank_i)] != af_addr_row_cmp);
         end
     end // block: gen_bank_hit
    endgenerate
@@ -503,8 +489,7 @@ module u_ctrl #
 
    always @(posedge clk) begin
       bank_hit_any_r       <= #TCQ | bank_hit_r;
-      no_precharge_wait_r  <= #TCQ bank_valid_r[7] & ~(|bank_hit_r);
-//      no_precharge_wait_r  <= #TCQ 1'b0;
+      no_precharge_wait_r  <= #TCQ bank_valid_r[3] & ~(|bank_hit_r);
       bank_conf_r          <= #TCQ bank_conf;
       conflict_detect_r    <= #TCQ mi_mc_bank_conf_c|| mi_mc_row_conf_c;
     end                        
@@ -518,42 +503,30 @@ module u_ctrl #
       // open bank list), but we don't need to wait at the end of that
       // precharge, because the next activate command will be to a
       // different bank
-      no_precharge_r = conflict_detect_r & ~bank_valid_r[7] & ~(|bank_hit_r);
-//      bank_conf      = conflict_detect_r;
+      no_precharge_r = conflict_detect_r & ~bank_valid_r[3] & ~(|bank_hit_r);
+      bank_conf      = conflict_detect_r;
       case ({conflict_detect_r, bank_hit_r})
-//        // 8 cases check cover case when we've already matched
-//        // banks. Now check to see if row matches as well. If not, then we
-//        // have a conflict - need to precharge, and kick out the old address.
-//        // Otherwise, if the row matches, we don't have a conflict, since
-//        // that bank/row is already open
-        9'b100000001:
+        // first four cases check cover case when we've already matched
+        // banks. Now check to see if row matches as well. If not, then we
+        // have a conflict - need to precharge, and kick out the old address.
+        // Otherwise, if the row matches, we don't have a conflict, since
+        // that bank/row is already open
+        5'b10001:
           bank_conf = row_miss_r[0];
-        9'b100000010:
+        5'b10010:
           bank_conf = row_miss_r[1];
-        9'b100000100:
+        5'b10100:
           bank_conf = row_miss_r[2];
-        9'b100001000:
+        5'b11000:
           bank_conf = row_miss_r[3];
-        9'b100010000:
-          bank_conf = row_miss_r[4];
-        9'b100100000:
-          bank_conf = row_miss_r[5];
-        9'b101000000:
-          bank_conf = row_miss_r[6];
-        9'b110000000:
-          bank_conf = row_miss_r[7];
-        default : bank_conf = conflict_detect_r;
       endcase
     end
 
       // synthesis attribute max_fanout of bank_cmp_addr_r is 1
-    always @(posedge clk or posedge rst_r) begin
+    always @(posedge clk) begin
       // Clear all bank valid bits during AR (i.e. since all banks get
       // precharged during auto-refresh)
-      if (rst_r) begin
-        bank_valid_r    <= #TCQ {(OPEN_BANK_NUM-1){1'b0}};
-        bank_cmp_addr_r <= #TCQ {(OPEN_BANK_NUM*CMP_WIDTH-1){1'b0}};
-      end else if (state_r1 == CTRL_AUTO_REFRESH) begin
+      if (rst_r || (state_r1 == CTRL_AUTO_REFRESH)) begin
         bank_valid_r    <= #TCQ {(OPEN_BANK_NUM-1){1'b0}};
         bank_cmp_addr_r <= #TCQ {(OPEN_BANK_NUM*CMP_WIDTH-1){1'b0}};
       end else begin
@@ -562,86 +535,35 @@ module u_ctrl #
           bank_cmp_addr_r[CMP_WIDTH-1:0] <= #TCQ mi_mc_add_c_r[CS_RANGE_END:ROW_RANGE_START];
           // This indicates the bank was activated
           bank_valid_r[0] <= #TCQ 1'b1;
+
           // Check to see where bank hit occurred, and handle new locations
           // of the various banks.
-          case({bank_hit_r[6:0]})
-                    7'b0000001:begin      
+
+          case({bank_hit_r[2:0]})
+                    3'b001:begin      
                        bank_cmp_addr_r[CMP_WIDTH-1:0] <= #TCQ mi_mc_add_c_r[CS_RANGE_END:ROW_RANGE_START];
                        // This indicates the bank was activated
                        bank_valid_r[0] <= #TCQ 1'b1;
                     end                    
-                    7'b0000010: begin //(b0->b1)
+                    3'b010: begin //(b0->b1)
                        bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH] <= #TCQ bank_cmp_addr_r[CMP_WIDTH-1:0];
                        bank_valid_r[1] <= #TCQ bank_valid_r[0];
                     end
-                    7'b0000100:begin //(b0->b1, b1->b2)
+                    3'b100:begin //(b0->b1, b1->b2)
                        bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH] <= #TCQ bank_cmp_addr_r[CMP_WIDTH-1:0];
                        bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH];
                        bank_valid_r[1] <= #TCQ bank_valid_r[0];
                        bank_valid_r[2] <= #TCQ bank_valid_r[1];
                     end
-                    7'b0001000:begin //(b0->b1, b1->b2, b2->b3)
+                    default: begin //(b0->b1, b1->b2, b2->b3)
                        bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH] <= #TCQ bank_cmp_addr_r[CMP_WIDTH-1:0];
                        bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH];
                        bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH];
                        bank_valid_r[1] <= #TCQ bank_valid_r[0];
                        bank_valid_r[2] <= #TCQ bank_valid_r[1];
                        bank_valid_r[3] <= #TCQ bank_valid_r[2];
-                    end
-                    7'b0010000:begin //(b0->b1, b1->b2, b2->b3, b3->b4)
-                       bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH] <= #TCQ bank_cmp_addr_r[CMP_WIDTH-1:0];
-                       bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH];
-                       bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH];
-                       bank_cmp_addr_r[(5*CMP_WIDTH)-1:4*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH];
-                       bank_valid_r[1] <= #TCQ bank_valid_r[0];
-                       bank_valid_r[2] <= #TCQ bank_valid_r[1];
-                       bank_valid_r[3] <= #TCQ bank_valid_r[2];
-                       bank_valid_r[4] <= #TCQ bank_valid_r[3];
-                    end
-                    7'b0100000:begin //(b0->b1, b1->b2, b2->b3, b3->b4, b4->b5)
-                       bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH] <= #TCQ bank_cmp_addr_r[CMP_WIDTH-1:0];
-                       bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH];
-                       bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH];
-                       bank_cmp_addr_r[(5*CMP_WIDTH)-1:4*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH];
-                       bank_cmp_addr_r[(6*CMP_WIDTH)-1:5*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(5*CMP_WIDTH)-1:4*CMP_WIDTH];
-                       bank_valid_r[1] <= #TCQ bank_valid_r[0];
-                       bank_valid_r[2] <= #TCQ bank_valid_r[1];
-                       bank_valid_r[3] <= #TCQ bank_valid_r[2];
-                       bank_valid_r[4] <= #TCQ bank_valid_r[3];
-                       bank_valid_r[5] <= #TCQ bank_valid_r[4];
-                    end
-                    7'b1000000:begin //(b0->b1, b1->b2, b2->b3, b3->b4, b4->b5, b5->b6)
-                       bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH] <= #TCQ bank_cmp_addr_r[CMP_WIDTH-1:0];
-                       bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH];
-                       bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH];
-                       bank_cmp_addr_r[(5*CMP_WIDTH)-1:4*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH];
-                       bank_cmp_addr_r[(6*CMP_WIDTH)-1:5*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(5*CMP_WIDTH)-1:4*CMP_WIDTH];
-                       bank_cmp_addr_r[(7*CMP_WIDTH)-1:6*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(6*CMP_WIDTH)-1:5*CMP_WIDTH];
-                       bank_valid_r[1] <= #TCQ bank_valid_r[0];
-                       bank_valid_r[2] <= #TCQ bank_valid_r[1];
-                       bank_valid_r[3] <= #TCQ bank_valid_r[2];
-                       bank_valid_r[4] <= #TCQ bank_valid_r[3];
-                       bank_valid_r[5] <= #TCQ bank_valid_r[4];
-                       bank_valid_r[6] <= #TCQ bank_valid_r[5];
-                    end
-                    default: begin //(b0->b1, b1->b2, b2->b3, b3->b4, b4->b5, b5->b6, b6->b7)
-                       bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH] <= #TCQ bank_cmp_addr_r[CMP_WIDTH-1:0];
-                       bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(2*CMP_WIDTH)-1:CMP_WIDTH];
-                       bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(3*CMP_WIDTH)-1:2*CMP_WIDTH];
-                       bank_cmp_addr_r[(5*CMP_WIDTH)-1:4*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(4*CMP_WIDTH)-1:3*CMP_WIDTH];
-                       bank_cmp_addr_r[(6*CMP_WIDTH)-1:5*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(5*CMP_WIDTH)-1:4*CMP_WIDTH];
-                       bank_cmp_addr_r[(7*CMP_WIDTH)-1:6*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(6*CMP_WIDTH)-1:5*CMP_WIDTH];
-                       bank_cmp_addr_r[(8*CMP_WIDTH)-1:7*CMP_WIDTH] <= #TCQ bank_cmp_addr_r[(7*CMP_WIDTH)-1:6*CMP_WIDTH];
-                       bank_valid_r[1] <= #TCQ bank_valid_r[0];
-                       bank_valid_r[2] <= #TCQ bank_valid_r[1];
-                       bank_valid_r[3] <= #TCQ bank_valid_r[2];
-                       bank_valid_r[4] <= #TCQ bank_valid_r[3];
-                       bank_valid_r[5] <= #TCQ bank_valid_r[4];
-                       bank_valid_r[6] <= #TCQ bank_valid_r[5];
-                       bank_valid_r[7] <= #TCQ bank_valid_r[6];
                     end // case: default
                  endcase
-                 
               end // if (state_r1 == CTRL_ACTIVE)
           
             end // else: !if((state_r1 == CTRL_AUTO_REFRESH))
@@ -655,7 +577,7 @@ module u_ctrl #
   // whener there is a change in direction (read-> write or write-> read)
   // this signal will vbe asserted
   //***************************************************************************
-   always @ (posedge clk or posedge rst_r) begin
+   always @ (posedge clk) begin
      if (rst_r) begin
          change_direction_r <= #TCQ 1'dx;    
      end else begin
@@ -685,7 +607,7 @@ module u_ctrl #
   // This signal will be asserted when the controller 
   // is ready to accept commands
   //***************************************************************************  
-   always @ (posedge clk or posedge rst_r) begin
+   always @ (posedge clk) begin
       if (rst_r) 
          mc_mi_addr_rdy_accpt_count_r <= #TCQ 8'd15;
       else begin
@@ -704,13 +626,10 @@ module u_ctrl #
    end // always @ (posedge clk)
 
 
-   always @ (posedge clk or posedge rst_r) begin
+   always @ (posedge clk) begin
  // Added rd_mod_wr to de-assert mc_mi_addr_rdy_accpt_r signal
 // during Read Modify Write to prevent MCI from sending additional commands 
-//      if (rst_r || rmw_flag || rd_mod_wr_r)
-      if (rst_r)
-           mc_mi_addr_rdy_accpt_r <= #TCQ 1'd0;
-      else if (rmw_flag || rd_mod_wr_r)
+      if (rst_r || rmw_flag || rd_mod_wr_r)
            mc_mi_addr_rdy_accpt_r <= #TCQ 1'd0;
       else if((mc_mi_addr_rdy_accpt_count_r <=8'd3) && 
              (~(change_direction_r || bank_conf )))
@@ -722,7 +641,7 @@ module u_ctrl #
 
    assign    mc_mi_addr_rdy_accpt = mc_mi_addr_rdy_accpt_r;
 
-   always @ (posedge clk or posedge rst_r) begin
+   always @ (posedge clk) begin
       if (rst_r)begin
            mc_mi_addr_rdy_accpt_r1 <= #TCQ 1'dx;
          end
@@ -743,7 +662,7 @@ module u_ctrl #
 
   // write burst count. Counts from (BL/2 to 1).
   // Also logic for controller write enable.
-  always @(posedge clk or posedge rst_r)begin
+  always @(posedge clk)begin
     if (rst_r) begin
       ctrl_wren_r   <= #TCQ 1'b0;
       wrburst_cnt_r <= #TCQ 3'b000;
@@ -765,7 +684,7 @@ module u_ctrl #
   end
 
   // read burst count. Counts from (BL/2 to 1)
-  always @(posedge clk or posedge rst_r)begin
+  always @(posedge clk)begin
     if (rst_r) begin
       ctrl_rden     <= #TCQ 1'b0;
       rdburst_cnt_r <= #TCQ 3'b000;
@@ -841,7 +760,7 @@ module u_ctrl #
   end
 
   // tRAS count - active to precharge
-  always @(posedge clk or posedge rst_r)begin
+  always @(posedge clk)begin
     if (rst_r)
       ras_cnt_r <= #TCQ 4'd0;
     else if (state_r == CTRL_ACTIVE)
@@ -859,7 +778,7 @@ module u_ctrl #
   end  
 
   // tRTP count - read to precharge
-  always @(posedge clk or posedge rst_r)begin
+  always @(posedge clk)begin
     if (rst_r)
       rtp_cnt_r <= #TCQ 5'd0;
     else if (state_r == CTRL_BURST_READ)
@@ -877,7 +796,7 @@ module u_ctrl #
   end
 
   // wtp count - write to precharge
-  always @(posedge clk or posedge rst_r)begin
+  always @(posedge clk)begin
     if (rst_r)
       wtp_cnt_r <= #TCQ 5'd0;
     else if (state_r == CTRL_BURST_WRITE)
@@ -936,7 +855,7 @@ module u_ctrl #
    
 
   // auto refresh interval counter in refresh_clk domain
-  always @(posedge clk or posedge rst_r)
+  always @(posedge clk)
     if (rst_r) begin
       refi_cnt_r <= #TCQ 12'd0;
       ref_flag_r <= #TCQ 1'b0;
@@ -964,12 +883,6 @@ module u_ctrl #
     else if ((state_r == CTRL_AUTO_REFRESH)|| rst_r)
       auto_ref_r <= #TCQ 1'b0;
 
-  always @(posedge clk or posedge rst_r)
-    if (rst_r)
-      auto_ref_t <= #TCQ 1'b0;
-    else if (ref_flag_r)
-      auto_ref_t <= #TCQ ~auto_ref_t;
-
    always @(posedge clk)begin
       if(rst_r) begin
         auto_ref_r1 <= #TCQ 1'd0;
@@ -994,11 +907,8 @@ module u_ctrl #
 
   // keep track of which chip selects got auto-refreshed (avoid auto-refreshing
   // all CS's at once to avoid current spike)
-  always @(posedge clk or posedge rst_r)
-//    if (rst_r || (state_r == CTRL_PRECHARGE))
-    if (rst_r)
-      auto_cnt_r <= #TCQ 3'd0;
-    else if (state_r == CTRL_PRECHARGE)
+  always @(posedge clk)
+    if (rst_r || (state_r == CTRL_PRECHARGE))
       auto_cnt_r <= #TCQ 3'd0;
     else if (state_r == CTRL_AUTO_REFRESH)
       auto_cnt_r <= #TCQ auto_cnt_r + 1;
@@ -1017,7 +927,7 @@ module u_ctrl #
       delay_write <= #TCQ 1'b0;
   end 
    
-  always @(posedge clk or posedge rst_r)
+  always @(posedge clk)
     if (rst_r) begin
       state_r  <= #TCQ CTRL_IDLE;
       state_r1 <= #TCQ CTRL_IDLE;
@@ -1039,7 +949,7 @@ assign rd_mod_wr_flag = rmw_done_r ? 1'b0 : (rmw_flag && (state_r == CTRL_COMMAN
 assign rd_mod_wr = rd_mod_wr_r;
                         
 
-  always @(posedge clk or posedge rst_r) begin
+  always @(posedge clk) begin
     if (rst_r) begin
       rd_mod_wr_r  <= #TCQ 1'b0;
       rd_mod_wr_r1 <= #TCQ 1'b0;
@@ -1053,41 +963,35 @@ assign rd_mod_wr = rd_mod_wr_r;
     end
   end // always @ (posedge clk)
 
-  always @ (posedge clk or posedge rst_r) begin
-//    if (rst_r || (rmw_state_r != 3'd4))
-    if (rst_r)
-      rmw_state_flag <= #TCQ 1'd0;
-    else if (rmw_state_r != 3'd4)
+  always @ (posedge clk) begin
+    if (rst_r || (rmw_state_r != 3'd4))
       rmw_state_flag <= #TCQ 1'd0;
     else if (rd_to_wr_ok_r)
       rmw_state_flag <= #TCQ 1'd1;
   end
 
-  always @ (posedge clk or posedge rst_r) begin
-//    if (rst_r || (rmw_state_r != 3'd2) || ~rd_mod_wr_r)
-    if (rst_r)
-      rmw_state2_flag <= #TCQ 1'd0;
-    else if ((rmw_state_r != 3'd2) || ~rd_mod_wr_r)
+  always @ (posedge clk) begin
+    if (rst_r || (rmw_state_r != 3'd2) || ~rd_mod_wr_r)
       rmw_state2_flag <= #TCQ 1'd0;
     else if (rmw_state_r == 3'd2)
       rmw_state2_flag <= #TCQ 1'd1;
   end
   
-  always @(negedge clk or posedge rst_180r) begin
+  always @(negedge clk) begin
     if (rst_180r)
       rmw_done_180r     <= #TCQ 1'b0;
     else
       rmw_done_180r <= #TCQ rmw_done;
   end
   
-  always @(posedge clk or posedge rst_r) begin
+  always @(posedge clk) begin
     if (rst_r)
       rmw_state_r    <= #TCQ RMW_IDLE;
     else
       rmw_state_r    <= #TCQ rmw_next_state;
   end
 
-  always @ (posedge clk or posedge rst_r) begin
+  always @ (posedge clk) begin
     if (rst_r)begin
       rmw_done_r     <= #TCQ 1'b0;
       wdf_rden_out_r <= #TCQ 1'b0;
@@ -1325,32 +1229,26 @@ assign rd_mod_wr = rd_mod_wr_r;
   always @(posedge clk)
     if ((state_r == CTRL_AUTO_REFRESH) ||
         (state_r == CTRL_ACTIVE) ||
-        (state_r == CTRL_PRECHARGE)) begin
+        (state_r == CTRL_PRECHARGE))
       ddr_ras_n_r <= #TCQ 1'b0;
-      two_t_enable_r[0] <= #TCQ 1'b0; end
-    else begin
-      ddr_ras_n_r <= two_t_enable_r[0];
-      two_t_enable_r[0] <= #TCQ 1'b1; end
+    else
+      ddr_ras_n_r <= #TCQ 1'b1;
 
   always @(posedge clk)
     if ((rmw_state_r == RMW_READ) || (rmw_state_r == RMW_WRITE)
         || (state_r == CTRL_BURST_WRITE)
         || (state_r == CTRL_BURST_READ)
-        || (state_r == CTRL_AUTO_REFRESH)) begin
+        || (state_r == CTRL_AUTO_REFRESH))
       ddr_cas_n_r <= #TCQ 1'b0;
-      two_t_enable_r[1] <= #TCQ 1'b0; end
-    else begin
-      ddr_cas_n_r <= two_t_enable_r[1];
-      two_t_enable_r[1] <= #TCQ 1'b1; end
+    else
+      ddr_cas_n_r <= #TCQ 1'b1;
 
   always @(posedge clk)
     if ((rmw_state_r == RMW_WRITE) || (state_r == CTRL_BURST_WRITE)
-       || (state_r == CTRL_PRECHARGE)) begin
+       || (state_r == CTRL_PRECHARGE))
       ddr_we_n_r <= #TCQ 1'b0;
-      two_t_enable_r[2] <= #TCQ 1'b0; end
-    else begin
-      ddr_we_n_r <= two_t_enable_r[2];
-      two_t_enable_r[2] <= #TCQ 1'b1; end
+    else
+      ddr_we_n_r <= #TCQ 1'b1;
 
   // turn off auto-precharge when issuing commands (A10 = 0)
   // mapping the col add for linear addressing.
@@ -1371,27 +1269,24 @@ assign rd_mod_wr = rd_mod_wr_r;
   endgenerate
 
   // Assign address during row activate
-  assign ddr_addr_row = mi_mc_add_c_r1[ROW_RANGE_END:ROW_RANGE_START];
+  assign ddr_addr_row = mi_mc_add_c_r[ROW_RANGE_END:ROW_RANGE_START];
 
   always @(posedge clk)
-    if ((state_r == CTRL_ACTIVE || state_r1 == CTRL_ACTIVE))
+    if ((state_r == CTRL_ACTIVE))
       ddr_addr_r <= #TCQ ddr_addr_row;
     else if ((rmw_state_r == RMW_READ) || (rmw_state_r == RMW_WRITE)
               || (state_r == CTRL_BURST_WRITE)
-              || (state_r == CTRL_BURST_READ)
-              || (state_r1 == CTRL_BURST_WRITE)
-              || (state_r1 == CTRL_BURST_READ))
+              || (state_r == CTRL_BURST_READ))
       ddr_addr_r <= #TCQ ddr_addr_col;
-    else if ((state_r == CTRL_PRECHARGE || state_r1 == CTRL_PRECHARGE) && auto_ref_r) begin
+    else if ((state_r == CTRL_PRECHARGE) && auto_ref_r) begin
       // if we're precharging as a result of AUTO-REFRESH, precharge all banks
       ddr_addr_r <= #TCQ {ROW_WIDTH{1'b0}};
       ddr_addr_r[10] <= #TCQ 1'b1;
-    end else if (state_r == CTRL_PRECHARGE || state_r1 == CTRL_PRECHARGE)
+    end else if (state_r == CTRL_PRECHARGE)
       // if we're precharging to close a specific bank/row, set A10=0
       ddr_addr_r <= #TCQ {ROW_WIDTH{1'b0}};
     else
-//      ddr_addr_r <= #TCQ {ROW_WIDTH{1'bx}};
-      ddr_addr_r <= #TCQ {ROW_WIDTH{1'b0}};
+      ddr_addr_r <= #TCQ {ROW_WIDTH{1'bx}};
 
   always @(posedge clk)
     // whenever we're precharging, we're either: (1) precharging all banks (in
@@ -1400,12 +1295,13 @@ assign rd_mod_wr = rd_mod_wr_r;
     // bank to make room for a new one), (3) we haven't exceed the maximum #
     // of banks open, but we trying to open a different row in a bank that's
     // already open
-    if ((state_r == CTRL_PRECHARGE || state_r1 == CTRL_PRECHARGE) && bank_conf_r && !bank_hit_any_r) // --> TW: to check
+    if ((state_r == CTRL_PRECHARGE) && bank_conf_r &&
+        !bank_hit_any_r)
       // When LRU bank needs to be closed
-      ddr_ba_r <= #TCQ bank_cmp_addr_r[(3*CMP_WIDTH)+CMP_BANK_RANGE_END : (3*CMP_WIDTH)+CMP_BANK_RANGE_START];
+      ddr_ba_r <= #TCQ bank_cmp_addr_r[(3*CMP_WIDTH)+CMP_BANK_RANGE_END:
+                                  (3*CMP_WIDTH)+CMP_BANK_RANGE_START];
     else
       // Either precharge due to refresh or bank hit case
-//      ddr_ba_r <= #TCQ mi_mc_add_c_r[BANK_RANGE_END:BANK_RANGE_START];
       ddr_ba_r <= #TCQ mi_mc_add_c_r[BANK_RANGE_END:BANK_RANGE_START];
 
   // chip enable generation logic
@@ -1415,60 +1311,37 @@ assign rd_mod_wr = rd_mod_wr_r;
       always @(posedge clk)
         if (rst_r)
           ddr_cs_n_r[0] <= #TCQ 1'b1;
-       else
+        else
           ddr_cs_n_r[0] <= #TCQ 1'b0;
-  // otherwise if we have multiple chip selects
-    end 
-//    else begin: gen_ddr_cs_1
-//    always @(posedge clk) // TW: only support CS_BITS == 1
-//  	always @(negedge clk90 or posedge rst270_r)
-//        if (rst270_r)
-//          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
-//        else if ((state_r1 == CTRL_PRECHARGE) && auto_ref_r) begin
-      // if we're precharging as a result of AUTO-REFRESH, precharge all banks
-//          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
-//          ddr_cs_n_r[1] <= #TCQ 1'b0;
-//          ddr_cs_n_r[0] <= #TCQ 1'b0;
-//        end else if (state_r1 == CTRL_AUTO_REFRESH) begin
-//          // if auto-refreshing, only auto-refresh one CS at any time (avoid
-//          // beating on the ground plane by refreshing all CS's at same time)
-//          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
-//          if (auto_cnt_r[0]) begin
-//          	if (auto_ref_t) begin
-//          	  ddr_cs_n_r[1] <= #TCQ 1'b1;
-//          	  ddr_cs_n_r[0] <= #TCQ 1'b0;
-//          	end
-//                else begin 
-//          	  ddr_cs_n_r[1] <= #TCQ 1'b0;
-//          	  ddr_cs_n_r[0] <= #TCQ 1'b1;
-//	        end
-//	  end
-//        end else if ((state_r1 == CTRL_PRECHARGE) && bank_conf_r && !bank_hit_any_r) begin
-////        end else if (state_r1 == CTRL_PRECHARGE) begin
-//          // precharging the LRU bank
-//          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
-////          ddr_cs_n_r[1] <= #TCQ 1'b0;
-////          ddr_cs_n_r[0] <= #TCQ 1'b0;
-//          ddr_cs_n_r[bank_cmp_addr_r[(3*CMP_WIDTH)+CMP_CS_RANGE_END:(3*CMP_WIDTH)+CMP_CS_RANGE_START]] <= #TCQ 1'b0;                                                    
-//        end else begin
-//          // otherwise, check the upper address bits to see which CS to assert
-//          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
-//          ddr_cs_n_r[1] <= #TCQ ~mi_mc_add_c_r1[CS_RANGE_END];
-//          ddr_cs_n_r[0] <= #TCQ mi_mc_add_c_r1[CS_RANGE_END];
-//          
-////          ddr_cs_n_r[mi_mc_add_c_r1[CS_RANGE_END:CS_RANGE_START]] <= #TCQ 1'b0;
-//        end
-////   end
+    // otherwise if we have multiple chip selects
+    end else begin: gen_ddr_cs_1
+      always @(posedge clk)
+        if (rst_r)
+          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
+        else if (state_r == CTRL_AUTO_REFRESH) begin
+          // if auto-refreshing, only auto-refresh one CS at any time (avoid
+          // beating on the ground plane by refreshing all CS's at same time)
+          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
+          ddr_cs_n_r[auto_cnt_r] <= #TCQ 1'b0;
+        end else if ((state_r == CTRL_PRECHARGE) && bank_conf_r &&
+                     !bank_hit_any_r) begin
+          // precharging the LRU bank
+          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
+          ddr_cs_n_r[bank_cmp_addr_r[(3*CMP_WIDTH)+CMP_CS_RANGE_END:
+                                 (3*CMP_WIDTH)+CMP_CS_RANGE_START]] <= #TCQ 1'b0;
+        end else begin
+          // otherwise, check the upper address bits to see which CS to assert
+          ddr_cs_n_r <= #TCQ {CS_NUM{1'b1}};
+          ddr_cs_n_r[mi_mc_add_c_r[CS_RANGE_END:CS_RANGE_START]] <= #TCQ 1'b0;
+        end
+    end
   endgenerate
 
   generate
   if(ECC_ENABLE) begin
 
-    always @ (posedge clk or posedge rst_r)begin
-//      if (rst_r || ~rmw_flag)
-      if (rst_r)
-	rmw_wr_flag_r <= #TCQ 1'd0;
-      else if (~rmw_flag)
+    always @ (posedge clk)begin
+      if (rst_r || ~rmw_flag)
 	rmw_wr_flag_r <= #TCQ 1'd0;
       else if (rmw_wr_flag_w)
         rmw_wr_flag_r <= #TCQ rmw_flag;
@@ -1477,12 +1350,12 @@ assign rd_mod_wr = rd_mod_wr_r;
     always @ (posedge clk)
       ctrl_wren_r1 <= #TCQ ctrl_wren_r;
 
-    always @ (posedge clk or posedge rst_r)begin
+    always @ (posedge clk)begin
       if (rst_r)begin
 	rmw_disable_r  <= #TCQ 1'b0;
         rmw_disable_r1 <= #TCQ 1'b0;
       end
-      else if (BURST_LEN == 8)begin
+      else if (BURST_LEN == 4)begin
 	rmw_disable_r  <= #TCQ rmw_disable;
 	rmw_disable_r1 <= #TCQ rmw_disable_r;
       end
@@ -1496,52 +1369,24 @@ assign rd_mod_wr = rd_mod_wr_r;
                           rmw_disable_r;
                          
        
-    assign ctrl_cas_n = ((BURST_LEN == 8) && rmw_disable) ? ddr_cas_n_r : ((rmw_flag) && (rmw_wr_flag_w)) ? 1'd1 : ddr_cas_n_r;
-    assign ctrl_we_n  = ((BURST_LEN == 8) && rmw_disable) ? ddr_we_n_r :((rmw_flag) && (rmw_wr_flag_w)) ? 1'd1 : ddr_we_n_r;
-    assign ctrl_wren  = ((BURST_LEN == 8) && rmw_disable) ? ctrl_wren_r :((rmw_flag) && (rmw_wr_flag_w || rmw_wr_flag_r)) ? 1'd0 : ctrl_wren_r;
+    assign ctrl_cas_n = ((BURST_LEN == 4) && rmw_disable) ? ddr_cas_n_r : ((rmw_flag) && (rmw_wr_flag_w)) ? 1'd1 : ddr_cas_n_r;
+    assign ctrl_we_n  = ((BURST_LEN == 4) && rmw_disable) ? ddr_we_n_r :((rmw_flag) && (rmw_wr_flag_w)) ? 1'd1 : ddr_we_n_r;
+    assign ctrl_wren  = ((BURST_LEN == 4) && rmw_disable) ? ctrl_wren_r :((rmw_flag) && (rmw_wr_flag_w || rmw_wr_flag_r)) ? 1'd0 : ctrl_wren_r;
     assign rmw_wr_flag_w  = ctrl_wren_r & ~ddr_we_n_r;
     assign rmw_wr_flag  = rmw_wr_flag_w;
   end
   else begin
-  
-    always @ (posedge clk)
-      ctrl_wren_r1 <= #TCQ ctrl_wren_r;
-  
     assign ctrl_cas_n = ddr_cas_n_r;
     assign ctrl_we_n  = ddr_we_n_r;
     assign rmw_wr_flag  = 1'd0;
     assign ctrl_wren  = ctrl_wren_r;
-//    assign ctrl_wren  = ctrl_wren_r1;
   end
   endgenerate     
    
-//  generate
-//  if(SIM_ONLY == 1) begin
-//	always @(posedge clk)begin
-//   		if(&two_t_enable_r)
-//      		two_t_enable_r1 <= {CS_NUM{1'b1}};
-//   		else
-//      		two_t_enable_r1 <= {CS_NUM{1'b0}};
-//		end
-//  end
-//  endgenerate 
-
-//  generate
-//  if(SIM_ONLY == 0) begin
-  	always @(negedge clk90)begin
-     		if(&two_t_enable_r)
-        		two_t_enable_r1 <= {CS_NUM{1'b1}};
-     		else
-        		two_t_enable_r1 <= {CS_NUM{1'b0}};
-  		end
-//  end
-//  endgenerate     
-
-
   assign ctrl_addr  = ddr_addr_r;
   assign ctrl_ba    = ddr_ba_r;
   assign ctrl_ras_n = ddr_ras_n_r;
-  assign ctrl_cs_n  = ddr_cs_n_r | two_t_enable_r1;
+  assign ctrl_cs_n  = ddr_cs_n_r;
 
 endmodule
 
