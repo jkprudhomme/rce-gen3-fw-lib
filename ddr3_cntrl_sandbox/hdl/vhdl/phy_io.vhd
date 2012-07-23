@@ -1,38 +1,63 @@
 --*****************************************************************************
--- Copyright (c) 2006-2007 Xilinx, Inc.
--- This design is confidential and proprietary of Xilinx, Inc. 
--- All Rights Reserved 
+-- DISCLAIMER OF LIABILITY
+--
+-- This file contains proprietary and confidential information of
+-- Xilinx, Inc. ("Xilinx"), that is distributed under a license
+-- from Xilinx, and may be used, copied and/or disclosed only
+-- pursuant to the terms of a valid license agreement with Xilinx.
+--
+-- XILINX IS PROVIDING THIS DESIGN, CODE, OR INFORMATION
+-- ("MATERIALS") "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+-- EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING WITHOUT
+-- LIMITATION, ANY WARRANTY WITH RESPECT TO NONINFRINGEMENT,
+-- MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE. Xilinx
+-- does not warrant that functions included in the Materials will
+-- meet the requirements of Licensee, or that the operation of the
+-- Materials will be uninterrupted or error-free, or that defects
+-- in the Materials will be corrected. Furthermore, Xilinx does
+-- not warrant or make any representations regarding use, or the
+-- results of the use, of the Materials in terms of correctness,
+-- accuracy, reliability or otherwise.
+--
+-- Xilinx products are not designed or intended to be fail-safe,
+-- or for use in any application requiring fail-safe performance,
+-- such as life-support or safety devices or systems, Class III
+-- medical devices, nuclear facilities, applications related to
+-- the deployment of airbags, or any other applications that could
+-- lead to death, personal injury or severe property or
+-- environmental damage (individually and collectively, "critical
+-- applications"). Customer assumes the sole risk and liability
+-- of any use of Xilinx products in critical applications,
+-- subject only to applicable laws and regulations governing
+-- limitations on product liability.
+--
+-- Copyright 2006, 2007, 2008 Xilinx, Inc.
+-- All rights reserved.
+--
+-- This disclaimer and copyright notice must be retained as part
+-- of this file at all times.
 --*****************************************************************************
 --   ____  ____
 --  /   /\/   /
 -- /___/  \  /    Vendor: Xilinx
--- \   \   \/     Version: $Id: phy_io.vhd,v 1.2 2007/08/28 06:46:24 richc Exp $
---  \   \         Filename: phy_io.v
---  /   /         Date Last Modified:
--- /___/   /\     Date Created: 8/16/06
--- \   \  /  \
+-- \   \   \/     Version: 3.6.1
+--  \   \         Application: MIG
+--  /   /         Filename: ddr2_phy_io.vhd
+-- /___/   /\     Date Last Modified: $Date: 2010/11/26 18:26:03 $
+-- \   \  /  \    Date Created: Wed Jan 10 2007
 --  \___\/\___\
 --
 --Device: Virtex-5
 --Design Name: DDR/DDR2
 --Purpose:
---   This module instantiates calibration logic, data, data strobe and the 
+--   This module instantiates calibration logic, data, data strobe and the
 --   data mask iobs.
 --Reference:
 --Revision History:
---   Rev 1.1 - Translated from Verilog to VHDL. 8/1/07  
---   Rev 1.2 - Changed copyright, added calib_ref_done & calib_ref_req ports
---             added keep on en_dqs MD 8/24/07
+--   Rev 1.1 - DM_IOB instance made based on USE_DM_PORT value . PK. 25/6/08
+--   Rev 1.2 - Parameter IODELAY_GRP added. PK. 11/27/08
 --*****************************************************************************
 
---*****************************************************************************
---$Id: phy_io.vhd,v 1.2 2007/08/28 06:46:24 richc Exp $
---$Date: 2007/08/28 06:46:24 $
---$Author: richc $
---$Revision: 1.2 $
---$Source: /devl/xcs/repo/groups/apd_mem/Virtex5/designs/2_0/ddr2/rtl/vhdl/phy_io.vhd,v $
---*****************************************************************************
-  
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -41,24 +66,29 @@ use unisim.vcomponents.all;
 
 entity phy_io is
   generic (
-    CLK_WIDTH    : integer    := 1;
-    DM_WIDTH     : integer    := 2;
-    DQ_WIDTH     : integer    := 16;
-    DQ_BITS      : integer    := 4;
-    DQ_PER_DQS   : integer    := 8;
-    DQS_BITS     : integer    := 1;
-    DQS_WIDTH    : integer    := 2;
-    ODT_WIDTH    : integer    := 1;
-    ADDITIVE_LAT : integer    := 0;
-    CAS_LAT      : integer    := 5;
-    REG_ENABLE   : integer    := 0;
-    CLK_PERIOD   : integer    := 3000;
-    DDR_TYPE     : integer    := 1;
-    SIM_ONLY     : integer    := 0;
-    DEBUG_EN     : integer    := 0;
-    HIGH_PERFORMANCE_MODE : boolean := TRUE;
-    IODELAY_GRP           : string  := "IODELAY_MIG";
-    FPGA_SPEED_GRADE      : integer := 2
+    -- Following parameters are for 72-bit RDIMM design (for ML561 Reference
+    -- board design). Actual values may be different. Actual parameters values
+    -- are passed from design top module mig_36_1 module. Please refer to
+    -- the mig_36_1 module for actual values.
+    CLK_WIDTH             : integer    := 1;
+    USE_DM_PORT           : integer    := 1;
+    DM_WIDTH              : integer    := 9;
+    DQ_WIDTH              : integer    := 72;
+    DQ_BITS               : integer    := 7;
+    DQ_PER_DQS            : integer    := 8;
+    DQS_BITS              : integer    := 4;
+    DQS_WIDTH             : integer    := 9;
+    HIGH_PERFORMANCE_MODE : boolean    := TRUE;
+    IODELAY_GRP           : string     := "IODELAY_MIG";
+    ODT_WIDTH             : integer    := 1;
+    ADDITIVE_LAT          : integer    := 0;
+    CAS_LAT               : integer    := 5;
+    REG_ENABLE            : integer    := 1;
+    CLK_PERIOD            : integer    := 3000;
+    DDR_TYPE              : integer    := 1;
+    SIM_ONLY              : integer    := 0;
+    DEBUG_EN              : integer    := 0;
+    FPGA_SPEED_GRADE      : integer    := 2
     );
   port (
     clk0                   : in    std_logic;
@@ -66,7 +96,6 @@ entity phy_io is
     clkdiv0                : in    std_logic;
     rst0                   : in    std_logic;
     rst90                  : in    std_logic;
-    rst270                 : in    std_logic;
     rstdiv0                : in    std_logic;
     dm_ce                  : in    std_logic;
     dq_oe_n                : in    std_logic_vector(1 downto 0);
@@ -91,30 +120,30 @@ entity phy_io is
     ddr_dm                 : out   std_logic_vector(DM_WIDTH-1 downto 0);
     ddr_dqs                : inout std_logic_vector(DQS_WIDTH-1 downto 0);
     ddr_dqs_n              : inout std_logic_vector(DQS_WIDTH-1 downto 0);
-    ddr_dq                 : inout std_logic_vector(DQ_WIDTH-1 downto 0)
+    ddr_dq                 : inout std_logic_vector(DQ_WIDTH-1 downto 0);
     -- Debug signals (optional use)
---    dbg_idel_up_all        : in    std_logic;
---    dbg_idel_down_all      : in    std_logic;
---    dbg_idel_up_dq         : in    std_logic;
---    dbg_idel_down_dq       : in    std_logic;
---    dbg_idel_up_dqs        : in    std_logic;
---    dbg_idel_down_dqs      : in    std_logic;
---    dbg_idel_up_gate       : in    std_logic;
---    dbg_idel_down_gate     : in    std_logic;
---    dbg_sel_idel_dq        : in    std_logic_vector(DQ_BITS-1 downto 0);
---    dbg_sel_all_idel_dq    : in    std_logic;
---    dbg_sel_idel_dqs       : in    std_logic_vector(DQS_BITS downto 0);
---    dbg_sel_all_idel_dqs   : in    std_logic;
---    dbg_sel_idel_gate      : in    std_logic_vector(DQS_BITS downto 0);
---    dbg_sel_all_idel_gate  : in    std_logic;
---    dbg_calib_done         : out   std_logic_vector(3 downto 0);
---    dbg_calib_err          : out   std_logic_vector(3 downto 0);
---    dbg_calib_dq_tap_cnt   : out   std_logic_vector((6*DQ_WIDTH)-1 downto 0);
---    dbg_calib_dqs_tap_cnt  : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
---    dbg_calib_gate_tap_cnt : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
---    dbg_calib_rd_data_sel  : out   std_logic_vector(DQS_WIDTH-1 downto 0);
---    dbg_calib_rden_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0);
---    dbg_calib_gate_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0)
+    dbg_idel_up_all        : in    std_logic;
+    dbg_idel_down_all      : in    std_logic;
+    dbg_idel_up_dq         : in    std_logic;
+    dbg_idel_down_dq       : in    std_logic;
+    dbg_idel_up_dqs        : in    std_logic;
+    dbg_idel_down_dqs      : in    std_logic;
+    dbg_idel_up_gate       : in    std_logic;
+    dbg_idel_down_gate     : in    std_logic;
+    dbg_sel_idel_dq        : in    std_logic_vector(DQ_BITS-1 downto 0);
+    dbg_sel_all_idel_dq    : in    std_logic;
+    dbg_sel_idel_dqs       : in    std_logic_vector(DQS_BITS downto 0);
+    dbg_sel_all_idel_dqs   : in    std_logic;
+    dbg_sel_idel_gate      : in    std_logic_vector(DQS_BITS downto 0);
+    dbg_sel_all_idel_gate  : in    std_logic;
+    dbg_calib_done         : out   std_logic_vector(3 downto 0);
+    dbg_calib_err          : out   std_logic_vector(3 downto 0);
+    dbg_calib_dq_tap_cnt   : out   std_logic_vector((6*DQ_WIDTH)-1 downto 0);
+    dbg_calib_dqs_tap_cnt  : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
+    dbg_calib_gate_tap_cnt : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
+    dbg_calib_rd_data_sel  : out   std_logic_vector(DQS_WIDTH-1 downto 0);
+    dbg_calib_rden_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0);
+    dbg_calib_gate_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0)
     );
 end entity phy_io;
 
@@ -157,30 +186,29 @@ architecture syn of phy_io is
       dlyce_gate             : out std_logic_vector(DQS_WIDTH-1 downto 0);
       dlyinc_gate            : out std_logic_vector(DQS_WIDTH-1 downto 0);
       en_dqs                 : out std_logic_vector(DQS_WIDTH-1 downto 0);
-      rd_data_sel            : out std_logic_vector(DQS_WIDTH-1 downto 0)
---      dbg_idel_up_all        : in  std_logic;
---      dbg_idel_down_all      : in  std_logic;
---      dbg_idel_up_dq         : in  std_logic;
---      dbg_idel_down_dq       : in  std_logic;
---      dbg_idel_up_dqs        : in  std_logic;
---      dbg_idel_down_dqs      : in  std_logic;
---      dbg_idel_up_gate       : in  std_logic;
---      dbg_idel_down_gate     : in  std_logic;
---      dbg_sel_idel_dq        : in  std_logic_vector(DQ_BITS-1 downto 0);
---      dbg_sel_all_idel_dq    : in  std_logic;
---      dbg_sel_idel_dqs       : in  std_logic_vector(DQS_BITS downto 0);
---      dbg_sel_all_idel_dqs   : in  std_logic;
---      dbg_sel_idel_gate      : in  std_logic_vector(DQS_BITS downto 0);
---      dbg_sel_all_idel_gate  : in  std_logic;
---      dbg_calib_done         : out std_logic_vector(3 downto 0);
---      dbg_calib_err          : out std_logic_vector(3 downto 0);
---      dbg_calib_dq_tap_cnt   : out std_logic_vector((6*DQ_WIDTH)-1 downto 0);
---      dbg_calib_dqs_tap_cnt  : out std_logic_vector((6*DQS_WIDTH)-1 downto 0);
---      dbg_calib_gate_tap_cnt : out std_logic_vector((6*DQS_WIDTH)-1 downto 0);
---      dbg_calib_rd_data_sel  : out std_logic_vector(DQS_WIDTH-1 downto 0);
---      dbg_calib_rden_dly     : out std_logic_vector((5*DQS_WIDTH)-1 downto 0);
---      dbg_calib_gate_dly     : out std_logic_vector((5*DQS_WIDTH)-1 downto 0)
-);
+      rd_data_sel            : out std_logic_vector(DQS_WIDTH-1 downto 0);
+      dbg_idel_up_all        : in  std_logic;
+      dbg_idel_down_all      : in  std_logic;
+      dbg_idel_up_dq         : in  std_logic;
+      dbg_idel_down_dq       : in  std_logic;
+      dbg_idel_up_dqs        : in  std_logic;
+      dbg_idel_down_dqs      : in  std_logic;
+      dbg_idel_up_gate       : in  std_logic;
+      dbg_idel_down_gate     : in  std_logic;
+      dbg_sel_idel_dq        : in  std_logic_vector(DQ_BITS-1 downto 0);
+      dbg_sel_all_idel_dq    : in  std_logic;
+      dbg_sel_idel_dqs       : in  std_logic_vector(DQS_BITS downto 0);
+      dbg_sel_all_idel_dqs   : in  std_logic;
+      dbg_sel_idel_gate      : in  std_logic_vector(DQS_BITS downto 0);
+      dbg_sel_all_idel_gate  : in  std_logic;
+      dbg_calib_done         : out std_logic_vector(3 downto 0);
+      dbg_calib_err          : out std_logic_vector(3 downto 0);
+      dbg_calib_dq_tap_cnt   : out std_logic_vector((6*DQ_WIDTH)-1 downto 0);
+      dbg_calib_dqs_tap_cnt  : out std_logic_vector((6*DQS_WIDTH)-1 downto 0);
+      dbg_calib_gate_tap_cnt : out std_logic_vector((6*DQS_WIDTH)-1 downto 0);
+      dbg_calib_rd_data_sel  : out std_logic_vector(DQS_WIDTH-1 downto 0);
+      dbg_calib_rden_dly     : out std_logic_vector((5*DQS_WIDTH)-1 downto 0);
+      dbg_calib_gate_dly     : out std_logic_vector((5*DQS_WIDTH)-1 downto 0));
   end component;
 
   component phy_dm_iob
@@ -191,12 +219,12 @@ architecture syn of phy_io is
       mask_data_fall : in  std_logic;
       ddr_dm         : out std_logic);
   end component;
-  
+
   component phy_dq_iob
     generic (
-    HIGH_PERFORMANCE_MODE : boolean;
-    IODELAY_GRP           : string;
-    FPGA_SPEED_GRADE      : integer);
+      HIGH_PERFORMANCE_MODE : boolean := TRUE;
+      IODELAY_GRP           : string;
+      FPGA_SPEED_GRADE      : integer);
     port (
       clk0         : in    std_logic;
       clk90        : in    std_logic;
@@ -215,12 +243,12 @@ architecture syn of phy_io is
       rd_data_fall : out   std_logic;
       ddr_dq       : inout std_logic);
   end component;
-  
+
   component phy_dqs_iob
     generic (
-      HIGH_PERFORMANCE_MODE : boolean;
-      IODELAY_GRP           : string;
-      DDR_TYPE : integer);
+      DDR_TYPE              : integer;
+      HIGH_PERFORMANCE_MODE : boolean := TRUE;
+      IODELAY_GRP           : string);
     port (
       clk0        : in    std_logic;
       clkdiv0     : in    std_logic;
@@ -239,11 +267,11 @@ architecture syn of phy_io is
       dq_ce       : out   std_logic;
       delayed_dqs : out   std_logic);
   end component;
-  
+
   -- ratio of # of physical DM outputs to bytes in data bus
   -- may be different - e.g. if using x4 components
   constant DM_TO_BYTE_RATIO : integer := DM_WIDTH / (DQ_WIDTH/8);
-  
+
   signal ddr_ck_q    : std_logic_vector(CLK_WIDTH-1 downto 0);
   signal delayed_dqs : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal dlyce_dq    : std_logic_vector(DQ_WIDTH-1 downto 0);
@@ -262,19 +290,19 @@ architecture syn of phy_io is
   signal i_rd_data_fall : std_logic_vector(DQ_WIDTH-1 downto 0);
   signal i_rd_data_rise : std_logic_vector(DQ_WIDTH-1 downto 0);
 
-  attribute keep : string; 
+  attribute keep : string;
   attribute syn_keep : boolean;
   attribute keep of en_dqs : signal is "true";
   attribute syn_keep of en_dqs : signal is true;
 
-  
+
 begin
 
   rd_data_rise <= i_rd_data_rise;
   rd_data_fall <= i_rd_data_fall;
-    
+
   --***************************************************************************
-  
+
   u_phy_calib : phy_calib
     generic map (
       DQ_WIDTH               => DQ_WIDTH,
@@ -313,36 +341,36 @@ begin
       dlyce_gate             => dlyce_gate,
       dlyinc_gate            => dlyinc_gate,
       en_dqs                 => en_dqs,
-      rd_data_sel            => rd_data_sel
---      dbg_idel_up_all        => dbg_idel_up_all,
---      dbg_idel_down_all      => dbg_idel_down_all,
---      dbg_idel_up_dq         => dbg_idel_up_dq,
---      dbg_idel_down_dq       => dbg_idel_down_dq,
---      dbg_idel_up_dqs        => dbg_idel_up_dqs,
---      dbg_idel_down_dqs      => dbg_idel_down_dqs,
---      dbg_idel_up_gate       => dbg_idel_up_gate,
---      dbg_idel_down_gate     => dbg_idel_down_gate,
---      dbg_sel_idel_dq        => dbg_sel_idel_dq,
---      dbg_sel_all_idel_dq    => dbg_sel_all_idel_dq,
---      dbg_sel_idel_dqs       => dbg_sel_idel_dqs,
---      dbg_sel_all_idel_dqs   => dbg_sel_all_idel_dqs,
---      dbg_sel_idel_gate      => dbg_sel_idel_gate,
---      dbg_sel_all_idel_gate  => dbg_sel_all_idel_gate,
---      dbg_calib_done         => dbg_calib_done,
---      dbg_calib_err          => dbg_calib_err,
---      dbg_calib_dq_tap_cnt   => dbg_calib_dq_tap_cnt,
---      dbg_calib_dqs_tap_cnt  => dbg_calib_dqs_tap_cnt,
---      dbg_calib_gate_tap_cnt => dbg_calib_gate_tap_cnt,
---      dbg_calib_rd_data_sel  => dbg_calib_rd_data_sel,
---      dbg_calib_rden_dly     => dbg_calib_rden_dly,
---      dbg_calib_gate_dly     => dbg_calib_gate_dly
+      rd_data_sel            => rd_data_sel,
+      dbg_idel_up_all        => dbg_idel_up_all,
+      dbg_idel_down_all      => dbg_idel_down_all,
+      dbg_idel_up_dq         => dbg_idel_up_dq,
+      dbg_idel_down_dq       => dbg_idel_down_dq,
+      dbg_idel_up_dqs        => dbg_idel_up_dqs,
+      dbg_idel_down_dqs      => dbg_idel_down_dqs,
+      dbg_idel_up_gate       => dbg_idel_up_gate,
+      dbg_idel_down_gate     => dbg_idel_down_gate,
+      dbg_sel_idel_dq        => dbg_sel_idel_dq,
+      dbg_sel_all_idel_dq    => dbg_sel_all_idel_dq,
+      dbg_sel_idel_dqs       => dbg_sel_idel_dqs,
+      dbg_sel_all_idel_dqs   => dbg_sel_all_idel_dqs,
+      dbg_sel_idel_gate      => dbg_sel_idel_gate,
+      dbg_sel_all_idel_gate  => dbg_sel_all_idel_gate,
+      dbg_calib_done         => dbg_calib_done,
+      dbg_calib_err          => dbg_calib_err,
+      dbg_calib_dq_tap_cnt   => dbg_calib_dq_tap_cnt,
+      dbg_calib_dqs_tap_cnt  => dbg_calib_dqs_tap_cnt,
+      dbg_calib_gate_tap_cnt => dbg_calib_gate_tap_cnt,
+      dbg_calib_rd_data_sel  => dbg_calib_rd_data_sel,
+      dbg_calib_rden_dly     => dbg_calib_rden_dly,
+      dbg_calib_gate_dly     => dbg_calib_gate_dly
       );
-  
+
   --***************************************************************************
   -- Memory clock generation
   --***************************************************************************
-  
-  gen_ck: for ck_i in 0 to CLK_WIDTH-1 generate    
+
+  gen_ck: for ck_i in 0 to CLK_WIDTH-1 generate
     u_oddr_ck_i : ODDR
       generic map (
         SRTYPE       => "SYNC",
@@ -357,7 +385,7 @@ begin
         R            => '0',
         S            => '0'
         );
-    -- Can insert ODELAY here if required    
+    -- Can insert ODELAY here if required
     u_obuf_ck_i : OBUFDS
       port map (
         I   => ddr_ck_q(ck_i),
@@ -365,17 +393,17 @@ begin
         OB  => ddr_ck_n(ck_i)
       );
   end generate;
-  
+
   --***************************************************************************
   -- DQS instances
   --***************************************************************************
-  
-  gen_dqs: for dqs_i in 0 to DQS_WIDTH-1 generate    
+
+  gen_dqs: for dqs_i in 0 to DQS_WIDTH-1 generate
     u_iob_dqs : phy_dqs_iob
       generic map (
+        DDR_TYPE              => DDR_TYPE,
         HIGH_PERFORMANCE_MODE => HIGH_PERFORMANCE_MODE,
-        IODELAY_GRP           => IODELAY_GRP,
-        DDR_TYPE    => DDR_TYPE
+        IODELAY_GRP           => IODELAY_GRP
         )
       port map (
         clk0        => clk0,
@@ -396,32 +424,34 @@ begin
         delayed_dqs => delayed_dqs(dqs_i)
         );
   end generate;
-  
+
   --***************************************************************************
   -- DM instances
   --***************************************************************************
-  
-  gen_dm: for dm_i in 0 to DM_WIDTH-1 generate    
-    u_iob_dm : phy_dm_iob
-      port map (
-        clk90           => clk90,
-        dm_ce           => dm_ce,
-        mask_data_rise  => mask_data_rise(dm_i/DM_TO_BYTE_RATIO),
-        mask_data_fall  => mask_data_fall(dm_i/DM_TO_BYTE_RATIO),
-        ddr_dm          => ddr_dm(dm_i)
-      );
+
+  gen_dm_inst: if (USE_DM_PORT = 1) generate
+    gen_dm: for dm_i in 0 to DM_WIDTH-1 generate
+      u_iob_dm : phy_dm_iob
+        port map (
+          clk90           => clk90,
+          dm_ce           => dm_ce,
+          mask_data_rise  => mask_data_rise(dm_i/DM_TO_BYTE_RATIO),
+          mask_data_fall  => mask_data_fall(dm_i/DM_TO_BYTE_RATIO),
+          ddr_dm          => ddr_dm(dm_i)
+        );
+    end generate;
   end generate;
-  
+
   --***************************************************************************
   -- DQ IOB instances
   --***************************************************************************
-  
-  gen_dq: for dq_i in 0 to DQ_WIDTH-1 generate    
+
+  gen_dq: for dq_i in 0 to DQ_WIDTH-1 generate
     u_iob_dq : phy_dq_iob
       generic map (
-          HIGH_PERFORMANCE_MODE => HIGH_PERFORMANCE_MODE,
-          IODELAY_GRP           => IODELAY_GRP,
-          FPGA_SPEED_GRADE      => FPGA_SPEED_GRADE
+        HIGH_PERFORMANCE_MODE => HIGH_PERFORMANCE_MODE,
+        IODELAY_GRP           => IODELAY_GRP,
+        FPGA_SPEED_GRADE      => FPGA_SPEED_GRADE
         )
       port map (
         clk0          => clk0,
@@ -442,7 +472,7 @@ begin
         ddr_dq        => ddr_dq(dq_i)
       );
   end generate;
-    
+
 end architecture syn;
 
 

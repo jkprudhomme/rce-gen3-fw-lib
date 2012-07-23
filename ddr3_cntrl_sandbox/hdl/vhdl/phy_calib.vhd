@@ -1,53 +1,57 @@
 --*****************************************************************************
--- DISCLAIMER OF LIABILITY
--- 
--- This text/file contains proprietary, confidential
--- information of Xilinx, Inc., is distributed under license
--- from Xilinx, Inc., and may be used, copied and/or
--- disclosed only pursuant to the terms of a valid license
--- agreement with Xilinx, Inc. Xilinx hereby grants you a 
--- license to use this text/file solely for design, simulation, 
--- implementation and creation of design files limited 
--- to Xilinx devices or technologies. Use with non-Xilinx 
--- devices or technologies is expressly prohibited and 
--- immediately terminates your license unless covered by
--- a separate agreement.
+-- (c) Copyright 2006-2009 Xilinx, Inc. All rights reserved.
 --
--- Xilinx is providing this design, code, or information 
--- "as-is" solely for use in developing programs and 
--- solutions for Xilinx devices, with no obligation on the 
--- part of Xilinx to provide support. By providing this design, 
--- code, or information as one possible implementation of 
--- this feature, application or standard, Xilinx is making no 
--- representation that this implementation is free from any 
--- claims of infringement. You are responsible for 
--- obtaining any rights you may require for your implementation. 
--- Xilinx expressly disclaims any warranty whatsoever with 
--- respect to the adequacy of the implementation, including 
--- but not limited to any warranties or representations that this
--- implementation is free from claims of infringement, implied 
--- warranties of merchantability or fitness for a particular 
--- purpose.
+-- This file contains confidential and proprietary information
+-- of Xilinx, Inc. and is protected under U.S. and 
+-- international copyright and other intellectual property
+-- laws.
 --
--- Xilinx products are not intended for use in life support
--- appliances, devices, or systems. Use in such applications is
--- expressly prohibited.
+-- DISCLAIMER
+-- This disclaimer is not a license and does not grant any
+-- rights to the materials distributed herewith. Except as
+-- otherwise provided in a valid license issued to you by
+-- Xilinx, and to the maximum extent permitted by applicable
+-- law: (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND
+-- WITH ALL FAULTS, AND XILINX HEREBY DISCLAIMS ALL WARRANTIES
+-- AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY, INCLUDING
+-- BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-
+-- INFRINGEMENT, OR FITNESS FOR ANY PARTICULAR PURPOSE; and
+-- (2) Xilinx shall not be liable (whether in contract or tort,
+-- including negligence, or under any other theory of
+-- liability) for any loss or damage of any kind or nature
+-- related to, arising under or in connection with these
+-- materials, including for any direct, or any indirect,
+-- special, incidental, or consequential loss or damage
+-- (including loss of data, profits, goodwill, or any type of
+-- loss or damage suffered as a result of any action brought
+-- by a third party) even if such damage or loss was
+-- reasonably foreseeable or Xilinx had been advised of the
+-- possibility of the same.
 --
--- Any modifications that are made to the Source Code are 
--- done at the user's sole risk and will be unsupported.
+-- CRITICAL APPLICATIONS
+-- Xilinx products are not designed or intended to be fail-
+-- safe, or for use in any application requiring fail-safe
+-- performance, such as life-support or safety devices or
+-- systems, Class III medical devices, nuclear facilities,
+-- applications related to the deployment of airbags, or any
+-- other applications that could lead to death, personal
+-- injury, or severe property or environmental damage
+-- (individually and collectively, "Critical
+-- Applications"). Customer assumes the sole risk and
+-- liability of any use of Xilinx products in Critical
+-- Applications, subject only to applicable laws and
+-- regulations governing limitations on product liability.
 --
--- Copyright (c) 2006-2007 Xilinx, Inc. All rights reserved.
---
--- This copyright and support notice must be retained as part 
--- of this text at all times.
+-- THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS
+-- PART OF THIS FILE AT ALL TIMES.
 --*****************************************************************************
 --   ____  ____
 --  /   /\/   /
 -- /___/  \  /    Vendor: Xilinx
--- \   \   \/     Version: %version
+-- \   \   \/     Version: 3.6.1
 --  \   \         Application: MIG
 --  /   /         Filename: ddr2_phy_calib.vhd
--- /___/   /\     Date Last Modified: $Date: 2008/02/06 16:21:38 $
+-- /___/   /\     Date Last Modified: $Date: 2010/11/26 18:26:03 $
 -- \   \  /  \    Date Created: Wed Jan 10 2007
 --  \___\/\___\
 --
@@ -57,6 +61,9 @@
 --   This module handles calibration after memory initialization.
 --Reference:
 --Revision History:
+--  Rev 1.2 - (In sync with verilog) Change training pattern detected for stage 3 calibration.
+--             Use 2-bits per DQS group for stage 3 pattern detection.
+--             RC. 09/21/09
 --*****************************************************************************
 
 library ieee;
@@ -107,30 +114,30 @@ entity phy_calib is
     dlyce_gate             : out std_logic_vector(DQS_WIDTH-1 downto 0);
     dlyinc_gate            : out std_logic_vector(DQS_WIDTH-1 downto 0);
     en_dqs                 : out std_logic_vector(DQS_WIDTH-1 downto 0);
-    rd_data_sel            : out std_logic_vector(DQS_WIDTH-1 downto 0)
+    rd_data_sel            : out std_logic_vector(DQS_WIDTH-1 downto 0);
     -- Debug signals (optional use)
---    dbg_idel_up_all        : in  std_logic;
---    dbg_idel_down_all      : in  std_logic;
---    dbg_idel_up_dq         : in  std_logic;
---    dbg_idel_down_dq       : in  std_logic;
---    dbg_idel_up_dqs        : in  std_logic;
---    dbg_idel_down_dqs      : in  std_logic;
---    dbg_idel_up_gate       : in  std_logic;
---    dbg_idel_down_gate     : in  std_logic;
---    dbg_sel_idel_dq        : in  std_logic_vector(DQ_BITS-1 downto 0);
---    dbg_sel_all_idel_dq    : in  std_logic;
---    dbg_sel_idel_dqs       : in  std_logic_vector(DQS_BITS downto 0);
---    dbg_sel_all_idel_dqs   : in  std_logic;
---    dbg_sel_idel_gate      : in  std_logic_vector(DQS_BITS downto 0);
---    dbg_sel_all_idel_gate  : in  std_logic;
---    dbg_calib_done         : out std_logic_vector(3 downto 0);
---    dbg_calib_err          : out std_logic_vector(3 downto 0);
---    dbg_calib_dq_tap_cnt   : out std_logic_vector((6*DQ_WIDTH)-1 downto 0);
---    dbg_calib_dqs_tap_cnt  : out std_logic_vector((6*DQS_WIDTH)-1 downto 0);
---    dbg_calib_gate_tap_cnt : out std_logic_vector((6*DQS_WIDTH)-1 downto 0);
---    dbg_calib_rd_data_sel  : out std_logic_vector(DQS_WIDTH-1 downto 0);
---    dbg_calib_rden_dly     : out std_logic_vector((5*DQS_WIDTH)-1 downto 0);
---    dbg_calib_gate_dly     : out std_logic_vector((5*DQS_WIDTH)-1 downto 0)
+    dbg_idel_up_all        : in  std_logic;
+    dbg_idel_down_all      : in  std_logic;
+    dbg_idel_up_dq         : in  std_logic;
+    dbg_idel_down_dq       : in  std_logic;
+    dbg_idel_up_dqs        : in  std_logic;
+    dbg_idel_down_dqs      : in  std_logic;
+    dbg_idel_up_gate       : in  std_logic;
+    dbg_idel_down_gate     : in  std_logic;
+    dbg_sel_idel_dq        : in  std_logic_vector(DQ_BITS-1 downto 0);
+    dbg_sel_all_idel_dq    : in  std_logic;
+    dbg_sel_idel_dqs       : in  std_logic_vector(DQS_BITS downto 0);
+    dbg_sel_all_idel_dqs   : in  std_logic;
+    dbg_sel_idel_gate      : in  std_logic_vector(DQS_BITS downto 0);
+    dbg_sel_all_idel_gate  : in  std_logic;
+    dbg_calib_done         : out std_logic_vector(3 downto 0);
+    dbg_calib_err          : out std_logic_vector(3 downto 0);
+    dbg_calib_dq_tap_cnt   : out std_logic_vector((6*DQ_WIDTH)-1 downto 0);
+    dbg_calib_dqs_tap_cnt  : out std_logic_vector((6*DQS_WIDTH)-1 downto 0);
+    dbg_calib_gate_tap_cnt : out std_logic_vector((6*DQS_WIDTH)-1 downto 0);
+    dbg_calib_rd_data_sel  : out std_logic_vector(DQS_WIDTH-1 downto 0);
+    dbg_calib_rden_dly     : out std_logic_vector((5*DQS_WIDTH)-1 downto 0);
+    dbg_calib_gate_dly     : out std_logic_vector((5*DQS_WIDTH)-1 downto 0)
     );
 end entity phy_calib;
 
@@ -397,22 +404,40 @@ architecture syn of phy_calib is
   signal next_count_gate             : unsigned(DQS_BITS_FIX-1 downto 0);
   signal phy_init_rden_r             : std_logic;
   signal phy_init_rden_r1            : std_logic;
+  signal rd_data_fall_1x_bit1_r1     : std_logic_vector(DQS_WIDTH - 1 downto 0 );
   signal rd_data_fall_1x_r           : std_logic_vector(DQ_WIDTH-1 downto 0);
   signal rd_data_fall_1x_r1          : std_logic_vector(DQS_WIDTH-1 downto 0);
+  signal rd_data_fall_2x_bit1_r      : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal rd_data_fall_2x_r           : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal rd_data_fall_chk_q1         : std_logic_vector(DQS_WIDTH-1 downto 0);
+  signal rd_data_fall_chk_q1_bit1    : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal rd_data_fall_chk_q2         : std_logic_vector(DQS_WIDTH-1 downto 0);
+  signal rd_data_fall_chk_q2_bit1    : std_logic_vector(DQS_WIDTH-1 downto 0);
+  signal rd_data_rise_1x_bit1_r1     : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal rd_data_rise_1x_r           : std_logic_vector(DQ_WIDTH-1 downto 0);
   signal rd_data_rise_1x_r1          : std_logic_vector(DQS_WIDTH-1 downto 0);
+  signal rd_data_rise_2x_bit1_r      : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal rd_data_rise_2x_r           : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal rd_data_rise_chk_q1         : std_logic_vector(DQS_WIDTH-1 downto 0);
+  signal rd_data_rise_chk_q1_bit1    : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal rd_data_rise_chk_q2         : std_logic_vector(DQS_WIDTH-1 downto 0);
+  signal rd_data_rise_chk_q2_bit1    : std_logic_vector(DQS_WIDTH-1 downto 0);
   signal rdd_fall_q1                 : std_logic;
+  signal rdd_fall_q1_bit1            : std_logic;
+  signal rdd_fall_q1_bit1_r          : std_logic;
+  signal rdd_fall_q1_bit1_r1         : std_logic;
   signal rdd_fall_q1_r               : std_logic;
   signal rdd_fall_q1_r1              : std_logic;
   signal rdd_fall_q2                 : std_logic;
+  signal rdd_fall_q2_bit1            : std_logic;
+  signal rdd_fall_q2_bit1_r          : std_logic;
   signal rdd_fall_q2_r               : std_logic;
   signal rdd_rise_q1                 : std_logic;
+  signal rdd_rise_q1_bit1            : std_logic;
+  signal rdd_rise_q1_bit1_r          : std_logic;
+  signal rdd_rise_q1_bit1_r1         : std_logic;
+  signal rdd_rise_q2_bit1            : std_logic;
+  signal rdd_rise_q2_bit1_r          : std_logic;
   signal rdd_rise_q1_r               : std_logic;
   signal rdd_rise_q1_r1              : std_logic;
   signal rdd_rise_q2                 : std_logic;
@@ -429,13 +454,13 @@ architecture syn of phy_calib is
   signal rden_srl_out                : std_logic_vector(DQS_WIDTH-1 downto 0);
 
   -- Debug
---  type TYPE_DBG_DQ_ARRAY is array (DQ_WIDTH-1 downto 0) of
---    unsigned(5 downto 0);
---  type TYPE_DBG_DQS_ARRAY is array (DQS_WIDTH-1 downto 0) of
---    unsigned(5 downto 0);
---  signal dbg_dq_tap_cnt   : TYPE_DBG_DQ_ARRAY;
---  signal dbg_dqs_tap_cnt  : TYPE_DBG_DQS_ARRAY;
---  signal dbg_gate_tap_cnt : TYPE_DBG_DQS_ARRAY;
+  type TYPE_DBG_DQ_ARRAY is array (DQ_WIDTH-1 downto 0) of
+    unsigned(5 downto 0);
+  type TYPE_DBG_DQS_ARRAY is array (DQS_WIDTH-1 downto 0) of
+    unsigned(5 downto 0);
+  signal dbg_dq_tap_cnt   : TYPE_DBG_DQ_ARRAY;
+  signal dbg_dqs_tap_cnt  : TYPE_DBG_DQS_ARRAY;
+  signal dbg_gate_tap_cnt : TYPE_DBG_DQS_ARRAY;
 
   signal i_calib_done  : std_logic_vector(3 downto 0);
   signal i_dlyrst_dq   : std_logic;
@@ -451,6 +476,16 @@ architecture syn of phy_calib is
   attribute syn_preserve : boolean;
   attribute syn_replicate : boolean;
   attribute syn_preserve of u_calib_rden_srl_out_r  : label is true;
+
+  --attribute XIL_PAR_NO_REG_ORDER    : string;
+  --attribute XIL_PAR_PATH            : string;
+  --attribute syn_keep                : boolean;
+  --attribute KEEP                    : string;
+
+  --attribute XIL_PAR_NO_REG_ORDER of en_dqs : signal is "TRUE";
+  --attribute XIL_PAR_PATH         of en_dqs : signal is "Q->u_iodelay_dq_ce.DATAIN";
+  --attribute syn_keep             of en_dqs : signal is true;
+  --attribute KEEP                 of en_dqs : signal is "TRUE";
 
 begin
 
@@ -499,72 +534,72 @@ begin
   --*****************************************************************
 
   -- record DQ IDELAY tap values
---  gen_dbg_dq_tc: for dbg_dq_tc_i in 0 to DQ_WIDTH-1 generate
---    dbg_calib_dq_tap_cnt((6*dbg_dq_tc_i)+5 downto 6*dbg_dq_tc_i) <=
---      std_logic_vector(dbg_dq_tap_cnt(dbg_dq_tc_i));
---    process (clkdiv)
---    begin
---      if (rising_edge(clkdiv)) then
---        if ((rstdiv = '1') or (i_dlyrst_dq = '1')) then
---          dbg_dq_tap_cnt(dbg_dq_tc_i) <= TO_UNSIGNED(0,6);
---        elsif (i_dlyce_dq(dbg_dq_tc_i) = '1') then
---          if (i_dlyinc_dq(dbg_dq_tc_i) = '1') then
---            dbg_dq_tap_cnt(dbg_dq_tc_i) <= dbg_dq_tap_cnt(dbg_dq_tc_i) + 1;
---          else
---            dbg_dq_tap_cnt(dbg_dq_tc_i) <= dbg_dq_tap_cnt(dbg_dq_tc_i) - 1;
---          end if;
---        end if;
---      end if;
---    end process;
---  end generate;
+  gen_dbg_dq_tc: for dbg_dq_tc_i in 0 to DQ_WIDTH-1 generate
+    dbg_calib_dq_tap_cnt((6*dbg_dq_tc_i)+5 downto 6*dbg_dq_tc_i) <=
+      std_logic_vector(dbg_dq_tap_cnt(dbg_dq_tc_i));
+    process (clkdiv)
+    begin
+      if (rising_edge(clkdiv)) then
+        if ((rstdiv = '1') or (i_dlyrst_dq = '1')) then
+          dbg_dq_tap_cnt(dbg_dq_tc_i) <= TO_UNSIGNED(0,6);
+        elsif (i_dlyce_dq(dbg_dq_tc_i) = '1') then
+          if (i_dlyinc_dq(dbg_dq_tc_i) = '1') then
+            dbg_dq_tap_cnt(dbg_dq_tc_i) <= dbg_dq_tap_cnt(dbg_dq_tc_i) + 1;
+          else
+            dbg_dq_tap_cnt(dbg_dq_tc_i) <= dbg_dq_tap_cnt(dbg_dq_tc_i) - 1;
+          end if;
+        end if;
+      end if;
+    end process;
+  end generate;
 
   -- record DQS IDELAY tap values
---  gen_dbg_dqs_tc: for dbg_dqs_tc_i in 0 to DQS_WIDTH-1 generate
---    dbg_calib_dqs_tap_cnt((6*dbg_dqs_tc_i)+5 downto 6*dbg_dqs_tc_i) <=
---      std_logic_vector(dbg_dqs_tap_cnt(dbg_dqs_tc_i));
---    process (clkdiv)
---    begin
---      if (rising_edge(clkdiv)) then
---        if ((rstdiv = '1') or (i_dlyrst_dqs = '1')) then
---          dbg_dqs_tap_cnt(dbg_dqs_tc_i) <= TO_UNSIGNED(0,6);
---        elsif (i_dlyce_dqs(dbg_dqs_tc_i) = '1') then
---          if (i_dlyinc_dqs(dbg_dqs_tc_i) = '1') then
---            dbg_dqs_tap_cnt(dbg_dqs_tc_i) <= dbg_dqs_tap_cnt(dbg_dqs_tc_i) + 1;
---          else
---            dbg_dqs_tap_cnt(dbg_dqs_tc_i) <= dbg_dqs_tap_cnt(dbg_dqs_tc_i) - 1;
---          end if;
---        end if;
---      end if;
---    end process;
---  end generate;
+  gen_dbg_dqs_tc: for dbg_dqs_tc_i in 0 to DQS_WIDTH-1 generate
+    dbg_calib_dqs_tap_cnt((6*dbg_dqs_tc_i)+5 downto 6*dbg_dqs_tc_i) <=
+      std_logic_vector(dbg_dqs_tap_cnt(dbg_dqs_tc_i));
+    process (clkdiv)
+    begin
+      if (rising_edge(clkdiv)) then
+        if ((rstdiv = '1') or (i_dlyrst_dqs = '1')) then
+          dbg_dqs_tap_cnt(dbg_dqs_tc_i) <= TO_UNSIGNED(0,6);
+        elsif (i_dlyce_dqs(dbg_dqs_tc_i) = '1') then
+          if (i_dlyinc_dqs(dbg_dqs_tc_i) = '1') then
+            dbg_dqs_tap_cnt(dbg_dqs_tc_i) <= dbg_dqs_tap_cnt(dbg_dqs_tc_i) + 1;
+          else
+            dbg_dqs_tap_cnt(dbg_dqs_tc_i) <= dbg_dqs_tap_cnt(dbg_dqs_tc_i) - 1;
+          end if;
+        end if;
+      end if;
+    end process;
+  end generate;
 
   -- record DQS gate IDELAY tap values
---  gen_dbg_gate_tc: for dbg_gate_tc_i in 0 to DQS_WIDTH-1 generate
---    dbg_calib_gate_tap_cnt((6*dbg_gate_tc_i)+5 downto 6*dbg_gate_tc_i) <=
---      std_logic_vector(dbg_gate_tap_cnt(dbg_gate_tc_i));
---    process (clkdiv)
---    begin
---      if (rising_edge(clkdiv)) then
---        if ((rstdiv = '1') or (i_dlyrst_gate(dbg_gate_tc_i) = '1')) then
---          dbg_gate_tap_cnt(dbg_gate_tc_i) <= TO_UNSIGNED(0,6);
---        elsif (i_dlyce_gate(dbg_gate_tc_i) = '1') then
---          if (i_dlyinc_gate(dbg_gate_tc_i) = '1') then
---            dbg_gate_tap_cnt(dbg_gate_tc_i) <=
---              dbg_gate_tap_cnt(dbg_gate_tc_i) + 1;
---          else
---            dbg_gate_tap_cnt(dbg_gate_tc_i) <=
---              dbg_gate_tap_cnt(dbg_gate_tc_i) - 1;
---          end if;
---        end if;
---      end if;
---    end process;
---  end generate;
+  gen_dbg_gate_tc: for dbg_gate_tc_i in 0 to DQS_WIDTH-1 generate
+    dbg_calib_gate_tap_cnt((6*dbg_gate_tc_i)+5 downto 6*dbg_gate_tc_i) <=
+      std_logic_vector(dbg_gate_tap_cnt(dbg_gate_tc_i));
+    process (clkdiv)
+    begin
+      if (rising_edge(clkdiv)) then
+        if ((rstdiv = '1') or (i_dlyrst_gate(dbg_gate_tc_i) = '1')) then
+          dbg_gate_tap_cnt(dbg_gate_tc_i) <= TO_UNSIGNED(0,6);
+        elsif (i_dlyce_gate(dbg_gate_tc_i) = '1') then
+          if (i_dlyinc_gate(dbg_gate_tc_i) = '1') then
+            dbg_gate_tap_cnt(dbg_gate_tc_i) <=
+              dbg_gate_tap_cnt(dbg_gate_tc_i) + 1;
+          else
+            dbg_gate_tap_cnt(dbg_gate_tc_i) <=
+              dbg_gate_tap_cnt(dbg_gate_tc_i) - 1;
+          end if;
+        end if;
+      end if;
+    end process;
+  end generate;
 
---  dbg_calib_done        <= i_calib_done;
---  dbg_calib_err         <= calib_err;
---  dbg_calib_rd_data_sel <= cal2_rd_data_sel;
---  dbg_calib_rden_dly    <= rden_dly;
---  dbg_calib_gate_dly    <= gate_dly;
+  dbg_calib_done        <= i_calib_done;
+  dbg_calib_err         <= calib_err;
+  dbg_calib_rd_data_sel <= cal2_rd_data_sel;
+  dbg_calib_rden_dly    <= rden_dly;
+  dbg_calib_gate_dly    <= gate_dly;
 
   --***************************************************************************
   -- Read data pipelining, and read data "ISERDES" data width expansion
@@ -590,6 +625,14 @@ begin
   -- to compare data over consecutive clock cycles. We can also use this for
   -- stage 2 as well (stage 2 doesn't require every bit to be looked at, only
   -- one bit per DQS group)
+  -- MIG 3.3: Expand to use lower two bits of each DQS group - use for stage
+  --  3 calibration for added robustness, since we will be checking for the
+  --  training pattern from the memory even when the data bus is 3-stated.
+  --  Theoretically it is possible for whatever garbage data is on the bus
+  --  to be interpreted as the training sequence, although this can be made
+  --  very unlikely by the choice of training sequence (bit sequence, length)
+  --  and the number of bits compared for each DQS group.
+
   -- first stage: keep data in fast clk domain. Store data over two
   -- consecutive clock cycles for rise/fall data for proper transfer
   -- to slow clock domain
@@ -599,6 +642,8 @@ begin
       if (rising_edge(clk)) then
         rd_data_rise_2x_r(rdd_i) <= rd_data_rise(rdd_i*DQ_PER_DQS);
         rd_data_fall_2x_r(rdd_i) <= rd_data_fall(rdd_i*DQ_PER_DQS);
+        rd_data_rise_2x_bit1_r(rdd_i) <= rd_data_rise((rdd_i*DQ_PER_DQS)+1);
+        rd_data_fall_2x_bit1_r(rdd_i) <= rd_data_fall((rdd_i*DQ_PER_DQS)+1);
       end if;
     end process;
     -- second stage, register first stage to slow clock domain, 2nd stage
@@ -608,6 +653,8 @@ begin
       if (rising_edge(clkdiv)) then
         rd_data_rise_1x_r1(rdd_i) <= rd_data_rise_2x_r(rdd_i);
         rd_data_fall_1x_r1(rdd_i) <= rd_data_fall_2x_r(rdd_i);
+        rd_data_rise_1x_bit1_r1(rdd_i) <= rd_data_rise_2x_bit1_r(rdd_i);
+        rd_data_fall_1x_bit1_r1(rdd_i) <= rd_data_fall_2x_bit1_r(rdd_i);
       end if;
     end process;
     -- now we have four outputs - representing rise/fall outputs over last
@@ -621,6 +668,15 @@ begin
     rd_data_rise_chk_q2(rdd_i) <= rd_data_rise_1x_r1(rdd_i);
     rd_data_fall_chk_q1(rdd_i) <= rd_data_fall_1x_r((rdd_i*DQ_PER_DQS));
     rd_data_fall_chk_q2(rdd_i) <= rd_data_fall_1x_r1(rdd_i);
+    -- MIG 3.3: Added comparison for second bit in DQS group for stage 3 cal
+    rd_data_rise_chk_q1_bit1(rdd_i)
+               <= rd_data_rise_1x_r((rdd_i*DQ_PER_DQS)+1);
+    rd_data_rise_chk_q2_bit1(rdd_i)
+               <= rd_data_rise_1x_bit1_r1(rdd_i);
+    rd_data_fall_chk_q1_bit1(rdd_i)
+               <= rd_data_fall_1x_r((rdd_i*DQ_PER_DQS)+1);
+    rd_data_fall_chk_q2_bit1(rdd_i)
+               <= rd_data_fall_1x_bit1_r1(rdd_i);
   end generate;
 
   --*****************************************************************
@@ -642,8 +698,7 @@ begin
         when "111" =>
           rdd_mux_sel <= next_count_gate;
         when others =>
---          rdd_mux_sel <= (others => 'X');
-          rdd_mux_sel <= (others => '0');
+          rdd_mux_sel <= (others => 'X');
       end case;
     end if;
   end process;
@@ -655,6 +710,10 @@ begin
       rdd_rise_q2 <= rd_data_rise_chk_q2(to_integer(rdd_mux_sel));
       rdd_fall_q1 <= rd_data_fall_chk_q1(to_integer(rdd_mux_sel));
       rdd_fall_q2 <= rd_data_fall_chk_q2(to_integer(rdd_mux_sel));
+      rdd_rise_q1_bit1 <= rd_data_rise_chk_q1_bit1(to_integer(rdd_mux_sel));
+      rdd_rise_q2_bit1 <= rd_data_rise_chk_q2_bit1(to_integer(rdd_mux_sel));
+      rdd_fall_q1_bit1 <= rd_data_fall_chk_q1_bit1(to_integer(rdd_mux_sel));
+      rdd_fall_q2_bit1 <= rd_data_fall_chk_q2_bit1(to_integer(rdd_mux_sel));
     end if;
   end process;
 
@@ -670,25 +729,28 @@ begin
 
   -- don't use DLYRST to reset value of IDELAY after reset. Need to change this
   -- if we want to allow user to recalibrate after initial reset
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-   if (rstdiv = '1') then
+    if (rising_edge(clkdiv)) then
+      if (rstdiv = '1') then
         i_dlyrst_dq  <= '1';
         i_dlyrst_dqs <= '1';
-   elsif (rising_edge(clkdiv)) then
+      else
         i_dlyrst_dq  <= '0';
         i_dlyrst_dqs <= '0';
-   end if;
+      end if;
+    end if;
   end process;
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-    if (rstdiv = '1') then
+    if (rising_edge(clkdiv)) then
+      if (rstdiv = '1') then
         i_dlyce_dq   <= (others => '0');
         i_dlyinc_dq  <= (others => '0');
         i_dlyce_dqs  <= (others => '0');
         i_dlyinc_dqs <= (others => '0');
-    elsif (rising_edge(clkdiv)) then
+      else
         i_dlyce_dq   <= (others => '0');
         i_dlyinc_dq  <= (others => '0');
         i_dlyce_dqs  <= (others => '0');
@@ -728,51 +790,52 @@ begin
               end loop;
             end loop;
           end if;
---        elsif (DEBUG_EN /= 0) then
---          -- DEBUG: allow user to vary IDELAY tap settings
---          -- For DQ IDELAY taps
---          if ((dbg_idel_up_all = '1') or (dbg_idel_down_all = '1') or
---              (dbg_sel_all_idel_dq = '1')) then
---            for x in 0 to DQ_WIDTH-1 loop
---              i_dlyce_dq(x) <= dbg_idel_up_all or dbg_idel_down_all or
---                               dbg_idel_up_dq or dbg_idel_down_dq;
---              i_dlyinc_dq(x) <= dbg_idel_up_all or dbg_idel_up_dq;
---            end loop;
---          else
---            i_dlyce_dq <= (others => '0');
---            i_dlyce_dq(to_integer(unsigned(dbg_sel_idel_dq)))
---              <= dbg_idel_up_dq or dbg_idel_down_dq;
---            i_dlyinc_dq(to_integer(unsigned(dbg_sel_idel_dq)))
---              <= dbg_idel_up_dq;
---          end if;
---          -- For DQS IDELAY taps
---          if ((dbg_idel_up_all = '1') or (dbg_idel_down_all = '1') or
---              (dbg_sel_all_idel_dqs = '1')) then
---            for x in 0 to DQS_WIDTH-1 loop
---              i_dlyce_dqs(x) <= dbg_idel_up_all or dbg_idel_down_all or
---                                dbg_idel_up_dqs or dbg_idel_down_dqs;
---              i_dlyinc_dqs(x) <= dbg_idel_up_all or dbg_idel_up_dqs;
---            end loop;
---          else
---            i_dlyce_dqs <= (others => '0');
---            i_dlyce_dqs(to_integer(unsigned(dbg_sel_idel_dqs)))
---              <= dbg_idel_up_dqs or dbg_idel_down_dqs;
---            i_dlyinc_dqs(to_integer(unsigned(dbg_sel_idel_dqs)))
---              <= dbg_idel_up_dqs;
---          end if;
+        elsif (DEBUG_EN /= 0) then
+          -- DEBUG: allow user to vary IDELAY tap settings
+          -- For DQ IDELAY taps
+          if ((dbg_idel_up_all = '1') or (dbg_idel_down_all = '1') or
+              (dbg_sel_all_idel_dq = '1')) then
+            for x in 0 to DQ_WIDTH-1 loop
+              i_dlyce_dq(x) <= dbg_idel_up_all or dbg_idel_down_all or
+                               dbg_idel_up_dq or dbg_idel_down_dq;
+              i_dlyinc_dq(x) <= dbg_idel_up_all or dbg_idel_up_dq;
+            end loop;
+          else
+            i_dlyce_dq <= (others => '0');
+            i_dlyce_dq(to_integer(unsigned(dbg_sel_idel_dq)))
+              <= dbg_idel_up_dq or dbg_idel_down_dq;
+            i_dlyinc_dq(to_integer(unsigned(dbg_sel_idel_dq)))
+              <= dbg_idel_up_dq;
+          end if;
+          -- For DQS IDELAY taps
+          if ((dbg_idel_up_all = '1') or (dbg_idel_down_all = '1') or
+              (dbg_sel_all_idel_dqs = '1')) then
+            for x in 0 to DQS_WIDTH-1 loop
+              i_dlyce_dqs(x) <= dbg_idel_up_all or dbg_idel_down_all or
+                                dbg_idel_up_dqs or dbg_idel_down_dqs;
+              i_dlyinc_dqs(x) <= dbg_idel_up_all or dbg_idel_up_dqs;
+            end loop;
+          else
+            i_dlyce_dqs <= (others => '0');
+            i_dlyce_dqs(to_integer(unsigned(dbg_sel_idel_dqs)))
+              <= dbg_idel_up_dqs or dbg_idel_down_dqs;
+            i_dlyinc_dqs(to_integer(unsigned(dbg_sel_idel_dqs)))
+              <= dbg_idel_up_dqs;
+          end if;
         end if;
---      end if;
+      end if;
     end if;
   end process;
 
   -- GATE synchronization is handled directly by Stage 4 calibration FSM
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
+    if (rising_edge(clkdiv)) then
       if (rstdiv = '1') then
         i_dlyrst_gate <= (others => '1');
         i_dlyce_gate  <= (others => '0');
         i_dlyinc_gate <= (others => '0');
-    elsif (rising_edge(clkdiv)) then
+      else
         i_dlyrst_gate <= (others => '0');
         i_dlyce_gate  <= (others => '0');
         i_dlyinc_gate <= (others => '0');
@@ -798,24 +861,24 @@ begin
               i_dlyinc_gate(i) <= cal4_dlyinc_gate;
             end loop;
           end if;
---        elsif (DEBUG_EN /= 0) then
---          -- DEBUG: allow user to vary IDELAY tap settings
---          if ((dbg_idel_up_all = '1') or (dbg_idel_down_all = '1') or
---              (dbg_sel_all_idel_gate = '1')) then
---            for x in 0 to  DQS_WIDTH-1 loop
---              i_dlyce_gate(x) <= dbg_idel_up_all or dbg_idel_down_all or
---                                 dbg_idel_up_gate or dbg_idel_down_gate;
---              i_dlyinc_gate(x) <= dbg_idel_up_all or dbg_idel_up_gate;
---            end loop;
---          else
---            i_dlyce_gate <= (others => '0');
---            i_dlyce_gate(to_integer(unsigned(dbg_sel_idel_gate))) <=
---              dbg_idel_up_gate or dbg_idel_down_gate;
---            i_dlyinc_gate(to_integer(unsigned(dbg_sel_idel_gate))) <=
---              dbg_idel_up_gate;
---          end if;
+        elsif (DEBUG_EN /= 0) then
+          -- DEBUG: allow user to vary IDELAY tap settings
+          if ((dbg_idel_up_all = '1') or (dbg_idel_down_all = '1') or
+              (dbg_sel_all_idel_gate = '1')) then
+            for x in 0 to  DQS_WIDTH-1 loop
+              i_dlyce_gate(x) <= dbg_idel_up_all or dbg_idel_down_all or
+                                 dbg_idel_up_gate or dbg_idel_down_gate;
+              i_dlyinc_gate(x) <= dbg_idel_up_all or dbg_idel_up_gate;
+            end loop;
+          else
+            i_dlyce_gate <= (others => '0');
+            i_dlyce_gate(to_integer(unsigned(dbg_sel_idel_gate))) <=
+              dbg_idel_up_gate or dbg_idel_down_gate;
+            i_dlyinc_gate(to_integer(unsigned(dbg_sel_idel_gate))) <=
+              dbg_idel_up_gate;
+          end if;
         end if;
---      end if;
+      end if;
     end if;
   end process;
 
@@ -855,12 +918,12 @@ begin
   idel_set_wait <= '1' when ((dlyce_or  = '1') or
                              (idel_set_cnt /= IDEL_SET_VAL)) else '0';
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-    if (rstdiv = '1') then
+    if (rising_edge(clkdiv)) then
+      if (rstdiv = '1') then
         idel_set_cnt <= (others => '0');
-    elsif (rising_edge(clkdiv)) then
-      if (dlyce_or = '1') then
+      elsif (dlyce_or = '1') then
         idel_set_cnt <= (others => '0');
       elsif (idel_set_cnt /= IDEL_SET_VAL) then
         idel_set_cnt <= idel_set_cnt + "001";
@@ -875,15 +938,16 @@ begin
   -- following requirements: (1) only transition from 0->1 when the refresh
   -- request is needed, (2) stay at 1 and only transition 1->0 when
   -- CALIB_REF_DONE is asserted
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-    if (rstdiv = '1') then
+    if (rising_edge(clkdiv)) then
+      if (rstdiv = '1') then
         calib_ref_req <= '0';
-    elsif (rising_edge(clkdiv)) then
+      else
         calib_ref_req <= cal1_ref_req or
                          cal2_ref_req or
                          cal4_ref_req;
---      end if;
+      end if;
     end if;
   end process;
 
@@ -1028,8 +1092,7 @@ begin
       if (cal1_state = CAL1_INIT) then
         cal1_window_cnt <= (others => '0');
         cal1_found_window <= '0';
---        cal1_found_rising <= 'X';
-        cal1_found_rising <= '0';
+        cal1_found_rising <= 'X';
       elsif (cal1_data_chk_last_valid = '0') then
         -- if we haven't stored a previous value of CAL1_DATA_CHK (or it got
         -- invalidated because we detected an edge, and are now looking for the
@@ -1040,8 +1103,7 @@ begin
         -- edge on the next clock cycle (e.g. during CAL1_FIND_FIRST_EDGE)
         cal1_window_cnt   <= (others => '0');
         cal1_found_window <= '0';
---        cal1_found_rising <= 'X';
-        cal1_found_rising <= '0';
+        cal1_found_rising <= 'X';
       elsif (((cal1_state = CAL1_FIRST_EDGE_IDEL_WAIT) or
               (cal1_state = CAL1_SECOND_EDGE_IDEL_WAIT)) and
              (idel_set_wait = '0')) then
@@ -1065,8 +1127,7 @@ begin
           -- happen by design at least once after finding the first edge.
           cal1_window_cnt <= (others => '0');
           cal1_found_window <= '0';
---          cal1_found_rising <= 'X';
-          cal1_found_rising <= '0';
+          cal1_found_rising <= 'X';
         end if;
       end if;
     end if;
@@ -1077,12 +1138,9 @@ begin
   -- incremented to the maximum number of taps allowed
   --*****************************************************************
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-    if (rstdiv = '1') then
-        cal1_idel_tap_limit_hit <= '0';
-        cal1_idel_tap_cnt <= (others => '0');
-    elsif (rising_edge(clkdiv)) then
+    if (rising_edge(clkdiv)) then
       if (cal1_state = CAL1_INIT) then
         cal1_idel_tap_limit_hit <= '0';
         cal1_idel_tap_cnt <= (others => '0');
@@ -1128,12 +1186,13 @@ begin
   -- the number of taps that can be used in stage 2
   --*****************************************************************
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
+    if (rising_edge(clkdiv)) then
       if (rstdiv = '1') then
         cal1_idel_max_tap    <= (others => '0');
         cal1_idel_max_tap_we <= '0';
-      elsif (rising_edge(clkdiv)) then
+      else
         -- pipeline latch enable for CAL1_IDEL_MAX_TAP - we have plenty
         -- of time, tap count gets updated, then dead cycles waiting for
         -- IDELAY output to settle
@@ -1147,43 +1206,34 @@ begin
           cal1_idel_max_tap <= cal1_idel_tap_cnt;
         end if;
       end if;
---    end if;
+    end if;
   end process;
 
   --*****************************************************************
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-       if (rstdiv = '1') then
+    if (rising_edge(clkdiv)) then
+      if (rstdiv = '1') then
         i_calib_done(0)            <= '0';
---        calib_done_tmp(0)        <= 'X';
-        calib_done_tmp(0)        <= '0';
+        calib_done_tmp(0)        <= 'X';
         calib_err(0)             <= '0';
         count_dq                 <= (others => '0');
         next_count_dq            <= (others => '0');
---        cal1_bit_time_tap_cnt    <= (others => 'X');
---        cal1_data_chk_last       <= (others => 'X');
-        cal1_bit_time_tap_cnt    <= (others => '0');
-        cal1_data_chk_last       <= (others => '0');
---        cal1_data_chk_last_valid <= 'X';
-        cal1_data_chk_last_valid <= '0';
+        cal1_bit_time_tap_cnt    <= (others => 'X');
+        cal1_data_chk_last       <= (others => 'X');
+        cal1_data_chk_last_valid <= 'X';
         cal1_dlyce_dq            <= '0';
         cal1_dlyinc_dq           <= '0';
---        cal1_dqs_dq_init_phase   <= 'X';
---        cal1_first_edge_done     <= 'X';
---        cal1_found_second_edge   <= 'X';
-        cal1_dqs_dq_init_phase   <= '0';
-        cal1_first_edge_done     <= '0';
-        cal1_found_second_edge   <= '0';
---        cal1_first_edge_tap_cnt  <= (others => 'X');
---        cal1_idel_dec_cnt        <= (others => 'X');
---        cal1_idel_inc_cnt        <= (others => 'X');
-        cal1_first_edge_tap_cnt  <= (others => '0');
-        cal1_idel_dec_cnt        <= (others => '0');
-        cal1_idel_inc_cnt        <= (others => '0');
+        cal1_dqs_dq_init_phase   <= 'X';
+        cal1_first_edge_done     <= 'X';
+        cal1_found_second_edge   <= 'X';
+        cal1_first_edge_tap_cnt  <= (others => 'X');
+        cal1_idel_dec_cnt        <= (others => 'X');
+        cal1_idel_inc_cnt        <= (others => 'X');
         cal1_ref_req             <= '0';
         cal1_state               <= CAL1_IDLE;
-   elsif (rising_edge(clkdiv)) then
+      else
         -- default values for all "pulse" outputs
         cal1_ref_req <= '0';
         cal1_dlyce_dq <= '0';
@@ -1368,7 +1418,7 @@ begin
             end if;
         end case;
       end if;
---    end if;
+    end if;
   end process;
 
   --***************************************************************************
@@ -1417,11 +1467,14 @@ begin
     attribute syn_preserve of u_ff_rd_data_sel  : label is true;
     attribute syn_replicate of u_ff_rd_data_sel : label is false;
   begin
-    u_ff_rd_data_sel : FD
+    u_ff_rd_data_sel : FDRSE
       port map (
-        Q => rd_data_sel(rd_i),
-        C => clkdiv,
-        D => cal2_rd_data_sel(rd_i)
+        Q    => rd_data_sel(rd_i),
+        C    => clkdiv,
+        CE   => '1',
+        D    => cal2_rd_data_sel(rd_i),
+        R    => '0',
+        S    => '0'
         );
   end generate;
 
@@ -1467,12 +1520,9 @@ begin
   --       decrements) when searching for edge of the data valid window
   --*****************************************************************
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-    if (rstdiv = '1') then
-        cal2_idel_tap_limit_hit <= '0';
-        cal2_idel_tap_cnt <= (others => '0');
-    elsif (rising_edge(clkdiv)) then
+    if (rising_edge(clkdiv)) then
       if (cal2_state = CAL2_INIT) then
         cal2_idel_tap_limit_hit <= '0';
         cal2_idel_tap_cnt <= (others => '0');
@@ -1489,32 +1539,24 @@ begin
 
   --*****************************************************************
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-     if (rstdiv = '1') then
+    if (rising_edge(clkdiv)) then
+      if (rstdiv = '1') then
         i_calib_done(1)             <= '0';
---        calib_done_tmp(1)           <= 'X';
-        calib_done_tmp(1)           <= '0';
+        calib_done_tmp(1)           <= 'X';
         calib_err(1)                <= '0';
         count_dqs                   <= (others => '0');
         next_count_dqs              <= (others => '0');
         cal2_dlyce_dqs              <= '0';
         cal2_dlyinc_dqs             <= '0';
---        cal2_idel_dec_cnt           <= (others => 'X');
---        cal2_rd_data_last_valid_neg <= 'X';
---        cal2_rd_data_last_valid_pos <= 'X';
-        cal2_idel_dec_cnt           <= (others => '0');
-        cal2_rd_data_last_valid_neg <= '0';
-        cal2_rd_data_last_valid_pos <= '0';
+        cal2_idel_dec_cnt           <= (others => 'X');
+        cal2_rd_data_last_valid_neg <= 'X';
+        cal2_rd_data_last_valid_pos <= 'X';
         cal2_rd_data_sel            <= (others => '0');
         cal2_ref_req                <= '0';
-        cal2_curr_sel               <= '0';
-        cal2_rd_data_fall_last_neg  <= '0';
-        cal2_rd_data_fall_last_pos  <= '0';
-        cal2_rd_data_rise_last_neg  <= '0';
-        cal2_rd_data_rise_last_pos  <= '0';
         cal2_state                  <= CAL2_IDLE;
-    elsif (rising_edge(clkdiv)) then
+      else
         cal2_ref_req <= '0';
         cal2_dlyce_dqs <= '0';
         cal2_dlyinc_dqs <= '0';
@@ -1668,7 +1710,7 @@ begin
             end if;
         end case;
       end if;
---    end if;
+    end if;
   end process;
 
   --***************************************************************************
@@ -1730,11 +1772,14 @@ begin
     attribute syn_preserve of u_ff_cal_rden_dly  : label is true;
     attribute syn_replicate of u_ff_cal_rden_dly : label is false;
   begin
-    u_ff_cal_rden_dly : FD
+    u_ff_cal_rden_dly : FDRSE
       port map (
-        Q => calib_rden_srl_a_r(cal_rden_ff_i),
-        C => clkdiv,
-        D => calib_rden_srl_a(cal_rden_ff_i)
+        Q    => calib_rden_srl_a_r(cal_rden_ff_i),
+        C    => clkdiv,
+        CE   => '1',
+        D    => calib_rden_srl_a(cal_rden_ff_i),
+        R    => '0',
+        S    => '0'
         );
   end generate;
 
@@ -1748,11 +1793,14 @@ begin
       D    => calib_rden_edge_r
     );
 
-  u_calib_rden_srl_out_r : FD
+  u_calib_rden_srl_out_r : FDRSE
     port map (
-      Q  => calib_rden_srl_out_r,
-      C  => clk,
-      D  => calib_rden_srl_out
+      Q    => calib_rden_srl_out_r,
+      C    => clk,
+      CE   => '1',
+      D    => calib_rden_srl_out,
+      R    => '0',
+      S    => '0'
     );
 
   -- convert to CLKDIV domain. Two version are generated because we need
@@ -1784,11 +1832,14 @@ begin
     attribute syn_preserve of u_ff_rden_dly  : label is true;
     attribute syn_replicate of u_ff_rden_dly : label is false;
   begin
-    u_ff_rden_dly : FD
+    u_ff_rden_dly : FDRSE
       port map (
-        Q => rden_dly_r(rden_ff_i),
-        C => clkdiv,
-        D => rden_dly(rden_ff_i)
+        Q    => rden_dly_r(rden_ff_i),
+        C    => clkdiv,
+        CE   => '1',
+        D    => rden_dly(rden_ff_i),
+        R    => '0',
+        S    => '0'
         );
   end generate;
 
@@ -1812,11 +1863,14 @@ begin
         CLK  => clk,
         D    => ctrl_rden_r
       );
-    u_calib_rden_r : FD
+    u_calib_rden_r : FDRSE
       port map (
-        Q  => calib_rden(rden_i),
-        C  => clk,
-        D  => rden_srl_out(rden_i)
+        Q    => calib_rden(rden_i),
+        C    => clk,
+        CE   => '1',
+        D    => rden_srl_out(rden_i),
+        R    => '0',
+        S    => '0'
       );
   end generate;
 
@@ -1826,9 +1880,10 @@ begin
   -- we're checking using a pipelined version of read data, so need to take
   -- this inherent delay into account in determining final read valid delay
   -- Data is written to the memory in the following order (first -> last):
-  --   0x1, 0xE, 0xE, 0x1, 0x1, 0xE, 0xE, 0x1
-  -- Looking just at LSb, expect data in sequence (in binary):
-  --   1, 0, 0, 1, 1, 0, 0, 1
+  --   0x1, 0xE, 0xE, 0x1, 0x1, 0xE, 0x1, 0xE
+  -- Looking at the two LSb bits, expect data in sequence (in binary):
+  --   bit[0]: 1, 0, 0, 1, 0, 1, 0, 1
+  --   bit[1]: 0, 1, 1, 0, 1, 0, 1, 0
   -- Check for the presence of the first 7 words, and compensate read valid
   -- delay accordingly. Don't check last falling edge data, it may be
   -- corrupted by the DQS tri-state glitch at end of read postamble
@@ -1844,6 +1899,13 @@ begin
       rdd_fall_q2_r  <= rdd_fall_q2;
       rdd_rise_q1_r1 <= rdd_rise_q1_r;
       rdd_fall_q1_r1 <= rdd_fall_q1_r;
+      -- MIG 3.3: Added comparison for second bit in DQS group for stage 3 cal
+      rdd_rise_q1_bit1_r  <= rdd_rise_q1_bit1;
+      rdd_fall_q1_bit1_r  <= rdd_fall_q1_bit1;
+      rdd_rise_q2_bit1_r  <= rdd_rise_q2_bit1;
+      rdd_fall_q2_bit1_r  <= rdd_fall_q2_bit1;
+      rdd_rise_q1_bit1_r1 <= rdd_rise_q1_bit1_r;
+      rdd_fall_q1_bit1_r1 <= rdd_fall_q1_bit1_r;
     end if;
   end process;
 
@@ -1861,9 +1923,16 @@ begin
           (rdd_fall_q2_r = '0') and
           (rdd_rise_q1_r = '0') and
           (rdd_fall_q1_r = '1') and
-          (rdd_rise_q2   = '1') and
-          (rdd_fall_q2   = '0') and
-          (rdd_rise_q1   = '0')) then
+          (rdd_rise_q2   = '0') and
+          (rdd_fall_q2   = '1') and
+          (rdd_rise_q1   = '0') and
+          (rdd_rise_q2_bit1_r = '0') and
+          (rdd_fall_q2_bit1_r = '1') and
+          (rdd_rise_q1_bit1_r = '1') and
+          (rdd_fall_q1_bit1_r = '0') and
+          (rdd_rise_q2_bit1   = '1') and
+          (rdd_fall_q2_bit1   = '0') and
+          (rdd_rise_q1_bit1   = '1')) then
         cal3_data_match <= '1';
       else
         cal3_data_match <= '0';
@@ -1877,9 +1946,16 @@ begin
           (rdd_fall_q1_r1 = '0') and
           (rdd_rise_q2_r  = '0') and
           (rdd_fall_q2_r  = '1') and
-          (rdd_rise_q1_r  = '1') and
-          (rdd_fall_q1_r  = '0') and
-          (rdd_rise_q2    = '0')) then
+          (rdd_rise_q1_r  = '0') and
+          (rdd_fall_q1_r  = '1') and
+          (rdd_rise_q2    = '0') and
+          (rdd_rise_q1_bit1_r1 = '0') and
+          (rdd_fall_q1_bit1_r1 = '1') and
+          (rdd_rise_q2_bit1_r  = '1') and
+          (rdd_fall_q2_bit1_r  = '0') and
+          (rdd_rise_q1_bit1_r  = '1') and
+          (rdd_fall_q1_bit1_r  = '0') and
+          (rdd_rise_q2_bit1    = '1')) then
         cal3_data_match_stgd <= '1';
       else
         cal3_data_match_stgd <= '0';
@@ -1900,18 +1976,17 @@ begin
   -- issued) does the expected data pattern arrive. Record this result
   -- NOTE: Can add error checking here in case valid data not found on any
   --  of the available pipeline stages
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-    if (rstdiv = '1') then
---        cal3_rden_srl_a <= (others => 'X');
-        cal3_rden_srl_a <= (others => '0');
+    if (rising_edge(clkdiv)) then
+      if (rstdiv = '1') then
+        cal3_rden_srl_a <= (others => 'X');
         cal3_state      <= CAL3_IDLE;
         i_calib_done(2) <= '0';
         calib_err_2(0)  <= '0';
         count_rden      <= (others => '0');
         rden_dly        <= (others => '0');
-        calib_rden_dly  <= (others => '0');
-    elsif (rising_edge(clkdiv)) then
+      else
 
         case (cal3_state) is
           when CAL3_IDLE =>
@@ -1991,7 +2066,7 @@ begin
             end if;
         end case;
       end if;
---    end if;
+    end if;
   end process;
 
   --*****************************************************************
@@ -2021,18 +2096,17 @@ begin
   --       (variation is too high for this algorithm to handle)
   --*****************************************************************
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
+    if (rising_edge(clkdiv)) then
       if (rstdiv = '1') then
         calib_err_2(1) <= '0';
---        calib_rden_sel <= (others => 'X');
-        calib_rden_sel <= (others => '0');
+        calib_rden_sel <= (others => 'X');
         rden_dec       <= '0';
-        rden_dly_0     <= (others => '0');
---        rden_dly_0     <= (others => 'X');
+        rden_dly_0     <= (others => 'X');
         rden_inc       <= '0';
         rden_mux       <= (others => '0');
-    elsif (rising_edge(clkdiv)) then
+      else
         -- if a match if found, then store the value of rden_dly
         if (i_calib_done(2) = '0') then
           if ((cal3_state = CAL3_DETECT) and (cal3_match_found = '1')) then
@@ -2080,7 +2154,7 @@ begin
           end if;
         end if;
       end if;
---    end if;
+    end if;
   end process;
 
   -- flag error for stage 3 if appropriate
@@ -2277,11 +2351,14 @@ begin
     attribute syn_preserve of u_ff_gate_dly  : label is true;
     attribute syn_replicate of u_ff_gate_dly : label is false;
   begin
-    u_ff_gate_dly : FD
+    u_ff_gate_dly : FDRSE
       port map (
-        Q => gate_dly_r(gate_ff_i),
-        C => clkdiv,
-        D => gate_dly(gate_ff_i)
+        Q    => gate_dly_r(gate_ff_i),
+        C    => clkdiv,
+        CE   => '1',
+        D    => gate_dly(gate_ff_i),
+        R    => '0',
+        S    => '0'
       );
   end generate;
 
@@ -2310,22 +2387,28 @@ begin
     begin
       -- add flop between SRL32 and EN_DQS flop (which is located near the
       -- DDR2 IOB's)
-      u_gate_srl_ff : FD
+      u_gate_srl_ff : FDRSE
         port map (
-          Q => gate_srl_out_r(gate_i),
-          C => clk,
-          D => gate_srl_out(gate_i)
+          Q    => gate_srl_out_r(gate_i),
+          C    => clk,
+          CE   => '1',
+          D    => gate_srl_out(gate_i),
+          R    => '0',
+          S    => '0'
           );
     end generate;
     gen_gate_base_dly_le3: if (GATE_BASE_DELAY <= 0) generate
       gate_srl_out_r(gate_i) <= gate_srl_out(gate_i);
     end generate;
 
-    u_en_dqs_ff : FD
+    u_en_dqs_ff : FDRSE
       port map (
-        Q  => en_dqs(gate_i),
-        C  => clk,
-        D  => gate_srl_out_r(gate_i)
+        Q    => en_dqs(gate_i),
+        C    => clk,
+        CE   => '1',
+        D    => gate_srl_out_r(gate_i),
+        R    => '0',
+        S    => '0'
       );
   end generate;
 
@@ -2337,12 +2420,9 @@ begin
   --*****************************************************************
 
   -- reset before we start to look for window
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-    if rstdiv = '1' then
-        cal4_window_cnt    <= (others => '0');
-        cal4_stable_window <= '0';    
-    elsif (rising_edge(clkdiv)) then
+    if (rising_edge(clkdiv)) then
       if (cal4_state = CAL4_INIT) then
         cal4_window_cnt    <= (others => '0');
         cal4_stable_window <= '0';
@@ -2369,13 +2449,9 @@ begin
   -- incremented to the maximum number of taps allowed
   --*****************************************************************
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
-    if (rstdiv = '1') then
-        cal4_idel_bit_tap <= '0';
-        cal4_idel_tap_cnt <= (others => '0');
-        cal4_idel_max_tap <= '0';
-    elsif (rising_edge(clkdiv)) then
+    if (rising_edge(clkdiv)) then
       if ((cal4_state = CAL4_INIT) or (cal4_dlyrst_gate = '1')) then
         cal4_idel_max_tap <= '0';
         cal4_idel_bit_tap <= '0';
@@ -2414,14 +2490,13 @@ begin
     end if;
   end process;
 
-calib_done_tmp(2) <= '0';
-
   --*****************************************************************
   -- Stage 4 cal state machine
   --*****************************************************************
 
-  process (clkdiv, rstdiv)
+  process (clkdiv)
   begin
+    if (rising_edge(clkdiv)) then
       if (rstdiv = '1') then
         i_calib_done(3)   <= '0';
         calib_done_tmp(3) <= '0';
@@ -2429,21 +2504,16 @@ calib_done_tmp(2) <= '0';
         count_gate        <= (others => '0');
         gate_dly          <= (others => '0');
         next_count_gate   <= (others => '0');
---        cal4_idel_adj_cnt <= (others => 'X');
-        cal4_idel_adj_cnt <= (others => '0');
+        cal4_idel_adj_cnt <= (others => 'X');
         cal4_dlyce_gate   <= '0';
         cal4_dlyinc_gate  <= '0';
         cal4_dlyrst_gate  <= '0';          -- reset handled elsewhere in code
---        cal4_gate_srl_a   <= (others => 'X');
---        cal4_rden_srl_a   <= (others => 'X');
-        cal4_gate_srl_a   <= (others => '0');
-        cal4_rden_srl_a   <= (others => '0');
+        cal4_gate_srl_a   <= (others => 'X');
+        cal4_rden_srl_a   <= (others => 'X');
         cal4_ref_req      <= '0';
---        cal4_seek_left    <= 'X';
-        cal4_seek_left    <= '0';
-        cal4_idel_adj_inc <= '0';
+        cal4_seek_left    <= 'X';
         cal4_state        <= CAL4_IDLE;
-    elsif (rising_edge(clkdiv)) then
+      else
         cal4_ref_req     <= '0';
         cal4_dlyce_gate  <= '0';
         cal4_dlyinc_gate <= '0';
@@ -2657,7 +2727,7 @@ calib_done_tmp(2) <= '0';
             end if;
         end case;
       end if;
---    end if;
+    end if;
   end process;
 
 end architecture syn;

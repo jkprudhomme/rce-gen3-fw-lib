@@ -40,10 +40,10 @@
 --   ____  ____
 --  /   /\/   /
 -- /___/  \  /    Vendor: Xilinx
--- \   \   \/     Version: 3.1
+-- \   \   \/     Version: 3.6.1
 --  \   \         Application: MIG
---  /   /         Filename: phy_dqs_iob.vhd
--- /___/   /\     Date Last Modified: $Date: 2009/03/31 15:57:10 $
+--  /   /         Filename: ddr2_phy_dqs_iob.vhd
+-- /___/   /\     Date Last Modified: $Date: 2010/11/26 18:26:03 $
 -- \   \  /  \    Date Created: Wed Jan 10 2007
 --  \___\/\___\
 --
@@ -58,6 +58,8 @@
 --             on IODELAY primitives. PK. 11/27/08
 --   Rev 1.3 - IDDR primitve (u_iddr_dq_ce) is replaced with a negative-edge
 --             triggered flip-flop. PK. 03/20/09
+--   Rev 1.4 - To fix CR 540201, S and syn_preserve attributes are added
+--             for dqs_oe_n_r. PK. 01/08/10
 --*****************************************************************************
 
 library ieee;
@@ -69,8 +71,8 @@ entity phy_dqs_iob is
   generic (
     -- Following parameters are for 72-bit RDIMM design (for ML561 Reference
     -- board design). Actual values may be different. Actual parameters values
-    -- are passed from design top module mig_31 module. Please refer to
-    -- the mig_31 module for actual values.
+    -- are passed from design top module mig_36_1 module. Please refer to
+    -- the mig_36_1 module for actual values.
     DDR_TYPE              : integer := 1;
     HIGH_PERFORMANCE_MODE : boolean := TRUE;
     IODELAY_GRP           : string  := "IODELAY_MIG"
@@ -143,6 +145,8 @@ architecture syn of phy_dqs_iob is
   attribute syn_useioff of u_iddr_dq_ce : label is true;
   attribute syn_replicate : boolean;
   attribute syn_replicate of u_iddr_dq_ce : label is false;
+  attribute S : string;
+  attribute S of dqs_oe_n_r : signal is "TRUE";
 
   attribute equivalent_register_removal : string;
   attribute max_fanout : string;
@@ -154,6 +158,7 @@ architecture syn of phy_dqs_iob is
   attribute equivalent_register_removal of dqs_rst_n_r : signal is "no";
   attribute syn_preserve of dqs_rst_n_r : signal is true;
   attribute syn_keep of dqs_rst_n_r : signal is true;
+  attribute syn_keep of dqs_oe_n_r : signal is true;
 
   signal i_delayed_dqs : std_logic;
 

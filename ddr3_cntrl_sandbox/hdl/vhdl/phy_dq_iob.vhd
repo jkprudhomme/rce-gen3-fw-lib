@@ -40,10 +40,10 @@
 --   ____  ____
 --  /   /\/   /
 -- /___/  \  /    Vendor: Xilinx
--- \   \   \/     Version: 3.1
+-- \   \   \/     Version: 3.6.1
 --  \   \         Application: MIG
---  /   /         Filename: phy_dq_iob.vhd
--- /___/   /\     Date Last Modified: $Date: 2009/03/23 16:10:57 $
+--  /   /         Filename: ddr2_phy_dq_iob.vhd
+-- /___/   /\     Date Last Modified: $Date: 2010/11/26 18:26:03 $
 -- \   \  /  \    Date Created: Wed Jan 10 2007
 --  \___\/\___\
 --
@@ -67,8 +67,8 @@ entity phy_dq_iob is
   generic (
     -- Following parameters are for 72-bit RDIMM design (for ML561 Reference
     -- board design). Actual values may be different. Actual parameters values
-    -- are passed from design top module mig_31 module. Please refer to
-    -- the mig_31 module for actual values.
+    -- are passed from design top module mig_36_1 module. Please refer to
+    -- the mig_36_1 module for actual values.
     HIGH_PERFORMANCE_MODE : boolean := TRUE;
     IODELAY_GRP           : string  := "IODELAY_MIG";
     FPGA_SPEED_GRADE      : integer := 2

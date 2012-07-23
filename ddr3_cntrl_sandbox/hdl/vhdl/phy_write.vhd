@@ -1,53 +1,49 @@
 --*****************************************************************************
 -- DISCLAIMER OF LIABILITY
--- 
--- This text/file contains proprietary, confidential
--- information of Xilinx, Inc., is distributed under license
--- from Xilinx, Inc., and may be used, copied and/or
--- disclosed only pursuant to the terms of a valid license
--- agreement with Xilinx, Inc. Xilinx hereby grants you a 
--- license to use this text/file solely for design, simulation, 
--- implementation and creation of design files limited 
--- to Xilinx devices or technologies. Use with non-Xilinx 
--- devices or technologies is expressly prohibited and 
--- immediately terminates your license unless covered by
--- a separate agreement.
 --
--- Xilinx is providing this design, code, or information 
--- "as-is" solely for use in developing programs and 
--- solutions for Xilinx devices, with no obligation on the 
--- part of Xilinx to provide support. By providing this design, 
--- code, or information as one possible implementation of 
--- this feature, application or standard, Xilinx is making no 
--- representation that this implementation is free from any 
--- claims of infringement. You are responsible for 
--- obtaining any rights you may require for your implementation. 
--- Xilinx expressly disclaims any warranty whatsoever with 
--- respect to the adequacy of the implementation, including 
--- but not limited to any warranties or representations that this
--- implementation is free from claims of infringement, implied 
--- warranties of merchantability or fitness for a particular 
--- purpose.
+-- This file contains proprietary and confidential information of
+-- Xilinx, Inc. ("Xilinx"), that is distributed under a license
+-- from Xilinx, and may be used, copied and/or disclosed only
+-- pursuant to the terms of a valid license agreement with Xilinx.
 --
--- Xilinx products are not intended for use in life support
--- appliances, devices, or systems. Use in such applications is
--- expressly prohibited.
+-- XILINX IS PROVIDING THIS DESIGN, CODE, OR INFORMATION
+-- ("MATERIALS") "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+-- EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING WITHOUT
+-- LIMITATION, ANY WARRANTY WITH RESPECT TO NONINFRINGEMENT,
+-- MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE. Xilinx
+-- does not warrant that functions included in the Materials will
+-- meet the requirements of Licensee, or that the operation of the
+-- Materials will be uninterrupted or error-free, or that defects
+-- in the Materials will be corrected. Furthermore, Xilinx does
+-- not warrant or make any representations regarding use, or the
+-- results of the use, of the Materials in terms of correctness,
+-- accuracy, reliability or otherwise.
 --
--- Any modifications that are made to the Source Code are 
--- done at the user's sole risk and will be unsupported.
+-- Xilinx products are not designed or intended to be fail-safe,
+-- or for use in any application requiring fail-safe performance,
+-- such as life-support or safety devices or systems, Class III
+-- medical devices, nuclear facilities, applications related to
+-- the deployment of airbags, or any other applications that could
+-- lead to death, personal injury or severe property or
+-- environmental damage (individually and collectively, "critical
+-- applications"). Customer assumes the sole risk and liability
+-- of any use of Xilinx products in critical applications,
+-- subject only to applicable laws and regulations governing
+-- limitations on product liability.
 --
--- Copyright (c) 2006-2007 Xilinx, Inc. All rights reserved.
+-- Copyright 2006, 2007, 2008 Xilinx, Inc.
+-- All rights reserved.
 --
--- This copyright and support notice must be retained as part 
--- of this text at all times.
+-- This disclaimer and copyright notice must be retained as part
+-- of this file at all times.
 --*****************************************************************************
 --   ____  ____
 --  /   /\/   /
 -- /___/  \  /    Vendor: Xilinx
--- \   \   \/     Version: %version
+-- \   \   \/     Version: 3.6.1
 --  \   \         Application: MIG
 --  /   /         Filename: ddr2_phy_write.vhd
--- /___/   /\     Date Last Modified: $Date: 2008/02/06 16:21:38 $
+-- /___/   /\     Date Last Modified: $Date: 2010/11/26 18:26:03 $
 -- \   \  /  \    Date Created: Wed Jan 10 2007
 --  \___\/\___\
 --
@@ -59,6 +55,9 @@
 --   on CAS latency, additive latency, etc. Also splits the data and mask in
 --   rise and fall buses.
 --Revision History:
+--   Rev 1.1 - For Dual Rank parts support ODT logic corrected. PK. 08/05/08
+--   Rev 1.2 - Retain current data pattern for stage 4 calibration, and create
+--             new pattern for stage 4. RC. 09/21/09.
 --*****************************************************************************
 
 library ieee;
@@ -72,6 +71,7 @@ entity phy_write is
     -- are passed from design top module %modulename module. Please refer to
     -- the %modulename module for actual values.
     DQ_WIDTH       :     integer := 72;
+    CS_NUM         :     integer := 1;
     ADDITIVE_LAT   :     integer := 0;
     CAS_LAT        :     integer := 5;
     ECC_ENABLE     :     integer := 0;
@@ -83,7 +83,6 @@ entity phy_write is
     clk0              : in  std_logic;
     clk90             : in  std_logic;
     rst90             : in  std_logic;
-    rst270            : in  std_logic;
     wdf_data          : in  std_logic_vector((2*DQ_WIDTH)-1 downto 0);
     wdf_mask_data     : in  std_logic_vector((2*DQ_WIDTH/8)-1 downto 0);
     ctrl_wren         : in  std_logic;
@@ -94,7 +93,7 @@ entity phy_write is
     dqs_oe_n          : out std_logic;
     dqs_rst_n         : out std_logic;
     wdf_rden          : out std_logic;
-    odt               : out std_logic;
+    odt               : out std_logic_vector(CS_NUM-1 downto 0);
     wr_data_rise      : out std_logic_vector(DQ_WIDTH-1 downto 0);
     wr_data_fall      : out std_logic_vector(DQ_WIDTH-1 downto 0);
     mask_data_rise    : out std_logic_vector((DQ_WIDTH/8)-1 downto 0);
@@ -218,7 +217,12 @@ begin
   -- ODT generation for DDR2 based on write latency. The MIN write
   -- latency is 2. Based on the write latency ODT is asserted.
   gen_odt_ddr2_ddr3: if ((DDR_TYPE /= DDR1) and (ODT_TYPE > 0)) generate
-    gen_odt_ddr2_ddr3_wl_gt2: if (ODT_WR_LATENCY > 2) generate
+    gen_odt_ddr2_ddr3_wl_gt3: if (ODT_WR_LATENCY > 3) generate
+      odt_0 <= wr_stages(ODT_WR_LATENCY-2) or
+               wr_stages(ODT_WR_LATENCY-3) or
+               wr_stages(ODT_WR_LATENCY-4);
+    end generate;
+    gen_odt_ddr2_ddr3_wl_eq3: if (ODT_WR_LATENCY = 3) generate
       odt_0 <= wr_stages(ODT_WR_LATENCY-1) or
                wr_stages(ODT_WR_LATENCY-2) or
                wr_stages(ODT_WR_LATENCY-3);
@@ -236,7 +240,7 @@ begin
 
   dq_oe_0(0) <= wr_stages(WR_LATENCY-1) or wr_stages(WR_LATENCY);
   dq_oe_0(1) <= wr_stages(WR_LATENCY-1) or wr_stages(WR_LATENCY-2);
-  dqs_rst_0  <= not(wr_stages(WR_LATENCY-2)) and not(wr_stages(WR_LATENCY-3));
+  dqs_rst_0  <= not(wr_stages(WR_LATENCY-2));
   dm_ce_0    <= wr_stages(WR_LATENCY) or wr_stages(WR_LATENCY-1) or
                 wr_stages(WR_LATENCY-2);
 
@@ -473,9 +477,9 @@ begin
           when X"5" | X"7" =>
             init_data_r <= (others => '0');
             init_data_f <= (others => '0');
-	  -- MIG 2.1: Changed Stage 3/4 training pattern
+	      -- MIG 3.2: Changed Stage 3/4 training pattern
           -- Third and fourth stage calibration patern = 
-          --   11(r)->ee(f)->ee(r)->11(f)-11(r)->ee(f)->ee(r)->11(f)
+          --   11(r)->ee(f)->ee(r)->11(f)->ee(f)-11(r)->ee(r)->11(f)
           when X"8" =>
             for i in 0 to (DQ_WIDTH/4)-1 loop
               init_data_r((4*i)+3 downto 4*i) <= X"1";
@@ -488,17 +492,45 @@ begin
             end loop;
           when X"A" =>
             for i in 0 to (DQ_WIDTH/4)-1 loop
-              init_data_r((4*i)+3 downto 4*i) <= X"1";
-              init_data_f((4*i)+3 downto 4*i) <= X"E";
+              init_data_r((4*i)+3 downto 4*i) <= X"E";
+              init_data_f((4*i)+3 downto 4*i) <= X"1";
             end loop;
           when X"B" =>
             for i in 0 to (DQ_WIDTH/4)-1 loop
               init_data_r((4*i)+3 downto 4*i) <= X"E";
               init_data_f((4*i)+3 downto 4*i) <= X"1";
             end loop;
-          when others =>
-            init_data_r <= (others => 'X');
-            init_data_f <= (others => 'X');
+        -- Fourth stage calibration patern = 
+        --   11(r)->ee(f)->ee(r)->11(f)-11(r)->ee(f)->ee(r)->11(f)
+        when X"C" =>
+         for i in 0 to (DQ_WIDTH/4)-1 loop
+              init_data_r((4*i)+3 downto 4*i) <= X"1";
+              init_data_f((4*i)+3 downto 4*i) <= X"E";
+         end loop;
+        when X"D" =>
+            for i in 0 to (DQ_WIDTH/4)-1 loop
+              init_data_r((4*i)+3 downto 4*i) <= X"E";
+              init_data_f((4*i)+3 downto 4*i) <= X"1";
+            end loop;
+        when X"E" =>
+         for i in 0 to (DQ_WIDTH/4)-1 loop
+              init_data_r((4*i)+3 downto 4*i) <= X"1";
+              init_data_f((4*i)+3 downto 4*i) <= X"E";
+         end loop;
+        when X"F" =>
+         for i in 0 to (DQ_WIDTH/4)-1 loop
+              -- MIG 3.5: Corrected last two writes for stage 4 calibration
+              -- training pattern. Previously MIG 3.3 and MIG 3.4 had the
+              -- incorrect pattern. This can sometimes result in a calibration
+              -- point with small timing margin.
+--              init_data_r((4*i)+3 downto 4*i) <= X"1";
+--              init_data_f((4*i)+3 downto 4*i) <= X"E";
+              init_data_r((4*i)+3 downto 4*i) <= X"E";
+              init_data_f((4*i)+3 downto 4*i) <= X"1";
+         end loop;
+        when others =>
+          init_data_r <= (others => 'X');
+          init_data_f <= (others => 'X');
         end case;
       end if;
     end if;
@@ -530,19 +562,21 @@ begin
     end if;
   end process;
 
-  gen_reg_odt_0: if (ODT_WR_LATENCY > 2) generate
+  gen_reg_odt_0: if (ODT_WR_LATENCY > 3) generate
     process (clk0)
     begin
       if (rising_edge(clk0)) then
-        odt <= odt_0;
+        odt <= (others => '0');
+        odt(0) <= odt_0;
       end if;
     end process;
   end generate;
 
-  gen_reg_odt_1: if (ODT_WR_LATENCY <= 2) generate
+  gen_reg_odt_1: if (ODT_WR_LATENCY <= 3) generate
     process (odt_0)
     begin
-      odt <= odt_0;
+        odt <= (others => '0');
+        odt(0) <= odt_0;
     end process;
   end generate;
 
