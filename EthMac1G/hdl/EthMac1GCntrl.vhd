@@ -218,14 +218,14 @@ begin
    end process;
 
    -- Data mux
-   emacTxData <= txFifoData(63 downto 56) when txCount(2 downto 0) = "000" else
-                 txFifoData(55 downto 48) when txCount(2 downto 0) = "001" else
-                 txFifoData(47 downto 40) when txCount(2 downto 0) = "010" else
-                 txFifoData(39 downto 32) when txCount(2 downto 0) = "011" else
-                 txFifoData(31 downto 24) when txCount(2 downto 0) = "100" else
-                 txFifoData(23 downto 16) when txCount(2 downto 0) = "101" else
-                 txFifoData(15 downto  8) when txCount(2 downto 0) = "110" else
-                 txFifoData(7  downto  0);
+   emacTxData <= txFifoDout(63 downto 56) when txCount(2 downto 0) = "000" else
+                 txFifoDout(55 downto 48) when txCount(2 downto 0) = "001" else
+                 txFifoDout(47 downto 40) when txCount(2 downto 0) = "010" else
+                 txFifoDout(39 downto 32) when txCount(2 downto 0) = "011" else
+                 txFifoDout(31 downto 24) when txCount(2 downto 0) = "100" else
+                 txFifoDout(23 downto 16) when txCount(2 downto 0) = "101" else
+                 txFifoDout(15 downto  8) when txCount(2 downto 0) = "110" else
+                 txFifoDout(7  downto  0);
 
    -- ASync state logic
    process ( curTxState, emacTxAck, cmdFifoEmpty, txOpCode, txCount, txRespAck, txLength ) begin
