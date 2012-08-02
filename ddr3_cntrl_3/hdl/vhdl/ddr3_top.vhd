@@ -108,31 +108,31 @@ entity ddr3_top is
     ddr3_dqs               : inout std_logic_vector(DQS_WIDTH-1 downto 0);
     ddr3_dqs_n             : inout std_logic_vector(DQS_WIDTH-1 downto 0);
     ddr3_dq                : inout std_logic_vector(DQ_WIDTH-1 downto 0);
-    ddr3_reset_n	   : out std_logic;
+    ddr3_reset_n	   : out std_logic
 
     -- Debug signals (optional use)
-    dbg_idel_up_all        : in    std_logic;
-    dbg_idel_down_all      : in    std_logic;
-    dbg_idel_up_dq         : in    std_logic;
-    dbg_idel_down_dq       : in    std_logic;
-    dbg_idel_up_dqs        : in    std_logic;
-    dbg_idel_down_dqs      : in    std_logic;
-    dbg_idel_up_gate       : in    std_logic;
-    dbg_idel_down_gate     : in    std_logic;
-    dbg_sel_idel_dq        : in    std_logic_vector(DQ_BITS-1 downto 0);
-    dbg_sel_all_idel_dq    : in    std_logic;
-    dbg_sel_idel_dqs       : in    std_logic_vector(DQS_BITS downto 0);
-    dbg_sel_all_idel_dqs   : in    std_logic;
-    dbg_sel_idel_gate      : in    std_logic_vector(DQS_BITS downto 0);
-    dbg_sel_all_idel_gate  : in    std_logic;
-    dbg_calib_done         : out   std_logic_vector(3 downto 0);
-    dbg_calib_err          : out   std_logic_vector(3 downto 0);
-    dbg_calib_dq_tap_cnt   : out   std_logic_vector((6*DQ_WIDTH)-1 downto 0);
-    dbg_calib_dqs_tap_cnt  : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
-    dbg_calib_gate_tap_cnt : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
-    dbg_calib_rd_data_sel  : out   std_logic_vector(DQS_WIDTH-1 downto 0);
-    dbg_calib_rden_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0);
-    dbg_calib_gate_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0)
+--    dbg_idel_up_all        : in    std_logic;
+--    dbg_idel_down_all      : in    std_logic;
+--    dbg_idel_up_dq         : in    std_logic;
+--    dbg_idel_down_dq       : in    std_logic;
+--    dbg_idel_up_dqs        : in    std_logic;
+--    dbg_idel_down_dqs      : in    std_logic;
+--    dbg_idel_up_gate       : in    std_logic;
+--    dbg_idel_down_gate     : in    std_logic;
+--    dbg_sel_idel_dq        : in    std_logic_vector(DQ_BITS-1 downto 0);
+--    dbg_sel_all_idel_dq    : in    std_logic;
+--    dbg_sel_idel_dqs       : in    std_logic_vector(DQS_BITS downto 0);
+--    dbg_sel_all_idel_dqs   : in    std_logic;
+--    dbg_sel_idel_gate      : in    std_logic_vector(DQS_BITS downto 0);
+--    dbg_sel_all_idel_gate  : in    std_logic;
+--    dbg_calib_done         : out   std_logic_vector(3 downto 0);
+--    dbg_calib_err          : out   std_logic_vector(3 downto 0);
+--    dbg_calib_dq_tap_cnt   : out   std_logic_vector((6*DQ_WIDTH)-1 downto 0);
+--    dbg_calib_dqs_tap_cnt  : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
+--    dbg_calib_gate_tap_cnt : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
+--    dbg_calib_rd_data_sel  : out   std_logic_vector(DQS_WIDTH-1 downto 0);
+--    dbg_calib_rden_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0);
+--    dbg_calib_gate_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0)
     );
 end entity ddr3_top;
 
@@ -224,7 +224,7 @@ end component;
       clkdiv0                : in    std_logic;
       rst0                   : in    std_logic;
       rst90                  : in    std_logic;
---      rst270                 : in    std_logic;
+      rst270                 : in    std_logic;
       rstdiv0                : in    std_logic;
  
       mi_mcaddressvalid      : in    std_logic;
@@ -267,30 +267,34 @@ end component;
       ddr_dm                 : out   std_logic_vector(DM_WIDTH-1 downto 0);
       ddr_dqs                : inout std_logic_vector(DQS_WIDTH-1 downto 0);
       ddr_dqs_n              : inout std_logic_vector(DQS_WIDTH-1 downto 0);
-      ddr_dq                 : inout std_logic_vector(DQ_WIDTH-1 downto 0);
+      ddr_dq                 : inout std_logic_vector(DQ_WIDTH-1 downto 0)
 
-      dbg_idel_up_all        : in    std_logic;
-      dbg_idel_down_all      : in    std_logic;
-      dbg_idel_up_dq         : in    std_logic;
-      dbg_idel_down_dq       : in    std_logic;
-      dbg_idel_up_dqs        : in    std_logic;
-      dbg_idel_down_dqs      : in    std_logic;
-      dbg_idel_up_gate       : in    std_logic;
-      dbg_idel_down_gate     : in    std_logic;
-      dbg_sel_idel_dq        : in    std_logic_vector(DQ_BITS-1 downto 0);
-      dbg_sel_all_idel_dq    : in    std_logic;
-      dbg_sel_idel_dqs       : in    std_logic_vector(DQS_BITS downto 0);
-      dbg_sel_all_idel_dqs   : in    std_logic;
-      dbg_sel_idel_gate      : in    std_logic_vector(DQS_BITS downto 0);
-      dbg_sel_all_idel_gate  : in    std_logic;
-      dbg_calib_done         : out   std_logic_vector(3 downto 0);
-      dbg_calib_err          : out   std_logic_vector(3 downto 0);
-      dbg_calib_dq_tap_cnt   : out   std_logic_vector((6*DQ_WIDTH)-1 downto 0);
-      dbg_calib_dqs_tap_cnt  : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
-      dbg_calib_gate_tap_cnt : out   std_logic_vector((6*DQS_WIDTH)-1 downto 0);
-      dbg_calib_rd_data_sel  : out   std_logic_vector(DQS_WIDTH-1 downto 0);
-      dbg_calib_rden_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0);
-      dbg_calib_gate_dly     : out   std_logic_vector((5*DQS_WIDTH)-1 downto 0)
+--      dbg_idel_up_all        : in    std_logic;
+--      dbg_idel_down_all      : in    std_logic;
+--      dbg_idel_up_dq         : in    std_logic;
+--      dbg_idel_down_dq       : in    std_logic;
+--      dbg_idel_up_dqs        : in    std_logic;
+--      dbg_idel_down_dqs      : in    std_logic;
+--      dbg_idel_up_gate       : in    std_logic;
+--      dbg_idel_down_gate     : in    std_logic;
+--      dbg_sel_idel_dq        : in    std_logic_vector(DQ_BITS-1 downto 0);
+--      dbg_sel_all_idel_dq    : in    std_logic;
+--      dbg_sel_idel_dqs       : in    std_logic_vector(DQS_BITS downto 0);
+--      dbg_sel_all_idel_dqs   : in    std_logic;
+--      dbg_sel_idel_gate      : in    std_logic_vector(DQS_BITS downto 0);
+--      dbg_sel_all_idel_gate  : in    std_logic;
+--      dbg_calib_done         : out   std_logic_vector(3 downto 0);
+--      dbg_calib_err          : out   std_logic_vector(3 downto 0);
+--      dbg_calib_dq_tap_cnt   : out   std_logic_vector((6*DQ_WIDTH)-1 downto 0);
+--      dbg_calib_dqs_tap_cnt  : out   std_logic_vector((6*DQS_WIDTH)-1
+--                                                      downto 0);
+--      dbg_calib_gate_tap_cnt : out   std_logic_vector((6*DQS_WIDTH)-1
+--                                                      downto 0);
+--      dbg_calib_rd_data_sel  : out   std_logic_vector(DQS_WIDTH-1 downto 0);
+--      dbg_calib_rden_dly     : out   std_logic_vector((5*DQS_WIDTH)-1
+--                                                      downto 0);
+--      dbg_calib_gate_dly     : out   std_logic_vector((5*DQS_WIDTH)-1
+--                                                      downto 0)
 );
   end component;
   
@@ -459,7 +463,7 @@ begin
       clkdiv0                 => mi_mcclkdiv2,
       rst0                    => rst0,
       rst90                   => rst90,
---      rst270                  => rst270,
+      rst270                  => rst270,
       rstdiv0                 => rstdiv0,
 
 --      mi_mcaddressvalid       => mi_mcaddressvalid_r,
@@ -517,29 +521,29 @@ begin
       ddr_dm                  => ddr3_dm,
       ddr_dqs                 => ddr3_dqs,
       ddr_dqs_n               => ddr3_dqs_n,
-      ddr_dq                  => ddr3_dq,
-      dbg_idel_up_all         => dbg_idel_up_all,
-      dbg_idel_down_all       => dbg_idel_down_all,
-      dbg_idel_up_dq          => dbg_idel_up_dq,
-      dbg_idel_down_dq        => dbg_idel_down_dq,
-      dbg_idel_up_dqs         => dbg_idel_up_dqs,
-      dbg_idel_down_dqs       => dbg_idel_down_dqs,
-      dbg_idel_up_gate        => dbg_idel_up_gate,
-      dbg_idel_down_gate      => dbg_idel_down_gate,
-      dbg_sel_idel_dq         => dbg_sel_idel_dq,
-      dbg_sel_all_idel_dq     => dbg_sel_all_idel_dq,
-      dbg_sel_idel_dqs        => dbg_sel_idel_dqs,
-      dbg_sel_all_idel_dqs    => dbg_sel_all_idel_dqs,
-      dbg_sel_idel_gate       => dbg_sel_idel_gate,
-      dbg_sel_all_idel_gate   => dbg_sel_all_idel_gate,
-      dbg_calib_done          => dbg_calib_done,
-      dbg_calib_err           => dbg_calib_err,
-      dbg_calib_dq_tap_cnt    => dbg_calib_dq_tap_cnt,
-      dbg_calib_dqs_tap_cnt   => dbg_calib_dqs_tap_cnt,
-      dbg_calib_gate_tap_cnt  => dbg_calib_gate_tap_cnt,
-      dbg_calib_rd_data_sel   => dbg_calib_rd_data_sel,
-      dbg_calib_rden_dly      => dbg_calib_rden_dly,
-      dbg_calib_gate_dly      => dbg_calib_gate_dly
+      ddr_dq                  => ddr3_dq
+--      dbg_idel_up_all         => dbg_idel_up_all,
+--      dbg_idel_down_all       => dbg_idel_down_all,
+--      dbg_idel_up_dq          => dbg_idel_up_dq,
+--      dbg_idel_down_dq        => dbg_idel_down_dq,
+--      dbg_idel_up_dqs         => dbg_idel_up_dqs,
+--      dbg_idel_down_dqs       => dbg_idel_down_dqs,
+--      dbg_idel_up_gate        => dbg_idel_up_gate,
+--      dbg_idel_down_gate      => dbg_idel_down_gate,
+--      dbg_sel_idel_dq         => dbg_sel_idel_dq,
+--      dbg_sel_all_idel_dq     => dbg_sel_all_idel_dq,
+--      dbg_sel_idel_dqs        => dbg_sel_idel_dqs,
+--      dbg_sel_all_idel_dqs    => dbg_sel_all_idel_dqs,
+--      dbg_sel_idel_gate       => dbg_sel_idel_gate,
+--      dbg_sel_all_idel_gate   => dbg_sel_all_idel_gate,
+--      dbg_calib_done          => dbg_calib_done,
+--      dbg_calib_err           => dbg_calib_err,
+--      dbg_calib_dq_tap_cnt    => dbg_calib_dq_tap_cnt,
+--      dbg_calib_dqs_tap_cnt   => dbg_calib_dqs_tap_cnt,
+--      dbg_calib_gate_tap_cnt  => dbg_calib_gate_tap_cnt,
+--      dbg_calib_rd_data_sel   => dbg_calib_rd_data_sel,
+--      dbg_calib_rden_dly      => dbg_calib_rden_dly,
+--      dbg_calib_gate_dly      => dbg_calib_gate_dly
       );
   
 end architecture syn;
