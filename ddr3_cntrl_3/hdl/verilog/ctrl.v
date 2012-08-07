@@ -277,9 +277,9 @@ module u_ctrl #
   reg                                      mi_mc_rd_r;
   reg 					   mi_mc_rd_r1;
   reg 					   mi_mc_rd_r2; 
-//  reg 				           mi_mc_wr_r;      NOT USED
-//  reg 				           mi_mc_wr_r1;     NOT USED
-//  reg 				           mi_mc_wr_r2;     NOT USED
+  reg 				           mi_mc_wr_r;      
+  reg 				           mi_mc_wr_r1;     
+  reg 				           mi_mc_wr_r2;     
   reg [31:0]                               mi_mc_add_r;
   reg 				           mi_mc_add_val_r;
   reg 				           mi_mc_add_val_r1;
