@@ -1,0 +1,73 @@
+##############################################################
+#
+# Xilinx Core Generator version 13.4
+# Date: Mon Jun 18 22:23:56 2012
+#
+##############################################################
+#
+#  This file contains the customisation parameters for a
+#  Xilinx CORE Generator IP GUI. It is strongly recommended
+#  that you do not manually alter this file as it may cause
+#  unexpected and unsupported behavior.
+#
+##############################################################
+#
+#  Generated from component: xilinx.com:ip:c_addsub:11.0
+#
+##############################################################
+#
+# BEGIN Project Options
+SET addpads = true
+SET asysymbol = true
+SET busformat = BusFormatAngleBracketNotRipped
+SET createndf = false
+SET designentry = Verilog
+SET device = xc5vfx70t
+SET devicefamily = virtex5
+SET flowvendor = Foundation_ISE
+SET formalverification = false
+SET foundationsym = false
+SET implementationfiletype = Ngc
+SET package = ff1136
+SET removerpms = false
+SET simulationfiles = Structural
+SET speedgrade = -2
+SET verilogsim = true
+SET vhdlsim = false
+# END Project Options
+# BEGIN Select
+SELECT Adder_Subtracter xilinx.com:ip:c_addsub:11.0
+# END Select
+# BEGIN Parameters
+CSET a_type=Signed
+CSET a_width=15
+CSET add_mode=Add
+CSET ainit_value=0
+CSET b_constant=false
+CSET b_type=Signed
+CSET b_value=000000000000000
+CSET b_width=15
+CSET borrow_sense=Active_Low
+CSET bypass=false
+CSET bypass_ce_priority=CE_Overrides_Bypass
+CSET bypass_sense=Active_High
+CSET c_in=false
+CSET c_out=false
+CSET ce=true
+CSET component_name=AddSub
+CSET implementation=Fabric
+CSET latency=1
+CSET latency_configuration=Manual
+CSET out_width=16
+CSET sclr=false
+CSET sinit=false
+CSET sinit_value=0
+CSET sset=false
+CSET sync_ce_priority=Sync_Overrides_CE
+CSET sync_ctrl_priority=Reset_Overrides_Set
+# END Parameters
+# BEGIN Extra information
+MISC pkg_timestamp=2011-10-12T06:20:53Z
+# END Extra information
+GENERATE
+# CRC: 99d2d364
