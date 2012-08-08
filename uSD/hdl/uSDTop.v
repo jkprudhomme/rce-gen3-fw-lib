@@ -98,9 +98,7 @@ wire sdStatusCmd;
 wire [3:0] dataStatus;
 wire cmdStatus;
 //chipscope signals
-assign csData[63:0] = sdDataDebug[63:0];
-assign csData[81:64] = chipScopeSel ? sdCmdDebug[29:12] : sdDataDebug[82:64];
-assign csData[180:82] = sdDataDebug[180:82];
+assign csData[180:0] = sdDataDebug[180:0];
 assign csData[188:181] = sdCmdDebug[7:0]; // [3:0] = cmdState, [7:4] = rxCrcCheck[3:0]
 assign csData[196:189] = sdEngineDebug[7:0];
 assign csData[228:197] = cmdResponse[39:8];
@@ -114,6 +112,7 @@ assign csData[241] = sdDataEn;
 assign csData[242] = chipScopeSel;
 assign csData[248:243] = cmdFifoDataOut[63:58];
 assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], cmdStatus
+assign csData[253] = sdCmdDebug[30];
 assign csData[255] = sdClkInt;
 
 // active high internal reset

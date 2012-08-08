@@ -112,23 +112,25 @@ parameter ACMD6_WAIT     = 8'h14;
 parameter ACMD6_CHECK    = 8'h15;
 parameter SEND_ACMD42    = 8'h16;
 parameter ACMD42_WAIT    = 8'h17;
-parameter READY          = 8'h18;
-parameter CMD_READ       = 8'h19;
-parameter CMD_CHECK      = 8'h1A;
-parameter WRITE_CHECK    = 8'h1B;
-parameter SEND_CMD24     = 8'h1C;      // write block
-parameter CMD24_WAIT     = 8'h1D;
-parameter WRITE          = 8'h1E;
-parameter WRITE_WAIT     = 8'h1F;
-parameter READ_CHECK     = 8'h20;
-parameter SEND_CMD17     = 8'h21;      // read block
-parameter CMD17_WAIT     = 8'h22;
-parameter READ           = 8'h23;
-parameter READ_WAIT      = 8'h24;
-parameter RESULT_CHECK   = 8'h25;
-parameter WRITE_RESULT   = 8'h26;
-parameter SEND_ACMD13    = 8'h27;
-parameter ACMD13_WAIT    = 8'h28;
+parameter SEND_CMD16     = 8'h18;
+parameter CMD16_WAIT     = 8'h19;
+parameter READY          = 8'h1A;
+parameter CMD_READ       = 8'h1B;
+parameter CMD_CHECK      = 8'h1C;
+parameter WRITE_CHECK    = 8'h1D;
+parameter SEND_CMD24     = 8'h1E;      // write block
+parameter CMD24_WAIT     = 8'h1F;
+parameter WRITE          = 8'h20;
+parameter WRITE_WAIT     = 8'h21;
+parameter READ_CHECK     = 8'h22;
+parameter SEND_CMD17     = 8'h23;      // read block
+parameter CMD17_WAIT     = 8'h24;
+parameter READ           = 8'h25;
+parameter READ_WAIT      = 8'h26;
+parameter RESULT_CHECK   = 8'h27;
+parameter WRITE_RESULT   = 8'h28;
+parameter SEND_ACMD13    = 8'h29;
+parameter ACMD13_WAIT    = 8'h2A;
 
 
 // result fifo
@@ -343,10 +345,21 @@ begin
       end
       ACMD42_WAIT: begin
          if (dataReady) begin
-            cmdState <= READY;
+            cmdState <= SEND_CMD16;
 	 end
 	 else begin
             cmdState <= ACMD42_WAIT;
+         end
+      end
+      SEND_CMD16: begin
+         cmdState <= CMD16_WAIT;
+      end
+      CMD16_WAIT: begin
+         if (dataReady) begin
+            cmdState <= READY;
+	 end
+	 else begin
+            cmdState <= CMD16_WAIT;
          end
       end
       SEND_ACMD13: begin
@@ -516,12 +529,12 @@ begin
    SEND_ACMD41: begin
       newCmd <= 1'b1;
       argumentReg <= 32'h40FF8000;
-      cmdReg <= 16'h291A;
+      cmdReg <= 16'h2912;
    end
    ACMD41_WAIT: begin
       newCmd <= 1'b0;
       argumentReg <= 32'h40FF8000;
-      cmdReg <= 16'h291A;
+      cmdReg <= 16'h2912;
    end
    SEND_CMD2: begin
       newCmd <= 1'b1;
@@ -592,6 +605,16 @@ begin
       newCmd <= 1'b0;
       argumentReg <= 32'h00000000;
       cmdReg <= 16'h2A1A;
+  end
+  SEND_CMD16: begin
+      newCmd <= 1'b1;
+      argumentReg <= 32'h00000200;
+      cmdReg <= 16'h101A;
+  end
+  CMD16_WAIT: begin
+      newCmd <= 1'b0;
+      argumentReg <= 32'h00000200;
+      cmdReg <= 16'h101A;
    end
    READY: begin
       newCmd <= 1'b0;
@@ -646,7 +669,7 @@ begin
    end
    READ: begin
       readCmd <= 1'b1;
-      if (cmdFifoDataOut[63:58 == 13]) begin
+      if (cmdFifoDataOut[63:58] == 13) begin
          sdStatusCmd <= 1'b1;
       end
       else begin
@@ -655,7 +678,7 @@ begin
    end
    READ_WAIT: begin
       readCmd <= 1'b0;
-      if (cmdFifoDataOut[63:58 == 13]) begin
+      if (cmdFifoDataOut[63:58] == 13) begin
          sdStatusCmd <= 1'b1;
       end
       else begin

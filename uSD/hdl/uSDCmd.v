@@ -57,6 +57,8 @@ wire [7:0] recSize;
 reg txCrcRst;
 reg rxCrcRst;
 reg [6:0] rxCrcCheck;
+wire rxCrcIn;
+
 // state machine states
 parameter RESET   = 4'h0;  // INIT from sdEngine
 parameter INIT    = 4'h1;  // 74 clock delay
@@ -81,7 +83,7 @@ assign sdCmdDebug[13] = rxCrcEnableInt;
 assign sdCmdDebug[14] = rxCrcEnableExt;
 assign sdCmdDebug[22:15] = rxCnt;
 assign sdCmdDebug[29:23] = rxCrcValue;
-
+assign sdCmdDebug[30] = rxCrcIn;
 
 // init counter
 always @(posedge sdClk or posedge sysRst)
@@ -355,8 +357,8 @@ always @(posedge sdClk) begin
   endcase
 end
 
-wire rxCrcIn;
-assign rxCrcIn  = (rxCnt == recSize) ? 1'b0 : (rxCnt > 6) ? sdCmdIn : 1'b0;
+
+assign rxCrcIn  = (rxCnt == recSize) ? 1'b0 : (rxCnt > 127) ? 1'b0 : (rxCnt > 6) ? sdCmdIn : 1'b0;
 
 sd_crc_7 sd_crc_7_tx(
    .BITVAL(cmdOut[txCnt]),
@@ -376,14 +378,14 @@ sd_crc_7 sd_crc_7_rx(
 
 // capture incomming crc
 always @(posedge sdClk) begin
-   if (rxCnt < 7) begin
-      rxCrcCheck[rxCnt] <= sdCmdIn;
+   if (rxCnt <= 8 & rxCnt >= 1) begin
+      rxCrcCheck[rxCnt -1] <= sdCmdIn;
    end
 end
 
 // check incomming crc
 always @(posedge sdClk) begin
-   if (cmdState == CRC_CHK) begin
+   if (cmdState == CRC_CHK & cmdReg[3]) begin
       if (rxCrcCheck == rxCrcValue) begin
          cmdStatus <= 1'b0;
       end
