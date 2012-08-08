@@ -279,7 +279,7 @@ begin
          when ST_TX_REQ =>
             txCountRst  <= '0';
             emacTxValid <= '1';
-            emacTxFirst <= '1';
+            emacTxFirst <= '0';
             cmdFifoRd   <= '0';
             txFifoRd    <= '0';
             txRespReq   <= '0';
