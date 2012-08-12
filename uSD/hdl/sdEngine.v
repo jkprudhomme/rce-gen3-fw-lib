@@ -142,6 +142,7 @@ assign sdEngineDebug[39:8] = initDelay;
 assign sdEngineDebug[40] = acmd41Done;
 assign sdEngineDebug[41] = acmd6Done;
 assign sdEngineDebug[57:42] = RCA;
+assign sdEngineDebug[58] = cmdFifoEmpty;
 // command response
 // generate delayed reset
 always @(posedge sdClkIn or negedge sysRstN)

@@ -113,6 +113,7 @@ assign csData[242] = chipScopeSel;
 assign csData[248:243] = cmdFifoDataOut[63:58];
 assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], cmdStatus
 assign csData[253] = sdCmdDebug[30];
+assign csData[254] = cmdFifoEmpty;
 assign csData[255] = sdClkInt;
 
 // active high internal reset
