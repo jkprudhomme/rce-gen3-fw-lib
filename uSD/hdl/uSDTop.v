@@ -101,7 +101,8 @@ wire cmdStatus;
 assign csData[180:0] = sdDataDebug[180:0];
 assign csData[188:181] = sdCmdDebug[7:0]; // [3:0] = cmdState, [7:4] = rxCrcCheck[3:0]
 assign csData[196:189] = sdEngineDebug[7:0];
-assign csData[228:197] = cmdResponse[39:8];
+// assign csData[228:197] = cmdResponse[39:8];
+assign csData[199:197] = {sdEngineDebug[41:40], sdEngineDebug[59]};  //acmd6Done, acmd41Done, acmd42Done
 assign csData[229] = sdStatusCmd;
 assign csData[230] = sdCmdIn;
 assign csData[231] = sdCmdOut;

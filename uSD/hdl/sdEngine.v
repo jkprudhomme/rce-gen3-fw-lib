@@ -141,6 +141,7 @@ assign sdEngineDebug[7:0] = cmdState;
 assign sdEngineDebug[39:8] = initDelay;
 assign sdEngineDebug[40] = acmd41Done;
 assign sdEngineDebug[41] = acmd6Done;
+assign sdEngineDebug[59] = acmd42Done;
 assign sdEngineDebug[57:42] = RCA;
 assign sdEngineDebug[58] = cmdFifoEmpty;
 // command response

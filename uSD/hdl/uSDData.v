@@ -71,11 +71,12 @@ reg writeCrcEnable;          // write crc enable
 reg readCrcEnable;          // read crc enable
 reg writeCrcRst;             // write crc reset
 reg readCrcRst;             // read crc reset
-reg [15:0] cmdState;
+reg [4:0] cmdState;
+reg [5:0] writeStatus;
 
 assign sdDataDebug[63:0]    = chipScopeSel ? readData      : writeData0;
 assign sdDataDebug[127:64]  = chipScopeSel ? {44'b0, dataStatus, readCrcCheck3} : writeData1;
-assign sdDataDebug[144:128] = {9'b0, writeCrcIn, cmdState};
+assign sdDataDebug[144:128] = {2'b0, writeStatus, writeCrcIn, cmdState};
 assign sdDataDebug[147:145] = chipScopeSel ? readByteCnt   : writeByteCnt;
 assign sdDataDebug[150:148] = chipScopeSel ? readBitCnt    : writeBitCnt;
 assign sdDataDebug[166:151] = chipScopeSel ? readCrcValue3 : writeCrcValue3;
@@ -86,23 +87,31 @@ assign sdDataDebug[173:170] = chipScopeSel ? readCrcCnt    : writeCrcCnt;
 assign sdDataDebug[174]     = chipScopeSel ? readCmd       : writeCmd;
 assign sdDataDebug[180:175] = chipScopeSel ? {1'b0, readStartBit, readBlockCnt}  : {1'b0, writeStartBit, writeBlockCnt};
 // state machine states
-parameter[3:0]
-   RESET       = 4'h0,  // [0] from sdEngine
-   IDLE        = 4'h1,  // [1] No commands
-   WRITE_WAIT  = 4'h2,  // [2]
-   WRITE_WAIT1 = 4'h3,
-   WRITE_START = 4'h4,  // [3] Write start bit
-   WRITE       = 4'h5,  // [4] Write Data
-   WRITE_CRC   = 4'h6,  // [5] Write CRC
-   WRITE_STOP  = 4'h7,  // [5] Write CRC
-   WRITE_TURN  = 4'h8,  // [5] Write CRC
-   BUSY_CHK    = 4'h9,  // [6] Check write complete
-   NOT_BUSY    = 4'hA,  // [7] send done bit
-   READ_START  = 4'hB,  // [8] Read start bit
-   READ        = 4'hC,  // [9] Read Data
-   READ_CRC    = 4'hD,  // [10] Read CRC
-   CRC_CHK     = 4'hE;  // [11] Check CRC
-//parameter DEAD        = 5'b11111;
+parameter[4:0]
+   RESET       = 5'h00,  //  from sdEngine
+   IDLE        = 5'h01,  //  No commands
+   WRITE_WAIT  = 5'h02,  // prefetch fifo data
+   WRITE_WAIT1 = 5'h03,  // prefetch fifo data
+   WRITE_WAIT2 = 5'h04,  // precharge crc
+   WRITE_START = 5'h05,  // Write start bit
+   WRITE       = 5'h06,  // Write Data
+   WRITE_CRC   = 5'h07,  // Write CRC
+   WRITE_STOP  = 5'h08,  // Write Stop bit
+   WRITE_TURN  = 5'h09,  // delay for status
+   WRITE_TURN1 = 5'h0A,  // delay for status2
+   WRITE_STAT0 = 5'h0B,  // read status start bit
+   WRITE_STAT1 = 5'h0C,  // read first status bit
+   WRITE_STAT2 = 5'h0D,  // read second status bit
+   WRITE_STAT3 = 5'h0E,  // read third status bit
+   WRITE_STAT4 = 5'h0F,  // read fourth status bit
+   WRITE_STAT5 = 5'h10,  // read fifth status bit
+   BUSY_CHK    = 5'h11,  // Check write complete
+   NOT_BUSY    = 5'h12,  // send done bit
+   READ_START  = 5'h13,  // Read start bit
+   READ        = 5'h14,  // Read Data
+   READ_CRC    = 5'h15,  // Read CRC
+   CRC_CHK     = 5'h16;  // Check CRC
+
 
 // write block counter
 always @(posedge sdClk or posedge sysRst)
@@ -385,6 +394,9 @@ begin
          cmdState <= WRITE_WAIT1;
       end
       WRITE_WAIT1: begin
+         cmdState <= WRITE_WAIT2;
+      end
+      WRITE_WAIT2: begin
          cmdState <= WRITE_START;
       end
       WRITE_START: begin
@@ -406,6 +418,27 @@ begin
          cmdState <= WRITE_TURN;
       end
       WRITE_TURN: begin
+         cmdState <= WRITE_TURN1;
+      end
+      WRITE_TURN1: begin
+         cmdState <= WRITE_STAT0;
+      end
+      WRITE_STAT0: begin
+         cmdState <= WRITE_STAT1;
+      end
+      WRITE_STAT1: begin
+         cmdState <= WRITE_STAT2;
+      end
+      WRITE_STAT2: begin
+         cmdState <= WRITE_STAT3;
+      end
+      WRITE_STAT3: begin
+         cmdState <= WRITE_STAT4;
+      end
+      WRITE_STAT4: begin
+         cmdState <= WRITE_STAT5;
+      end
+      WRITE_STAT5: begin
          cmdState <= BUSY_CHK;
       end
       BUSY_CHK: begin
@@ -465,6 +498,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        writeStatus <= 4'b0;
      end
      WRITE_WAIT: begin
 	writeFifoRe <= 1'b1;
@@ -477,6 +511,15 @@ always @(posedge sdClk) begin
      end
      WRITE_WAIT1: begin
 	writeFifoRe <= 1'b1;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b1;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b1;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+     end
+     WRITE_WAIT2: begin
+	writeFifoRe <= 1'b0;
 	readFifoWe  <= 1'b0;
         writeCrcEnable <= 1'b1;
         readCrcEnable <= 1'b0;
@@ -548,6 +591,84 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+     end
+     WRITE_TURN: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+     end
+     WRITE_TURN1: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+     end
+     WRITE_STAT0: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        writeStatus[5] <= sdDataIn[0];
+     end
+     WRITE_STAT1: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        writeStatus[4] <= sdDataIn[0];
+     end
+     WRITE_STAT2: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        writeStatus[3] <= sdDataIn[0];
+     end
+     WRITE_STAT3: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        writeStatus[2] <= sdDataIn[0];
+     end
+     WRITE_STAT4: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        writeStatus[1] <= sdDataIn[0];
+     end
+     WRITE_STAT5: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        writeStatus[0] <= sdDataIn[0];
      end
       BUSY_CHK: begin
 	writeFifoRe <= 1'b0;
@@ -639,7 +760,7 @@ begin
    if (sysRst) begin
       writeData0 <= 64'h0;
    end
-   else if (cmdState == WRITE_WAIT) begin
+   else if (cmdState == WRITE_WAIT2) begin
       writeData0 <= writeDataIn[63:0];
    end
    else if (cmdState == WRITE & writeByteCnt == 1) begin
@@ -694,6 +815,10 @@ begin
       sdDataOut <= 4'hF;
       writeCrcIn <= 4'h0;
    end
+   WRITE_WAIT2: begin
+      sdDataOut <= 4'hF;
+      writeCrcIn <= 4'h0;
+   end
    WRITE_START: begin
       sdDataOut <= 4'h0;
       writeCrcIn[3]  <= writeData0[7];
@@ -729,7 +854,7 @@ begin
 	    sdDataOut[0] <= writeData0[0];
             writeCrcIn[3] <= writeData0[15];
 	    writeCrcIn[2] <= writeData0[14];
-	    writeCrcIn[1] <= writeData0[14];
+	    writeCrcIn[1] <= writeData0[13];
 	    writeCrcIn[0] <= writeData0[12];
 	 end
          2: begin
@@ -874,7 +999,7 @@ begin
             writeCrcIn[3] <= writeData0[7];
 	    writeCrcIn[2] <= writeData0[6];
 	    writeCrcIn[1] <= writeData0[5];
-	    writeCrcIn[0] <= writeData0[3];
+	    writeCrcIn[0] <= writeData0[4];
 	 end
 	 endcase // case (writeBitCnt)
       end
@@ -956,7 +1081,7 @@ begin
 	    sdDataOut[1] <= writeData0[25];
 	    sdDataOut[0] <= writeData0[24];
             writeCrcIn[3] <= writeData0[39];
-	    writeCrcIn[2] <= writeData0[39];
+	    writeCrcIn[2] <= writeData0[38];
 	    writeCrcIn[1] <= writeData0[37];
 	    writeCrcIn[0] <= writeData0[36];
 	 end
@@ -1272,7 +1397,7 @@ begin
 	    sdDataOut[1] <= writeData0[17];
 	    sdDataOut[0] <= writeData0[16];
             writeCrcIn[3] <= writeData0[31];
-	    writeCrcIn[2] <= writeData0[32];
+	    writeCrcIn[2] <= writeData0[30];
 	    writeCrcIn[1] <= writeData0[29];
 	    writeCrcIn[0] <= writeData0[28];
 	 end
@@ -1326,7 +1451,7 @@ begin
 	    sdDataOut[1] <= writeData0[45];
 	    sdDataOut[0] <= writeData0[44];
             writeCrcIn[3] <= writeData0[43];
-	    writeCrcIn[2] <= writeData0[43];
+	    writeCrcIn[2] <= writeData0[42];
 	    writeCrcIn[1] <= writeData0[41];
 	    writeCrcIn[0] <= writeData0[40];
 	 end

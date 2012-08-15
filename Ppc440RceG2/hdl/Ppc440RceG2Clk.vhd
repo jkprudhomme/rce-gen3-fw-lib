@@ -312,7 +312,11 @@ begin
    cpuClk234_375MhzAdjRst     <= intClk234_375MhzAdjRst;
    cpuClk200MhzAdjRst         <= intClk200MhzAdjRst;
    asyncReset                 <= masterReset or powerOnReset;
-   intNotReady                <= (not memReady) or intClk312_5MhzRst or intClk312_5MhzAdjRst or
+   --intNotReady                <= (not memReady) or intClk312_5MhzRst or intClk312_5MhzAdjRst or
+   --                              intClk312_5Mhz90DegAdjRst or intClk156_25MhzAdjRst or
+   --                              intClk156_25MhzAdjRstPon or intClk468_75MhzRst or 
+   --                              intClk200MhzAdjRst or intClk234_375MhzAdjRst;
+   intNotReady                <= intClk312_5MhzRst or intClk312_5MhzAdjRst or
                                  intClk312_5Mhz90DegAdjRst or intClk156_25MhzAdjRst or
                                  intClk156_25MhzAdjRstPon or intClk468_75MhzRst or 
                                  intClk200MhzAdjRst or intClk234_375MhzAdjRst;
