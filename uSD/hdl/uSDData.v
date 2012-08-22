@@ -29,6 +29,9 @@ input writeFifoAlmostEmpty,
 input readFifoAlmostFull,
 input sdStatusCmd,
 input chipScopeSel,
+input r2Cmd,
+input r1Cmd,
+input [135:0] cmdResponseInt,
 //-------- Outputs
 output reg [3:0] sdDataOut,
 output reg sdDataEn,
@@ -38,7 +41,8 @@ output reg readFifoWe,
 output reg [71:0] readDataOut,
 output reg writeDone,
 output reg readDone,
-output reg [3:0] dataStatus
+output reg [3:0] dataStatus,
+output reg cmdDone
 
 );
 reg [3:0] writeBlockCnt;  // 6 bit counter for block (512 bytes per block / 8 bytes per fifo read)
@@ -86,6 +90,9 @@ assign sdDataDebug[169]     = chipScopeSel ? readFifoWe    : writeFifoRe;
 assign sdDataDebug[173:170] = chipScopeSel ? readCrcCnt    : writeCrcCnt;
 assign sdDataDebug[174]     = chipScopeSel ? readCmd       : writeCmd;
 assign sdDataDebug[180:175] = chipScopeSel ? {1'b0, readStartBit, readBlockCnt}  : {1'b0, writeStartBit, writeBlockCnt};
+assign sdDataDebug[181]     = r2Cmd;
+assign sdDataDebug[182]     = r1Cmd;
+assign sdDataDebug[183]     = cmdDone;
 // state machine states
 parameter[4:0]
    RESET       = 5'h00,  //  from sdEngine
@@ -110,8 +117,11 @@ parameter[4:0]
    READ_START  = 5'h13,  // Read start bit
    READ        = 5'h14,  // Read Data
    READ_CRC    = 5'h15,  // Read CRC
-   CRC_CHK     = 5'h16;  // Check CRC
-
+   CRC_CHK     = 5'h16,  // Check CRC
+   WRITE_R1    = 5'h17,  // write R1 CMD Result
+   WRITE_R21   = 5'h18,  // write R2 64 bits CMD Result
+   WRITE_R22   = 5'h19,  // write R2 64 bits CMD Result
+   CMD_DONE    = 5'h1A;  // R1/R2 CMD Done
 
 // write block counter
 always @(posedge sdClk or posedge sysRst)
@@ -387,6 +397,10 @@ begin
 	    cmdState <= WRITE_WAIT;
          else if (readCmd) 
 	    cmdState <= READ_START;
+         else if (r1Cmd) 
+	    cmdState <= WRITE_R1;
+         else if (r2Cmd) 
+	    cmdState <= WRITE_R21;
 	 else 
 	    cmdState <= IDLE;
       end
@@ -473,7 +487,18 @@ begin
       CRC_CHK: begin
          cmdState <= IDLE;
       end
-//      default : DEAD;
+      WRITE_R1: begin
+         cmdState <= CMD_DONE;
+      end
+      WRITE_R21: begin
+         cmdState <= WRITE_R22;
+      end
+      WRITE_R22: begin
+         cmdState <= CMD_DONE;
+      end
+      CMD_DONE: begin
+         cmdState <= IDLE;
+      end
       endcase // case (cmdState)
    end
 end
@@ -489,6 +514,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      IDLE: begin
 	writeFifoRe <= 1'b0;
@@ -499,6 +525,7 @@ always @(posedge sdClk) begin
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
         writeStatus <= 4'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_WAIT: begin
 	writeFifoRe <= 1'b1;
@@ -508,6 +535,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b1;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_WAIT1: begin
 	writeFifoRe <= 1'b1;
@@ -517,6 +545,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b1;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_WAIT2: begin
 	writeFifoRe <= 1'b0;
@@ -526,6 +555,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b1;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_START: begin
 	writeFifoRe <= 1'b0;
@@ -535,6 +565,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b1;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE: begin
         if (writeByteCnt == 1 & writeBitCnt == 7) begin
@@ -564,6 +595,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b1;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_CRC: begin
 	writeFifoRe <= 1'b0;
@@ -573,6 +605,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b1;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_STOP: begin
 	writeFifoRe <= 1'b0;
@@ -582,6 +615,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b1;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_TURN: begin
 	writeFifoRe <= 1'b0;
@@ -591,15 +625,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
-     end
-     WRITE_TURN: begin
-	writeFifoRe <= 1'b0;
-	readFifoWe  <= 1'b0;
-        writeCrcEnable <= 1'b0;
-        readCrcEnable <= 1'b0;
-        sdDataEn    <= 1'b0;
-        writeDone   <= 1'b0;
-        readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_TURN1: begin
 	writeFifoRe <= 1'b0;
@@ -609,6 +635,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      WRITE_STAT0: begin
 	writeFifoRe <= 1'b0;
@@ -619,6 +646,7 @@ always @(posedge sdClk) begin
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
         writeStatus[5] <= sdDataIn[0];
+        cmdDone     <= 1'b0;
      end
      WRITE_STAT1: begin
 	writeFifoRe <= 1'b0;
@@ -629,6 +657,7 @@ always @(posedge sdClk) begin
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
         writeStatus[4] <= sdDataIn[0];
+        cmdDone     <= 1'b0;
      end
      WRITE_STAT2: begin
 	writeFifoRe <= 1'b0;
@@ -639,6 +668,7 @@ always @(posedge sdClk) begin
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
         writeStatus[3] <= sdDataIn[0];
+        cmdDone     <= 1'b0;
      end
      WRITE_STAT3: begin
 	writeFifoRe <= 1'b0;
@@ -649,6 +679,7 @@ always @(posedge sdClk) begin
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
         writeStatus[2] <= sdDataIn[0];
+        cmdDone     <= 1'b0;
      end
      WRITE_STAT4: begin
 	writeFifoRe <= 1'b0;
@@ -659,6 +690,7 @@ always @(posedge sdClk) begin
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
         writeStatus[1] <= sdDataIn[0];
+        cmdDone     <= 1'b0;
      end
      WRITE_STAT5: begin
 	writeFifoRe <= 1'b0;
@@ -669,6 +701,7 @@ always @(posedge sdClk) begin
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
         writeStatus[0] <= sdDataIn[0];
+        cmdDone     <= 1'b0;
      end
       BUSY_CHK: begin
 	writeFifoRe <= 1'b0;
@@ -678,6 +711,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
       end
       NOT_BUSY: begin
 	writeFifoRe <= 1'b0;
@@ -687,6 +721,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b1;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
       end
      READ_START: begin
 	writeFifoRe <= 1'b0;
@@ -701,6 +736,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      READ: begin
         if (readByteCnt == 1 & readBitCnt == 7) begin
@@ -732,6 +768,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
      READ_CRC: begin
 	writeFifoRe <= 1'b0;
@@ -741,6 +778,7 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
      end
       CRC_CHK: begin
 	writeFifoRe <= 1'b0;
@@ -750,6 +788,47 @@ always @(posedge sdClk) begin
         sdDataEn    <= 1'b0;
         writeDone   <= 1'b0;
         readDone    <= 1'b1;
+        cmdDone     <= 1'b0;
+      end
+     WRITE_R1: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b1;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
+     end
+     WRITE_R21: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b1;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
+     end
+     WRITE_R22: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b1;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        cmdDone     <= 1'b0;
+     end
+     CMD_DONE: begin
+	writeFifoRe <= 1'b0;
+	readFifoWe  <= 1'b0;
+        writeCrcEnable <= 1'b0;
+        readCrcEnable <= 1'b0;
+        sdDataEn    <= 1'b0;
+        writeDone   <= 1'b0;
+        readDone    <= 1'b0;
+        cmdDone     <= 1'b1;
      end
   endcase
 end
@@ -1948,10 +2027,26 @@ end
 
 always @(posedge sdClk)
 begin
-   if (readByteCnt == 7 & readBitCnt == 7) begin
-      readDataOut[63:0] <= readData;
-      readDataOut[71:64] <= 8'h0;
+   case (cmdState) // synthesis parallel_case full_case
+   READ: begin
+      if (readByteCnt == 7 & readBitCnt == 7) begin
+         readDataOut[63:0] <= readData;
+         readDataOut[71:64] <= 8'h0;
+      end
    end
+   WRITE_R1: begin
+      readDataOut[71:64] <= 8'b0;
+      readDataOut[63:0] <= cmdResponseInt[63:0];
+   end
+   WRITE_R21: begin
+      readDataOut[71:63] <= 9'b0;
+      readDataOut[62:0] <= cmdResponseInt[127:64];
+   end
+   WRITE_R22: begin
+      readDataOut[71:64] <= 8'b0;
+      readDataOut[63:0] <= cmdResponseInt[63:0];
+   end
+   endcase
 end
 
 sd_crc_16 Sd_crc_16_data3_write(

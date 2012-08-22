@@ -97,24 +97,64 @@ wire resultFifoFull;
 wire sdStatusCmd;
 wire [3:0] dataStatus;
 wire cmdStatus;
+wire r1Cmd;
+wire r2Cmd;
+wire cmdDone;
+wire [135:0] cmdResponseInt;
+wire readFifoEmpty;
 //chipscope signals
-assign csData[180:0] = sdDataDebug[180:0];
-assign csData[188:181] = sdCmdDebug[7:0]; // [3:0] = cmdState, [7:4] = rxCrcCheck[3:0]
-assign csData[196:189] = sdEngineDebug[7:0];
-// assign csData[228:197] = cmdResponse[39:8];
-assign csData[199:197] = {sdEngineDebug[41:40], sdEngineDebug[59]};  //acmd6Done, acmd41Done, acmd42Done
-assign csData[229] = sdStatusCmd;
-assign csData[230] = sdCmdIn;
-assign csData[231] = sdCmdOut;
-assign csData[232] = sdCmdEn;
-assign csData[236:233] = sdDataIn;
-assign csData[240:237] = sdDataOut;
-assign csData[241] = sdDataEn;
-assign csData[242] = chipScopeSel;
-assign csData[248:243] = cmdFifoDataOut[63:58];
-assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], cmdStatus
-assign csData[253] = sdCmdDebug[30];
-assign csData[254] = cmdFifoEmpty;
+// These are for chipScopeSel0&1
+// assign csData[183:0] = sdDataDebug[183:0];
+// assign csData[184] = sysRstN;
+// assign csData[188:185] = sdCmdDebug[3:0]; // [3:0] = cmdState 
+// assign csData[196:189] = sdEngineDebug[7:0];
+// // assign csData[228:197] = cmdResponse[39:8];
+// assign csData[199:197] = {sdEngineDebug[41:40], sdEngineDebug[59]};  //acmd6Done, acmd41Done, acmd42Done
+// assign csData[229] = sdStatusCmd;
+// assign csData[230] = sdCmdIn;
+// assign csData[231] = sdCmdOut;
+// assign csData[232] = sdCmdEn;
+// assign csData[236:233] = sdDataIn;
+// assign csData[240:237] = sdDataOut;
+// assign csData[241] = sdDataEn;
+// assign csData[242] = chipScopeSel;
+// assign csData[248:243] = cmdFifoDataOut[63:58];
+// assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], cmdStatus
+// assign csData[253] = sdCmdDebug[30];
+// assign csData[254] = cmdFifoEmpty;
+// assign csData[255] = sdClkInt;
+
+// These are for apu
+//assign csData[63:0] = cmdFifoData[63:0];
+//assign csData[127:64] = cmdFifoDataOut[63:0];
+assign csData[127:0] = cmdResponseInt[127:0];
+assign csData[128] = cmdFifoEmpty;
+assign csData[129] = cmdFifoWrEn;
+assign csData[130] = cmdFifoRdEn;
+assign csData[131] = resultFifoRdEn;
+assign csData[132] = resultFifoEmpty;
+assign csData[133] = resultFifoWrEn;
+assign csData[165:134] = resultFifoDataIn[31:0];
+assign csData[197:166] = resultFifoData[31:0];
+assign csData[205:198] = sdEngineDebug[7:0];
+assign csData[209:206] = sdDataIn;
+assign csData[213:210] = sdDataOut;
+assign csData[214] = sdDataEn;
+assign csData[215] = sdCmdIn;
+assign csData[216] = sdCmdOut;
+assign csData[217] = sdCmdEn;
+assign csData[218] = initDone;
+assign csData[219] = sysRst;
+assign csData[220] = sdEngineDebug[60];  // sdInitComplete
+assign csData[226:221] = cmdFifoDataOut[63:58];
+assign csData[227] = r1Cmd;
+assign csData[228] = r2Cmd;
+assign csData[229] = cmdDone;
+assign csData[234:230] = sdDataDebug[132:128];
+assign csData[235] = readFifoWe;
+assign csData[236] = resultDataFifoRdEn;
+assign csData[237] = readFifoEmpty;
+assign csData[238] = dataReady;
 assign csData[255] = sdClkInt;
 
 // active high internal reset
@@ -245,7 +285,11 @@ uSDData uSDData_1(
    .sdStatusCmd(sdStatusCmd),
    .readDone(readDone),
    .dataStatus(dataStatus),
-   .chipScopeSel(chipScopeSel)
+   .chipScopeSel(chipScopeSel),
+   .r1Cmd(r1Cmd),
+   .r2Cmd(r2Cmd),
+   .cmdDone(cmdDone),
+   .cmdResponseInt(cmdResponseInt)
 );
 
 sdEngine sdEngine_1 (
@@ -275,7 +319,11 @@ sdEngine sdEngine_1 (
    .readFifoAlmostFull(readFifoAlmostFull),
    .sdStatusCmd(sdStatusCmd),
    .chipScopeSel(chipScopeSel),
-   .sdEngineDebug(sdEngineDebug)
+   .sdEngineDebug(sdEngineDebug),
+   .r1Cmd(r1Cmd),
+   .r2Cmd(r2Cmd),
+   .cmdDone(cmdDone),
+   .cmdResponseInt(cmdResponseInt)
 );
 
 // invert full flag per Mike's diagram
@@ -330,9 +378,9 @@ fifo72x512apuwrite writeDataFifo(
 
 
 fifo72x512sdwrite readDataFifo(
-   .rd_en(resultFifoRdEn),
+   .rd_en(resultDataFifoRdEn),
    .rst(sysRst),
-   .empty(),
+   .empty(readFifoEmpty),
    .wr_en(readFifoWe),
    .rd_clk(apuClk),
    .full(),
