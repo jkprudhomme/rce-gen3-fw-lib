@@ -155,6 +155,7 @@ assign csData[235] = readFifoWe;
 assign csData[236] = resultDataFifoRdEn;
 assign csData[237] = readFifoEmpty;
 assign csData[238] = dataReady;
+assign csData[247:239] = sdEngineDebug[69:61];
 assign csData[255] = sdClkInt;
 
 // active high internal reset

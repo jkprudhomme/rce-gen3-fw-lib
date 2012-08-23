@@ -2155,6 +2155,14 @@ always @(posedge sdClk or posedge sysRst) begin
          dataStatus[0] <= 1'b0;
       end
    end
+   else if (cmdState == BUSY_CHK) begin
+      if (writeStatus == 6'b100101) begin
+         dataStatus <= 4'hF;
+      end
+      else begin
+         dataStatus <= 4'h0;
+      end
+   end
 end
       
 endmodule

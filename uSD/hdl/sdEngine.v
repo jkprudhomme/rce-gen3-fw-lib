@@ -94,7 +94,8 @@ reg acmd42Done;                          // ACMD42 is complete
 reg [15:0] RCA;                          // Relative card address
 reg [135:0] CID;                         // Card ID Reg
 reg [135:0] CSD;                         // Card status reg
-reg [47:0] OCR;
+reg [47:0] OCR;                          // OCR Register
+reg [15:0] timeOut;                      // command timeout register
 // command state machine states
 parameter IDLE           = 8'h00;
 parameter SEND_CMD0      = 8'h01;
@@ -157,8 +158,8 @@ parameter CMD55NEW_WAIT  = 8'h39;
 
 
 // result fifo
-assign resultFifoDataIn = {16'b0, dataStatus, 1'b0, cmdResponse[45:40], cmdFifoDataOut[57:50]};
-//                         [31:20] [19:16]             [7:0]
+assign resultFifoDataIn = {17'b0, dataStatus, 1'b0, cmdResponse[45:40], cmdFifoDataOut[57:50]};
+//                         [35:18] [18:15]    [14]  [13:8]              [7:0]
 // debug signals
 assign sdEngineDebug[7:0] = cmdState;
 assign sdEngineDebug[39:8] = initDelay;
@@ -168,6 +169,7 @@ assign sdEngineDebug[59] = acmd42Done;
 assign sdEngineDebug[57:42] = RCA;
 assign sdEngineDebug[58] = cmdFifoEmpty;
 assign sdEngineDebug[60] = sdInitComplete;
+assign sdEngineDebug[69:61] = timeOut[8:0];
 // command response
 // generate delayed reset
 always @(posedge sdClkIn or negedge sysRstN)
@@ -189,6 +191,21 @@ begin
     end
 end
 //`endif
+// timeout register
+always @(posedge sdClkIn or negedge sysRstN)
+begin
+   if (~sysRstN) begin
+      timeOut  <= 16'b0;
+   end
+   else begin
+      if (cmdState == CMD8_WAIT | cmdState == CMD55_WAIT) begin // counter at max count      
+         timeOut <= timeOut + 1;
+      end
+      else begin
+         timeOut <= 16'b0;
+      end
+    end
+end
 
 always @(posedge sdClkIn or posedge initRst)
 begin
@@ -267,7 +284,10 @@ begin
          cmdState <= CMD8_WAIT;
       end
       CMD8_WAIT: begin
-         if (dataReady) begin
+         if (timeOut == 256) begin
+            cmdState <= SEND_CMD0;
+         end
+         else if (dataReady) begin
             cmdState <= SEND_CMD55;
 	 end
 	 else begin
@@ -278,7 +298,10 @@ begin
          cmdState <= CMD55_WAIT;
       end
       CMD55_WAIT: begin
-         if (dataReady) begin
+         if (timeOut == 256) begin
+            cmdState <= SEND_CMD0;
+         end
+         else if (dataReady) begin
             if (~acmd41Done & ~acmd6Done) begin
                cmdState <= SEND_ACMD41;
             end
