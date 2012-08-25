@@ -7,7 +7,7 @@
 // \   \   \/     Version: O.87xd
 //  \   \         Application: netgen
 //  /   /         Filename: fifo36x1024sdwrite.v
-// /___/   /\     Timestamp: Tue Jul 24 13:14:58 2012
+// /___/   /\     Timestamp: Fri Aug 24 17:59:12 2012
 // \   \  /  \ 
 //  \___\/\___\
 //             
@@ -188,8 +188,8 @@ module fifo36x1024sdwrite (
     .DATA_WIDTH ( 36 ),
     .DO_REG ( 1 ),
     .EN_SYN ( "FALSE" ),
-    .FIRST_WORD_FALL_THROUGH ( "FALSE" ),
-    .ALMOST_EMPTY_OFFSET ( 13'h0005 ))
+    .FIRST_WORD_FALL_THROUGH ( "TRUE" ),
+    .ALMOST_EMPTY_OFFSET ( 13'h0006 ))
   \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gfn72.sngfifo36  (
     .RDEN(rd_en),
     .WREN(wr_en),

@@ -70,7 +70,7 @@ wire cmdFifoEmpty;
 wire [35:0] resultFifoDataIn;
 wire resultFifoWrEn;
 wire resultFifoNotFull;
-wire [63:0] readDataOut;
+wire [71:0] readDataOut;
 wire writeFifoRe;
 wire writeFifoAlmostEmpty;
 wire readFifoAlmostFull;
@@ -102,6 +102,8 @@ wire r2Cmd;
 wire cmdDone;
 wire [135:0] cmdResponseInt;
 wire readFifoEmpty;
+wire commandTimeOut;
+wire scrCmd;
 //chipscope signals
 // These are for chipScopeSel0&1
 // assign csData[183:0] = sdDataDebug[183:0];
@@ -124,10 +126,12 @@ wire readFifoEmpty;
 // assign csData[254] = cmdFifoEmpty;
 // assign csData[255] = sdClkInt;
 
-// These are for apu
-//assign csData[63:0] = cmdFifoData[63:0];
-//assign csData[127:64] = cmdFifoDataOut[63:0];
-assign csData[127:0] = cmdResponseInt[127:0];
+// These are for apu 
+//assign csData[127:0] = cmdResponseInt[127:0];   // chipscope = apu2
+//assign csData[63:0] = readDataOut[63:0];          // chipscope = apu
+assign csData[63:0] = sdDataDebug[63:0];          // chipscope = apu
+//assign csData[127:64] = writeDataIn[63:0];
+assign csData[127:64] = resultDataFifoData[63:0];
 assign csData[128] = cmdFifoEmpty;
 assign csData[129] = cmdFifoWrEn;
 assign csData[130] = cmdFifoRdEn;
@@ -156,6 +160,10 @@ assign csData[236] = resultDataFifoRdEn;
 assign csData[237] = readFifoEmpty;
 assign csData[238] = dataReady;
 assign csData[247:239] = sdEngineDebug[69:61];
+assign csData[251:248] = sdCmdDebug[3:0];
+assign csData[252] = scrCmd;
+assign csData[253] = writeFifoRe;
+assign csData[254] = resultDataFifoRdEn;
 assign csData[255] = sdClkInt;
 
 // active high internal reset
@@ -262,6 +270,7 @@ uSDCmd uSDCmd_1(
     .initDone(initDone),
     .dataReady(dataReady),
     .cmdStatus(cmdStatus),
+    .commandTimeOut(commandTimeOut),
     .chipScopeSel(chipScopeSel)
  );
 
@@ -290,7 +299,8 @@ uSDData uSDData_1(
    .r1Cmd(r1Cmd),
    .r2Cmd(r2Cmd),
    .cmdDone(cmdDone),
-   .cmdResponseInt(cmdResponseInt)
+   .cmdResponseInt(cmdResponseInt),
+   .scrCmd(scrCmd)
 );
 
 sdEngine sdEngine_1 (
@@ -324,7 +334,9 @@ sdEngine sdEngine_1 (
    .r1Cmd(r1Cmd),
    .r2Cmd(r2Cmd),
    .cmdDone(cmdDone),
-   .cmdResponseInt(cmdResponseInt)
+   .commandTimeOut(commandTimeOut),
+   .cmdResponseInt(cmdResponseInt),
+   .scrCmd(scrCmd)
 );
 
 // invert full flag per Mike's diagram

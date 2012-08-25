@@ -32,6 +32,7 @@ input chipScopeSel,
 input r2Cmd,
 input r1Cmd,
 input [135:0] cmdResponseInt,
+input scrCmd,
 //-------- Outputs
 output reg [3:0] sdDataOut,
 output reg sdDataEn,
@@ -78,7 +79,7 @@ reg readCrcRst;             // read crc reset
 reg [4:0] cmdState;
 reg [5:0] writeStatus;
 
-assign sdDataDebug[63:0]    = chipScopeSel ? readData      : writeData0;
+assign sdDataDebug[63:0]    = chipScopeSel ? readDataOut      : writeData0;
 assign sdDataDebug[127:64]  = chipScopeSel ? {44'b0, dataStatus, readCrcCheck3} : writeData1;
 assign sdDataDebug[144:128] = {2'b0, writeStatus, writeCrcIn, cmdState};
 assign sdDataDebug[147:145] = chipScopeSel ? readByteCnt   : writeByteCnt;
@@ -471,9 +472,11 @@ begin
             cmdState <= READ_START;
       end
       READ: begin
-         if (readBlockCnt == 15 & readByteCnt == 7 & readBitCnt == 7 & ~sdStatusCmd) 
+         if (readBlockCnt == 15 & readByteCnt == 7 & readBitCnt == 7 & ~sdStatusCmd & ~scrCmd) 
             cmdState <= READ_CRC;
-         else if (readBlockCnt == 1 & readByteCnt == 7 & readBitCnt == 7 & sdStatusCmd) 
+         else if (readBlockCnt == 1 & readByteCnt == 7 & readBitCnt == 7 & sdStatusCmd & ~scrCmd) 
+            cmdState <= READ_CRC;
+         else if (readBlockCnt == 0 & readByteCnt == 1 & readBitCnt == 7 & ~sdStatusCmd & scrCmd) 
             cmdState <= READ_CRC;
          else 
             cmdState <= READ;
@@ -2029,18 +2032,22 @@ always @(posedge sdClk)
 begin
    case (cmdState) // synthesis parallel_case full_case
    READ: begin
-      if (readByteCnt == 7 & readBitCnt == 7) begin
+      // if (readByteCnt == 7 & readBitCnt == 7) begin
+      //    readDataOut[63:0] <= readData;
+      //    readDataOut[71:64] <= 8'h0;
+      // end
+//      if (readByteCnt == 7 & readBitCnt == 7) begin
          readDataOut[63:0] <= readData;
          readDataOut[71:64] <= 8'h0;
-      end
+//      end
    end
    WRITE_R1: begin
       readDataOut[71:64] <= 8'b0;
       readDataOut[63:0] <= cmdResponseInt[63:0];
    end
    WRITE_R21: begin
-      readDataOut[71:63] <= 9'b0;
-      readDataOut[62:0] <= cmdResponseInt[127:64];
+      readDataOut[71:63] <= 8'b0;
+      readDataOut[63:0] <= cmdResponseInt[127:64];
    end
    WRITE_R22: begin
       readDataOut[71:64] <= 8'b0;

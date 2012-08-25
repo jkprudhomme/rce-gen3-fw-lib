@@ -26,6 +26,7 @@ input [31:0] argumentReg,
 input [15:0] cmdReg,
 input newCmd,
 input chipScopeSel,
+input commandTimeOut,
 //-------- Outputs
 output reg sdCmdOut,
 output reg sdCmdEn,
@@ -269,6 +270,9 @@ begin
       RCV: begin
          if (rxCnt == 0) begin
             cmdState <= CRC_CHK;
+         end
+	 else if (commandTimeOut) begin
+	    cmdState <= IDLE;
          end
 	 else begin
 	    cmdState <= RCV;

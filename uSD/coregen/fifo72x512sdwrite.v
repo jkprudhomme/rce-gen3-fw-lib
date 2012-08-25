@@ -7,7 +7,7 @@
 // \   \   \/     Version: O.87xd
 //  \   \         Application: netgen
 //  /   /         Filename: fifo72x512sdwrite.v
-// /___/   /\     Timestamp: Mon Jun 25 14:49:55 2012
+// /___/   /\     Timestamp: Fri Aug 24 18:02:00 2012
 // \   \  /  \ 
 //  \___\/\___\
 //             
@@ -199,8 +199,8 @@ module fifo72x512sdwrite (
     .EN_ECC_READ ( "FALSE" ),
     .EN_ECC_WRITE ( "FALSE" ),
     .EN_SYN ( "FALSE" ),
-    .FIRST_WORD_FALL_THROUGH ( "FALSE" ),
-    .ALMOST_EMPTY_OFFSET ( 9'h005 ))
+    .FIRST_WORD_FALL_THROUGH ( "TRUE" ),
+    .ALMOST_EMPTY_OFFSET ( 9'h006 ))
   \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gf72.sngfifo36_72  (
     .RDEN(rd_en),
     .WREN(wr_en),

@@ -25,9 +25,10 @@ module sdEngine(
    resultFifoDataIn, resultFifoWrEn, resultFifoFull, 
 // uSDCmd
    newCmd, argumentReg, cmdReg, statusReg, initDone, dataReady, cmdResponse,
+   commandTimeOut,
 // uSDData
    writeCmd, readCmd, writeDone, readDone, sdStatusCmd, dataStatus, r2Cmd,
-   cmdDone, r1Cmd, cmdResponseInt,
+   cmdDone, r1Cmd, cmdResponseInt, scrCmd,
 // write FIFO
    writeFifoAlmostEmpty,
 // read FIFO
@@ -59,6 +60,7 @@ input [15:0] statusReg;                  // command status register
 input initDone;                          // init is complete
 input dataReady;                         // received data ready
 input [135:0] cmdResponse;               // cmd response from host
+output commandTimeOut;                   // no response after 256 clocks
 
 // sdData
 output reg writeCmd;                     // write command start
@@ -71,6 +73,7 @@ output reg r2Cmd;                        // write result of r2 command
 input cmdDone;                           // r2 or r1 cmd written
 output reg r1Cmd;                        // write result of r1 command
 output reg [135:0] cmdResponseInt;       // capture command response
+output reg scrCmd;                       // scr read from card
 // write FIFO
 input writeFifoAlmostEmpty;              // write fifo almost empty
 
@@ -156,7 +159,8 @@ parameter ACMD41_FAKE    = 8'h37;
 parameter SEND_CMD55NEW  = 8'h38;
 parameter CMD55NEW_WAIT  = 8'h39;
 
-
+// command timeout
+assign commandTimeOut = timeOut[8];
 // result fifo
 assign resultFifoDataIn = {17'b0, dataStatus, 1'b0, cmdResponse[45:40], cmdFifoDataOut[57:50]};
 //                         [35:18] [18:15]    [14]  [13:8]              [7:0]
@@ -198,7 +202,7 @@ begin
       timeOut  <= 16'b0;
    end
    else begin
-      if (cmdState == CMD8_WAIT | cmdState == CMD55_WAIT) begin // counter at max count      
+      if (cmdState == CMD8_WAIT | cmdState == CMD55_WAIT | cmdState == CMD55NEW_WAIT) begin // counter at max count      
          timeOut <= timeOut + 1;
       end
       else begin
@@ -440,7 +444,7 @@ begin
       end
       ACMD13_WAIT: begin
          if (dataReady) begin
-            cmdState <= WRITE_R1;
+            cmdState <= READ;
 	 end
 	 else begin
             cmdState <= ACMD13_WAIT;
@@ -569,7 +573,15 @@ begin
          cmdState <= ACMD51_WAIT;
       end
       ACMD51_WAIT: begin
-         cmdState <= WRITE_R1;
+         if (dataReady) begin
+            cmdState <= READ;
+         end
+         // else if (timeOut == 256) begin
+         //    cmdState <= SEND_ACMD51;
+         // end
+         else begin
+            cmdState <= ACMD51_WAIT;
+         end
       end
       SEND_ACMD51: begin
          cmdState <= ACMD51_WAIT;
@@ -605,6 +617,9 @@ begin
 	    end
             endcase // case (cmdFifoDataOut[63:58])
          end
+         else if (timeOut == 256) begin
+            cmdState <= SEND_CMD55NEW;
+         end
          else begin
             cmdState <= CMD55NEW_WAIT;
          end
@@ -630,6 +645,7 @@ begin
       resultFifoWrEn <= 1'b0;
       cmdFifoRdEn <= 1'b0;
       sdStatusCmd <= 1'b0;
+      scrCmd <= 1'b0;
       r1Cmd <= 1'b0;
       r2Cmd <= 1'b0;
    end
@@ -761,6 +777,7 @@ begin
       resultFifoWrEn <= 1'b0;
       cmdFifoRdEn <= 1'b0;
       sdStatusCmd <= 1'b0;
+      scrCmd <= 1'b0;
    end
    CMD_READ: begin
       cmdFifoRdEn <= 1'b1;
@@ -826,6 +843,12 @@ begin
       else begin
          sdStatusCmd <= 1'b0;
       end
+      if (cmdFifoDataOut[63:58] == 51) begin
+         scrCmd <= 1'b1;
+      end
+      else begin
+         scrCmd <= 1'b0;
+      end
    end
    READ_WAIT: begin
       readCmd <= 1'b0;
@@ -835,6 +858,12 @@ begin
       end
       else begin
          sdStatusCmd <= 1'b0;
+      end
+      if (cmdFifoDataOut[63:58] == 51) begin
+         scrCmd <= 1'b1;
+      end
+      else begin
+         scrCmd <= 1'b0;
       end
    end
    RESULT_CHECK: begin
