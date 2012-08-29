@@ -79,7 +79,7 @@ wire readFifoWe;
 wire newCmd;
 wire [31:0] argumentReg;
 wire [15:0] cmdReg;
-wire [15:0] statusReg;         
+wire crcOk;         
 wire [135:0] cmdResponse;
 wire initDone;
 wire dataReady;
@@ -96,7 +96,6 @@ wire sdReady;
 wire resultFifoFull;
 wire sdStatusCmd;
 wire [3:0] dataStatus;
-wire cmdStatus;
 wire r1Cmd;
 wire r2Cmd;
 wire cmdDone;
@@ -104,6 +103,8 @@ wire [135:0] cmdResponseInt;
 wire readFifoEmpty;
 wire commandTimeOut;
 wire scrCmd;
+wire sdClk400k;
+wire sdInitComplete;
 //chipscope signals
 // These are for chipScopeSel0&1
 // assign csData[183:0] = sdDataDebug[183:0];
@@ -121,7 +122,7 @@ wire scrCmd;
 // assign csData[241] = sdDataEn;
 // assign csData[242] = chipScopeSel;
 // assign csData[248:243] = cmdFifoDataOut[63:58];
-// assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], cmdStatus
+// assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], crcOk
 // assign csData[253] = sdCmdDebug[30];
 // assign csData[254] = cmdFifoEmpty;
 // assign csData[255] = sdClkInt;
@@ -147,8 +148,8 @@ assign csData[214] = sdDataEn;
 assign csData[215] = sdCmdIn;
 assign csData[216] = sdCmdOut;
 assign csData[217] = sdCmdEn;
-assign csData[218] = initDone;
-assign csData[219] = sysRst;
+assign csData[218] = cmdFifoDataOut[49];
+assign csData[219] = sdStatusCmd;
 assign csData[220] = sdEngineDebug[60];  // sdInitComplete
 assign csData[226:221] = cmdFifoDataOut[63:58];
 assign csData[227] = r1Cmd;
@@ -164,7 +165,7 @@ assign csData[251:248] = sdCmdDebug[3:0];
 assign csData[252] = scrCmd;
 assign csData[253] = writeFifoRe;
 assign csData[254] = resultDataFifoRdEn;
-assign csData[255] = sdClkInt;
+assign csData[255] = sdClk;
 
 // active high internal reset
 assign #`DEL sysRst = ~sysRstN & ~dcmLocked;
@@ -214,20 +215,10 @@ IOBUF IOBUF_sdCmd (
 // sd clk pad
 // figure out if need to change clock freq to fpp(25Mhz) from fop(400khz)
 // if so put mux here and figure out
-OBUF OBUF_sdClk (
+BUFG  sdClk_buf (
    .O(sdClk),
    .I(sdClkInt)
 );
-
-// IBUFGDS IBUFGDS_sysClk (
-//    .O(sysClk200In),
-//    .I(sysClkP),
-//    .IB(sysClkN)
-// );
-
-// Generate 25Mhz and 40Mhz clocks
-
-
 
 sysDCM sdDCM_1(
    .CLKIN_IN(sysClk200),
@@ -255,7 +246,7 @@ sysDCM sdDCM_1(
 // );
 
 uSDCmd uSDCmd_1(
-    .sdClk(sdClkInt), 
+    .sdClk(sdClk), 
     .sysRst(initRst), 
     .sdCmdIn(sdCmdIn),
     .argumentReg(argumentReg),
@@ -264,19 +255,18 @@ uSDCmd uSDCmd_1(
     .sdCmdOut(sdCmdOut),
     .sdCmdEn(sdCmdEn),
     .cmdResponse(cmdResponse),
-    .statusReg(statusReg),
+    .crcOk(crcOk),
     .sdClkSel(sdClkSel),
     .sdCmdDebug(sdCmdDebug),
     .initDone(initDone),
     .dataReady(dataReady),
-    .cmdStatus(cmdStatus),
     .commandTimeOut(commandTimeOut),
     .chipScopeSel(chipScopeSel)
  );
 
 
 uSDData uSDData_1(
-   .sdClk(sdClkInt),
+   .sdClk(sdClk),
    .sysRst(sysRst),
    .writeCmd(writeCmd),
    .readCmd(readCmd),
@@ -304,10 +294,10 @@ uSDData uSDData_1(
 );
 
 sdEngine sdEngine_1 (
-   .sdClkIn(sdClkInt),
+   .sdClkIn(sdClk),
    .sysRstN(sysRstN),
    .initRst(initRst),
-   .sdReady(sdReady),
+   .sdInitComplete(sdInitComplete),
    .cmdFifoDataOut(cmdFifoDataOut),
    .cmdFifoRdEn(cmdFifoRdEn),
    .cmdFifoEmpty(cmdFifoEmpty),
@@ -317,7 +307,7 @@ sdEngine sdEngine_1 (
    .newCmd(newCmd), 
    .argumentReg(argumentReg), 
    .cmdReg(cmdReg), 
-   .statusReg(statusReg),
+   .crcOk(crcOk),
    .initDone(initDone),
    .dataReady(dataReady),
    .cmdResponse(cmdResponse),
@@ -350,7 +340,7 @@ fifo72x512apuwrite cmdFifo(
    .rst(sysRst),
    .empty(cmdFifoEmpty),
    .wr_en(cmdFifoWrEn),
-   .rd_clk(sdClkInt),
+   .rd_clk(sdClk),
    .full(cmdRdyRdN),
    .prog_empty(),
    .wr_clk(apuClk),
@@ -360,7 +350,8 @@ fifo72x512apuwrite cmdFifo(
 );
 
 // invert empty flag
-assign resultPending = ~resultFifoEmpty;
+//assign resultPending = ~resultFifoEmpty;
+assign resultPending = resultFifoEmpty;
 fifo36x1024sdwrite resultFifo(
    .rd_en(resultFifoRdEn),
    .rst(sysRst),
@@ -369,7 +360,7 @@ fifo36x1024sdwrite resultFifo(
    .rd_clk(apuClk),
    .full(resultFifoFull),
    .prog_empty(),
-   .wr_clk(sdClkInt),
+   .wr_clk(sdClk),
    .prog_full(),
    .dout(resultFifoData),
    .din(resultFifoDataIn)
@@ -380,7 +371,7 @@ fifo72x512apuwrite writeDataFifo(
    .rst(sysRst),
    .empty(),
    .wr_en(cmdDataFifoWrEn),
-   .rd_clk(sdClkInt),
+   .rd_clk(sdClk),
    .full(),
    .prog_empty(writeFifoAlmostEmpty),
    .wr_clk(apuClk),
@@ -398,7 +389,7 @@ fifo72x512sdwrite readDataFifo(
    .rd_clk(apuClk),
    .full(),
    .prog_empty(),
-   .wr_clk(sdClkInt),
+   .wr_clk(sdClk),
    .prog_full(readFifoAlmostFull),
    .dout(resultDataFifoData),
    .din(readDataOut)
@@ -414,7 +405,7 @@ chipscope_icon icon0 (
 
 chipscope_ila ila0 (
    .CONTROL(csControl),
-// .CLK(sysClk200Buf),
+//   .CLK(sysClk200Buf),
    .CLK(apuClk),
    .TRIG0(csData)
 );

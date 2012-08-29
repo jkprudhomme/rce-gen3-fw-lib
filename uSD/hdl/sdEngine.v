@@ -18,13 +18,13 @@
 module sdEngine(
 
 // system 
-   sdClkIn, sysRstN, initRst, sdReady,
+   sdClkIn, sysRstN, initRst, sdInitComplete,
 // Command FIFO
    cmdFifoDataOut, cmdFifoRdEn, cmdFifoEmpty,
 // Result FIFO
    resultFifoDataIn, resultFifoWrEn, resultFifoFull, 
 // uSDCmd
-   newCmd, argumentReg, cmdReg, statusReg, initDone, dataReady, cmdResponse,
+   newCmd, argumentReg, cmdReg, crcOk, initDone, dataReady, cmdResponse,
    commandTimeOut,
 // uSDData
    writeCmd, readCmd, writeDone, readDone, sdStatusCmd, dataStatus, r2Cmd,
@@ -41,14 +41,14 @@ module sdEngine(
 input sdClkIn;                           // sd clock
 input sysRstN;                           // active low reset
 output reg initRst;                      // initialization reset
-output reg sdReady;                      // sd card is ready for data transfer
+output reg sdInitComplete;                      // ready for data transfer
 // Command FIFO (generates commands to uSD card_
 input [71:0] cmdFifoDataOut;             // command fifo data
 output reg cmdFifoRdEn;                  // command fifo read enable
 input cmdFifoEmpty;                   // command fifo has data
 
 // Result FIFO (contains results of last command)
-output  [35:0] resultFifoDataIn;      // result fifo data
+output reg [35:0] resultFifoDataIn;      // result fifo data
 output reg resultFifoWrEn;               // result fifo write enable
 input resultFifoFull;                 // result fifo not full
 
@@ -56,7 +56,7 @@ input resultFifoFull;                 // result fifo not full
 output reg newCmd;                       // generate new command
 output reg [31:0] argumentReg;	         // command argument
 output reg [15:0] cmdReg;                // command setting
-input [15:0] statusReg;                  // command status register
+input crcOk;                             // command crc check good
 input initDone;                          // init is complete
 input dataReady;                         // received data ready
 input [135:0] cmdResponse;               // cmd response from host
@@ -88,7 +88,7 @@ input chipScopeSel;
 reg [31:0] initDelay;                    // mostly for chipscope delay
 reg [31:0] cmdWaitCnt;                   // counter for no response commands
 reg [7:0] cmdState;                      // command state machine state
-reg sdInitComplete;                      // ready for data transfer
+
 
 reg acmd41Done;                          // ACMD41 is complete
 reg acmd6Done;                           // ACMD6 is complete
@@ -99,6 +99,7 @@ reg [135:0] CID;                         // Card ID Reg
 reg [135:0] CSD;                         // Card status reg
 reg [47:0] OCR;                          // OCR Register
 reg [15:0] timeOut;                      // command timeout register
+
 // command state machine states
 parameter IDLE           = 8'h00;
 parameter SEND_CMD0      = 8'h01;
@@ -159,11 +160,62 @@ parameter ACMD41_FAKE    = 8'h37;
 parameter SEND_CMD55NEW  = 8'h38;
 parameter CMD55NEW_WAIT  = 8'h39;
 
+
 // command timeout
 assign commandTimeOut = timeOut[8];
 // result fifo
-assign resultFifoDataIn = {17'b0, dataStatus, 1'b0, cmdResponse[45:40], cmdFifoDataOut[57:50]};
-//                         [35:18] [18:15]    [14]  [13:8]              [7:0]
+always @(posedge sdClkIn or negedge sysRstN) begin
+   if (~sysRstN) begin
+      resultFifoDataIn <= 36'b0;
+   end
+   else begin
+      case (cmdFifoDataOut[63:58])   // synthesis full_case parallel_case
+         9: begin
+            resultFifoDataIn <= {7'b0,     10'b0000010000, 1'b1,  4'b0,      1'b0,   6'b001001, cmdFifoDataOut[57:50]};
+                               //[35:30]   [29:20]         [19]   [18:15]    [14]    [13:8]     [7:0]
+	                       // blank,   validBytes      crcOK  dataStatus blank   cmd Index  TID
+	 end
+         10: begin
+            resultFifoDataIn <= {7'b0,     10'b0000010000, 1'b1,  4'b0,      1'b0,   6'b001010, cmdFifoDataOut[57:50]};
+                               //[35:30]   [29:20]         [19]   [18:15]    [14]    [13:8]     [7:0]
+	                       // blank,   validBytes      crcOK  dataStatus blank   cmd Index  TID
+	 end
+         13: begin
+            if (cmdFifoDataOut[49]) begin // ACMD13 Command
+               resultFifoDataIn <= {7'b0,     10'b0001000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+                                  //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
+	                          // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
+	    end
+            else begin
+               resultFifoDataIn <= {7'b0,     10'b0000001000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+                                  //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
+	                          // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
+	    end
+	 end
+         17: begin
+            resultFifoDataIn <= {7'b0,     10'b1000000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+                               //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
+	                       // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
+	 end
+         24: begin
+            resultFifoDataIn <= {7'b0,     10'b0000000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+                               //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
+	                       // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
+	 end
+         41: begin
+            resultFifoDataIn <= {7'b0,     10'b0000001000, 1'b1,   4'b0,         1'b0,   6'b101001,   cmdFifoDataOut[57:50]};
+                               //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]       [7:0]
+	                       // blank,   validBytes      crcOK   dataStatus    blank   cmd Index    TID
+	 end
+         51: begin
+            resultFifoDataIn <= {7'b0,     10'b0000001000, crcOk,   4'b0,        1'b0,   cmdResponse[45:40],   cmdFifoDataOut[57:50]};
+                               //[35:30]   [29:20]         [19]     [18:15]      [14]    [13:8]                [7:0]
+	                       // blank,   validBytes      crcOK    dataStatus   blank   cmd Index             TID
+	 end
+      endcase // case (cmdFifoDataOut[57:50])
+   end
+end
+
 // debug signals
 assign sdEngineDebug[7:0] = cmdState;
 assign sdEngineDebug[39:8] = initDelay;
@@ -184,7 +236,7 @@ begin
    end
    else begin
 //      if (initDelay == 32'hFFFFFFFF) begin // counter at max count
-      if (initDelay == 32'h0FFFFFFF) begin // counter at max count      
+      if (initDelay == 32'h0000FFFF) begin // counter at max count      
          initDelay <= initDelay;
          initRst <= 1'b0;
       end
@@ -202,7 +254,7 @@ begin
       timeOut  <= 16'b0;
    end
    else begin
-      if (cmdState == CMD8_WAIT | cmdState == CMD55_WAIT | cmdState == CMD55NEW_WAIT) begin // counter at max count      
+      if (cmdState == CMD8_WAIT | cmdState == CMD55_WAIT | cmdState == ACMD41_WAIT | cmdState == CMD55NEW_WAIT) begin // counter at max count      
          timeOut <= timeOut + 1;
       end
       else begin
@@ -324,7 +376,10 @@ begin
          cmdState <= ACMD41_WAIT;
       end
       ACMD41_WAIT: begin
-         if (dataReady) begin
+         if (timeOut == 256) begin
+            cmdState <= SEND_CMD0;
+         end
+         else if (dataReady) begin
             cmdState <= ACMD41_CHECK;
 	 end
 	 else begin
@@ -444,7 +499,12 @@ begin
       end
       ACMD13_WAIT: begin
          if (dataReady) begin
-            cmdState <= READ;
+            if (cmdFifoDataOut[49]) begin
+               cmdState <= READ;
+            end
+            else begin
+               cmdState <= WRITE_R1;
+            end
 	 end
 	 else begin
             cmdState <= ACMD13_WAIT;
@@ -473,7 +533,12 @@ begin
             cmdState <= READ_CHECK;
          end
          13: begin
-            cmdState <= SEND_CMD55NEW;
+            if (cmdFifoDataOut[49]) begin
+               cmdState <= SEND_CMD55NEW;
+            end
+            else begin
+               cmdState <= SEND_ACMD13;
+            end
          end
          41: begin
             cmdState <= ACMD41_FAKE;
@@ -876,13 +941,23 @@ begin
    end
    SEND_ACMD13: begin
       newCmd <= 1'b1;
-      argumentReg <= 32'h0;
+      if (~cmdFifoDataOut[49]) begin
+         argumentReg <= {RCA, 16'h0};
+      end
+      else begin
+         argumentReg <= 32'h0;
+      end
       cmdReg <= 16'h0D1A;
       sdInitComplete <= 1'b1;
    end
    ACMD13_WAIT: begin
       newCmd <= 1'b0;
-      argumentReg <= 32'h0;
+      if (~cmdFifoDataOut[49]) begin
+         argumentReg <= {RCA, 16'h0};
+      end
+      else begin
+         argumentReg <= 32'h0;
+      end
       cmdReg <= 16'h0D1A;
       sdInitComplete <= 1'b1;
    end

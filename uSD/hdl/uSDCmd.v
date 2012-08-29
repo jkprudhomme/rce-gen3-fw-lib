@@ -31,13 +31,12 @@ input commandTimeOut,
 output reg sdCmdOut,
 output reg sdCmdEn,
 output reg [135:0] cmdResponse,
-output reg [15:0] statusReg,
 output sdClkSel,
 output [81:0] sdCmdDebug,
 output reg initDone,
 output reg dataReady,
 output [6:0] rxCrcValue,
-output reg cmdStatus
+output reg crcOk
 );
 
 
@@ -78,7 +77,7 @@ assign cmdOut = {1'b0, 1'b1, cmdReg[13:8], argumentReg, txCrcValue, 1'b1};
 assign recSize = (cmdReg[1:0] == 2'b0) ? 0 : (cmdReg[1:0] == 2'b01) ? 135 : 47;
 assign sdCmdDebug[3:0] = cmdState;    // [15:8]
 assign sdCmdDebug[10:4] = rxCrcCheck;
-assign sdCmdDebug[11] = cmdStatus;
+assign sdCmdDebug[11] = crcOk;
 assign sdCmdDebug[12] = rxCrcEnable;
 assign sdCmdDebug[13] = rxCrcEnableInt;
 assign sdCmdDebug[14] = rxCrcEnableExt;
@@ -391,11 +390,14 @@ end
 always @(posedge sdClk) begin
    if (cmdState == CRC_CHK & cmdReg[3]) begin
       if (rxCrcCheck == rxCrcValue) begin
-         cmdStatus <= 1'b0;
+         crcOk <= 1'b1;
       end
       else begin
-         cmdStatus <= 1'b1;
+         crcOk <= 1'b0;
       end
+   end
+   else if (cmdState == CRC_CHK & ~cmdReg[3]) begin
+      crcOk <= 1'b1;
    end
 end
 
