@@ -1611,416 +1611,416 @@ begin
    0: begin
       case(readBitCnt)
       0: begin
-         readData[7] <= sdDataIn[3];
-         readData[6] <= sdDataIn[2];
-         readData[5] <= sdDataIn[1];
-         readData[4] <= sdDataIn[0];
+         readData[63] <= sdDataIn[3];
+         readData[62] <= sdDataIn[2];
+         readData[61] <= sdDataIn[1];
+         readData[60] <= sdDataIn[0];
       end
       1: begin
-         readData[3] <= sdDataIn[3];
-         readData[2] <= sdDataIn[2];
-         readData[1] <= sdDataIn[1];
-         readData[0] <= sdDataIn[0];
+         readData[59] <= sdDataIn[3];
+         readData[58] <= sdDataIn[2];
+         readData[57] <= sdDataIn[1];
+         readData[56] <= sdDataIn[0];
       end
       2: begin
-         readData[15] <= sdDataIn[3];
-         readData[14] <= sdDataIn[2];
-         readData[13] <= sdDataIn[1];
-         readData[12] <= sdDataIn[0];
+         readData[55] <= sdDataIn[3];
+         readData[54] <= sdDataIn[2];
+         readData[53] <= sdDataIn[1];
+         readData[52] <= sdDataIn[0];
       end
       3: begin
-         readData[11] <= sdDataIn[3];
-         readData[10] <= sdDataIn[2];
-         readData[9]  <= sdDataIn[1];
-         readData[8]  <= sdDataIn[0];
+         readData[51] <= sdDataIn[3];
+         readData[50] <= sdDataIn[2];
+         readData[49]  <= sdDataIn[1];
+         readData[48]  <= sdDataIn[0];
       end
       4: begin
-         readData[23] <= sdDataIn[3];
-         readData[22] <= sdDataIn[2];
-         readData[21] <= sdDataIn[1];
-         readData[20] <= sdDataIn[0];
+         readData[47] <= sdDataIn[3];
+         readData[46] <= sdDataIn[2];
+         readData[45] <= sdDataIn[1];
+         readData[44] <= sdDataIn[0];
       end
       5: begin
-         readData[19] <= sdDataIn[3];
-         readData[18] <= sdDataIn[2];
-         readData[17] <= sdDataIn[1];
-         readData[16] <= sdDataIn[0];
+         readData[43] <= sdDataIn[3];
+         readData[42] <= sdDataIn[2];
+         readData[41] <= sdDataIn[1];
+         readData[40] <= sdDataIn[0];
       end
       6: begin
-         readData[31] <= sdDataIn[3];
-         readData[30] <= sdDataIn[2];
-         readData[29] <= sdDataIn[1];
-         readData[28] <= sdDataIn[0];
+         readData[39] <= sdDataIn[3];
+         readData[38] <= sdDataIn[2];
+         readData[37] <= sdDataIn[1];
+         readData[36] <= sdDataIn[0];
       end
       7: begin
-         readData[27] <= sdDataIn[3];
-         readData[26] <= sdDataIn[2];
-         readData[25] <= sdDataIn[1];
-         readData[24] <= sdDataIn[0];
+         readData[35] <= sdDataIn[3];
+         readData[34] <= sdDataIn[2];
+         readData[33] <= sdDataIn[1];
+         readData[32] <= sdDataIn[0];
       end
       endcase // case (readBitCnt)
    end
    1: begin
       case(readBitCnt)
       0: begin
-         readData[39] <= sdDataIn[3];
-         readData[38] <= sdDataIn[2];
-         readData[37] <= sdDataIn[1];
-         readData[36] <= sdDataIn[0];
+         readData[31] <= sdDataIn[3];
+         readData[30] <= sdDataIn[2];
+         readData[29] <= sdDataIn[1];
+         readData[28] <= sdDataIn[0];
       end
       1: begin
-         readData[35] <= sdDataIn[3];
-         readData[34] <= sdDataIn[2];
-         readData[33] <= sdDataIn[1];
-         readData[32] <= sdDataIn[0];
+         readData[27] <= sdDataIn[3];
+         readData[26] <= sdDataIn[2];
+         readData[25] <= sdDataIn[1];
+         readData[24] <= sdDataIn[0];
       end
       2: begin
-         readData[47] <= sdDataIn[3];
-         readData[46] <= sdDataIn[2];
-         readData[45] <= sdDataIn[1];
-         readData[44] <= sdDataIn[0];
+         readData[23] <= sdDataIn[3];
+         readData[22] <= sdDataIn[2];
+         readData[21] <= sdDataIn[1];
+         readData[20] <= sdDataIn[0];
       end
       3: begin
-         readData[43] <= sdDataIn[3];
-         readData[42] <= sdDataIn[2];
-         readData[41]  <= sdDataIn[1];
-         readData[40]  <= sdDataIn[0];
+         readData[19] <= sdDataIn[3];
+         readData[18] <= sdDataIn[2];
+         readData[17]  <= sdDataIn[1];
+         readData[16]  <= sdDataIn[0];
       end
       4: begin
-         readData[55] <= sdDataIn[3];
-         readData[54] <= sdDataIn[2];
-         readData[53] <= sdDataIn[1];
-         readData[52] <= sdDataIn[0];
+         readData[15] <= sdDataIn[3];
+         readData[14] <= sdDataIn[2];
+         readData[13] <= sdDataIn[1];
+         readData[12] <= sdDataIn[0];
       end
       5: begin
-         readData[51] <= sdDataIn[3];
-         readData[50] <= sdDataIn[2];
-         readData[49] <= sdDataIn[1];
-         readData[48] <= sdDataIn[0];
+         readData[11] <= sdDataIn[3];
+         readData[10] <= sdDataIn[2];
+         readData[9] <= sdDataIn[1];
+         readData[8] <= sdDataIn[0];
       end
       6: begin
-         readData[63] <= sdDataIn[3];
-         readData[62] <= sdDataIn[2];
-         readData[61] <= sdDataIn[1];
-         readData[60] <= sdDataIn[0];
+         readData[7] <= sdDataIn[3];
+         readData[6] <= sdDataIn[2];
+         readData[5] <= sdDataIn[1];
+         readData[4] <= sdDataIn[0];
       end
       7: begin
-         readData[59] <= sdDataIn[3];
-         readData[58] <= sdDataIn[2];
-         readData[57] <= sdDataIn[1];
-         readData[56] <= sdDataIn[0];
+         readData[3] <= sdDataIn[3];
+         readData[2] <= sdDataIn[2];
+         readData[1] <= sdDataIn[1];
+         readData[0] <= sdDataIn[0];
       end
       endcase // case (readBitCnt)
    end
    2: begin
       case(readBitCnt)
       0: begin
-         readData[7] <= sdDataIn[3];
-         readData[6] <= sdDataIn[2];
-         readData[5] <= sdDataIn[1];
-         readData[4] <= sdDataIn[0];
+         readData[63] <= sdDataIn[3];
+         readData[62] <= sdDataIn[2];
+         readData[61] <= sdDataIn[1];
+         readData[60] <= sdDataIn[0];
       end
       1: begin
-         readData[3] <= sdDataIn[3];
-         readData[2] <= sdDataIn[2];
-         readData[1] <= sdDataIn[1];
-         readData[0] <= sdDataIn[0];
+         readData[59] <= sdDataIn[3];
+         readData[58] <= sdDataIn[2];
+         readData[57] <= sdDataIn[1];
+         readData[56] <= sdDataIn[0];
       end
       2: begin
-         readData[15] <= sdDataIn[3];
-         readData[14] <= sdDataIn[2];
-         readData[13] <= sdDataIn[1];
-         readData[12] <= sdDataIn[0];
+         readData[55] <= sdDataIn[3];
+         readData[54] <= sdDataIn[2];
+         readData[53] <= sdDataIn[1];
+         readData[52] <= sdDataIn[0];
       end
       3: begin
-         readData[11] <= sdDataIn[3];
-         readData[10] <= sdDataIn[2];
-         readData[9]  <= sdDataIn[1];
-         readData[8]  <= sdDataIn[0];
+         readData[51] <= sdDataIn[3];
+         readData[50] <= sdDataIn[2];
+         readData[49]  <= sdDataIn[1];
+         readData[48]  <= sdDataIn[0];
       end
       4: begin
-         readData[23] <= sdDataIn[3];
-         readData[22] <= sdDataIn[2];
-         readData[21] <= sdDataIn[1];
-         readData[20] <= sdDataIn[0];
+         readData[47] <= sdDataIn[3];
+         readData[46] <= sdDataIn[2];
+         readData[45] <= sdDataIn[1];
+         readData[44] <= sdDataIn[0];
       end
       5: begin
-         readData[19] <= sdDataIn[3];
-         readData[18] <= sdDataIn[2];
-         readData[17] <= sdDataIn[1];
-         readData[16] <= sdDataIn[0];
+         readData[43] <= sdDataIn[3];
+         readData[42] <= sdDataIn[2];
+         readData[41] <= sdDataIn[1];
+         readData[40] <= sdDataIn[0];
       end
       6: begin
-         readData[31] <= sdDataIn[3];
-         readData[30] <= sdDataIn[2];
-         readData[29] <= sdDataIn[1];
-         readData[28] <= sdDataIn[0];
+         readData[39] <= sdDataIn[3];
+         readData[38] <= sdDataIn[2];
+         readData[37] <= sdDataIn[1];
+         readData[36] <= sdDataIn[0];
       end
       7: begin
-         readData[27] <= sdDataIn[3];
-         readData[26] <= sdDataIn[2];
-         readData[25] <= sdDataIn[1];
-         readData[24] <= sdDataIn[0];
+         readData[35] <= sdDataIn[3];
+         readData[34] <= sdDataIn[2];
+         readData[33] <= sdDataIn[1];
+         readData[32] <= sdDataIn[0];
       end
       endcase // case (readBitCnt)
    end
    3: begin
       case(readBitCnt)
       0: begin
-         readData[39] <= sdDataIn[3];
-         readData[38] <= sdDataIn[2];
-         readData[37] <= sdDataIn[1];
-         readData[36] <= sdDataIn[0];
+         readData[31] <= sdDataIn[3];
+         readData[30] <= sdDataIn[2];
+         readData[29] <= sdDataIn[1];
+         readData[28] <= sdDataIn[0];
       end
       1: begin
-         readData[35] <= sdDataIn[3];
-         readData[34] <= sdDataIn[2];
-         readData[33] <= sdDataIn[1];
-         readData[32] <= sdDataIn[0];
+         readData[27] <= sdDataIn[3];
+         readData[26] <= sdDataIn[2];
+         readData[25] <= sdDataIn[1];
+         readData[24] <= sdDataIn[0];
       end
       2: begin
-         readData[47] <= sdDataIn[3];
-         readData[46] <= sdDataIn[2];
-         readData[45] <= sdDataIn[1];
-         readData[44] <= sdDataIn[0];
+         readData[23] <= sdDataIn[3];
+         readData[22] <= sdDataIn[2];
+         readData[21] <= sdDataIn[1];
+         readData[20] <= sdDataIn[0];
       end
       3: begin
-         readData[43] <= sdDataIn[3];
-         readData[42] <= sdDataIn[2];
-         readData[41]  <= sdDataIn[1];
-         readData[40]  <= sdDataIn[0];
+         readData[19] <= sdDataIn[3];
+         readData[18] <= sdDataIn[2];
+         readData[17]  <= sdDataIn[1];
+         readData[16]  <= sdDataIn[0];
       end
       4: begin
-         readData[55] <= sdDataIn[3];
-         readData[54] <= sdDataIn[2];
-         readData[53] <= sdDataIn[1];
-         readData[52] <= sdDataIn[0];
+         readData[15] <= sdDataIn[3];
+         readData[14] <= sdDataIn[2];
+         readData[13] <= sdDataIn[1];
+         readData[12] <= sdDataIn[0];
       end
       5: begin
-         readData[51] <= sdDataIn[3];
-         readData[50] <= sdDataIn[2];
-         readData[49] <= sdDataIn[1];
-         readData[48] <= sdDataIn[0];
+         readData[11] <= sdDataIn[3];
+         readData[10] <= sdDataIn[2];
+         readData[9] <= sdDataIn[1];
+         readData[8] <= sdDataIn[0];
       end
       6: begin
-         readData[63] <= sdDataIn[3];
-         readData[62] <= sdDataIn[2];
-         readData[61] <= sdDataIn[1];
-         readData[60] <= sdDataIn[0];
+         readData[7] <= sdDataIn[3];
+         readData[6] <= sdDataIn[2];
+         readData[5] <= sdDataIn[1];
+         readData[4] <= sdDataIn[0];
       end
       7: begin
-         readData[59] <= sdDataIn[3];
-         readData[58] <= sdDataIn[2];
-         readData[57] <= sdDataIn[1];
-         readData[56] <= sdDataIn[0];
+         readData[3] <= sdDataIn[3];
+         readData[2] <= sdDataIn[2];
+         readData[1] <= sdDataIn[1];
+         readData[0] <= sdDataIn[0];
       end
       endcase // case (readBitCnt)
    end
    4: begin
       case(readBitCnt)
       0: begin
-         readData[7] <= sdDataIn[3];
-         readData[6] <= sdDataIn[2];
-         readData[5] <= sdDataIn[1];
-         readData[4] <= sdDataIn[0];
+         readData[63] <= sdDataIn[3];
+         readData[62] <= sdDataIn[2];
+         readData[61] <= sdDataIn[1];
+         readData[60] <= sdDataIn[0];
       end
       1: begin
-         readData[3] <= sdDataIn[3];
-         readData[2] <= sdDataIn[2];
-         readData[1] <= sdDataIn[1];
-         readData[0] <= sdDataIn[0];
+         readData[59] <= sdDataIn[3];
+         readData[58] <= sdDataIn[2];
+         readData[57] <= sdDataIn[1];
+         readData[56] <= sdDataIn[0];
       end
       2: begin
-         readData[15] <= sdDataIn[3];
-         readData[14] <= sdDataIn[2];
-         readData[13] <= sdDataIn[1];
-         readData[12] <= sdDataIn[0];
+         readData[55] <= sdDataIn[3];
+         readData[54] <= sdDataIn[2];
+         readData[53] <= sdDataIn[1];
+         readData[52] <= sdDataIn[0];
       end
       3: begin
-         readData[11] <= sdDataIn[3];
-         readData[10] <= sdDataIn[2];
-         readData[9]  <= sdDataIn[1];
-         readData[8]  <= sdDataIn[0];
+         readData[51] <= sdDataIn[3];
+         readData[50] <= sdDataIn[2];
+         readData[49]  <= sdDataIn[1];
+         readData[48]  <= sdDataIn[0];
       end
       4: begin
-         readData[23] <= sdDataIn[3];
-         readData[22] <= sdDataIn[2];
-         readData[21] <= sdDataIn[1];
-         readData[20] <= sdDataIn[0];
+         readData[47] <= sdDataIn[3];
+         readData[46] <= sdDataIn[2];
+         readData[45] <= sdDataIn[1];
+         readData[44] <= sdDataIn[0];
       end
       5: begin
-         readData[19] <= sdDataIn[3];
-         readData[18] <= sdDataIn[2];
-         readData[17] <= sdDataIn[1];
-         readData[16] <= sdDataIn[0];
+         readData[43] <= sdDataIn[3];
+         readData[42] <= sdDataIn[2];
+         readData[41] <= sdDataIn[1];
+         readData[40] <= sdDataIn[0];
       end
       6: begin
-         readData[31] <= sdDataIn[3];
-         readData[30] <= sdDataIn[2];
-         readData[29] <= sdDataIn[1];
-         readData[28] <= sdDataIn[0];
+         readData[39] <= sdDataIn[3];
+         readData[38] <= sdDataIn[2];
+         readData[37] <= sdDataIn[1];
+         readData[36] <= sdDataIn[0];
       end
       7: begin
-         readData[27] <= sdDataIn[3];
-         readData[26] <= sdDataIn[2];
-         readData[25] <= sdDataIn[1];
-         readData[24] <= sdDataIn[0];
+         readData[35] <= sdDataIn[3];
+         readData[34] <= sdDataIn[2];
+         readData[33] <= sdDataIn[1];
+         readData[32] <= sdDataIn[0];
       end
       endcase // case (readBitCnt)
    end
    5: begin
       case(readBitCnt)
       0: begin
-         readData[39] <= sdDataIn[3];
-         readData[38] <= sdDataIn[2];
-         readData[37] <= sdDataIn[1];
-         readData[36] <= sdDataIn[0];
+         readData[31] <= sdDataIn[3];
+         readData[30] <= sdDataIn[2];
+         readData[29] <= sdDataIn[1];
+         readData[28] <= sdDataIn[0];
       end
       1: begin
-         readData[35] <= sdDataIn[3];
-         readData[34] <= sdDataIn[2];
-         readData[33] <= sdDataIn[1];
-         readData[32] <= sdDataIn[0];
+         readData[27] <= sdDataIn[3];
+         readData[26] <= sdDataIn[2];
+         readData[25] <= sdDataIn[1];
+         readData[24] <= sdDataIn[0];
       end
       2: begin
-         readData[47] <= sdDataIn[3];
-         readData[46] <= sdDataIn[2];
-         readData[45] <= sdDataIn[1];
-         readData[44] <= sdDataIn[0];
+         readData[23] <= sdDataIn[3];
+         readData[22] <= sdDataIn[2];
+         readData[21] <= sdDataIn[1];
+         readData[20] <= sdDataIn[0];
       end
       3: begin
-         readData[43] <= sdDataIn[3];
-         readData[42] <= sdDataIn[2];
-         readData[41]  <= sdDataIn[1];
-         readData[40]  <= sdDataIn[0];
+         readData[19] <= sdDataIn[3];
+         readData[18] <= sdDataIn[2];
+         readData[17]  <= sdDataIn[1];
+         readData[16]  <= sdDataIn[0];
       end
       4: begin
-         readData[55] <= sdDataIn[3];
-         readData[54] <= sdDataIn[2];
-         readData[53] <= sdDataIn[1];
-         readData[52] <= sdDataIn[0];
+         readData[15] <= sdDataIn[3];
+         readData[14] <= sdDataIn[2];
+         readData[13] <= sdDataIn[1];
+         readData[12] <= sdDataIn[0];
       end
       5: begin
-         readData[51] <= sdDataIn[3];
-         readData[50] <= sdDataIn[2];
-         readData[49] <= sdDataIn[1];
-         readData[48] <= sdDataIn[0];
+         readData[11] <= sdDataIn[3];
+         readData[10] <= sdDataIn[2];
+         readData[9] <= sdDataIn[1];
+         readData[8] <= sdDataIn[0];
       end
       6: begin
-         readData[63] <= sdDataIn[3];
-         readData[62] <= sdDataIn[2];
-         readData[61] <= sdDataIn[1];
-         readData[60] <= sdDataIn[0];
+         readData[7] <= sdDataIn[3];
+         readData[6] <= sdDataIn[2];
+         readData[5] <= sdDataIn[1];
+         readData[4] <= sdDataIn[0];
       end
       7: begin
-         readData[59] <= sdDataIn[3];
-         readData[58] <= sdDataIn[2];
-         readData[57] <= sdDataIn[1];
-         readData[56] <= sdDataIn[0];
+         readData[3] <= sdDataIn[3];
+         readData[2] <= sdDataIn[2];
+         readData[1] <= sdDataIn[1];
+         readData[0] <= sdDataIn[0];
       end
       endcase // case (readBitCnt)
    end
    6: begin
       case(readBitCnt)
       0: begin
-         readData[7] <= sdDataIn[3];
-         readData[6] <= sdDataIn[2];
-         readData[5] <= sdDataIn[1];
-         readData[4] <= sdDataIn[0];
+         readData[63] <= sdDataIn[3];
+         readData[62] <= sdDataIn[2];
+         readData[61] <= sdDataIn[1];
+         readData[60] <= sdDataIn[0];
       end
       1: begin
-         readData[3] <= sdDataIn[3];
-         readData[2] <= sdDataIn[2];
-         readData[1] <= sdDataIn[1];
-         readData[0] <= sdDataIn[0];
+         readData[59] <= sdDataIn[3];
+         readData[58] <= sdDataIn[2];
+         readData[57] <= sdDataIn[1];
+         readData[56] <= sdDataIn[0];
       end
       2: begin
-         readData[15] <= sdDataIn[3];
-         readData[14] <= sdDataIn[2];
-         readData[13] <= sdDataIn[1];
-         readData[12] <= sdDataIn[0];
+         readData[55] <= sdDataIn[3];
+         readData[54] <= sdDataIn[2];
+         readData[53] <= sdDataIn[1];
+         readData[52] <= sdDataIn[0];
       end
       3: begin
-         readData[11] <= sdDataIn[3];
-         readData[10] <= sdDataIn[2];
-         readData[9]  <= sdDataIn[1];
-         readData[8]  <= sdDataIn[0];
+         readData[51] <= sdDataIn[3];
+         readData[50] <= sdDataIn[2];
+         readData[49]  <= sdDataIn[1];
+         readData[48]  <= sdDataIn[0];
       end
       4: begin
-         readData[23] <= sdDataIn[3];
-         readData[22] <= sdDataIn[2];
-         readData[21] <= sdDataIn[1];
-         readData[20] <= sdDataIn[0];
+         readData[47] <= sdDataIn[3];
+         readData[46] <= sdDataIn[2];
+         readData[45] <= sdDataIn[1];
+         readData[44] <= sdDataIn[0];
       end
       5: begin
-         readData[19] <= sdDataIn[3];
-         readData[18] <= sdDataIn[2];
-         readData[17] <= sdDataIn[1];
-         readData[16] <= sdDataIn[0];
+         readData[43] <= sdDataIn[3];
+         readData[42] <= sdDataIn[2];
+         readData[41] <= sdDataIn[1];
+         readData[40] <= sdDataIn[0];
       end
       6: begin
-         readData[31] <= sdDataIn[3];
-         readData[30] <= sdDataIn[2];
-         readData[29] <= sdDataIn[1];
-         readData[28] <= sdDataIn[0];
+         readData[39] <= sdDataIn[3];
+         readData[38] <= sdDataIn[2];
+         readData[37] <= sdDataIn[1];
+         readData[36] <= sdDataIn[0];
       end
       7: begin
-         readData[27] <= sdDataIn[3];
-         readData[26] <= sdDataIn[2];
-         readData[25] <= sdDataIn[1];
-         readData[24] <= sdDataIn[0];
+         readData[35] <= sdDataIn[3];
+         readData[34] <= sdDataIn[2];
+         readData[33] <= sdDataIn[1];
+         readData[32] <= sdDataIn[0];
       end
       endcase // case (readBitCnt)
    end
    7: begin
       case(readBitCnt)
       0: begin
-         readData[39] <= sdDataIn[3];
-         readData[38] <= sdDataIn[2];
-         readData[37] <= sdDataIn[1];
-         readData[36] <= sdDataIn[0];
+         readData[31] <= sdDataIn[3];
+         readData[30] <= sdDataIn[2];
+         readData[29] <= sdDataIn[1];
+         readData[28] <= sdDataIn[0];
       end
       1: begin
-         readData[35] <= sdDataIn[3];
-         readData[34] <= sdDataIn[2];
-         readData[33] <= sdDataIn[1];
-         readData[32] <= sdDataIn[0];
+         readData[27] <= sdDataIn[3];
+         readData[26] <= sdDataIn[2];
+         readData[25] <= sdDataIn[1];
+         readData[24] <= sdDataIn[0];
       end
       2: begin
-         readData[47] <= sdDataIn[3];
-         readData[46] <= sdDataIn[2];
-         readData[45] <= sdDataIn[1];
-         readData[44] <= sdDataIn[0];
+         readData[23] <= sdDataIn[3];
+         readData[22] <= sdDataIn[2];
+         readData[21] <= sdDataIn[1];
+         readData[20] <= sdDataIn[0];
       end
       3: begin
-         readData[43] <= sdDataIn[3];
-         readData[42] <= sdDataIn[2];
-         readData[41]  <= sdDataIn[1];
-         readData[40]  <= sdDataIn[0];
+         readData[19] <= sdDataIn[3];
+         readData[18] <= sdDataIn[2];
+         readData[17]  <= sdDataIn[1];
+         readData[16]  <= sdDataIn[0];
       end
       4: begin
-         readData[55] <= sdDataIn[3];
-         readData[54] <= sdDataIn[2];
-         readData[53] <= sdDataIn[1];
-         readData[52] <= sdDataIn[0];
+         readData[15] <= sdDataIn[3];
+         readData[14] <= sdDataIn[2];
+         readData[13] <= sdDataIn[1];
+         readData[12] <= sdDataIn[0];
       end
       5: begin
-         readData[51] <= sdDataIn[3];
-         readData[50] <= sdDataIn[2];
-         readData[49] <= sdDataIn[1];
-         readData[48] <= sdDataIn[0];
+         readData[11] <= sdDataIn[3];
+         readData[10] <= sdDataIn[2];
+         readData[9] <= sdDataIn[1];
+         readData[8] <= sdDataIn[0];
       end
       6: begin
-         readData[63] <= sdDataIn[3];
-         readData[62] <= sdDataIn[2];
-         readData[61] <= sdDataIn[1];
-         readData[60] <= sdDataIn[0];
+         readData[7] <= sdDataIn[3];
+         readData[6] <= sdDataIn[2];
+         readData[5] <= sdDataIn[1];
+         readData[4] <= sdDataIn[0];
       end
       7: begin
-         readData[59] <= sdDataIn[3];
-         readData[58] <= sdDataIn[2];
-         readData[57] <= sdDataIn[1];
-         readData[56] <= sdDataIn[0];
+         readData[3] <= sdDataIn[3];
+         readData[2] <= sdDataIn[2];
+         readData[1] <= sdDataIn[1];
+         readData[0] <= sdDataIn[0];
       end
       endcase // case (readBitCnt)
    end

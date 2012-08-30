@@ -648,9 +648,6 @@ begin
             cmdState <= ACMD51_WAIT;
          end
       end
-      SEND_ACMD51: begin
-         cmdState <= ACMD51_WAIT;
-      end
       WRITE_R1: begin
          cmdState <= WRITE_RWAIT;
       end
