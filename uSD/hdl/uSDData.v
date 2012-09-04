@@ -2042,8 +2042,8 @@ begin
 //      end
    end
    WRITE_R1: begin
-      readDataOut[71:64] <= 8'b0;
-      readDataOut[63:0] <= cmdResponseInt[63:0];
+      readDataOut[71:32] <= 0;
+      readDataOut[31:0] <= cmdResponseInt[31:0];
    end
    WRITE_R21: begin
       readDataOut[71:63] <= 8'b0;

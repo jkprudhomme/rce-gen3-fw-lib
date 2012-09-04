@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 `define DEL 500 // standard delay = 500 ps
-//`define USE_CHIPSCOPE // standard delay = 500 ps
+`define USE_CHIPSCOPE // standard delay = 500 ps
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Title                   : uSDTop.v
 // Project                 : COB DPM      
@@ -405,8 +405,8 @@ chipscope_icon icon0 (
 
 chipscope_ila ila0 (
    .CONTROL(csControl),
-//   .CLK(sysClk200Buf),
-   .CLK(apuClk),
+   .CLK(sysClk200Buf),
+//   .CLK(apuClk),
    .TRIG0(csData)
 );
 

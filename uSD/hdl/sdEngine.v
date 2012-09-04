@@ -187,7 +187,7 @@ always @(posedge sdClkIn or negedge sysRstN) begin
 	                          // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
 	    end
             else begin
-               resultFifoDataIn <= {7'b0,     10'b0000001000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+               resultFifoDataIn <= {7'b0,     10'b0000000100, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
                                   //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
 	                          // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
 	    end
@@ -203,7 +203,7 @@ always @(posedge sdClkIn or negedge sysRstN) begin
 	                       // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
 	 end
          41: begin
-            resultFifoDataIn <= {7'b0,     10'b0000001000, 1'b1,   4'b0,         1'b0,   6'b101001,   cmdFifoDataOut[57:50]};
+            resultFifoDataIn <= {7'b0,     10'b0000000100, 1'b1,   4'b0,         1'b0,   6'b101001,   cmdFifoDataOut[57:50]};
                                //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]       [7:0]
 	                       // blank,   validBytes      crcOK   dataStatus    blank   cmd Index    TID
 	 end
@@ -236,7 +236,7 @@ begin
    end
    else begin
 //      if (initDelay == 32'hFFFFFFFF) begin // counter at max count
-      if (initDelay == 32'h0000FFFF) begin // counter at max count      
+      if (initDelay == 32'hFFFFFFFF) begin // counter at max count      
          initDelay <= initDelay;
          initRst <= 1'b0;
       end
