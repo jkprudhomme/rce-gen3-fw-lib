@@ -141,6 +141,7 @@ architecture structure of Ppc440RceG2Apu is
   signal ifcmApuResultValid   : std_logic;
   signal ifcmApuSleepNotReady : std_logic;
   signal ifcmApuStoreData     : std_logic_vector(0 to 127);
+  signal storeTest            : std_logic_vector(0 to 3);
 
   -- Register delay for simulation
   constant tpd:time := 0.5 ns;
@@ -181,7 +182,7 @@ begin
     iapuReadFromPpc(i).regB   <= apuFcmRbData;
 
     -- Status combine
-    apuReadStatusIn((7-i)*4 to (7-i)*4+3) <= apuReadToPPc(i).status;
+    apuReadStatusIn((7-i)*4 to (7-i)*4+3) <= apuReadToPpc(i).status;
     
     -- Write Decode
     dec_write(i) <= '1' when apuFcmDecUdiValid    = '1' and 
@@ -199,7 +200,7 @@ begin
     iapuWriteFromPpc(i).regB   <= apuFcmRbData;
 
     -- Status combine
-    apuWriteStatusIn((7-i)*4 to (7-i)*4+3) <= apuWriteToPPc(i).status;
+    apuWriteStatusIn((7-i)*4 to (7-i)*4+3) <= apuWriteToPpc(i).status;
 
   end generate;
 
@@ -208,8 +209,9 @@ begin
   ifcmApuResultValid <= '0' when read_done = 0 and store_done = 0 else '1';
 
   -- Status & Result Mux
-  ifcmApuCr     <= apuReadToPPc(conv_integer(apuFcmDecUdi(0 to 2))).status when read_done /= 0 else (others=>'0');
-  ifcmApuResult <= apuReadToPPc(conv_integer(apuFcmDecUdi(0 to 2))).result when read_done /= 0 else (others=>'0');
+  ifcmApuResult <= apuReadToPpc(conv_integer(apuFcmDecUdi(0 to 2))).result when read_done /= 0 else (others=>'0');
+  ifcmApuCr     <= apuReadToPpc(conv_integer(apuFcmDecUdi(0 to 2))).status when read_done /= 0 else 
+                   storeTest when store_done /= 0 else (others=>'0');
 
   -- Read/Write States 
   fcm_p : process ( apuClkRst, apuClk )
@@ -285,9 +287,15 @@ begin
     if apuClkRst='1' then
       load_done  <= (others=>'0') after tpd;
       store_done <= (others=>'0') after tpd;
+      storeTest  <= (others=>'0') after tpd;
     elsif rising_edge(apuClk) then
       load_done  <= load_done_next   after tpd;
       store_done <= store_done_next  after tpd;
+
+      if ( store_done /= 0 ) then 
+         storeTest <= storeTest + 1 after tpd;
+      end if;
+
     end if;
   end process ls_p;
 
