@@ -80,7 +80,8 @@ reg [4:0] cmdState;
 reg [5:0] writeStatus;
 
 assign sdDataDebug[63:0]    = chipScopeSel ? readDataOut      : writeData0;
-assign sdDataDebug[127:64]  = chipScopeSel ? {44'b0, dataStatus, readCrcCheck3} : writeData1;
+//assign sdDataDebug[127:64]  = chipScopeSel ? {44'b0, dataStatus, readCrcCheck3} : writeData1;
+assign sdDataDebug[127:64]  = chipScopeSel ? readData : writeData1;
 assign sdDataDebug[144:128] = {2'b0, writeStatus, writeCrcIn, cmdState};
 assign sdDataDebug[147:145] = chipScopeSel ? readByteCnt   : writeByteCnt;
 assign sdDataDebug[150:148] = chipScopeSel ? readBitCnt    : writeBitCnt;
@@ -741,17 +742,49 @@ always @(posedge sdClk) begin
         readDone    <= 1'b0;
         cmdDone     <= 1'b0;
      end
+     // READ: begin
+     //    if (readByteCnt == 1 & readBitCnt == 7) begin
+     // 	   readFifoWe <= 1'b1;
+     //    end
+     //    else if (readByteCnt == 3 & readBitCnt == 7) begin
+     // 	   readFifoWe <= 1'b1;
+     //    end
+     //    else if (readByteCnt == 5 & readBitCnt == 7) begin
+     // 	   readFifoWe <= 1'b1;
+     //    end
+     //    else if (readByteCnt == 7 & readBitCnt == 7) begin
+     // 	   readFifoWe <= 1'b1;
+     //    end
+     //    else begin
+     //       readFifoWe <= 1'b0;
+     //    end
+     // 	writeFifoRe  <= 1'b0;
+     //    writeCrcEnable <= 1'b0;
+     //    if (readByteCnt == 7 & readBitCnt == 7 & readBlockCnt == 15 & ~sdStatusCmd) begin
+     // 	   readCrcEnable <= 1'b0;
+     // 	end
+     //    else if (readByteCnt == 7 & readBitCnt == 7 & readBlockCnt == 1 & sdStatusCmd) begin
+     // 	   readCrcEnable <= 1'b0;
+     // 	end
+     // 	else begin
+     //       readCrcEnable <= 1'b1;
+     // 	end
+     //    sdDataEn    <= 1'b0;
+     //    writeDone   <= 1'b0;
+     //    readDone    <= 1'b0;
+     //    cmdDone     <= 1'b0;
+     // end
      READ: begin
-        if (readByteCnt == 1 & readBitCnt == 7) begin
+        if (readByteCnt == 2 & readBitCnt == 0) begin
    	   readFifoWe <= 1'b1;
         end
-        else if (readByteCnt == 3 & readBitCnt == 7) begin
+        else if (readByteCnt == 4 & readBitCnt == 0) begin
    	   readFifoWe <= 1'b1;
         end
-        else if (readByteCnt == 5 & readBitCnt == 7) begin
+        else if (readByteCnt == 6 & readBitCnt == 0) begin
    	   readFifoWe <= 1'b1;
         end
-        else if (readByteCnt == 7 & readBitCnt == 7) begin
+        else if (readByteCnt == 0 & readBitCnt == 0 & readBlockCnt > 0) begin
    	   readFifoWe <= 1'b1;
         end
         else begin
@@ -775,7 +808,12 @@ always @(posedge sdClk) begin
      end
      READ_CRC: begin
 	writeFifoRe <= 1'b0;
-	readFifoWe  <= 1'b0;
+        if (readCrcCnt == 15) begin
+           readFifoWe <= 1'b1;
+        end
+        else begin
+	   readFifoWe  <= 1'b0;
+        end
         writeCrcEnable <= 1'b0;
         readCrcEnable <= 1'b0;
         sdDataEn    <= 1'b0;
@@ -2032,18 +2070,13 @@ always @(posedge sdClk)
 begin
    case (cmdState) // synthesis parallel_case full_case
    READ: begin
-      // if (readByteCnt == 7 & readBitCnt == 7) begin
-      //    readDataOut[63:0] <= readData;
-      //    readDataOut[71:64] <= 8'h0;
-      // end
-//      if (readByteCnt == 7 & readBitCnt == 7) begin
-         readDataOut[63:0] <= readData;
-         readDataOut[71:64] <= 8'h0;
-//      end
+      readDataOut[63:0] <= readData;
+      readDataOut[71:64] <= 8'h0;
    end
    WRITE_R1: begin
-      readDataOut[71:32] <= 0;
-      readDataOut[31:0] <= cmdResponseInt[31:0];
+      readDataOut[71:64] <= 0;
+      readDataOut[63:32] <= cmdResponseInt[39:8];   
+      readDataOut[31:0]  <= 0;
    end
    WRITE_R21: begin
       readDataOut[71:63] <= 8'b0;
@@ -2052,6 +2085,10 @@ begin
    WRITE_R22: begin
       readDataOut[71:64] <= 8'b0;
       readDataOut[63:0] <= cmdResponseInt[63:0];
+   end
+   READ_CRC: begin
+      readDataOut[63:0] <= readData;
+      readDataOut[71:64] <= 8'h0;
    end
    endcase
 end

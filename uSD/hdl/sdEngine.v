@@ -97,7 +97,7 @@ reg acmd42Done;                          // ACMD42 is complete
 reg [15:0] RCA;                          // Relative card address
 reg [135:0] CID;                         // Card ID Reg
 reg [135:0] CSD;                         // Card status reg
-reg [47:0] OCR;                          // OCR Register
+reg [31:0] OCR;                          // OCR Register
 reg [15:0] timeOut;                      // command timeout register
 
 // command state machine states
@@ -171,44 +171,44 @@ always @(posedge sdClkIn or negedge sysRstN) begin
    else begin
       case (cmdFifoDataOut[63:58])   // synthesis full_case parallel_case
          9: begin
-            resultFifoDataIn <= {7'b0,     10'b0000010000, 1'b1,  4'b0,      1'b0,   6'b001001, cmdFifoDataOut[57:50]};
+            resultFifoDataIn <= {6'b0,     10'b0000010000, 1'b1,  4'b0,      1'b0,   6'b001001, cmdFifoDataOut[57:50]};
                                //[35:30]   [29:20]         [19]   [18:15]    [14]    [13:8]     [7:0]
 	                       // blank,   validBytes      crcOK  dataStatus blank   cmd Index  TID
 	 end
          10: begin
-            resultFifoDataIn <= {7'b0,     10'b0000010000, 1'b1,  4'b0,      1'b0,   6'b001010, cmdFifoDataOut[57:50]};
+            resultFifoDataIn <= {6'b0,     10'b0000010000, 1'b1,  4'b0,      1'b0,   6'b001010, cmdFifoDataOut[57:50]};
                                //[35:30]   [29:20]         [19]   [18:15]    [14]    [13:8]     [7:0]
 	                       // blank,   validBytes      crcOK  dataStatus blank   cmd Index  TID
 	 end
          13: begin
             if (cmdFifoDataOut[49]) begin // ACMD13 Command
-               resultFifoDataIn <= {7'b0,     10'b0001000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+               resultFifoDataIn <= {6'b0,     10'b0001000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
                                   //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
 	                          // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
 	    end
             else begin
-               resultFifoDataIn <= {7'b0,     10'b0000000100, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+               resultFifoDataIn <= {6'b0,     10'b0000000100, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
                                   //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
 	                          // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
 	    end
 	 end
          17: begin
-            resultFifoDataIn <= {7'b0,     10'b1000000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+            resultFifoDataIn <= {6'b0,     10'b1000000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
                                //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
 	                       // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
 	 end
          24: begin
-            resultFifoDataIn <= {7'b0,     10'b0000000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
+            resultFifoDataIn <= {6'b0,     10'b0000000000, crcOk,  dataStatus,   1'b0,   cmdResponse[45:40], cmdFifoDataOut[57:50]};
                                //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]              [7:0]
 	                       // blank,   validBytes      crcOK   dataStatus    blank   cmd Index           TID
 	 end
          41: begin
-            resultFifoDataIn <= {7'b0,     10'b0000000100, 1'b1,   4'b0,         1'b0,   6'b101001,   cmdFifoDataOut[57:50]};
+            resultFifoDataIn <= {6'b0,     10'b0000000100, 1'b1,   4'b0,         1'b0,   6'b101001,   cmdFifoDataOut[57:50]};
                                //[35:30]   [29:20]         [19]    [18:15]       [14]    [13:8]       [7:0]
 	                       // blank,   validBytes      crcOK   dataStatus    blank   cmd Index    TID
 	 end
          51: begin
-            resultFifoDataIn <= {7'b0,     10'b0000001000, crcOk,   4'b0,        1'b0,   cmdResponse[45:40],   cmdFifoDataOut[57:50]};
+            resultFifoDataIn <= {6'b0,     10'b0000001000, crcOk,   4'b0,        1'b0,   cmdResponse[45:40],   cmdFifoDataOut[57:50]};
                                //[35:30]   [29:20]         [19]     [18:15]      [14]    [13:8]                [7:0]
 	                       // blank,   validBytes      crcOK    dataStatus   blank   cmd Index             TID
 	 end
@@ -218,14 +218,7 @@ end
 
 // debug signals
 assign sdEngineDebug[7:0] = cmdState;
-assign sdEngineDebug[39:8] = initDelay;
-assign sdEngineDebug[40] = acmd41Done;
-assign sdEngineDebug[41] = acmd6Done;
-assign sdEngineDebug[59] = acmd42Done;
-assign sdEngineDebug[57:42] = RCA;
-assign sdEngineDebug[58] = cmdFifoEmpty;
-assign sdEngineDebug[60] = sdInitComplete;
-assign sdEngineDebug[69:61] = timeOut[8:0];
+assign sdEngineDebug[39:8] = OCR;
 // command response
 // generate delayed reset
 always @(posedge sdClkIn or negedge sysRstN)
@@ -236,7 +229,7 @@ begin
    end
    else begin
 //      if (initDelay == 32'hFFFFFFFF) begin // counter at max count
-      if (initDelay == 32'hFFFFFFFF) begin // counter at max count      
+      if (initDelay == 32'h0FFFFFFF) begin // counter at max count      
          initDelay <= initDelay;
          initRst <= 1'b0;
       end
@@ -278,8 +271,9 @@ begin
       cmdResponseInt <= CID;
    end
    else if (cmdState == ACMD41_FAKE) begin
-      cmdResponseInt[31:0] <= OCR[39:8];
-      cmdResponseInt[135:32] <= 0;
+      cmdResponseInt[39:8] <= OCR;
+      cmdResponseInt[135:40] <= 0;
+      cmdResponseInt[7:0] <= 0;
    end
    else begin
       cmdResponseInt <= cmdResponseInt;
@@ -1137,11 +1131,11 @@ end
 always @(posedge sdClkIn or posedge initRst)
 begin
    if (initRst) begin
-      OCR <= 48'b0;
+      OCR <= 32'b0;
    end
    else begin
       if (cmdState == ACMD41_CHECK) begin
-         OCR <= cmdResponseInt[47:0];
+         OCR <= cmdResponse[39:8];
       end
       else begin
          OCR <= OCR;
