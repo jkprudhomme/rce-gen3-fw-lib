@@ -880,20 +880,104 @@ begin
    if (sysRst) begin
       writeData0 <= 64'h0;
    end
-   else if (cmdState == WRITE_WAIT2) begin
+   else if (cmdState == WRITE_WAIT1) begin
       writeData0 <= writeDataIn[63:0];
    end
-   else if (cmdState == WRITE & writeByteCnt == 1) begin
-      writeData0[31:0] <= writeData1[31:0];
+   else if (cmdState == WRITE & writeByteCnt == 0 & writeBitCnt == 2) begin
+      writeData0[63:56] <= writeData1[63:56];
    end
-   else if (cmdState == WRITE & writeByteCnt == 3) begin
-      writeData0[63:32] <= writeData1[63:32];
+   else if (cmdState == WRITE & writeByteCnt == 0 & writeBitCnt == 4) begin
+      writeData0[55:48] <= writeData1[55:48];
    end
-   else if (cmdState == WRITE & writeByteCnt == 5) begin
-      writeData0[31:0] <= writeData1[31:0];
+   else if (cmdState == WRITE & writeByteCnt == 0 & writeBitCnt == 6) begin
+      writeData0[47:40] <= writeData1[47:40];
    end
-   else if (cmdState == WRITE & writeByteCnt == 7) begin
-      writeData0[63:32] <= writeData1[63:32];
+   else if (cmdState == WRITE & writeByteCnt == 1 & writeBitCnt == 0) begin
+      writeData0[39:32] <= writeData1[39:32];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 1 & writeBitCnt == 2) begin
+      writeData0[31:24] <= writeData1[31:24];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 1 & writeBitCnt == 4) begin
+      writeData0[23:16] <= writeData1[23:16];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 1 & writeBitCnt == 6) begin
+      writeData0[15:8] <= writeData1[15:8];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 2 & writeBitCnt == 0) begin
+      writeData0[7:0] <= writeData1[7:0];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 2 & writeBitCnt == 2) begin
+      writeData0[63:56] <= writeData1[63:56];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 2 & writeBitCnt == 4) begin
+      writeData0[55:48] <= writeData1[55:48];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 2 & writeBitCnt == 6) begin
+      writeData0[47:40] <= writeData1[47:40];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 3 & writeBitCnt == 0) begin
+      writeData0[39:32] <= writeData1[39:32];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 3 & writeBitCnt == 2) begin
+      writeData0[31:24] <= writeData1[31:24];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 3 & writeBitCnt == 4) begin
+      writeData0[23:16] <= writeData1[23:16];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 3 & writeBitCnt == 6) begin
+      writeData0[15:8] <= writeData1[15:8];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 4 & writeBitCnt == 0) begin
+      writeData0[7:0] <= writeData1[7:0];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 4 & writeBitCnt == 2) begin
+      writeData0[63:56] <= writeData1[63:56];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 4 & writeBitCnt == 4) begin
+      writeData0[55:48] <= writeData1[55:48];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 4 & writeBitCnt == 6) begin
+      writeData0[47:40] <= writeData1[47:40];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 5 & writeBitCnt == 0) begin
+      writeData0[39:32] <= writeData1[39:32];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 5 & writeBitCnt == 2) begin
+      writeData0[31:24] <= writeData1[31:24];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 5 & writeBitCnt == 4) begin
+      writeData0[23:16] <= writeData1[23:16];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 5 & writeBitCnt == 6) begin
+      writeData0[15:8] <= writeData1[15:8];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 6 & writeBitCnt == 0) begin
+      writeData0[7:0] <= writeData1[7:0];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 6 & writeBitCnt == 2) begin
+      writeData0[63:56] <= writeData1[63:56];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 6 & writeBitCnt == 4) begin
+      writeData0[55:48] <= writeData1[55:48];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 6 & writeBitCnt == 6) begin
+      writeData0[47:40] <= writeData1[47:40];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 7 & writeBitCnt == 0) begin
+      writeData0[39:32] <= writeData1[39:32];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 7 & writeBitCnt == 2) begin
+      writeData0[31:24] <= writeData1[31:24];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 7 & writeBitCnt == 4) begin
+      writeData0[23:16] <= writeData1[23:16];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 7 & writeBitCnt == 6) begin
+      writeData0[15:8] <= writeData1[15:8];
+   end
+   else if (cmdState == WRITE & writeByteCnt == 0 & writeBitCnt == 0 & writeBlockCnt > 0) begin
+      writeData0[7:0] <= writeData1[7:0];
    end
    else begin
       writeData0 <= writeData0;
@@ -941,10 +1025,10 @@ begin
    end
    WRITE_START: begin
       sdDataOut <= 4'h0;
-      writeCrcIn[3]  <= writeData0[7];
-      writeCrcIn[2]  <= writeData0[6];
-      writeCrcIn[1]  <= writeData0[5];
-      writeCrcIn[0]  <= writeData0[4];
+      writeCrcIn[3]  <= writeData0[63];
+      writeCrcIn[2]  <= writeData0[62];
+      writeCrcIn[1]  <= writeData0[61];
+      writeCrcIn[0]  <= writeData0[60];
    end
    WRITE_CRC: begin
       sdDataOut[3] <= writeCrcValue3[writeCrcCnt];
@@ -958,570 +1042,426 @@ begin
       0: begin
          case(writeBitCnt) 
          0: begin
-            sdDataOut[3] <= writeData0[7];
-	    sdDataOut[2] <= writeData0[6];
-	    sdDataOut[1] <= writeData0[5];
-	    sdDataOut[0] <= writeData0[4];
-            writeCrcIn[3] <= writeData0[3];
-	    writeCrcIn[2] <= writeData0[2];
-	    writeCrcIn[1] <= writeData0[1];
-	    writeCrcIn[0] <= writeData0[0];
+            sdDataOut[3] <= writeData0[63];
+	    sdDataOut[2] <= writeData0[62];
+	    sdDataOut[1] <= writeData0[61];
+	    sdDataOut[0] <= writeData0[60];
+            writeCrcIn[3] <= writeData0[59];
+	    writeCrcIn[2] <= writeData0[58];
+	    writeCrcIn[1] <= writeData0[57];
+	    writeCrcIn[0] <= writeData0[56];
 	 end
          1: begin
-            sdDataOut[3] <= writeData0[3];
-	    sdDataOut[2] <= writeData0[2];
-	    sdDataOut[1] <= writeData0[1];
-	    sdDataOut[0] <= writeData0[0];
-            writeCrcIn[3] <= writeData0[15];
-	    writeCrcIn[2] <= writeData0[14];
-	    writeCrcIn[1] <= writeData0[13];
-	    writeCrcIn[0] <= writeData0[12];
+            sdDataOut[3] <= writeData0[59];
+	    sdDataOut[2] <= writeData0[58];
+	    sdDataOut[1] <= writeData0[57];
+	    sdDataOut[0] <= writeData0[56];
+            writeCrcIn[3] <= writeData0[55];
+	    writeCrcIn[2] <= writeData0[54];
+	    writeCrcIn[1] <= writeData0[53];
+	    writeCrcIn[0] <= writeData0[52];
 	 end
          2: begin
-            sdDataOut[3] <= writeData0[15];
-	    sdDataOut[2] <= writeData0[14];
-	    sdDataOut[1] <= writeData0[13];
-	    sdDataOut[0] <= writeData0[12];
-            writeCrcIn[3] <= writeData0[11];
-	    writeCrcIn[2] <= writeData0[10];
-	    writeCrcIn[1] <= writeData0[9];
-	    writeCrcIn[0] <= writeData0[8];
+            sdDataOut[3] <= writeData0[55];
+	    sdDataOut[2] <= writeData0[54];
+	    sdDataOut[1] <= writeData0[53];
+	    sdDataOut[0] <= writeData0[52];
+            writeCrcIn[3] <= writeData0[51];
+	    writeCrcIn[2] <= writeData0[50];
+	    writeCrcIn[1] <= writeData0[49];
+	    writeCrcIn[0] <= writeData0[48];
 	 end
          3: begin
-            sdDataOut[3] <= writeData0[11];
-	    sdDataOut[2] <= writeData0[10];
-	    sdDataOut[1] <= writeData0[9];
-	    sdDataOut[0] <= writeData0[8];
-            writeCrcIn[3] <= writeData0[23];
-	    writeCrcIn[2] <= writeData0[22];
-	    writeCrcIn[1] <= writeData0[21];
-	    writeCrcIn[0] <= writeData0[20];
+            sdDataOut[3] <= writeData0[51];
+	    sdDataOut[2] <= writeData0[50];
+	    sdDataOut[1] <= writeData0[49];
+	    sdDataOut[0] <= writeData0[48];
+            writeCrcIn[3] <= writeData0[47];
+	    writeCrcIn[2] <= writeData0[46];
+	    writeCrcIn[1] <= writeData0[45];
+	    writeCrcIn[0] <= writeData0[44];
 	 end
          4: begin
-            sdDataOut[3] <= writeData0[23];
-	    sdDataOut[2] <= writeData0[22];
-	    sdDataOut[1] <= writeData0[21];
-	    sdDataOut[0] <= writeData0[20];
-            writeCrcIn[3] <= writeData0[19];
-	    writeCrcIn[2] <= writeData0[18];
-	    writeCrcIn[1] <= writeData0[17];
-	    writeCrcIn[0] <= writeData0[16];
+            sdDataOut[3] <= writeData0[47];
+	    sdDataOut[2] <= writeData0[46];
+	    sdDataOut[1] <= writeData0[45];
+	    sdDataOut[0] <= writeData0[44];
+            writeCrcIn[3] <= writeData0[43];
+	    writeCrcIn[2] <= writeData0[42];
+	    writeCrcIn[1] <= writeData0[41];
+	    writeCrcIn[0] <= writeData0[40];
 	 end
          5: begin
-            sdDataOut[3] <= writeData0[19];
-	    sdDataOut[2] <= writeData0[18];
-	    sdDataOut[1] <= writeData0[17];
-	    sdDataOut[0] <= writeData0[16];
-            writeCrcIn[3] <= writeData0[31];
-	    writeCrcIn[2] <= writeData0[30];
-	    writeCrcIn[1] <= writeData0[29];
-	    writeCrcIn[0] <= writeData0[28];
-	 end
-         6: begin
-            sdDataOut[3] <= writeData0[31];
-	    sdDataOut[2] <= writeData0[30];
-	    sdDataOut[1] <= writeData0[29];
-	    sdDataOut[0] <= writeData0[28];
-            writeCrcIn[3] <= writeData0[27];
-	    writeCrcIn[2] <= writeData0[26];
-	    writeCrcIn[1] <= writeData0[25];
-	    writeCrcIn[0] <= writeData0[24];
-	 end
-         7: begin
-            sdDataOut[3] <= writeData0[27];
-	    sdDataOut[2] <= writeData0[26];
-	    sdDataOut[1] <= writeData0[25];
-	    sdDataOut[0] <= writeData0[24];
+            sdDataOut[3] <= writeData0[43];
+	    sdDataOut[2] <= writeData0[42];
+	    sdDataOut[1] <= writeData0[41];
+	    sdDataOut[0] <= writeData0[40];
             writeCrcIn[3] <= writeData0[39];
 	    writeCrcIn[2] <= writeData0[38];
 	    writeCrcIn[1] <= writeData0[37];
 	    writeCrcIn[0] <= writeData0[36];
+	 end
+         6: begin
+            sdDataOut[3] <= writeData0[39];
+	    sdDataOut[2] <= writeData0[38];
+	    sdDataOut[1] <= writeData0[37];
+	    sdDataOut[0] <= writeData0[36];
+            writeCrcIn[3] <= writeData0[35];
+	    writeCrcIn[2] <= writeData0[34];
+	    writeCrcIn[1] <= writeData0[33];
+	    writeCrcIn[0] <= writeData0[32];
+	 end
+         7: begin
+            sdDataOut[3] <= writeData0[35];
+	    sdDataOut[2] <= writeData0[34];
+	    sdDataOut[1] <= writeData0[33];
+	    sdDataOut[0] <= writeData0[32];
+            writeCrcIn[3] <= writeData0[31];
+	    writeCrcIn[2] <= writeData0[30];
+	    writeCrcIn[1] <= writeData0[29];
+	    writeCrcIn[0] <= writeData0[28];
 	 end
 	 endcase // case (writeBitCnt)
       end
       1: begin
          case(writeBitCnt) 
          0: begin
-            sdDataOut[3] <= writeData0[39];
-	    sdDataOut[2] <= writeData0[38];
-	    sdDataOut[1] <= writeData0[37];
-	    sdDataOut[0] <= writeData0[36];
-            writeCrcIn[3] <= writeData0[35];
-	    writeCrcIn[2] <= writeData0[34];
-	    writeCrcIn[1] <= writeData0[33];
-	    writeCrcIn[0] <= writeData0[32];
+            sdDataOut[3] <= writeData0[31];
+	    sdDataOut[2] <= writeData0[30];
+	    sdDataOut[1] <= writeData0[29];
+	    sdDataOut[0] <= writeData0[28];
+            writeCrcIn[3] <= writeData0[27];
+	    writeCrcIn[2] <= writeData0[26];
+	    writeCrcIn[1] <= writeData0[25];
+	    writeCrcIn[0] <= writeData0[24];
 	 end
          1: begin
-            sdDataOut[3] <= writeData0[35];
-	    sdDataOut[2] <= writeData0[34];
-	    sdDataOut[1] <= writeData0[33];
-	    sdDataOut[0] <= writeData0[32];
-            writeCrcIn[3] <= writeData0[47];
-	    writeCrcIn[2] <= writeData0[46];
-	    writeCrcIn[1] <= writeData0[45];
-	    writeCrcIn[0] <= writeData0[44];
+            sdDataOut[3] <= writeData0[27];
+	    sdDataOut[2] <= writeData0[26];
+	    sdDataOut[1] <= writeData0[25];
+	    sdDataOut[0] <= writeData0[24];
+            writeCrcIn[3] <= writeData0[23];
+	    writeCrcIn[2] <= writeData0[22];
+	    writeCrcIn[1] <= writeData0[21];
+	    writeCrcIn[0] <= writeData0[20];
 	 end
          2: begin
-            sdDataOut[3] <= writeData0[47];
-	    sdDataOut[2] <= writeData0[46];
-	    sdDataOut[1] <= writeData0[45];
-	    sdDataOut[0] <= writeData0[44];
-            writeCrcIn[3] <= writeData0[43];
-	    writeCrcIn[2] <= writeData0[42];
-	    writeCrcIn[1] <= writeData0[41];
-	    writeCrcIn[0] <= writeData0[40];
+            sdDataOut[3] <= writeData0[23];
+	    sdDataOut[2] <= writeData0[22];
+	    sdDataOut[1] <= writeData0[21];
+	    sdDataOut[0] <= writeData0[20];
+            writeCrcIn[3] <= writeData0[19];
+	    writeCrcIn[2] <= writeData0[18];
+	    writeCrcIn[1] <= writeData0[17];
+	    writeCrcIn[0] <= writeData0[16];
 	 end
          3: begin
-            sdDataOut[3] <= writeData0[43];
-	    sdDataOut[2] <= writeData0[42];
-	    sdDataOut[1] <= writeData0[41];
-	    sdDataOut[0] <= writeData0[40];
-            writeCrcIn[3] <= writeData0[55];
-	    writeCrcIn[2] <= writeData0[54];
-	    writeCrcIn[1] <= writeData0[53];
-	    writeCrcIn[0] <= writeData0[52];
+            sdDataOut[3] <= writeData0[19];
+	    sdDataOut[2] <= writeData0[18];
+	    sdDataOut[1] <= writeData0[17];
+	    sdDataOut[0] <= writeData0[16];
+            writeCrcIn[3] <= writeData0[15];
+	    writeCrcIn[2] <= writeData0[14];
+	    writeCrcIn[1] <= writeData0[13];
+	    writeCrcIn[0] <= writeData0[12];
 	 end
          4: begin
-            sdDataOut[3] <= writeData0[55];
-	    sdDataOut[2] <= writeData0[54];
-	    sdDataOut[1] <= writeData0[53];
-	    sdDataOut[0] <= writeData0[52];
-            writeCrcIn[3] <= writeData0[51];
-	    writeCrcIn[2] <= writeData0[50];
-	    writeCrcIn[1] <= writeData0[49];
-	    writeCrcIn[0] <= writeData0[48];
+            sdDataOut[3] <= writeData0[15];
+	    sdDataOut[2] <= writeData0[14];
+	    sdDataOut[1] <= writeData0[13];
+	    sdDataOut[0] <= writeData0[12];
+            writeCrcIn[3] <= writeData0[11];
+	    writeCrcIn[2] <= writeData0[10];
+	    writeCrcIn[1] <= writeData0[9];
+	    writeCrcIn[0] <= writeData0[8];
 	 end
          5: begin
-            sdDataOut[3] <= writeData0[51];
-	    sdDataOut[2] <= writeData0[50];
-	    sdDataOut[1] <= writeData0[49];
-	    sdDataOut[0] <= writeData0[48];
-            writeCrcIn[3] <= writeData0[63];
-	    writeCrcIn[2] <= writeData0[62];
-	    writeCrcIn[1] <= writeData0[61];
-	    writeCrcIn[0] <= writeData0[60];
-	 end
-         6: begin
-            sdDataOut[3] <= writeData0[63];
-	    sdDataOut[2] <= writeData0[62];
-	    sdDataOut[1] <= writeData0[61];
-	    sdDataOut[0] <= writeData0[60];
-            writeCrcIn[3] <= writeData0[59];
-	    writeCrcIn[2] <= writeData0[58];
-	    writeCrcIn[1] <= writeData0[57];
-	    writeCrcIn[0] <= writeData0[56];
-	 end
-         7: begin
-            sdDataOut[3] <= writeData0[59];
-	    sdDataOut[2] <= writeData0[58];
-	    sdDataOut[1] <= writeData0[57];
-	    sdDataOut[0] <= writeData0[56];
+            sdDataOut[3] <= writeData0[11];
+	    sdDataOut[2] <= writeData0[10];
+	    sdDataOut[1] <= writeData0[9];
+	    sdDataOut[0] <= writeData0[8];
             writeCrcIn[3] <= writeData0[7];
 	    writeCrcIn[2] <= writeData0[6];
 	    writeCrcIn[1] <= writeData0[5];
 	    writeCrcIn[0] <= writeData0[4];
+	 end
+         6: begin
+            sdDataOut[3] <= writeData0[7];
+	    sdDataOut[2] <= writeData0[6];
+	    sdDataOut[1] <= writeData0[5];
+	    sdDataOut[0] <= writeData0[4];
+            writeCrcIn[3] <= writeData0[3];
+	    writeCrcIn[2] <= writeData0[2];
+	    writeCrcIn[1] <= writeData0[1];
+	    writeCrcIn[0] <= writeData0[0];
+	 end
+         7: begin
+            sdDataOut[3] <= writeData0[3];
+	    sdDataOut[2] <= writeData0[2];
+	    sdDataOut[1] <= writeData0[1];
+	    sdDataOut[0] <= writeData0[0];
+            writeCrcIn[3] <= writeData0[63];
+	    writeCrcIn[2] <= writeData0[62];
+	    writeCrcIn[1] <= writeData0[61];
+	    writeCrcIn[0] <= writeData0[60];
 	 end
 	 endcase // case (writeBitCnt)
       end
       2: begin
          case(writeBitCnt) 
          0: begin
-            sdDataOut[3] <= writeData0[7];
-	    sdDataOut[2] <= writeData0[6];
-	    sdDataOut[1] <= writeData0[5];
-	    sdDataOut[0] <= writeData0[4];
-            writeCrcIn[3] <= writeData0[3];
-	    writeCrcIn[2] <= writeData0[2];
-	    writeCrcIn[1] <= writeData0[1];
-	    writeCrcIn[0] <= writeData0[0];
+            sdDataOut[3] <= writeData0[63];
+	    sdDataOut[2] <= writeData0[62];
+	    sdDataOut[1] <= writeData0[61];
+	    sdDataOut[0] <= writeData0[60];
+            writeCrcIn[3] <= writeData0[59];
+	    writeCrcIn[2] <= writeData0[58];
+	    writeCrcIn[1] <= writeData0[57];
+	    writeCrcIn[0] <= writeData0[56];
 	 end
          1: begin
-            sdDataOut[3] <= writeData0[3];
-	    sdDataOut[2] <= writeData0[2];
-	    sdDataOut[1] <= writeData0[1];
-	    sdDataOut[0] <= writeData0[0];
-            writeCrcIn[3] <= writeData0[15];
-	    writeCrcIn[2] <= writeData0[14];
-	    writeCrcIn[1] <= writeData0[13];
-	    writeCrcIn[0] <= writeData0[12];
+            sdDataOut[3] <= writeData0[59];
+	    sdDataOut[2] <= writeData0[58];
+	    sdDataOut[1] <= writeData0[57];
+	    sdDataOut[0] <= writeData0[56];
+            writeCrcIn[3] <= writeData0[55];
+	    writeCrcIn[2] <= writeData0[54];
+	    writeCrcIn[1] <= writeData0[53];
+	    writeCrcIn[0] <= writeData0[52];
 	 end
          2: begin
-            sdDataOut[3] <= writeData0[15];
-	    sdDataOut[2] <= writeData0[14];
-	    sdDataOut[1] <= writeData0[13];
-	    sdDataOut[0] <= writeData0[12];
-            writeCrcIn[3] <= writeData0[11];
-	    writeCrcIn[2] <= writeData0[10];
-	    writeCrcIn[1] <= writeData0[9];
-	    writeCrcIn[0] <= writeData0[8];
+            sdDataOut[3] <= writeData0[55];
+	    sdDataOut[2] <= writeData0[54];
+	    sdDataOut[1] <= writeData0[53];
+	    sdDataOut[0] <= writeData0[52];
+            writeCrcIn[3] <= writeData0[51];
+	    writeCrcIn[2] <= writeData0[50];
+	    writeCrcIn[1] <= writeData0[49];
+	    writeCrcIn[0] <= writeData0[48];
 	 end
          3: begin
-            sdDataOut[3] <= writeData0[11];
-	    sdDataOut[2] <= writeData0[10];
-	    sdDataOut[1] <= writeData0[9];
-	    sdDataOut[0] <= writeData0[8];
-            writeCrcIn[3] <= writeData0[23];
-	    writeCrcIn[2] <= writeData0[22];
-	    writeCrcIn[1] <= writeData0[21];
-	    writeCrcIn[0] <= writeData0[20];
+            sdDataOut[3] <= writeData0[51];
+	    sdDataOut[2] <= writeData0[50];
+	    sdDataOut[1] <= writeData0[49];
+	    sdDataOut[0] <= writeData0[48];
+            writeCrcIn[3] <= writeData0[47];
+	    writeCrcIn[2] <= writeData0[46];
+	    writeCrcIn[1] <= writeData0[45];
+	    writeCrcIn[0] <= writeData0[44];
 	 end
          4: begin
-            sdDataOut[3] <= writeData0[23];
-	    sdDataOut[2] <= writeData0[22];
-	    sdDataOut[1] <= writeData0[21];
-	    sdDataOut[0] <= writeData0[20];
-            writeCrcIn[3] <= writeData0[19];
-	    writeCrcIn[2] <= writeData0[18];
-	    writeCrcIn[1] <= writeData0[17];
-	    writeCrcIn[0] <= writeData0[16];
+            sdDataOut[3] <= writeData0[47];
+	    sdDataOut[2] <= writeData0[46];
+	    sdDataOut[1] <= writeData0[45];
+	    sdDataOut[0] <= writeData0[44];
+            writeCrcIn[3] <= writeData0[43];
+	    writeCrcIn[2] <= writeData0[42];
+	    writeCrcIn[1] <= writeData0[41];
+	    writeCrcIn[0] <= writeData0[40];
 	 end
          5: begin
-            sdDataOut[3] <= writeData0[19];
-	    sdDataOut[2] <= writeData0[18];
-	    sdDataOut[1] <= writeData0[17];
-	    sdDataOut[0] <= writeData0[16];
-            writeCrcIn[3] <= writeData0[31];
-	    writeCrcIn[2] <= writeData0[30];
-	    writeCrcIn[1] <= writeData0[29];
-	    writeCrcIn[0] <= writeData0[28];
-	 end
-         6: begin
-            sdDataOut[3] <= writeData0[31];
-	    sdDataOut[2] <= writeData0[30];
-	    sdDataOut[1] <= writeData0[29];
-	    sdDataOut[0] <= writeData0[28];
-            writeCrcIn[3] <= writeData0[27];
-	    writeCrcIn[2] <= writeData0[26];
-	    writeCrcIn[1] <= writeData0[25];
-	    writeCrcIn[0] <= writeData0[24];
-	 end
-         7: begin
-            sdDataOut[3] <= writeData0[27];
-	    sdDataOut[2] <= writeData0[26];
-	    sdDataOut[1] <= writeData0[25];
-	    sdDataOut[0] <= writeData0[24];
+            sdDataOut[3] <= writeData0[43];
+	    sdDataOut[2] <= writeData0[42];
+	    sdDataOut[1] <= writeData0[41];
+	    sdDataOut[0] <= writeData0[40];
             writeCrcIn[3] <= writeData0[39];
 	    writeCrcIn[2] <= writeData0[38];
 	    writeCrcIn[1] <= writeData0[37];
 	    writeCrcIn[0] <= writeData0[36];
+	 end
+         6: begin
+            sdDataOut[3] <= writeData0[39];
+	    sdDataOut[2] <= writeData0[38];
+	    sdDataOut[1] <= writeData0[37];
+	    sdDataOut[0] <= writeData0[36];
+            writeCrcIn[3] <= writeData0[35];
+	    writeCrcIn[2] <= writeData0[34];
+	    writeCrcIn[1] <= writeData0[33];
+	    writeCrcIn[0] <= writeData0[32];
+	 end
+         7: begin
+            sdDataOut[3] <= writeData0[35];
+	    sdDataOut[2] <= writeData0[34];
+	    sdDataOut[1] <= writeData0[33];
+	    sdDataOut[0] <= writeData0[32];
+            writeCrcIn[3] <= writeData0[31];
+	    writeCrcIn[2] <= writeData0[30];
+	    writeCrcIn[1] <= writeData0[29];
+	    writeCrcIn[0] <= writeData0[28];
 	 end
 	 endcase // case (writeBitCnt)
       end
       3: begin
          case(writeBitCnt) 
          0: begin
-            sdDataOut[3] <= writeData0[39];
-	    sdDataOut[2] <= writeData0[38];
-	    sdDataOut[1] <= writeData0[37];
-	    sdDataOut[0] <= writeData0[36];
-            writeCrcIn[3] <= writeData0[35];
-	    writeCrcIn[2] <= writeData0[34];
-	    writeCrcIn[1] <= writeData0[33];
-	    writeCrcIn[0] <= writeData0[32];
+            sdDataOut[3] <= writeData0[31];
+	    sdDataOut[2] <= writeData0[30];
+	    sdDataOut[1] <= writeData0[29];
+	    sdDataOut[0] <= writeData0[28];
+            writeCrcIn[3] <= writeData0[27];
+	    writeCrcIn[2] <= writeData0[26];
+	    writeCrcIn[1] <= writeData0[25];
+	    writeCrcIn[0] <= writeData0[24];
 	 end
          1: begin
-            sdDataOut[3] <= writeData0[35];
-	    sdDataOut[2] <= writeData0[34];
-	    sdDataOut[1] <= writeData0[33];
-	    sdDataOut[0] <= writeData0[32];
-            writeCrcIn[3] <= writeData0[47];
-	    writeCrcIn[2] <= writeData0[46];
-	    writeCrcIn[1] <= writeData0[45];
-	    writeCrcIn[0] <= writeData0[44];
+            sdDataOut[3] <= writeData0[27];
+	    sdDataOut[2] <= writeData0[26];
+	    sdDataOut[1] <= writeData0[25];
+	    sdDataOut[0] <= writeData0[24];
+            writeCrcIn[3] <= writeData0[23];
+	    writeCrcIn[2] <= writeData0[22];
+	    writeCrcIn[1] <= writeData0[21];
+	    writeCrcIn[0] <= writeData0[20];
 	 end
          2: begin
-            sdDataOut[3] <= writeData0[47];
-	    sdDataOut[2] <= writeData0[46];
-	    sdDataOut[1] <= writeData0[45];
-	    sdDataOut[0] <= writeData0[44];
-            writeCrcIn[3] <= writeData0[43];
-	    writeCrcIn[2] <= writeData0[42];
-	    writeCrcIn[1] <= writeData0[41];
-	    writeCrcIn[0] <= writeData0[40];
+            sdDataOut[3] <= writeData0[23];
+	    sdDataOut[2] <= writeData0[22];
+	    sdDataOut[1] <= writeData0[21];
+	    sdDataOut[0] <= writeData0[20];
+            writeCrcIn[3] <= writeData0[19];
+	    writeCrcIn[2] <= writeData0[18];
+	    writeCrcIn[1] <= writeData0[17];
+	    writeCrcIn[0] <= writeData0[16];
 	 end
          3: begin
-            sdDataOut[3] <= writeData0[43];
-	    sdDataOut[2] <= writeData0[42];
-	    sdDataOut[1] <= writeData0[41];
-	    sdDataOut[0] <= writeData0[40];
-            writeCrcIn[3] <= writeData0[55];
-	    writeCrcIn[2] <= writeData0[54];
-	    writeCrcIn[1] <= writeData0[53];
-	    writeCrcIn[0] <= writeData0[52];
+            sdDataOut[3] <= writeData0[19];
+	    sdDataOut[2] <= writeData0[18];
+	    sdDataOut[1] <= writeData0[17];
+	    sdDataOut[0] <= writeData0[16];
+            writeCrcIn[3] <= writeData0[15];
+	    writeCrcIn[2] <= writeData0[14];
+	    writeCrcIn[1] <= writeData0[13];
+	    writeCrcIn[0] <= writeData0[12];
 	 end
          4: begin
-            sdDataOut[3] <= writeData0[55];
-	    sdDataOut[2] <= writeData0[54];
-	    sdDataOut[1] <= writeData0[53];
-	    sdDataOut[0] <= writeData0[52];
-            writeCrcIn[3] <= writeData0[51];
-	    writeCrcIn[2] <= writeData0[50];
-	    writeCrcIn[1] <= writeData0[49];
-	    writeCrcIn[0] <= writeData0[48];
+            sdDataOut[3] <= writeData0[15];
+	    sdDataOut[2] <= writeData0[14];
+	    sdDataOut[1] <= writeData0[13];
+	    sdDataOut[0] <= writeData0[12];
+            writeCrcIn[3] <= writeData0[11];
+	    writeCrcIn[2] <= writeData0[10];
+	    writeCrcIn[1] <= writeData0[9];
+	    writeCrcIn[0] <= writeData0[8];
 	 end
          5: begin
-            sdDataOut[3] <= writeData0[51];
-	    sdDataOut[2] <= writeData0[50];
-	    sdDataOut[1] <= writeData0[49];
-	    sdDataOut[0] <= writeData0[48];
-            writeCrcIn[3] <= writeData0[63];
-	    writeCrcIn[2] <= writeData0[62];
-	    writeCrcIn[1] <= writeData0[61];
-	    writeCrcIn[0] <= writeData0[60];
-	 end
-         6: begin
-            sdDataOut[3] <= writeData0[63];
-	    sdDataOut[2] <= writeData0[62];
-	    sdDataOut[1] <= writeData0[61];
-	    sdDataOut[0] <= writeData0[60];
-            writeCrcIn[3] <= writeData0[59];
-	    writeCrcIn[2] <= writeData0[58];
-	    writeCrcIn[1] <= writeData0[57];
-	    writeCrcIn[0] <= writeData0[56];
-	 end
-         7: begin
-            sdDataOut[3] <= writeData0[59];
-	    sdDataOut[2] <= writeData0[58];
-	    sdDataOut[1] <= writeData0[57];
-	    sdDataOut[0] <= writeData0[56];
+            sdDataOut[3] <= writeData0[11];
+	    sdDataOut[2] <= writeData0[10];
+	    sdDataOut[1] <= writeData0[9];
+	    sdDataOut[0] <= writeData0[8];
             writeCrcIn[3] <= writeData0[7];
 	    writeCrcIn[2] <= writeData0[6];
 	    writeCrcIn[1] <= writeData0[5];
 	    writeCrcIn[0] <= writeData0[4];
+	 end
+         6: begin
+            sdDataOut[3] <= writeData0[7];
+	    sdDataOut[2] <= writeData0[6];
+	    sdDataOut[1] <= writeData0[5];
+	    sdDataOut[0] <= writeData0[4];
+            writeCrcIn[3] <= writeData0[3];
+	    writeCrcIn[2] <= writeData0[2];
+	    writeCrcIn[1] <= writeData0[1];
+	    writeCrcIn[0] <= writeData0[0];
+	 end
+         7: begin
+            sdDataOut[3] <= writeData0[3];
+	    sdDataOut[2] <= writeData0[2];
+	    sdDataOut[1] <= writeData0[1];
+	    sdDataOut[0] <= writeData0[0];
+            writeCrcIn[3] <= writeData0[63];
+	    writeCrcIn[2] <= writeData0[62];
+	    writeCrcIn[1] <= writeData0[61];
+	    writeCrcIn[0] <= writeData0[60];
 	 end
 	 endcase // case (writeBitCnt)
       end
       4: begin
          case(writeBitCnt) 
          0: begin
-            sdDataOut[3] <= writeData0[7];
-	    sdDataOut[2] <= writeData0[6];
-	    sdDataOut[1] <= writeData0[5];
-	    sdDataOut[0] <= writeData0[4];
-            writeCrcIn[3] <= writeData0[3];
-	    writeCrcIn[2] <= writeData0[2];
-	    writeCrcIn[1] <= writeData0[1];
-	    writeCrcIn[0] <= writeData0[0];
+            sdDataOut[3] <= writeData0[63];
+	    sdDataOut[2] <= writeData0[62];
+	    sdDataOut[1] <= writeData0[61];
+	    sdDataOut[0] <= writeData0[60];
+            writeCrcIn[3] <= writeData0[59];
+	    writeCrcIn[2] <= writeData0[58];
+	    writeCrcIn[1] <= writeData0[57];
+	    writeCrcIn[0] <= writeData0[56];
 	 end
          1: begin
-            sdDataOut[3] <= writeData0[3];
-	    sdDataOut[2] <= writeData0[2];
-	    sdDataOut[1] <= writeData0[1];
-	    sdDataOut[0] <= writeData0[0];
-            writeCrcIn[3] <= writeData0[15];
-	    writeCrcIn[2] <= writeData0[14];
-	    writeCrcIn[1] <= writeData0[13];
-	    writeCrcIn[0] <= writeData0[12];
+            sdDataOut[3] <= writeData0[59];
+	    sdDataOut[2] <= writeData0[58];
+	    sdDataOut[1] <= writeData0[57];
+	    sdDataOut[0] <= writeData0[56];
+            writeCrcIn[3] <= writeData0[55];
+	    writeCrcIn[2] <= writeData0[54];
+	    writeCrcIn[1] <= writeData0[53];
+	    writeCrcIn[0] <= writeData0[52];
 	 end
          2: begin
-            sdDataOut[3] <= writeData0[15];
-	    sdDataOut[2] <= writeData0[14];
-	    sdDataOut[1] <= writeData0[13];
-	    sdDataOut[0] <= writeData0[12];
-            writeCrcIn[3] <= writeData0[11];
-	    writeCrcIn[2] <= writeData0[10];
-	    writeCrcIn[1] <= writeData0[9];
-	    writeCrcIn[0] <= writeData0[8];
+            sdDataOut[3] <= writeData0[55];
+	    sdDataOut[2] <= writeData0[54];
+	    sdDataOut[1] <= writeData0[53];
+	    sdDataOut[0] <= writeData0[52];
+            writeCrcIn[3] <= writeData0[51];
+	    writeCrcIn[2] <= writeData0[50];
+	    writeCrcIn[1] <= writeData0[49];
+	    writeCrcIn[0] <= writeData0[48];
 	 end
          3: begin
-            sdDataOut[3] <= writeData0[11];
-	    sdDataOut[2] <= writeData0[10];
-	    sdDataOut[1] <= writeData0[9];
-	    sdDataOut[0] <= writeData0[8];
-            writeCrcIn[3] <= writeData0[23];
-	    writeCrcIn[2] <= writeData0[22];
-	    writeCrcIn[1] <= writeData0[21];
-	    writeCrcIn[0] <= writeData0[20];
+            sdDataOut[3] <= writeData0[51];
+	    sdDataOut[2] <= writeData0[50];
+	    sdDataOut[1] <= writeData0[49];
+	    sdDataOut[0] <= writeData0[48];
+            writeCrcIn[3] <= writeData0[47];
+	    writeCrcIn[2] <= writeData0[46];
+	    writeCrcIn[1] <= writeData0[45];
+	    writeCrcIn[0] <= writeData0[44];
 	 end
          4: begin
-            sdDataOut[3] <= writeData0[23];
-	    sdDataOut[2] <= writeData0[22];
-	    sdDataOut[1] <= writeData0[21];
-	    sdDataOut[0] <= writeData0[20];
-            writeCrcIn[3] <= writeData0[19];
-	    writeCrcIn[2] <= writeData0[18];
-	    writeCrcIn[1] <= writeData0[17];
-	    writeCrcIn[0] <= writeData0[16];
+            sdDataOut[3] <= writeData0[47];
+	    sdDataOut[2] <= writeData0[46];
+	    sdDataOut[1] <= writeData0[45];
+	    sdDataOut[0] <= writeData0[44];
+            writeCrcIn[3] <= writeData0[43];
+	    writeCrcIn[2] <= writeData0[42];
+	    writeCrcIn[1] <= writeData0[41];
+	    writeCrcIn[0] <= writeData0[40];
 	 end
          5: begin
-            sdDataOut[3] <= writeData0[19];
-	    sdDataOut[2] <= writeData0[18];
-	    sdDataOut[1] <= writeData0[17];
-	    sdDataOut[0] <= writeData0[16];
-            writeCrcIn[3] <= writeData0[31];
-	    writeCrcIn[2] <= writeData0[30];
-	    writeCrcIn[1] <= writeData0[29];
-	    writeCrcIn[0] <= writeData0[28];
-	 end
-         6: begin
-            sdDataOut[3] <= writeData0[31];
-	    sdDataOut[2] <= writeData0[30];
-	    sdDataOut[1] <= writeData0[29];
-	    sdDataOut[0] <= writeData0[28];
-            writeCrcIn[3] <= writeData0[27];
-	    writeCrcIn[2] <= writeData0[26];
-	    writeCrcIn[1] <= writeData0[25];
-	    writeCrcIn[0] <= writeData0[24];
-	 end
-         7: begin
-            sdDataOut[3] <= writeData0[27];
-	    sdDataOut[2] <= writeData0[26];
-	    sdDataOut[1] <= writeData0[25];
-	    sdDataOut[0] <= writeData0[24];
+            sdDataOut[3] <= writeData0[43];
+	    sdDataOut[2] <= writeData0[42];
+	    sdDataOut[1] <= writeData0[41];
+	    sdDataOut[0] <= writeData0[40];
             writeCrcIn[3] <= writeData0[39];
 	    writeCrcIn[2] <= writeData0[38];
 	    writeCrcIn[1] <= writeData0[37];
 	    writeCrcIn[0] <= writeData0[36];
+	 end
+         6: begin
+            sdDataOut[3] <= writeData0[39];
+	    sdDataOut[2] <= writeData0[38];
+	    sdDataOut[1] <= writeData0[37];
+	    sdDataOut[0] <= writeData0[36];
+            writeCrcIn[3] <= writeData0[35];
+	    writeCrcIn[2] <= writeData0[34];
+	    writeCrcIn[1] <= writeData0[33];
+	    writeCrcIn[0] <= writeData0[32];
+	 end
+         7: begin
+            sdDataOut[3] <= writeData0[35];
+	    sdDataOut[2] <= writeData0[34];
+	    sdDataOut[1] <= writeData0[33];
+	    sdDataOut[0] <= writeData0[32];
+            writeCrcIn[3] <= writeData0[31];
+	    writeCrcIn[2] <= writeData0[30];
+	    writeCrcIn[1] <= writeData0[29];
+	    writeCrcIn[0] <= writeData0[28];
 	 end
 	 endcase // case (writeBitCnt)
       end
       5: begin
          case(writeBitCnt) 
          0: begin
-            sdDataOut[3] <= writeData0[39];
-	    sdDataOut[2] <= writeData0[38];
-	    sdDataOut[1] <= writeData0[37];
-	    sdDataOut[0] <= writeData0[36];
-            writeCrcIn[3] <= writeData0[35];
-	    writeCrcIn[2] <= writeData0[34];
-	    writeCrcIn[1] <= writeData0[33];
-	    writeCrcIn[0] <= writeData0[32];
-	 end
-         1: begin
-            sdDataOut[3] <= writeData0[35];
-	    sdDataOut[2] <= writeData0[34];
-	    sdDataOut[1] <= writeData0[33];
-	    sdDataOut[0] <= writeData0[32];
-            writeCrcIn[3] <= writeData0[47];
-	    writeCrcIn[2] <= writeData0[46];
-	    writeCrcIn[1] <= writeData0[45];
-	    writeCrcIn[0] <= writeData0[44];
-	 end
-         2: begin
-            sdDataOut[3] <= writeData0[47];
-	    sdDataOut[2] <= writeData0[46];
-	    sdDataOut[1] <= writeData0[45];
-	    sdDataOut[0] <= writeData0[44];
-            writeCrcIn[3] <= writeData0[43];
-	    writeCrcIn[2] <= writeData0[42];
-	    writeCrcIn[1] <= writeData0[41];
-	    writeCrcIn[0] <= writeData0[40];
-	 end
-         3: begin
-            sdDataOut[3] <= writeData0[43];
-	    sdDataOut[2] <= writeData0[42];
-	    sdDataOut[1] <= writeData0[41];
-	    sdDataOut[0] <= writeData0[40];
-            writeCrcIn[3] <= writeData0[55];
-	    writeCrcIn[2] <= writeData0[54];
-	    writeCrcIn[1] <= writeData0[53];
-	    writeCrcIn[0] <= writeData0[52];
-	 end
-         4: begin
-            sdDataOut[3] <= writeData0[55];
-	    sdDataOut[2] <= writeData0[54];
-	    sdDataOut[1] <= writeData0[53];
-	    sdDataOut[0] <= writeData0[52];
-            writeCrcIn[3] <= writeData0[51];
-	    writeCrcIn[2] <= writeData0[50];
-	    writeCrcIn[1] <= writeData0[49];
-	    writeCrcIn[0] <= writeData0[48];
-	 end
-         5: begin
-            sdDataOut[3] <= writeData0[51];
-	    sdDataOut[2] <= writeData0[50];
-	    sdDataOut[1] <= writeData0[49];
-	    sdDataOut[0] <= writeData0[48];
-            writeCrcIn[3] <= writeData0[63];
-	    writeCrcIn[2] <= writeData0[62];
-	    writeCrcIn[1] <= writeData0[61];
-	    writeCrcIn[0] <= writeData0[60];
-	 end
-         6: begin
-            sdDataOut[3] <= writeData0[63];
-	    sdDataOut[2] <= writeData0[62];
-	    sdDataOut[1] <= writeData0[61];
-	    sdDataOut[0] <= writeData0[60];
-            writeCrcIn[3] <= writeData0[59];
-	    writeCrcIn[2] <= writeData0[58];
-	    writeCrcIn[1] <= writeData0[57];
-	    writeCrcIn[0] <= writeData0[56];
-	 end
-         7: begin
-            sdDataOut[3] <= writeData0[59];
-	    sdDataOut[2] <= writeData0[58];
-	    sdDataOut[1] <= writeData0[57];
-	    sdDataOut[0] <= writeData0[56];
-            writeCrcIn[3] <= writeData0[7];
-	    writeCrcIn[2] <= writeData0[6];
-	    writeCrcIn[1] <= writeData0[5];
-	    writeCrcIn[0] <= writeData0[4];
-	 end
-	 endcase // case (writeBitCnt)
-      end
-      6: begin
-         case(writeBitCnt) 
-         0: begin
-            sdDataOut[3] <= writeData0[7];
-	    sdDataOut[2] <= writeData0[6];
-	    sdDataOut[1] <= writeData0[5];
-	    sdDataOut[0] <= writeData0[4];
-            writeCrcIn[3] <= writeData0[3];
-	    writeCrcIn[2] <= writeData0[2];
-	    writeCrcIn[1] <= writeData0[1];
-	    writeCrcIn[0] <= writeData0[0];
-	 end
-         1: begin
-            sdDataOut[3] <= writeData0[3];
-	    sdDataOut[2] <= writeData0[2];
-	    sdDataOut[1] <= writeData0[1];
-	    sdDataOut[0] <= writeData0[0];
-            writeCrcIn[3] <= writeData0[15];
-	    writeCrcIn[2] <= writeData0[14];
-	    writeCrcIn[1] <= writeData0[13];
-	    writeCrcIn[0] <= writeData0[12];
-	 end
-         2: begin
-            sdDataOut[3] <= writeData0[15];
-	    sdDataOut[2] <= writeData0[14];
-	    sdDataOut[1] <= writeData0[13];
-	    sdDataOut[0] <= writeData0[12];
-            writeCrcIn[3] <= writeData0[11];
-	    writeCrcIn[2] <= writeData0[10];
-	    writeCrcIn[1] <= writeData0[9];
-	    writeCrcIn[0] <= writeData0[8];
-	 end
-         3: begin
-            sdDataOut[3] <= writeData0[11];
-	    sdDataOut[2] <= writeData0[10];
-	    sdDataOut[1] <= writeData0[9];
-	    sdDataOut[0] <= writeData0[8];
-            writeCrcIn[3] <= writeData0[23];
-	    writeCrcIn[2] <= writeData0[22];
-	    writeCrcIn[1] <= writeData0[21];
-	    writeCrcIn[0] <= writeData0[20];
-	 end
-         4: begin
-            sdDataOut[3] <= writeData0[23];
-	    sdDataOut[2] <= writeData0[22];
-	    sdDataOut[1] <= writeData0[21];
-	    sdDataOut[0] <= writeData0[20];
-            writeCrcIn[3] <= writeData0[19];
-	    writeCrcIn[2] <= writeData0[18];
-	    writeCrcIn[1] <= writeData0[17];
-	    writeCrcIn[0] <= writeData0[16];
-	 end
-         5: begin
-            sdDataOut[3] <= writeData0[19];
-	    sdDataOut[2] <= writeData0[18];
-	    sdDataOut[1] <= writeData0[17];
-	    sdDataOut[0] <= writeData0[16];
-            writeCrcIn[3] <= writeData0[31];
-	    writeCrcIn[2] <= writeData0[30];
-	    writeCrcIn[1] <= writeData0[29];
-	    writeCrcIn[0] <= writeData0[28];
-	 end
-         6: begin
             sdDataOut[3] <= writeData0[31];
 	    sdDataOut[2] <= writeData0[30];
 	    sdDataOut[1] <= writeData0[29];
@@ -1531,81 +1471,81 @@ begin
 	    writeCrcIn[1] <= writeData0[25];
 	    writeCrcIn[0] <= writeData0[24];
 	 end
-         7: begin
+         1: begin
             sdDataOut[3] <= writeData0[27];
 	    sdDataOut[2] <= writeData0[26];
 	    sdDataOut[1] <= writeData0[25];
 	    sdDataOut[0] <= writeData0[24];
-            writeCrcIn[3] <= writeData0[39];
-	    writeCrcIn[2] <= writeData0[38];
-	    writeCrcIn[1] <= writeData0[37];
-	    writeCrcIn[0] <= writeData0[36];
-	 end
-	 endcase // case (writeBitCnt)
-      end
-      7: begin
-         case(writeBitCnt) 
-         0: begin
-            sdDataOut[3] <= writeData0[39];
-	    sdDataOut[2] <= writeData0[38];
-	    sdDataOut[1] <= writeData0[37];
-	    sdDataOut[0] <= writeData0[36];
-            writeCrcIn[3] <= writeData0[35];
-	    writeCrcIn[2] <= writeData0[34];
-	    writeCrcIn[1] <= writeData0[33];
-	    writeCrcIn[0] <= writeData0[32];
-	 end
-         1: begin
-            sdDataOut[3] <= writeData0[35];
-	    sdDataOut[2] <= writeData0[34];
-	    sdDataOut[1] <= writeData0[33];
-	    sdDataOut[0] <= writeData0[32];
-            writeCrcIn[3] <= writeData0[47];
-	    writeCrcIn[2] <= writeData0[46];
-	    writeCrcIn[1] <= writeData0[45];
-	    writeCrcIn[0] <= writeData0[44];
+            writeCrcIn[3] <= writeData0[23];
+	    writeCrcIn[2] <= writeData0[22];
+	    writeCrcIn[1] <= writeData0[21];
+	    writeCrcIn[0] <= writeData0[20];
 	 end
          2: begin
-            sdDataOut[3] <= writeData0[47];
-	    sdDataOut[2] <= writeData0[46];
-	    sdDataOut[1] <= writeData0[45];
-	    sdDataOut[0] <= writeData0[44];
-            writeCrcIn[3] <= writeData0[43];
-	    writeCrcIn[2] <= writeData0[42];
-	    writeCrcIn[1] <= writeData0[41];
-	    writeCrcIn[0] <= writeData0[40];
+            sdDataOut[3] <= writeData0[23];
+	    sdDataOut[2] <= writeData0[22];
+	    sdDataOut[1] <= writeData0[21];
+	    sdDataOut[0] <= writeData0[20];
+            writeCrcIn[3] <= writeData0[19];
+	    writeCrcIn[2] <= writeData0[18];
+	    writeCrcIn[1] <= writeData0[17];
+	    writeCrcIn[0] <= writeData0[16];
 	 end
          3: begin
-            sdDataOut[3] <= writeData0[43];
-	    sdDataOut[2] <= writeData0[42];
-	    sdDataOut[1] <= writeData0[41];
-	    sdDataOut[0] <= writeData0[40];
-            writeCrcIn[3] <= writeData0[55];
-	    writeCrcIn[2] <= writeData0[54];
-	    writeCrcIn[1] <= writeData0[53];
-	    writeCrcIn[0] <= writeData0[52];
+            sdDataOut[3] <= writeData0[19];
+	    sdDataOut[2] <= writeData0[18];
+	    sdDataOut[1] <= writeData0[17];
+	    sdDataOut[0] <= writeData0[16];
+            writeCrcIn[3] <= writeData0[15];
+	    writeCrcIn[2] <= writeData0[14];
+	    writeCrcIn[1] <= writeData0[13];
+	    writeCrcIn[0] <= writeData0[12];
 	 end
          4: begin
-            sdDataOut[3] <= writeData0[55];
-	    sdDataOut[2] <= writeData0[54];
-	    sdDataOut[1] <= writeData0[53];
-	    sdDataOut[0] <= writeData0[52];
-            writeCrcIn[3] <= writeData0[51];
-	    writeCrcIn[2] <= writeData0[50];
-	    writeCrcIn[1] <= writeData0[49];
-	    writeCrcIn[0] <= writeData0[48];
+            sdDataOut[3] <= writeData0[15];
+	    sdDataOut[2] <= writeData0[14];
+	    sdDataOut[1] <= writeData0[13];
+	    sdDataOut[0] <= writeData0[12];
+            writeCrcIn[3] <= writeData0[11];
+	    writeCrcIn[2] <= writeData0[10];
+	    writeCrcIn[1] <= writeData0[9];
+	    writeCrcIn[0] <= writeData0[8];
 	 end
          5: begin
-            sdDataOut[3] <= writeData0[51];
-	    sdDataOut[2] <= writeData0[50];
-	    sdDataOut[1] <= writeData0[49];
-	    sdDataOut[0] <= writeData0[48];
+            sdDataOut[3] <= writeData0[11];
+	    sdDataOut[2] <= writeData0[10];
+	    sdDataOut[1] <= writeData0[9];
+	    sdDataOut[0] <= writeData0[8];
+            writeCrcIn[3] <= writeData0[7];
+	    writeCrcIn[2] <= writeData0[6];
+	    writeCrcIn[1] <= writeData0[5];
+	    writeCrcIn[0] <= writeData0[4];
+	 end
+         6: begin
+            sdDataOut[3] <= writeData0[7];
+	    sdDataOut[2] <= writeData0[6];
+	    sdDataOut[1] <= writeData0[5];
+	    sdDataOut[0] <= writeData0[4];
+            writeCrcIn[3] <= writeData0[3];
+	    writeCrcIn[2] <= writeData0[2];
+	    writeCrcIn[1] <= writeData0[1];
+	    writeCrcIn[0] <= writeData0[0];
+	 end
+         7: begin
+            sdDataOut[3] <= writeData0[3];
+	    sdDataOut[2] <= writeData0[2];
+	    sdDataOut[1] <= writeData0[1];
+	    sdDataOut[0] <= writeData0[0];
             writeCrcIn[3] <= writeData0[63];
 	    writeCrcIn[2] <= writeData0[62];
 	    writeCrcIn[1] <= writeData0[61];
 	    writeCrcIn[0] <= writeData0[60];
 	 end
-         6: begin
+	 endcase // case (writeBitCnt)
+      end
+      6: begin
+         case(writeBitCnt) 
+         0: begin
             sdDataOut[3] <= writeData0[63];
 	    sdDataOut[2] <= writeData0[62];
 	    sdDataOut[1] <= writeData0[61];
@@ -1615,15 +1555,159 @@ begin
 	    writeCrcIn[1] <= writeData0[57];
 	    writeCrcIn[0] <= writeData0[56];
 	 end
-         7: begin
+         1: begin
             sdDataOut[3] <= writeData0[59];
 	    sdDataOut[2] <= writeData0[58];
 	    sdDataOut[1] <= writeData0[57];
 	    sdDataOut[0] <= writeData0[56];
+            writeCrcIn[3] <= writeData0[55];
+	    writeCrcIn[2] <= writeData0[54];
+	    writeCrcIn[1] <= writeData0[53];
+	    writeCrcIn[0] <= writeData0[52];
+	 end
+         2: begin
+            sdDataOut[3] <= writeData0[55];
+	    sdDataOut[2] <= writeData0[54];
+	    sdDataOut[1] <= writeData0[53];
+	    sdDataOut[0] <= writeData0[52];
+            writeCrcIn[3] <= writeData0[51];
+	    writeCrcIn[2] <= writeData0[50];
+	    writeCrcIn[1] <= writeData0[49];
+	    writeCrcIn[0] <= writeData0[48];
+	 end
+         3: begin
+            sdDataOut[3] <= writeData0[51];
+	    sdDataOut[2] <= writeData0[50];
+	    sdDataOut[1] <= writeData0[49];
+	    sdDataOut[0] <= writeData0[48];
+            writeCrcIn[3] <= writeData0[47];
+	    writeCrcIn[2] <= writeData0[46];
+	    writeCrcIn[1] <= writeData0[45];
+	    writeCrcIn[0] <= writeData0[44];
+	 end
+         4: begin
+            sdDataOut[3] <= writeData0[47];
+	    sdDataOut[2] <= writeData0[46];
+	    sdDataOut[1] <= writeData0[45];
+	    sdDataOut[0] <= writeData0[44];
+            writeCrcIn[3] <= writeData0[43];
+	    writeCrcIn[2] <= writeData0[42];
+	    writeCrcIn[1] <= writeData0[41];
+	    writeCrcIn[0] <= writeData0[40];
+	 end
+         5: begin
+            sdDataOut[3] <= writeData0[43];
+	    sdDataOut[2] <= writeData0[42];
+	    sdDataOut[1] <= writeData0[41];
+	    sdDataOut[0] <= writeData0[40];
+            writeCrcIn[3] <= writeData0[39];
+	    writeCrcIn[2] <= writeData0[38];
+	    writeCrcIn[1] <= writeData0[37];
+	    writeCrcIn[0] <= writeData0[36];
+	 end
+         6: begin
+            sdDataOut[3] <= writeData0[39];
+	    sdDataOut[2] <= writeData0[38];
+	    sdDataOut[1] <= writeData0[37];
+	    sdDataOut[0] <= writeData0[36];
+            writeCrcIn[3] <= writeData0[35];
+	    writeCrcIn[2] <= writeData0[34];
+	    writeCrcIn[1] <= writeData0[33];
+	    writeCrcIn[0] <= writeData0[32];
+	 end
+         7: begin
+            sdDataOut[3] <= writeData0[35];
+	    sdDataOut[2] <= writeData0[34];
+	    sdDataOut[1] <= writeData0[33];
+	    sdDataOut[0] <= writeData0[32];
+            writeCrcIn[3] <= writeData0[31];
+	    writeCrcIn[2] <= writeData0[30];
+	    writeCrcIn[1] <= writeData0[29];
+	    writeCrcIn[0] <= writeData0[28];
+	 end
+	 endcase // case (writeBitCnt)
+      end
+      7: begin
+         case(writeBitCnt) 
+         0: begin
+            sdDataOut[3] <= writeData0[31];
+	    sdDataOut[2] <= writeData0[30];
+	    sdDataOut[1] <= writeData0[29];
+	    sdDataOut[0] <= writeData0[28];
+            writeCrcIn[3] <= writeData0[27];
+	    writeCrcIn[2] <= writeData0[26];
+	    writeCrcIn[1] <= writeData0[25];
+	    writeCrcIn[0] <= writeData0[24];
+	 end
+         1: begin
+            sdDataOut[3] <= writeData0[27];
+	    sdDataOut[2] <= writeData0[26];
+	    sdDataOut[1] <= writeData0[25];
+	    sdDataOut[0] <= writeData0[24];
+            writeCrcIn[3] <= writeData0[23];
+	    writeCrcIn[2] <= writeData0[22];
+	    writeCrcIn[1] <= writeData0[21];
+	    writeCrcIn[0] <= writeData0[20];
+	 end
+         2: begin
+            sdDataOut[3] <= writeData0[23];
+	    sdDataOut[2] <= writeData0[22];
+	    sdDataOut[1] <= writeData0[21];
+	    sdDataOut[0] <= writeData0[20];
+            writeCrcIn[3] <= writeData0[19];
+	    writeCrcIn[2] <= writeData0[18];
+	    writeCrcIn[1] <= writeData0[17];
+	    writeCrcIn[0] <= writeData0[16];
+	 end
+         3: begin
+            sdDataOut[3] <= writeData0[19];
+	    sdDataOut[2] <= writeData0[18];
+	    sdDataOut[1] <= writeData0[17];
+	    sdDataOut[0] <= writeData0[16];
+            writeCrcIn[3] <= writeData0[15];
+	    writeCrcIn[2] <= writeData0[14];
+	    writeCrcIn[1] <= writeData0[13];
+	    writeCrcIn[0] <= writeData0[12];
+	 end
+         4: begin
+            sdDataOut[3] <= writeData0[15];
+	    sdDataOut[2] <= writeData0[14];
+	    sdDataOut[1] <= writeData0[13];
+	    sdDataOut[0] <= writeData0[12];
+            writeCrcIn[3] <= writeData0[11];
+	    writeCrcIn[2] <= writeData0[10];
+	    writeCrcIn[1] <= writeData0[9];
+	    writeCrcIn[0] <= writeData0[8];
+	 end
+         5: begin
+            sdDataOut[3] <= writeData0[11];
+	    sdDataOut[2] <= writeData0[10];
+	    sdDataOut[1] <= writeData0[9];
+	    sdDataOut[0] <= writeData0[8];
             writeCrcIn[3] <= writeData0[7];
 	    writeCrcIn[2] <= writeData0[6];
 	    writeCrcIn[1] <= writeData0[5];
 	    writeCrcIn[0] <= writeData0[4];
+	 end
+         6: begin
+            sdDataOut[3] <= writeData0[7];
+	    sdDataOut[2] <= writeData0[6];
+	    sdDataOut[1] <= writeData0[5];
+	    sdDataOut[0] <= writeData0[4];
+            writeCrcIn[3] <= writeData0[3];
+	    writeCrcIn[2] <= writeData0[2];
+	    writeCrcIn[1] <= writeData0[1];
+	    writeCrcIn[0] <= writeData0[0];
+	 end
+         7: begin
+            sdDataOut[3] <= writeData0[3];
+	    sdDataOut[2] <= writeData0[2];
+	    sdDataOut[1] <= writeData0[1];
+	    sdDataOut[0] <= writeData0[0];
+            writeCrcIn[3] <= writeData0[63];
+	    writeCrcIn[2] <= writeData0[62];
+	    writeCrcIn[1] <= writeData0[61];
+	    writeCrcIn[0] <= writeData0[60];
 	 end
 	 endcase // case (writeBitCnt)
       end
