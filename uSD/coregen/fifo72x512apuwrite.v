@@ -7,14 +7,14 @@
 // \   \   \/     Version: O.87xd
 //  \   \         Application: netgen
 //  /   /         Filename: fifo72x512apuwrite.v
-// /___/   /\     Timestamp: Tue Sep 11 09:02:24 2012
+// /___/   /\     Timestamp: Thu Sep 13 12:11:00 2012
 // \   \  /  \ 
 //  \___\/\___\
 //             
-// Command	: -w -sim -ofmt verilog /afs/slac.stanford.edu/u/re/bklein/projects/microSD/coregen/tmp/_cg/fifo72x512apuwrite.ngc /afs/slac.stanford.edu/u/re/bklein/projects/microSD/coregen/tmp/_cg/fifo72x512apuwrite.v 
+// Command	: -w -sim -ofmt verilog /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512apuwrite.ngc /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512apuwrite.v 
 // Device	: 5vfx70tff1136-2
-// Input file	: /afs/slac.stanford.edu/u/re/bklein/projects/microSD/coregen/tmp/_cg/fifo72x512apuwrite.ngc
-// Output file	: /afs/slac.stanford.edu/u/re/bklein/projects/microSD/coregen/tmp/_cg/fifo72x512apuwrite.v
+// Input file	: /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512apuwrite.ngc
+// Output file	: /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512apuwrite.v
 // # of Modules	: 1
 // Design Name	: fifo72x512apuwrite
 // Xilinx        : /afs/slac.stanford.edu/g/reseng/vol13/xilinx/13.4/ISE_DS/ISE/

@@ -8,7 +8,7 @@
 // \   \   \/     Version    : 13.4
 //  \   \         Application: Xilinx CORE Generator
 //  /   /         Filename   : chipscope_ila.v
-// /___/   /\     Timestamp  : Tue Jul 24 17:05:01 PDT 2012
+// /___/   /\     Timestamp  : Thu Sep 13 12:00:26 PDT 2012
 // \   \  /  \
 //  \___\/\___\
 //
@@ -16,7 +16,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // This wrapper is used to integrate with Project Navigator and PlanAhead
 
-
+`timescale 1ns/1ps
 
 module chipscope_ila(
     CONTROL,

@@ -7,14 +7,14 @@
 // \   \   \/     Version: O.87xd
 //  \   \         Application: netgen
 //  /   /         Filename: fifo36x1024sdwrite.v
-// /___/   /\     Timestamp: Fri Aug 24 17:59:12 2012
+// /___/   /\     Timestamp: Thu Sep 13 12:03:57 2012
 // \   \  /  \ 
 //  \___\/\___\
 //             
-// Command	: -w -sim -ofmt verilog /afs/slac.stanford.edu/u/re/bklein/projects/microSD/coregen/tmp/_cg/fifo36x1024sdwrite.ngc /afs/slac.stanford.edu/u/re/bklein/projects/microSD/coregen/tmp/_cg/fifo36x1024sdwrite.v 
+// Command	: -w -sim -ofmt verilog /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo36x1024sdwrite.ngc /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo36x1024sdwrite.v 
 // Device	: 5vfx70tff1136-2
-// Input file	: /afs/slac.stanford.edu/u/re/bklein/projects/microSD/coregen/tmp/_cg/fifo36x1024sdwrite.ngc
-// Output file	: /afs/slac.stanford.edu/u/re/bklein/projects/microSD/coregen/tmp/_cg/fifo36x1024sdwrite.v
+// Input file	: /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo36x1024sdwrite.ngc
+// Output file	: /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo36x1024sdwrite.v
 // # of Modules	: 1
 // Design Name	: fifo36x1024sdwrite
 // Xilinx        : /afs/slac.stanford.edu/g/reseng/vol13/xilinx/13.4/ISE_DS/ISE/

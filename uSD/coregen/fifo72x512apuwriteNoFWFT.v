@@ -6,17 +6,17 @@
 // /___/  \  /    Vendor: Xilinx
 // \   \   \/     Version: O.87xd
 //  \   \         Application: netgen
-//  /   /         Filename: fifo72x512sdwrite.v
-// /___/   /\     Timestamp: Thu Sep 13 12:14:45 2012
+//  /   /         Filename: fifo72x512apuwriteNoFWFT.v
+// /___/   /\     Timestamp: Thu Sep 13 12:18:26 2012
 // \   \  /  \ 
 //  \___\/\___\
 //             
-// Command	: -w -sim -ofmt verilog /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512sdwrite.ngc /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512sdwrite.v 
+// Command	: -w -sim -ofmt verilog /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512apuwriteNoFWFT.ngc /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512apuwriteNoFWFT.v 
 // Device	: 5vfx70tff1136-2
-// Input file	: /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512sdwrite.ngc
-// Output file	: /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512sdwrite.v
+// Input file	: /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512apuwriteNoFWFT.ngc
+// Output file	: /afs/slac.stanford.edu/u/re/bklein/projects/cob_dpm/firmware/modules/uSD/coregen/tmp/_cg/fifo72x512apuwriteNoFWFT.v
 // # of Modules	: 1
-// Design Name	: fifo72x512sdwrite
+// Design Name	: fifo72x512apuwriteNoFWFT
 // Xilinx        : /afs/slac.stanford.edu/g/reseng/vol13/xilinx/13.4/ISE_DS/ISE/
 //             
 // Purpose:    
@@ -33,7 +33,7 @@
 
 `timescale 1 ns/1 ps
 
-module fifo72x512sdwrite (
+module fifo72x512apuwriteNoFWFT (
   rd_en, rst, empty, wr_en, rd_clk, full, prog_empty, wr_clk, prog_full, dout, din
 )/* synthesis syn_black_box syn_noprune=1 */;
   input rd_en;
@@ -52,9 +52,9 @@ module fifo72x512sdwrite (
   
   wire N0;
   wire N1;
-  wire \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_wr_rst_0_2 ;
-  wire \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_reg_9 ;
-  wire \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_reg_15 ;
+  wire \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_rd_rst_0_3 ;
+  wire \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_reg_10 ;
+  wire \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_reg_16 ;
   wire \NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gf72.sngfifo36_72_RDERR_UNCONNECTED ;
   wire \NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gf72.sngfifo36_72_WRERR_UNCONNECTED ;
   wire \NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gf72.sngfifo36_72_SBITERR_UNCONNECTED ;
@@ -93,11 +93,11 @@ module fifo72x512sdwrite (
   wire \NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gf72.sngfifo36_72_ECCPARITY<2>_UNCONNECTED ;
   wire \NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gf72.sngfifo36_72_ECCPARITY<1>_UNCONNECTED ;
   wire \NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gf72.sngfifo36_72_ECCPARITY<0>_UNCONNECTED ;
-  wire \NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_wr_rst_0_Q15_UNCONNECTED ;
-  wire [0 : 0] \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/power_on_wr_rst ;
+  wire \NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_rd_rst_0_Q15_UNCONNECTED ;
+  wire [0 : 0] \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rd_rst_i ;
+  wire [0 : 0] \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/power_on_rd_rst ;
   wire [4 : 0] \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_fb ;
   wire [4 : 0] \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_fb ;
-  wire [0 : 0] \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/wr_rst_i ;
   GND   XST_GND (
     .G(N0)
   );
@@ -108,7 +108,7 @@ module fifo72x512sdwrite (
     .INIT ( 1'b0 ))
   \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_fb_4  (
     .C(rd_clk),
-    .D(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_reg_9 ),
+    .D(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_reg_10 ),
     .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_fb [4])
   );
   FD #(
@@ -146,13 +146,13 @@ module fifo72x512sdwrite (
     .CE(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_fb [0]),
     .D(N0),
     .PRE(rst),
-    .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_reg_15 )
+    .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_reg_16 )
   );
   FD #(
     .INIT ( 1'b0 ))
   \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_fb_4  (
     .C(wr_clk),
-    .D(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_reg_15 ),
+    .D(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_reg_16 ),
     .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_fb [4])
   );
   FD #(
@@ -190,7 +190,7 @@ module fifo72x512sdwrite (
     .CE(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_fb [0]),
     .D(N0),
     .PRE(rst),
-    .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_reg_9 )
+    .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_reg_10 )
   );
   FIFO36_72_EXP #(
     .ALMOST_FULL_OFFSET ( 9'h004 ),
@@ -199,12 +199,12 @@ module fifo72x512sdwrite (
     .EN_ECC_READ ( "FALSE" ),
     .EN_ECC_WRITE ( "FALSE" ),
     .EN_SYN ( "FALSE" ),
-    .FIRST_WORD_FALL_THROUGH ( "TRUE" ),
-    .ALMOST_EMPTY_OFFSET ( 9'h006 ))
+    .FIRST_WORD_FALL_THROUGH ( "FALSE" ),
+    .ALMOST_EMPTY_OFFSET ( 9'h005 ))
   \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/v5_fifo.fblk/gextw[1].inst_extd/gonep.inst_prim/gf72.sngfifo36_72  (
     .RDEN(rd_en),
     .WREN(wr_en),
-    .RST(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/wr_rst_i [0]),
+    .RST(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rd_rst_i [0]),
     .RDCLKU(rd_clk),
     .RDCLKL(rd_clk),
     .WRCLKU(wr_clk),
@@ -270,31 +270,31 @@ dout[4], dout[3], dout[2], dout[1], dout[0]}),
   );
   LUT2 #(
     .INIT ( 4'hE ))
-  \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/WR_RST_I<1>1  (
-    .I0(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/wr_rst_reg_15 ),
-    .I1(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/power_on_wr_rst [0]),
-    .O(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/wr_rst_i [0])
+  \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/RD_RST_I<1>1  (
+    .I0(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/rd_rst_reg_10 ),
+    .I1(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/power_on_rd_rst [0]),
+    .O(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rd_rst_i [0])
   );
   SRLC16E #(
     .INIT ( 16'h001F ))
-  \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_wr_rst_0  (
+  \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_rd_rst_0  (
     .A0(N0),
     .A1(N0),
     .A2(N1),
     .A3(N0),
     .CE(N1),
-    .CLK(wr_clk),
+    .CLK(rd_clk),
     .D(N0),
-    .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_wr_rst_0_2 ),
-    .Q15(\NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_wr_rst_0_Q15_UNCONNECTED )
+    .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_rd_rst_0_3 ),
+    .Q15(\NLW_U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_rd_rst_0_Q15_UNCONNECTED )
   );
   FDE #(
     .INIT ( 1'b1 ))
-  \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/power_on_wr_rst_0  (
-    .C(wr_clk),
+  \U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/power_on_rd_rst_0  (
+    .C(rd_clk),
     .CE(N1),
-    .D(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_wr_rst_0_2 ),
-    .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/power_on_wr_rst [0])
+    .D(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/Mshreg_power_on_rd_rst_0_3 ),
+    .Q(\U0/xst_fifo_generator/gconvfifo.rf/gbiv5.bi/rstbt/power_on_rd_rst [0])
   );
 
 // synthesis translate_on
