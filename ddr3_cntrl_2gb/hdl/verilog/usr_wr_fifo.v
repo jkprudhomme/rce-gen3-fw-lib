@@ -172,10 +172,10 @@ module usr_wr_fifo #
      .ALMOST_EMPTY_OFFSET     (9'h007),
      .ALMOST_FULL_OFFSET      (9'h00F),
      .DO_REG                  (1),          // extra CC output delay
-     .EN_ECC_WRITE            ("FALSE"),
-     .EN_ECC_READ             ("FALSE"),
-     .EN_SYN                  ("FALSE"),
-     .FIRST_WORD_FALL_THROUGH ("TRUE")
+     .EN_ECC_WRITE            (0),
+     .EN_ECC_READ             (0),
+     .EN_SYN                  (0),
+     .FIRST_WORD_FALL_THROUGH (1)
      )
     u_wdf
       (

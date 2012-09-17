@@ -100,6 +100,10 @@ module ddr3_model (
     odt
 );
 
+    `define 2Gb
+    `define sg15E
+    `define x8 
+
     `include "ddr3_model_parameters.vh"
 
     parameter check_strict_mrbits = 1;

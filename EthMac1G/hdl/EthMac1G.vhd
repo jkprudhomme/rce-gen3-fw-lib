@@ -147,7 +147,7 @@ begin
       end if;
    end process;
 
-   U_EthMac1GCore : EthMac1GCore 
+   U_EthMac1GCore : entity EthMac1GCore 
       port map (
          gtxClk          => gtxClk,
          gtxClkDiv       => gtxClkDiv,
@@ -168,7 +168,7 @@ begin
          gtxTxP          => gtxTxP
       );
 
-   U_Ethmac1GCntrl : EthMac1GCntrl
+   U_Ethmac1GCntrl : entity EthMac1GCntrl
       port map (
          gtxClk             => gtxClk,
          gtxClkRst          => gtxClkRst,
