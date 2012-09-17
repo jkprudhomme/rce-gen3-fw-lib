@@ -2,11 +2,12 @@ Welcome to Xilinx CORE Generator.
 Help system initialized.
 The IP Catalog has been reloaded.
 Opening project file
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm/modules/ppc440_rce/coregen/
-coregen.cgp.
-Customize and GenerateINFO:sim:172 - Generating IP...
-Applying current project options...
-Finished applying current project options.
-Customizing IP...
-Cancelled Customization.
-Closed project file.
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm/modules/Ppc440RceG2/coregen
+/coregen.cgp.
+Recustomize and Generate (Under Original Project Settings)INFO:sim:172 - Generating IP...
+ERROR:sim - Improperly formatted COE file
+ERROR:sim -   
+   /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm/projects/DpmTest/boot/ud
+ERROR:sim -    iTest.mem. Parameter assignments should be separated by a ";"
+   character.
+ERROR:sim -     Found an illegal assignment on line 1.
