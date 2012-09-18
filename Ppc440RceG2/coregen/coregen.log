@@ -11,3 +11,4 @@ ERROR:sim -
 ERROR:sim -    iTest.mem. Parameter assignments should be separated by a ";"
    character.
 ERROR:sim -     Found an illegal assignment on line 1.
+Closed project file.
