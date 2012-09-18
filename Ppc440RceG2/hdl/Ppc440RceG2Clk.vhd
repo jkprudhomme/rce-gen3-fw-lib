@@ -136,7 +136,7 @@ begin
          CLKOUT4_DIVIDE         => 2,
          CLKOUT4_DUTY_CYCLE     => 0.5,
          CLKOUT4_PHASE          => 0.0,
-         CLKOUT5_DIVIDE         => 6,
+         CLKOUT5_DIVIDE         => 6, -- 6 = 156.25, 4 = 234.375
          CLKOUT5_DUTY_CYCLE     => 0.5,
          CLKOUT5_PHASE          => 0.0,
          COMPENSATION           => "SYSTEM_SYNCHRONOUS",
