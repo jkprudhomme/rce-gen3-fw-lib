@@ -27,6 +27,7 @@ entity EthMac1G is
       apuWriteFromPpc : in  ApuWriteFromPpcType;
       apuWriteToPpc   : out ApuWriteToPpcType;
       apuLoadFromPpc  : in  ApuLoadFromPpcType;
+      apuLoadToPpc    : out ApuLoadToPpcType;
       apuStoreFromPpc : in  ApuStoreFromPpcType;
       apuStoreToPpc   : out ApuStoreToPpcType;
 
@@ -204,22 +205,26 @@ begin
    cmdFifoData          <= apuWriteFromPpc.regB;
    cmdFifoWr            <= apuWriteFromPpc.enable;
 
-   apuWriteToPpc.status <= "00" & cmdFifoAlmostFull & cmdFifoFull;
+   apuWriteToPpc.Full   <= cmdFifoFull;
 
    -- Result FIFO
    resFifoRd            <= apuReadFromPpc.enable;
 
    apuReadToPpc.result  <= resFifoData;
    apuReadToPpc.status  <= "00" & resFifoAlmostEmpty & resFifoEmpty;
+   apuReadToPpc.empty   <= resFifoEmpty;
 
    -- Transmit FIFO
    txFifoData           <= apuLoadFromPpc.data(0 to 63);
    txFifoWr             <= apuLoadFromPpc.enable;
 
+   apuLoadToPpc.full    <= txFifoFull;
+
    -- Receive FIFO
    rxFifoRd             <= apuStoreFromPpc.enable;
   
    apuStoreToPpc.data   <= rxFifoData & x"0000000000000000";
+   apuStoreToPpc.empty  <= rxFifoEmpty;
 
 end EthMac1G;
 

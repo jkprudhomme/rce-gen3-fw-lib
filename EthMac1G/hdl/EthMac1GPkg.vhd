@@ -24,6 +24,7 @@ package EthMac1GPkg is
          apuWriteFromPpc : in  ApuWriteFromPpcType;
          apuWriteToPpc   : out ApuWriteToPpcType;
          apuLoadFromPpc  : in  ApuLoadFromPpcType;
+         apuLoadToPpc    : out ApuLoadToPpcType;
          apuStoreFromPpc : in  ApuStoreFromPpcType;
          apuStoreToPpc   : out ApuStoreToPpcType;
          gtxRxN          : in  std_logic;

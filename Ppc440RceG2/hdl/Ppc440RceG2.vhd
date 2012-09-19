@@ -60,8 +60,10 @@ entity Ppc440RceG2 is
       apuWriteFromPpc            : out ApuWriteFromPpcVector(0 to 3);
       apuWriteToPpc              : in  ApuWriteToPpcVector(0 to 3);
       apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 15);
+      apuLoadToPpc               : in  ApuLoadToPpcVector(0 to 15);
       apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 15);
       apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 15);
+      apuReset                   : out std_logic_vector(0 to 15);
 
       -- I2C
       modScl                     : inout std_logic;
@@ -153,10 +155,14 @@ architecture structure of Ppc440RceG2 is
    signal iapuWriteFromPpc             : ApuWriteFromPpcVector(0 to 7);
    signal iapuWriteToPpc               : ApuWriteToPpcVector(0 to 7);
    signal iapuLoadFromPpc              : ApuLoadFromPpcVector(0 to 31);
+   signal iapuLoadToPpc                : ApuLoadToPpcVector(0 to 31);
    signal iapuStoreFromPpc             : ApuStoreFromPpcVector(0 to 31);
    signal iapuStoreToPpc               : ApuStoreToPpcVector(0 to 31);
-   signal apuReadStatus                : std_logic_vector(0 to 31);
-   signal apuWriteStatus               : std_logic_vector(0 to 31);
+   signal iapuReset                    : std_logic_vector(0 to 31);
+   signal iapuWriteFull                : std_logic_vector(0 to 7);
+   signal iapuReadEmpty                : std_logic_vector(0 to 7);
+   signal iapuLoadFull                 : std_logic_vector(0 to 31);
+   signal iapuStoreEmpty               : std_logic_vector(0 to 31);
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -181,8 +187,10 @@ begin
    apuWriteFromPpc         <= iapuWriteFromPpc(0 to 3);
    iapuWriteToPpc(0 to 3)  <= apuWriteToPpc;
    apuLoadFromPpc          <= iapuLoadFromPpc(0 to 15);
+   iapuLoadToPpc(0 to 15)  <= apuLoadToPpc;
    apuStoreFromPpc         <= iapuStoreFromPpc(0 to 15);
    iapuStoreToPpc(0 to 15) <= apuStoreToPpc;
+   apuReset                <= iapuReset(0 to 15);
 
    ----------------------------------------------------------------------------
    -- Instantiate PPC440 Processor Block Primitive
@@ -197,29 +205,6 @@ begin
          INTERCONNECT_TMPL_SEL => x"3FFFFFFF",
          CLOCK_DELAY           => TRUE,
          APU_CONTROL           => B"00010000000100001",
-
---LD/ST Decode Disable               5 0     0
---UDI Decode Disable                 6 1     0
---Force UDI Non-auton, late confirm  7 2     0
---FPU Decode Disable                 8 3     1
-
---FPU Complex Arith. Disable         9 4     0
---FPU Convert Disable               10 5     0
---FPU Estimate/Select Disable       11 6     0
---FPU Single Precision Disable      12 7     0
-
---FPU Double Precision Disable      13 8     0
---FPU FPSCR Disable                 14 9     0
---Force FPU Non-auton, late confirm 15 10    0
---Store WriteBack OK                16 11    1
-
---Ld/St Priv. Op                    17 12    0
---Force Align                       20 13    0
---LE Trap                           21 14    0
---BE Trap                           22 15    0
-
---FCM Enable                        31 16    1
-
          APU_UDI0              => x"C06781", -- UDI0  read, cr en, non-auto, early confirm
          APU_UDI1              => x"C47609", -- UDI1  write, autonomous
          APU_UDI2              => x"C86781", -- UDI2  read, cr en, non-auto, early confirm
@@ -778,16 +763,39 @@ begin
       apuWriteFromPpc       => iapuWriteFromPpc,
       apuWriteToPpc         => iapuWriteToPpc,
       apuLoadFromPpc        => iapuLoadFromPpc,
+      apuLoadToPpc          => iapuLoadToPpc,
       apuStoreFromPpc       => iapuStoreFromPpc,
       apuStoreToPpc         => iapuStoreToPpc,
-      apuReadStatus         => apuReadStatus,
-      apuWriteStatus        => apuWriteStatus
+      apuWriteFull          => iapuWriteFull,
+      apuReadEmpty          => iapuReadEmpty,
+      apuLoadFull           => iapuLoadFull,
+      apuStoreEmpty         => iapuStoreEmpty
    );
 
    -- Unused APU interfaces
-   iapuReadToPpc(4 to 6)    <= (others=>ApuReadToPpcInit);
-   iapuWriteToPpc(4 to 6)   <= (others=>ApuWriteToPpcInit);
+   iapuReadToPpc(4 to 5)    <= (others=>ApuReadToPpcInit);
+   iapuWriteToPpc(4 to 5)   <= (others=>ApuWriteToPpcInit);
    iapuStoreToPpc(16 to 31) <= (others=>ApuStoreToPpcInit);
+   iapuLoadToPpc(16 to 31)  <= (others=>ApuLoadToPpcInit);
+
+
+   ----------------------------------------------------------------------------
+   -- Reset/Interupt Controller
+   ----------------------------------------------------------------------------
+   U_Ppc440RceG2Control : Ppc440RceG2Control port map (
+      apuClk          => intClk234_375MhzAdj,
+      apuClkRst       => intClk234_375MhzAdjRst,
+      apuReadFromPpc  => iapuReadFromPpc(6),
+      apuReadToPpc    => iapuReadToPpc(6),
+      apuWriteFromPpc => iapuWriteFromPpc(6),
+      apuWriteToPpc   => iapuWriteToPpc(6),
+      apuReset        => iapuReset,
+      apuWriteFull    => iapuWriteFull,
+      apuReadEmpty    => iapuReadEmpty,
+      apuLoadFull     => iapuLoadFull,
+      apuStoreEmpty   => iapuStoreEmpty
+    );
+
 
 end architecture structure;
 

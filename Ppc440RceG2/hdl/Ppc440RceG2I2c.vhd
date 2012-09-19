@@ -73,12 +73,12 @@ architecture IMP of Ppc440RceG2I2c is
     irq         : out   std_logic;
     -- I2C bus signals
     saddr       : in    std_logic_vector(6 downto 0);
-    sda_i	: in	std_logic;		
-    sda_o	: out	std_logic;		
-    sda_t	: out	std_logic;		
-    scl_i	: in	std_logic;
-    scl_o	: out	std_logic;
-    scl_t	: out	std_logic;
+    sda_i       : in    std_logic;
+    sda_o       : out   std_logic;
+    sda_t       : out   std_logic;
+    scl_i       : in    std_logic;
+    scl_o       : out   std_logic;
+    scl_t       : out   std_logic;
     -- BRAM interface
     rclk        : out   std_logic;
     rden        : out   std_logic;
@@ -195,12 +195,12 @@ begin  -- IMP
       irq         => interrupt,
       -- I2C bus signals
       saddr       => iic_addr,
-      sda_i	  => iic_datai,
-      sda_o	  => iic_datao,
-      sda_t	  => iic_datat,
-      scl_i	  => iic_clki,
-      scl_o	  => iic_clko,
-      scl_t	  => iic_clkt,
+      sda_i       => iic_datai,
+      sda_o       => iic_datao,
+      sda_t       => iic_datat,
+      scl_i       => iic_clki,
+      scl_o       => iic_clko,
+      scl_t       => iic_clkt,
       -- BRAM interface
       rclk        => iic_bram_clk,
       rden        => iic_bram_rd,
@@ -213,9 +213,10 @@ begin  -- IMP
   apu_bram_wr          <= apuWriteFromPpc.enable;
   apu_bram_addr        <= apuWriteFromPpc.regA(16 to 31);
   apu_bram_din         <= apuWriteFromPpc.regB;
-  apuWriteToPpc.status <= (others=>'0');
+  apuWriteToPpc.full   <= '0';
   apuReadToPpc.result  <= apu_bram_dout;
   apuReadToPpc.status  <= (others=>'0');
+  apuReadToPpc.empty   <= '0';
 
 end IMP;
 

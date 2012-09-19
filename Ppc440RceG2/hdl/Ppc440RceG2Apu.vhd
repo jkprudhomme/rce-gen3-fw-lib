@@ -75,43 +75,21 @@ entity Ppc440RceG2Apu is
 
     -- Load instructions
     apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 31);
+    apuLoadToPpc               : in  ApuLoadToPpcVector(0 to 31);
 
     -- Store instructions
     apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 31);
     apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 31);
 
-    -- Status bits
-    apuReadStatus              : out std_logic_vector(0 to 31);
-    apuWriteStatus             : out std_logic_vector(0 to 31)
+    -- Full/Empty Bits
+    apuWriteFull               : out std_logic_vector(0 to 7);
+    apuReadEmpty               : out std_logic_vector(0 to 7);
+    apuLoadFull                : out std_logic_vector(0 to 31);
+    apuStoreEmpty              : out std_logic_vector(0 to 31)
   );
 end Ppc440RceG2Apu;
 
 architecture structure of Ppc440RceG2Apu is
-
-  -- Debug
---  component chipscope_icon
---    PORT (
---      CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0)
---    );
---  end component;
-
---  component chipscope_ila
---    PORT (
---      CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
---      CLK     : IN    STD_LOGIC;
---      TRIG0   : IN    STD_LOGIC_VECTOR(255 DOWNTO 0)
---    );
---  end component;
-
---  signal dbControl : std_logic_vector(35  downto 0);
---  signal dbDebug   : std_logic_vector(255 downto 0);
-
---  attribute syn_black_box : boolean;
---  attribute syn_noprune   : boolean;
---  attribute syn_black_box of chipscope_icon : component is TRUE;
---  attribute syn_noprune   of chipscope_icon : component is TRUE;
---  attribute syn_black_box of chipscope_ila  : component is TRUE;
---  attribute syn_noprune   of chipscope_ila  : component is TRUE;
 
   -- Local signals
   signal dec_read             : std_logic_vector(7  downto 0);
@@ -126,8 +104,6 @@ architecture structure of Ppc440RceG2Apu is
   signal store_done           : std_logic_vector(31 downto 0);
   signal load_done_next       : std_logic_vector(31 downto 0);
   signal store_done_next      : std_logic_vector(31 downto 0);
-  signal apuReadStatusIn      : std_logic_vector(0 to 31);
-  signal apuWriteStatusIn     : std_logic_vector(0 to 31);
   signal iapuReadFromPpc      : ApuReadFromPpcVector(0 to 7);
   signal iapuWriteFromPpc     : ApuWriteFromPpcVector(0 to 7);
   signal iapuLoadFromPpc      : ApuLoadFromPpcVector(0 to 31);
@@ -141,7 +117,10 @@ architecture structure of Ppc440RceG2Apu is
   signal ifcmApuResultValid   : std_logic;
   signal ifcmApuSleepNotReady : std_logic;
   signal ifcmApuStoreData     : std_logic_vector(0 to 127);
-  signal storeTest            : std_logic_vector(0 to 3);
+  signal apuWriteFullIn       : std_logic_vector(0 to 7);
+  signal apuReadEmptyIn       : std_logic_vector(0 to 7);
+  signal apuLoadFullIn        : std_logic_vector(0 to 31);
+  signal apuStoreEmptyIn      : std_logic_vector(0 to 31);
 
   -- Register delay for simulation
   constant tpd:time := 0.5 ns;
@@ -163,6 +142,22 @@ begin
   fcmApuSleepNotReady <= ifcmApuSleepNotReady;
   fcmApuStoreData     <= ifcmApuStoreData;
 
+  -- Pass along status
+  process ( apuClkRst, apuClk )
+  begin
+    if apuClkRst='1' then
+       apuWriteFull  <= (others=>'0') after tpd;
+       apuReadEmpty  <= (others=>'0') after tpd;
+       apuLoadFull   <= (others=>'0') after tpd;
+       apuStoreEmpty <= (others=>'0') after tpd;
+    elsif rising_edge(apuClk) then
+       apuWriteFull  <= apuWriteFullIn  after tpd;
+       apuReadEmpty  <= apuReadEmptyIn  after tpd;
+       apuLoadFull   <= apuLoadFullIn   after tpd;
+       apuStoreEmpty <= apuStoreEmptyIn after tpd;
+    end if;
+  end process;
+
   -- UDI Instructions
   GenInst : for i in 0 to 7 generate
 
@@ -181,9 +176,6 @@ begin
     iapuReadFromPpc(i).regA   <= apuFcmRaData;
     iapuReadFromPpc(i).regB   <= apuFcmRbData;
 
-    -- Status combine
-    apuReadStatusIn((7-i)*4 to (7-i)*4+3) <= apuReadToPpc(i).status;
-    
     -- Write Decode
     dec_write(i) <= '1' when apuFcmDecUdiValid    = '1' and 
                              apuFcmDecUdi(3)      = '1' and 
@@ -199,8 +191,9 @@ begin
     iapuWriteFromPpc(i).regA   <= apuFcmRaData;
     iapuWriteFromPpc(i).regB   <= apuFcmRbData;
 
-    -- Status combine
-    apuWriteStatusIn((7-i)*4 to (7-i)*4+3) <= apuWriteToPpc(i).status;
+    -- Full/Empty Status
+    apuWriteFullIn(i) <= apuWriteToPpc(i).full;
+    apuReadEmptyIn(i) <= apuReadToPpc(i).empty;
 
   end generate;
 
@@ -210,8 +203,7 @@ begin
 
   -- Status & Result Mux
   ifcmApuResult <= apuReadToPpc(conv_integer(apuFcmDecUdi(0 to 2))).result when read_done /= 0 else (others=>'0');
-  ifcmApuCr     <= apuReadToPpc(conv_integer(apuFcmDecUdi(0 to 2))).status when read_done /= 0 else 
-                   storeTest when store_done /= 0 else (others=>'0');
+  ifcmApuCr     <= apuReadToPpc(conv_integer(apuFcmDecUdi(0 to 2))).status when read_done /= 0 else (others=>'0');
 
   -- Read/Write States 
   fcm_p : process ( apuClkRst, apuClk )
@@ -219,13 +211,9 @@ begin
     if apuClkRst='1' then
       read_done      <= (others=>'0') after tpd;
       write_done     <= (others=>'0') after tpd;
-      apuReadStatus  <= (others=>'0') after tpd;
-      apuWriteStatus <= (others=>'0') after tpd;
     elsif rising_edge(apuClk) then
       read_done      <= read_done_next   after tpd;
       write_done     <= write_done_next  after tpd;
-      apuReadStatus  <= apuReadStatusIn  after tpd;
-      apuWriteStatus <= apuWriteStatusIn after tpd;
     end if;
   end process fcm_p;
 
@@ -277,8 +265,13 @@ begin
     -- Store data
     iapuStoreFromPpc(i).enable <= store_done(i);
 
+    -- Full/Empty Status
+    apuLoadFullIn(i)   <= apuLoadToPpc(i).full;
+    apuStoreEmptyIn(i) <= apuStoreToPpc(i).empty;
+
   end generate;
 
+  -- Data MUX
   ifcmApuStoreData <= apuStoreToPpc(conv_integer(apuFcmInstruction(6 to 10))).data;
 
   -- Load/Store States 
@@ -287,15 +280,9 @@ begin
     if apuClkRst='1' then
       load_done  <= (others=>'0') after tpd;
       store_done <= (others=>'0') after tpd;
-      storeTest  <= (others=>'0') after tpd;
     elsif rising_edge(apuClk) then
       load_done  <= load_done_next   after tpd;
       store_done <= store_done_next  after tpd;
-
-      if ( store_done /= 0 ) then 
-         storeTest <= storeTest + 1 after tpd;
-      end if;
-
     end if;
   end process ls_p;
 
@@ -311,74 +298,6 @@ begin
   --apuFcmMsrFe1               : in  std_logic;
   --apuFcmNextInstrReady       : in  std_logic;
   --apuFcmWriteBackOk          : in  std_logic;
-
-  --------------------------------
-  -- Debug
-  --------------------------------
-  --U_Icon : chipscope_icon PORT map (
-    --CONTROL0 => dbControl
-  --);
-
-  --U_Ila : chipscope_ila PORT map (
-    --CONTROL => dbControl,
-    --CLK     => apuClk,
-    --TRIG0   => dbDebug
-  --);
-
-  --dbDebug(255 to 252)      <= (others=>'0');
-  --dbDebug(251 downto 188)  <= iapuLoadFromPpc(0).data(0 to 63);
-  --dbDebug(187)             <= dec_read(0);
-  --dbDebug(186)             <= dec_write(0);
-  --dbDebug(185)             <= read_done(0);
-  --dbDebug(184)             <= write_done(0);
-  --dbDebug(183)             <= read_done_next(0);
-  --dbDebug(182)             <= write_done_next(0);
-  --dbDebug(181)             <= dec_load(0);
-  --dbDebug(180)             <= dec_store(0);
-  --dbDebug(179)             <= load_done(0);
-  --dbDebug(178)             <= store_done(0);
-  --dbDebug(177)             <= load_done_next(0);
-  --dbDebug(176)             <= store_done_next(0);
-  --dbDebug(175)             <= dec_read(1);
-  --dbDebug(174)             <= dec_write(1);
-  --dbDebug(173)             <= read_done(1);
-  --dbDebug(172)             <= write_done(1);
-  --dbDebug(171)             <= read_done_next(1);
-  --dbDebug(170)             <= write_done_next(1);
-  --dbDebug(169)             <= dec_load(1);
-  --dbDebug(168)             <= dec_store(1);
-  --dbDebug(167)             <= load_done(1);
-  --dbDebug(166)             <= store_done(1);
-  --dbDebug(165)             <= load_done_next(1);
-  --dbDebug(164)             <= store_done_next(1);
-  --dbDebug(163)             <= ifcmApuConfirmInstr;
-  --dbDebug(162)             <= ifcmApuDone;
-  --dbDebug(161)             <= ifcmApuException;
-  --dbDebug(160)             <= ifcmApuFpsCrFex;
-  --dbDebug(159)             <= ifcmApuResultValid;
-  --dbDebug(158)             <= ifcmApuSleepNotReady;
-  --dbDebug(157)             <= apuFcmDecFpuOp;
-  --dbDebug(156)             <= apuFcmDecLoad;
-  --dbDebug(155)             <= apuFcmDecNonAuton;
-  --dbDebug(153)             <= apuFcmDecStore;
-  --dbDebug(152)             <= apuFcmDecUdiValid;
-  --dbDebug(151)             <= apuFcmEndian;
-  --dbDebug(150)             <= apuFcmFlush;
-  --dbDebug(149)             <= apuFcmInstrValid;
-  --dbDebug(148)             <= apuFcmLoadDValid;
-  --dbDebug(147)             <= apuFcmMsrFe0;
-  --dbDebug(146)             <= apuFcmMsrFe1;
-  --dbDebug(145)             <= apuFcmNextInstrReady;
-  --dbDebug(144)             <= apuFcmOperandValid;
-  --dbDebug(143)             <= apuFcmWriteBackOk;
-  --dbDebug(142 downto 139)  <= ifcmApuCr;
-  --dbDebug(138 downto 136)  <= apuFcmDecLdsTxferSize;
-  --dbDebug(135 downto 132)  <= apuFcmDecUdi;
-  --dbDebug(131 downto 128)  <= apuFcmLoadByteAddr;
-  --dbDebug(127 downto  96)  <= ifcmApuResult;
-  --dbDebug( 95 downto  64)  <= apuFcmInstruction;
-  --dbDebug( 63 downto  32)  <= apuFcmRaData;
-  --dbDebug( 31 downto   0)  <= apuFcmRbData;
 
 end architecture;
 

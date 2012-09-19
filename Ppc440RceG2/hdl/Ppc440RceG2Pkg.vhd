@@ -29,16 +29,18 @@ package Ppc440RceG2Pkg is
 
   type ApuWriteFromPpcVector is array (integer range<>) of ApuWriteFromPpcType;
 
-  constant ApuWriteFromPpcInit : ApuWriteFromPpcType := ( regA => (others=>'0'), regB => (others=>'0'), enable => '0');
+  constant ApuWriteFromPpcInit : ApuWriteFromPpcType := ( regA   => (others=>'0'), 
+                                                          regB   => (others=>'0'), 
+                                                          enable => '0');
 
   -- Write command. Signals to PPC.
   type ApuWriteToPpcType is record
-     status : std_logic_vector(0 to 3);
+     full   : std_logic;
   end record;
 
   type ApuWriteToPpcVector is array (integer range<>) of ApuWriteToPpcType;
 
-  constant ApuWriteToPpcInit : ApuWriteToPpcType := ( status => (others=>'0') );
+  constant ApuWriteToPpcInit : ApuWriteToPpcType := ( full   => '0' );
 
   -- Read command. Signals from PPC.
   type ApuReadFromPpcType is record
@@ -49,17 +51,22 @@ package Ppc440RceG2Pkg is
 
   type ApuReadFromPpcVector is array (integer range<>) of ApuReadFromPpcType;
 
-  constant ApuReadFromPpcInit : ApuReadFromPpcType := ( regA => (others=>'0'), regB => (others=>'0'), enable => '0');
+  constant ApuReadFromPpcInit : ApuReadFromPpcType := ( regA   => (others=>'0'), 
+                                                        regB   => (others=>'0'), 
+                                                        enable => '0');
 
   -- Read command. Signals to PPC.
   type ApuReadToPpcType is record
+     empty  : std_logic;
      result : std_logic_vector(0 to 31);
      status : std_logic_vector(0 to 3);
   end record;
 
   type ApuReadToPpcVector is array (integer range<>) of ApuReadToPpcType;
 
-  constant ApuReadToPpcInit : ApuReadToPpcType := ( result => (others=>'0'), status => (others=>'0') );
+  constant ApuReadToPpcInit : ApuReadToPpcType := ( empty  =>'0', 
+                                                    result => (others=>'0'), 
+                                                    status => (others=>'0') );
 
   -- Load command. Signals from PPC.
   -- Size: 100 = Byte
@@ -79,6 +86,16 @@ package Ppc440RceG2Pkg is
                                                         data   => (others=>'0'), 
                                                         enable => '0' );
 
+  -- Load command. Signals to PPC.
+  type ApuLoadToPpcType is record
+     full   : std_logic;
+  end record;
+
+  type ApuLoadToPpcVector is array (integer range<>) of ApuLoadToPpcType;
+
+  constant ApuLoadToPpcInit : ApuLoadToPpcType := ( full => '0' );
+
+
   -- Store command. Signals from PPC.
   -- Size: 100 = Byte
   --       010 = Halfword
@@ -92,16 +109,19 @@ package Ppc440RceG2Pkg is
 
   type ApuStoreFromPpcVector is array (integer range<>) of ApuStoreFromPpcType;
 
-  constant ApuStoreFromPpcInit : ApuStoreFromPpcType := ( size => (others=>'0'), enable => '0' );
+  constant ApuStoreFromPpcInit : ApuStoreFromPpcType := ( size   => (others=>'0'), 
+                                                          enable => '0' );
 
   -- Store command. Signals to PPC.
   type ApuStoreToPpcType is record
      data   : std_logic_vector(0 to 127);
+     empty  : std_logic;
   end record;
 
   type ApuStoreToPpcVector is array (integer range<>) of ApuStoreToPpcType;
 
-  constant ApuStoreToPpcInit : ApuStoreToPpcType := ( data => (others=>'0') );
+  constant ApuStoreToPpcInit : ApuStoreToPpcType := ( data  => (others=>'0'),
+                                                      empty => '0' );
 
   ----------------------------------
   -- Components
@@ -148,8 +168,10 @@ package Ppc440RceG2Pkg is
       apuWriteFromPpc            : out ApuWriteFromPpcVector(0 to 3);
       apuWriteToPpc              : in  ApuWriteToPpcVector(0 to 3);
       apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 15);
+      apuLoadToPpc               : in  ApuLoadToPpcVector(0 to 15);
       apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 15);
       apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 15);
+      apuReset                   : out std_logic_vector(0 to 15);
       modScl                     : inout std_logic;
       modSda                     : inout std_logic
     );
@@ -296,10 +318,29 @@ package Ppc440RceG2Pkg is
       apuWriteFromPpc            : out ApuWriteFromPpcVector(0 to 7);
       apuWriteToPpc              : in  ApuWriteToPpcVector(0 to 7);
       apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 31);
+      apuLoadToPpc               : in  ApuLoadToPpcVector(0 to 31);
       apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 31);
       apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 31);
-      apuReadStatus              : out std_logic_vector(0 to 31);
-      apuWriteStatus             : out std_logic_vector(0 to 31)
+      apuWriteFull               : out std_logic_vector(0 to 7);
+      apuReadEmpty               : out std_logic_vector(0 to 7);
+      apuLoadFull                : out std_logic_vector(0 to 31);
+      apuStoreEmpty              : out std_logic_vector(0 to 31)
+    );
+  end component;
+
+  component Ppc440RceG2Control is
+    port (
+      apuClk                     : in  std_logic;
+      apuClkRst                  : in  std_logic;
+      apuReadFromPpc             : in  ApuReadFromPpcType;
+      apuReadToPpc               : out ApuReadToPpcType;
+      apuWriteFromPpc            : in  ApuWriteFromPpcType;
+      apuWriteToPpc              : out ApuWriteToPpcType;
+      apuReset                   : out std_logic_vector(0 to 31);
+      apuWriteFull               : in  std_logic_vector(0 to 7);
+      apuReadEmpty               : in  std_logic_vector(0 to 7);
+      apuLoadFull                : in  std_logic_vector(0 to 31);
+      apuStoreEmpty              : in  std_logic_vector(0 to 31)
     );
   end component;
 
