@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 `define DEL 500 // standard delay = 500 ps
-`define USE_CHIPSCOPE // standard delay = 500 ps
+//`define USE_CHIPSCOPE // standard delay = 500 ps
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Title                   : uSDTop.v
 // Project                 : COB DPM      
@@ -24,23 +24,27 @@ input apuClk,
 input [71:0] cmdFifoData,
 input cmdFifoWrEn,
 input resultFifoRdEn,
-input [71:0] cmdDataFifoData,
-input cmdDataFifoWrEn,
-input resultDataFifoRdEn,
+input [71:0] writeFifoData,
+input writeFifoWrEn,
+input readFifoRdEn,
 input sysClk200,
 input sysRstN,
 input chipScopeSel,
 //-------- Outputs
 output [35:0] resultFifoData,
-output [71:0] resultDataFifoData,
+output [71:0] readFifoData,
 output sdClk,
 output cmdRdyRd,
 output cmdRdyWr,
 output resultPending,
+output cmdFifoFull,
+output writeFifoFull,
+output readFifoEmpty,
 //-------- IO
 inout sdCmd,
 inout [3:0] sdData,
-input [31:0] sdDebug
+input [31:0] sdDebug,
+input apuReset
 );
 
 //------- Internal Signals
@@ -91,7 +95,7 @@ wire writeDone;
 wire readDone;
 wire cmdRdyRdN;
 wire cmdFifoAlmostFull;
-wire writeDataFifoAlmostFull;
+wire writeFifoAlmostFull;
 wire resultFifoEmpty;
 wire sdReady;
 wire resultFifoFull;
@@ -101,76 +105,74 @@ wire r1Cmd;
 wire r2Cmd;
 wire cmdDone;
 wire [135:0] cmdResponseInt;
-wire readFifoEmpty;
 wire commandTimeOut;
 wire scrCmd;
 wire sdClk400k;
 wire sdInitComplete;
 //chipscope signals
 // These are for chipScopeSel0&1
-// assign csData[183:0] = sdDataDebug[183:0];
-// assign csData[184] = resultFifoRdEn;
-// assign csData[188:185] = sdCmdDebug[3:0]; // [3:0] = cmdState 
-// assign csData[196:189] = sdEngineDebug[7:0];
-// //assign csData[228:197] = cmdResponseInt[39:8];
-// assign csData[228:197] = resultFifoDataIn[31:0];
-// //assign csData[199:197] = {sdEngineDebug[41:40], sdEngineDebug[59]};  //acmd6Done, acmd41Done, acmd42Done
-// assign csData[229] = resultFifoWrEn;
-// assign csData[230] = sdCmdIn;
-// assign csData[231] = sdCmdOut;
-// assign csData[232] = sdCmdEn;
-// assign csData[236:233] = sdDataIn;
-// assign csData[240:237] = sdDataOut;
-// assign csData[241] = sdDataEn;
-// assign csData[242] = chipScopeSel;
-// assign csData[248:243] = cmdFifoDataOut[63:58];
-// assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], crcOk
-// assign csData[253] = sdCmdDebug[30]; // cmd rxCrcIn
-// //assign csData[254] = cmdFifoEmpty;
-// assign csData[254] = resultDataFifoRdEn;
-// assign csData[255] = sdClkInt;
+assign csData[183:0] = sdDataDebug[183:0];
+assign csData[184] = resultFifoRdEn;
+assign csData[188:185] = sdCmdDebug[3:0]; // [3:0] = cmdState 
+assign csData[196:189] = sdEngineDebug[7:0];
+//assign csData[228:197] = cmdResponseInt[39:8];
+assign csData[228:197] = resultFifoDataIn[31:0];
+//assign csData[199:197] = {sdEngineDebug[41:40], sdEngineDebug[59]};  //acmd6Done, acmd41Done, acmd42Done
+assign csData[229] = resultFifoWrEn;
+assign csData[230] = sdCmdIn;
+assign csData[231] = sdCmdOut;
+assign csData[232] = sdCmdEn;
+assign csData[236:233] = sdDataIn;
+assign csData[240:237] = sdDataOut;
+assign csData[241] = sdDataEn;
+assign csData[242] = chipScopeSel;
+assign csData[248:243] = cmdFifoDataOut[63:58];
+assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], crcOk
+assign csData[253] = sdCmdDebug[30]; // cmd rxCrcIn
+//assign csData[254] = cmdFifoEmpty;
+//assign csData[254] = resultDataFifoRdEn;
+assign csData[255] = sdClkInt;
 
 // These are for apu 
-assign csData[63:0] = sdDataDebug[63:0];          // chipscope = apu
-assign csData[127:64] = resultDataFifoData[63:0];
-assign csData[128] = cmdFifoEmpty;
-assign csData[129] = cmdFifoWrEn;
-assign csData[130] = cmdFifoRdEn;
-assign csData[131] = resultFifoRdEn;
-assign csData[132] = resultFifoEmpty;
-assign csData[133] = resultFifoWrEn;
-assign csData[165:134] = resultFifoDataIn[31:0];
-assign csData[197:166] = resultFifoData[31:0];
-assign csData[205:198] = sdEngineDebug[7:0];
-assign csData[209:206] = sdDataIn;
-assign csData[213:210] = sdDataOut;
-assign csData[214] = sdDataEn;
-assign csData[215] = sdCmdIn;
-assign csData[216] = sdCmdOut;
-assign csData[217] = sdCmdEn;
-assign csData[218] = cmdFifoDataOut[49];
-assign csData[219] = sdStatusCmd;
-assign csData[220] = sdEngineDebug[60];  // sdInitComplete
-assign csData[226:221] = cmdFifoDataOut[63:58];
-// assign csData[227] = r1Cmd;
-// assign csData[228] = r2Cmd;
-// assign csData[229] = cmdDone;
-assign csData[229:227] = sdDebug[2:0]; // memReady, powerOnReset, pllLocked
-assign csData[234:230] = sdDataDebug[132:128];
-assign csData[235] = readFifoWe;
-assign csData[236] = resultDataFifoRdEn;
-assign csData[237] = readFifoEmpty;
-assign csData[238] = dataReady;
-assign csData[247:239] = sdEngineDebug[69:61];
-assign csData[251:248] = sdCmdDebug[3:0];
-assign csData[252] = scrCmd;
-assign csData[253] = writeFifoRe;
-assign csData[254] = resultDataFifoRdEn;
-assign csData[255] = sdClk;
+// assign csData[63:0] = sdDataDebug[63:0];          // chipscope = apu
+// assign csData[127:64] = resultDataFifoData[63:0];
+// assign csData[128] = cmdFifoEmpty;
+// assign csData[129] = cmdFifoWrEn;
+// assign csData[130] = cmdFifoRdEn;
+// assign csData[131] = resultFifoRdEn;
+// assign csData[132] = resultFifoEmpty;
+// assign csData[133] = resultFifoWrEn;
+// assign csData[165:134] = resultFifoDataIn[31:0];
+// assign csData[197:166] = resultFifoData[31:0];
+// assign csData[205:198] = sdEngineDebug[7:0];
+// assign csData[209:206] = sdDataIn;
+// assign csData[213:210] = sdDataOut;
+// assign csData[214] = sdDataEn;
+// assign csData[215] = sdCmdIn;
+// assign csData[216] = sdCmdOut;
+// assign csData[217] = sdCmdEn;
+// assign csData[218] = cmdFifoDataOut[49];
+// assign csData[219] = sdStatusCmd;
+// assign csData[220] = sdEngineDebug[60];  // sdInitComplete
+// assign csData[226:221] = cmdFifoDataOut[63:58];
+// // assign csData[227] = r1Cmd;
+// // assign csData[228] = r2Cmd;
+// // assign csData[229] = cmdDone;
+// assign csData[229:227] = sdDebug[2:0]; // memReady, powerOnReset, pllLocked
+// assign csData[234:230] = sdDataDebug[132:128];
+// assign csData[235] = readFifoWe;
+// assign csData[236] = resultDataFifoRdEn;
+// assign csData[237] = readFifoEmpty;
+// assign csData[238] = dataReady;
+// assign csData[247:239] = sdEngineDebug[69:61];
+// assign csData[251:248] = sdCmdDebug[3:0];
+// assign csData[252] = scrCmd;
+// assign csData[253] = writeFifoRe;
+// assign csData[254] = resultDataFifoRdEn;
+// assign csData[255] = sdClk;
 
 // active high internal reset
 assign #`DEL sysRst = ~sysRstN & ~dcmLocked;
-
 
 
 // instantiate pads
@@ -331,8 +333,8 @@ sdEngine sdEngine_1 (
 );
 
 // invert full flag per Mike's diagram
-assign cmdRdyRd = ~cmdRdyRdN;
-assign cmdRdyWr = cmdFifoAlmostFull & writeDataFifoAlmostFull;
+assign cmdRdyRd = ~cmdFifoFull;
+assign cmdRdyWr = cmdFifoAlmostFull & writeFifoAlmostFull;
 
 // command fifo written by APU read by sdEngine
 
@@ -342,7 +344,7 @@ fifo72x512apuwriteNoFWFT cmdFifo(
    .empty(cmdFifoEmpty),
    .wr_en(cmdFifoWrEn),
    .rd_clk(sdClk),
-   .full(cmdRdyRdN),
+   .full(cmdFifoFull),
    .prog_empty(),
    .wr_clk(apuClk),
    .prog_full(cmdFifoAlmostFull),
@@ -371,19 +373,19 @@ fifo72x512apuwrite writeDataFifo(
    .rd_en(writeFifoRe),
    .rst(sysRst),
    .empty(),
-   .wr_en(cmdDataFifoWrEn),
+   .wr_en(writeFifoWrEn),
    .rd_clk(sdClk),
-   .full(),
+   .full(writeFifoFull),
    .prog_empty(writeFifoAlmostEmpty),
    .wr_clk(apuClk),
-   .prog_full(writeDataFifoAlmostFull),
+   .prog_full(writeFifoAlmostFull),
    .dout(writeDataIn),
-   .din(cmdDataFifoData)
+   .din(writeFifoData)
 );
 
 
 fifo72x512sdwrite readDataFifo(
-   .rd_en(resultDataFifoRdEn),
+   .rd_en(readFifoRdEn),
    .rst(sysRst),
    .empty(readFifoEmpty),
    .wr_en(readFifoWe),
@@ -392,7 +394,7 @@ fifo72x512sdwrite readDataFifo(
    .prog_empty(),
    .wr_clk(sdClk),
    .prog_full(readFifoAlmostFull),
-   .dout(resultDataFifoData),
+   .dout(readFifoData),
    .din(readDataOut)
 );
 
