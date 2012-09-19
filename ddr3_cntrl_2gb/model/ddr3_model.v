@@ -100,16 +100,21 @@ module ddr3_model (
     odt
 );
 
-    `define 2Gb
+    `define x2Gb
     `define sg15E
     `define x8 
 
     `include "ddr3_model_parameters.vh"
 
-    parameter check_strict_mrbits = 1;
-    parameter check_strict_timing = 1;
+    parameter check_strict_mrbits = 0;
+    parameter check_strict_timing = 0;
     parameter feature_pasr = 1;
     parameter feature_truebl4 = 0;
+
+    //parameter check_strict_mrbits = 1;
+    //parameter check_strict_timing = 1;
+    //parameter feature_pasr = 1;
+    //parameter feature_truebl4 = 0;
    
     // text macros
     `define DQ_PER_DQS DQ_BITS/DQS_BITS
