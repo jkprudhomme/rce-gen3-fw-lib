@@ -163,6 +163,9 @@ architecture structure of Ppc440RceG2 is
    signal iapuReadEmpty                : std_logic_vector(0 to 7);
    signal iapuLoadFull                 : std_logic_vector(0 to 31);
    signal iapuStoreEmpty               : std_logic_vector(0 to 31);
+   signal extInt                       : std_logic;
+   signal critInt                      : std_logic;
+   signal i2cInt                       : std_logic;
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -474,8 +477,8 @@ begin
          PPCDMDCRDBUSOUT             => ppcDmDcrDbusOut,
 
          -- Interupt Controller
-         EICC440CRITIRQ              => '0',
-         EICC440EXTIRQ               => extIrq,
+         EICC440CRITIRQ              => critInt,
+         EICC440EXTIRQ               => extInt,
          PPCEICINTERCONNECTIRQ       => open,
 
          -- JTAG Interface
@@ -695,7 +698,6 @@ begin
    U_Ppc440RceG2I2c : Ppc440RceG2I2c port map (
       rst_i           => intClk156_25MhzAdjRstPon,
       rst_o           => resetReq,
-      interrupt       => extIrq,
       clk32           => intClk156_25MhzAdj,
       apuClk          => intClk234_375MhzAdj,
       apuWriteFromPpc => iapuWriteFromPpc(7),
@@ -790,12 +792,13 @@ begin
       apuWriteFromPpc => iapuWriteFromPpc(6),
       apuWriteToPpc   => iapuWriteToPpc(6),
       apuReset        => iapuReset,
+      extInt          => extInt,
+      critInt         => critInt,
       apuWriteFull    => iapuWriteFull,
       apuReadEmpty    => iapuReadEmpty,
       apuLoadFull     => iapuLoadFull,
       apuStoreEmpty   => iapuStoreEmpty
     );
-
 
 end architecture structure;
 

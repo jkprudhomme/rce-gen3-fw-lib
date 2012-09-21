@@ -40,7 +40,6 @@ entity Ppc440RceG2I2c is
 
     -- Client interface
     rst_o     : out std_logic;
-    interrupt : out std_logic;
     clk32     : in  std_logic;
 
     -- APU Interface
@@ -88,7 +87,8 @@ architecture IMP of Ppc440RceG2I2c is
     datao       : out   std_logic_vector( 7 downto 0)
     );
   end component;
-  
+ 
+  signal interrupt     : std_logic;
   signal iic_bram_clk  : std_logic;
   signal iic_bram_rd   : std_logic;
   signal iic_bram_wr   : std_logic;
@@ -216,7 +216,7 @@ begin  -- IMP
   apuWriteToPpc.full   <= '0';
   apuReadToPpc.result  <= apu_bram_dout;
   apuReadToPpc.status  <= (others=>'0');
-  apuReadToPpc.empty   <= '0';
+  apuReadToPpc.empty   <= not interrupt;
 
 end IMP;
 
