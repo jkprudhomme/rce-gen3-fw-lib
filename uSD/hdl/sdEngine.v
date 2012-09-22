@@ -17,72 +17,54 @@
 
 module sdEngine(
 
-// system 
-   sdClkIn, sysRstN, initRst, sdInitComplete,
-// Command FIFO
-   cmdFifoDataOut, cmdFifoRdEn, cmdFifoEmpty,
-// Result FIFO
-   resultFifoDataIn, resultFifoWrEn, resultFifoFull, 
-// uSDCmd
-   newCmd, argumentReg, cmdReg, crcOk, initDone, dataReady, cmdResponse,
-   commandTimeOut,
-// uSDData
-   writeCmd, readCmd, writeDone, readDone, sdStatusCmd, dataStatus, r2Cmd,
-   cmdDone, r1Cmd, cmdResponseInt, scrCmd,
-// write FIFO
-   writeFifoAlmostEmpty,
-// read FIFO
-   readFifoAlmostFull,
-// debug signals
-   sdEngineDebug, chipScopeSel
-);
-
 // system
-input sdClkIn;                           // sd clock
-input sysRstN;                           // active low reset
-output reg initRst;                      // initialization reset
-output reg sdInitComplete;                      // ready for data transfer
+input sdClkIn,                           // sd clock
+input sysRstN,                           // active low reset
+input internalRst,                       // apuRst stretched to sd clock
+output reg initRst,                      // initialization reset
+output reg sdInitComplete,                      // ready for data transfer
 // Command FIFO (generates commands to uSD card_
-input [71:0] cmdFifoDataOut;             // command fifo data
-output reg cmdFifoRdEn;                  // command fifo read enable
-input cmdFifoEmpty;                   // command fifo has data
+input [71:0] cmdFifoDataOut,             // command fifo data
+output reg cmdFifoRdEn,                  // command fifo read enable
+input cmdFifoEmpty,                   // command fifo has data
 
 // Result FIFO (contains results of last command)
-output reg [35:0] resultFifoDataIn;      // result fifo data
-output reg resultFifoWrEn;               // result fifo write enable
-input resultFifoFull;                 // result fifo not full
+output reg [35:0] resultFifoDataIn,      // result fifo data
+output reg resultFifoWrEn,               // result fifo write enable
+input resultFifoFull,                 // result fifo not full
 
 // sdCmd
-output reg newCmd;                       // generate new command
-output reg [31:0] argumentReg;	         // command argument
-output reg [15:0] cmdReg;                // command setting
-input crcOk;                             // command crc check good
-input initDone;                          // init is complete
-input dataReady;                         // received data ready
-input [135:0] cmdResponse;               // cmd response from host
-output commandTimeOut;                   // no response after 256 clocks
+output reg newCmd,                       // generate new command
+output reg [31:0] argumentReg,	         // command argument
+output reg [15:0] cmdReg,                // command setting
+input crcOk,                             // command crc check good
+input initDone,                          // init is complete
+input dataReady,                         // received data ready
+input [135:0] cmdResponse,               // cmd response from host
+output commandTimeOut,                   // no response after 256 clocks
 
 // sdData
-output reg writeCmd;                     // write command start
-output reg readCmd;                      // read command start
-input writeDone;
-input readDone;
-output reg sdStatusCmd;
-input [3:0] dataStatus;
-output reg r2Cmd;                        // write result of r2 command
-input cmdDone;                           // r2 or r1 cmd written
-output reg r1Cmd;                        // write result of r1 command
-output reg [135:0] cmdResponseInt;       // capture command response
-output reg scrCmd;                       // scr read from card
+output reg writeCmd,                     // write command start
+output reg readCmd,                      // read command start
+input writeDone,
+input readDone,
+output reg sdStatusCmd,
+input [3:0] dataStatus,
+output reg r2Cmd,                        // write result of r2 command
+input cmdDone,                           // r2 or r1 cmd written
+output reg r1Cmd,                        // write result of r1 command
+output reg [135:0] cmdResponseInt,       // capture command response
+output reg scrCmd,                       // scr read from card
 // write FIFO
-input writeFifoAlmostEmpty;              // write fifo almost empty
+input writeFifoAlmostEmpty,              // write fifo almost empty
 
 // read FIFO
-input readFifoAlmostFull;                // read fifo almost full
+input readFifoAlmostFull,                // read fifo almost full
 
 // debug
-output [96:0] sdEngineDebug;             // chipscope signals
-input chipScopeSel;
+output [96:0] sdEngineDebug,             // chipscope signals
+input chipScopeSel
+);
 
 
 reg [31:0] initDelay;                    // mostly for chipscope delay
@@ -99,6 +81,7 @@ reg [135:0] CID;                         // Card ID Reg
 reg [135:0] CSD;                         // Card status reg
 reg [31:0] OCR;                          // OCR Register
 reg [15:0] timeOut;                      // command timeout register
+reg inRst;                               // currently in apu reset initialization
 
 // command state machine states
 parameter IDLE           = 8'h00;
@@ -159,7 +142,7 @@ parameter CMD10_FAKE     = 8'h36;
 parameter ACMD41_FAKE    = 8'h37;
 parameter SEND_CMD55NEW  = 8'h38;
 parameter CMD55NEW_WAIT  = 8'h39;
-
+parameter WRITE_RST      = 8'h3A;
 
 // command timeout
 assign commandTimeOut = timeOut[8];
@@ -211,14 +194,36 @@ always @(posedge sdClkIn or negedge sysRstN) begin
             resultFifoDataIn <= {6'b0,     10'b0000001000, crcOk,   4'b0,        1'b0,   cmdResponse[45:40],   cmdFifoDataOut[57:50]};
                                //[35:30]   [29:20]         [19]     [18:15]      [14]    [13:8]                [7:0]
 	                       // blank,   validBytes      crcOK    dataStatus   blank   cmd Index             TID
+         end
+         default: begin // for response to apuRst
+            resultFifoDataIn <= {6'b0,     10'b0000000000, 1'b1,   4'b0,        1'b0,   6'b111111,             8'b0};
+                               //[35:30]   [29:20]         [19]     [18:15]      [14]    [13:8]                [7:0]
+	                       // blank,   validBytes      crcOK    dataStatus   blank   cardInitalized        TID
 	 end
       endcase // case (cmdFifoDataOut[57:50])
    end
 end
 
+
+// internal reset capture
+always @ (posedge sdClkIn or negedge sysRstN) begin
+   if (~sysRstN) begin
+      inRst <= 1'b0;
+   end
+   else if (internalRst) begin
+      inRst <= 1'b1;
+   end
+   else if (cmdState == WRITE_RST) begin
+      inRst <= 1'b0;
+   end
+   else begin
+      inRst <= inRst;
+   end
+end
 // debug signals
 assign sdEngineDebug[7:0] = cmdState;
 assign sdEngineDebug[39:8] = OCR;
+assign sdEngineDebug[40] = inRst;
 // command response
 // generate delayed reset
 always @(posedge sdClkIn or negedge sysRstN)
@@ -307,6 +312,9 @@ end
 always @(posedge sdClkIn or posedge initRst)
 begin
    if (initRst) begin
+      cmdState <= IDLE;
+   end
+   else if (internalRst) begin
       cmdState <= IDLE;
    end
    else begin
@@ -481,9 +489,12 @@ begin
          cmdState <= CMD16_WAIT;
       end
       CMD16_WAIT: begin
-         if (dataReady) begin
+         if (dataReady & ~inRst) begin
             cmdState <= READY;
-	 end
+         end
+         else if (dataReady & inRst) begin
+            cmdState <= WRITE_RST;
+         end
 	 else begin
             cmdState <= CMD16_WAIT;
          end
@@ -679,6 +690,9 @@ begin
          else begin
             cmdState <= CMD55NEW_WAIT;
          end
+      end
+      WRITE_RST: begin
+         cmdState <= READY;
       end
       endcase // case (cmdState)
    end
@@ -1026,6 +1040,10 @@ begin
       argumentReg <= {RCA, 16'hAAAA};
       cmdReg <= 16'h371A;
    end
+   WRITE_RST: begin
+      newCmd <= 1'b0;
+      resultFifoWrEn <= 1'b1;
+   end
    endcase
 end
 
@@ -1033,6 +1051,9 @@ end
 always @(posedge sdClkIn or posedge initRst)
 begin
    if (initRst) begin
+      acmd41Done <= 1'b0;
+   end
+   else if (internalRst) begin
       acmd41Done <= 1'b0;
    end
    else begin
@@ -1049,6 +1070,9 @@ end
 always @(posedge sdClkIn or posedge initRst)
 begin
    if (initRst) begin
+      acmd6Done <= 1'b0;
+   end
+   else if (internalRst) begin
       acmd6Done <= 1'b0;
    end
    else begin
@@ -1068,6 +1092,9 @@ begin
    if (initRst) begin
       acmd42Done <= 1'b0;
    end
+   else if (internalRst) begin
+      acmd42Done <= 1'b0;
+   end
    else begin
       if (cmdState == ACMD42_WAIT) begin
          acmd42Done <= 1'b1;
@@ -1082,6 +1109,9 @@ end
 always @(posedge sdClkIn or posedge initRst)
 begin
    if (initRst) begin
+      RCA <= 16'b0;
+   end
+   else if (internalRst) begin
       RCA <= 16'b0;
    end
    else begin
@@ -1101,6 +1131,9 @@ begin
    if (initRst) begin
       CID <= 136'b0;
    end
+   else if (internalRst) begin
+      CID <= 136'b0;
+   end
    else begin
       if (cmdState == CMD10_CHECK) begin
          CID <= cmdResponseInt;
@@ -1117,6 +1150,9 @@ begin
    if (initRst) begin
       CSD <= 136'b0;
    end
+   else if (internalRst) begin
+      CSD <= 136'b0;
+   end
    else begin
       if (cmdState == CMD9_CHECK) begin
          CSD <= cmdResponseInt;
@@ -1131,6 +1167,9 @@ end
 always @(posedge sdClkIn or posedge initRst)
 begin
    if (initRst) begin
+      OCR <= 32'b0;
+   end
+   else if (internalRst) begin
       OCR <= 32'b0;
    end
    else begin

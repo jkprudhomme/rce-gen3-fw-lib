@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 `define DEL 500 // standard delay = 500 ps
-//`define USE_CHIPSCOPE // standard delay = 500 ps
+`define USE_CHIPSCOPE // standard delay = 500 ps
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Title                   : uSDTop.v
 // Project                 : COB DPM      
@@ -109,6 +109,10 @@ wire commandTimeOut;
 wire scrCmd;
 wire sdClk400k;
 wire sdInitComplete;
+reg apuRstCapture;
+reg apuRstCaptureD1;
+reg [3:0] apuRstCnt;
+wire internalRst;
 //chipscope signals
 // These are for chipScopeSel0&1
 assign csData[183:0] = sdDataDebug[183:0];
@@ -125,12 +129,12 @@ assign csData[232] = sdCmdEn;
 assign csData[236:233] = sdDataIn;
 assign csData[240:237] = sdDataOut;
 assign csData[241] = sdDataEn;
-assign csData[242] = chipScopeSel;
+assign csData[242] = apuReset;
 assign csData[248:243] = cmdFifoDataOut[63:58];
-assign csData[252:249] = sdCmdDebug[11:8]; // rxCrcCheck[6:4], crcOk
-assign csData[253] = sdCmdDebug[30]; // cmd rxCrcIn
-//assign csData[254] = cmdFifoEmpty;
-//assign csData[254] = resultDataFifoRdEn;
+assign csData[252:249] = apuRstCnt;
+assign csData[253] = sdEngineDebug[40]; // inRst
+//assign csData[254] = cmdFifoFull;
+assign csData[254] = readFifoRdEn;
 assign csData[255] = sdClkInt;
 
 // These are for apu 
@@ -173,8 +177,28 @@ assign csData[255] = sdClkInt;
 
 // active high internal reset
 assign #`DEL sysRst = ~sysRstN & ~dcmLocked;
+// caputre apuRst
+always @(posedge apuClk) begin
+   apuRstCapture <= apuReset;
+   apuRstCaptureD1 <= apuRstCapture;
+end
 
+always @(posedge apuClk or negedge sysRstN) begin
+   if (~sysRstN) begin
+      apuRstCnt <= 0;
+   end
+   else if (apuRstCapture & ~apuRstCaptureD1) begin
+      apuRstCnt <= apuRstCnt + 1;
+   end
+   else if (apuRstCnt >= 1 & apuRstCnt < 15) begin
+      apuRstCnt <= apuRstCnt + 1;
+   end
+   else begin
+      apuRstCnt <= 0;
+   end
+end
 
+assign internalRst = apuRstCnt ? 1'b1 : 1'b0;
 // instantiate pads
 // sd data pads
 
@@ -300,6 +324,7 @@ sdEngine sdEngine_1 (
    .sdClkIn(sdClk),
    .sysRstN(sysRstN),
    .initRst(initRst),
+   .internalRst(internalRst),
    .sdInitComplete(sdInitComplete),
    .cmdFifoDataOut(cmdFifoDataOut),
    .cmdFifoRdEn(cmdFifoRdEn),
@@ -340,7 +365,7 @@ assign cmdRdyWr = cmdFifoAlmostFull & writeFifoAlmostFull;
 
 fifo72x512apuwriteNoFWFT cmdFifo(
    .rd_en(cmdFifoRdEn),
-   .rst(sysRst),
+   .rst(sysRst | apuRstCnt),
    .empty(cmdFifoEmpty),
    .wr_en(cmdFifoWrEn),
    .rd_clk(sdClk),
@@ -354,11 +379,13 @@ fifo72x512apuwriteNoFWFT cmdFifo(
 
 // invert empty flag
 //assign resultPending = ~resultFifoEmpty;
+wire resultFifoEmptyInt;
+assign resultFifoEmpty = ~sdInitComplete ? 1'b1 : resultFifoEmptyInt;
 assign resultPending = resultFifoEmpty;
 fifo36x1024sdwrite resultFifo(
    .rd_en(resultFifoRdEn),
-   .rst(sysRst),
-   .empty(resultFifoEmpty),
+   .rst(sysRst | apuRstCnt),
+   .empty(resultFifoEmptyInt),
    .wr_en(resultFifoWrEn),
    .rd_clk(apuClk),
    .full(resultFifoFull),
@@ -368,26 +395,28 @@ fifo36x1024sdwrite resultFifo(
    .dout(resultFifoData),
    .din(resultFifoDataIn)
 );
-
+wire writeFifoFullInt;
+assign writeFifoFull = ~sdInitComplete ? 1'b0 : writeFifoFullInt;
 fifo72x512apuwrite writeDataFifo(
    .rd_en(writeFifoRe),
-   .rst(sysRst),
+   .rst(sysRst | apuRstCnt),
    .empty(),
    .wr_en(writeFifoWrEn),
    .rd_clk(sdClk),
-   .full(writeFifoFull),
+   .full(writeFifoFullInt),
    .prog_empty(writeFifoAlmostEmpty),
    .wr_clk(apuClk),
    .prog_full(writeFifoAlmostFull),
    .dout(writeDataIn),
    .din(writeFifoData)
 );
-
+wire readFifoEmptyInt;
+assign readFifoEmpty = ~sdInitComplete ? 1'b1 : readFifoEmptyInt;
 
 fifo72x512sdwrite readDataFifo(
    .rd_en(readFifoRdEn),
-   .rst(sysRst),
-   .empty(readFifoEmpty),
+   .rst(sysRst | apuRstCnt),
+   .empty(readFifoEmptyInt),
    .wr_en(readFifoWe),
    .rd_clk(apuClk),
    .full(),
