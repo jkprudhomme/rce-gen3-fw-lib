@@ -59,6 +59,7 @@
 //--------------------------------------------------------------------------------
 
 `timescale 1 ns/1 ns
+//`define GTP_DEBUG 1
 
 `define BAR_MASK_WIDTH_CALC(BAR)   BAR[63] ? (6'h3f) : \
                                    BAR[62] ? (6'h3e) : \
@@ -598,16 +599,21 @@ module   pcie_ep_top #
   wire        gwe_b;
   wire        ghigh_b;
 
+`ifndef GTP_DEBUG
   wire        GTPCLK_bufg;
   wire        REFCLK_OUT_bufg;
   wire        core_clk;
+  wire        user_clk;
+  wire        clock_lock;
+  wire        LINK_UP;
+  wire pll_lock;
+`endif
+
   wire [3:0]  PLLLKDET_OUT;
 
   wire        GTPRESET;
 
   wire [24:0] ILA_DATA;
-
-  wire        user_clk;
 
   wire        GSR;
 
@@ -624,7 +630,6 @@ module   pcie_ep_top #
   reg         mgt_reset_n_flt_reg = 0;
   wire        mgt_reset_n;
   wire        mgmt_rst;
-  wire        clock_lock;
 
 `ifdef MANAGEMENT_WRITE
   wire [10:0]  bridge_mgmt_addr;
@@ -656,9 +661,7 @@ assign refclkout = REFCLK_OUT_bufg;
 assign mgmt_rst_delay_n = mgmt_reset_delay_n;
 `endif
 
-wire LINK_UP;
 assign LINK_UP = llk_tc_status[0];
-wire pll_lock;
 assign pll_lock = PLLLKDET_OUT[0];
 
 

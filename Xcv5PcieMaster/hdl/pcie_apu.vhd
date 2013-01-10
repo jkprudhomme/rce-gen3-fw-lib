@@ -142,49 +142,6 @@ architecture IMP of pcie_debug is
 
   end component;
 
-
-  -- ICON
-  component v5_icon
-    PORT (
-      CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-      CONTROL1 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0));
-  end component;
-
-  -- ILA
-  component v5_ila
-    PORT (
-      CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-      CLK : IN STD_LOGIC;
-      DATA : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
-      TRIG0 : IN STD_LOGIC_VECTOR(7 DOWNTO 0));
-  end component;
-
-  -- VIO
-  component v5_vio
-    PORT (
-      CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-      CLK : IN STD_LOGIC;
-      SYNC_IN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-      SYNC_OUT : OUT STD_LOGIC_VECTOR(7 DOWNTO 0));
-  end component;
-
-  -- Chipscope attributes
-  attribute syn_black_box : boolean;
-  attribute syn_noprune   : boolean;
-  attribute syn_black_box of v5_icon : component is TRUE;
-  attribute syn_noprune   of v5_icon : component is TRUE;
-  attribute syn_black_box of v5_ila  : component is TRUE;
-  attribute syn_noprune   of v5_ila  : component is TRUE;
-  attribute syn_black_box of v5_vio  : component is TRUE;
-  attribute syn_noprune   of v5_vio  : component is TRUE;
-
-  signal csControl0       : std_logic_vector(35 downto 0);
-  signal csControl1       : std_logic_vector(35 downto 0);
-  signal csData           : std_logic_vector(63 downto 0);
-  signal csCntrl          : std_logic_vector( 7 downto 0);
-  signal csStat           : std_logic_vector( 7 downto 0);
-  signal csClk            : std_logic;
-  
   signal trn_clk, trn_rst_n       : std_logic;
   signal trn_td                   : std_logic_vector( 63 downto 0);
   signal trn_tsof_n               : std_logic;
@@ -229,19 +186,17 @@ architecture IMP of pcie_debug is
   signal csr_rst, csr_rst_next : std_logic;
 
   signal rst_n : std_logic;
-  signal trn_rst : std_logic;
+  signal pcie_clkout_b : std_logic;
+  signal pcie_clkcnt : std_logic_vector(3 downto 0);
+  signal trn_clkcnt : std_logic_vector(3 downto 0);
   signal pcie_plllock : std_logic;
-
-  signal gt_debug, gt_debug_r : std_logic_vector(43 downto 0);
   
 begin  -- IMP
 
-  rst_n         <= not rst and not csCntrl(7);
-
-  trn_rst       <= not trn_rst_n;
+  rst_n         <= not rst;
 
   -- Transmit FIFO filling
-  uwrite_en_next <= '1' when (utx_empty='1' and apuLoadFromPpc.enable='1' and csCntrl(2)='0') else
+  uwrite_en_next <= '1' when (utx_empty='1' and apuLoadFromPpc.enable='1') else
                     '0' when utx_empty='0' else
                     uwrite_en;
 
@@ -290,14 +245,16 @@ begin  -- IMP
                              trn_tdst_rdy_n  & trn_tsrc_rdy_n & trn_rdst_rdy_n  & trn_rsrc_rdy_n &
                              pcie_plllock & cfg_pcie_link_state_n &
                              urx_empty & uread_en & utx_empty & uwrite_en;
-  csr_value(15 downto  0) <= x"000" &
+  csr_value(15 downto  0) <= pcie_clkcnt &
+                             trn_clkcnt &
+                             x"0" &
                              gt_loopback & csr_rst;
 
   csr_rst_next  <= apuWriteFromPpc.regB(31) when (apuWriteFromPpc.enable='1') else
                    csr_rst;
   
   gt_loopback_next <= apuWriteFromPpc.regB(28 to 30) when (apuWriteFromPpc.enable='1') else
-                      (gt_loopback or csCntrl(6 downto 4));
+                      gt_loopback;
   
   fcm_clk_p: process (apuClk, apuClkRst)
   begin 
@@ -328,15 +285,26 @@ begin  -- IMP
       cpu_rxd <= (others=>'0');
       write_en<= '0';
       read_en <= '0';
+      trn_clkcnt <= (others=>'0');
     elsif rising_edge(trn_clk) then
       txState <= txState_next;
       rxState <= rxState_next;
       cpu_rxd <= cpu_rxd_next;
       write_en<= uwrite_en;
       read_en <= uread_en;
+      trn_clkcnt <= trn_clkcnt+1;
     end if;
   end process trn_clk_p;
-    
+
+  pcie_clk_p: process(pcie_clkout_b, rst)
+  begin
+    if rst='1' then
+      pcie_clkcnt <= (others=>'0');
+    elsif rising_edge(pcie_clkout_b) then
+      pcie_clkcnt <= pcie_clkcnt+1;
+    end if;
+  end process pcie_clk_p;
+  
 --  endpoint : endpoint_blk_plus_v1_15
   endpoint : endpoint_blk_plus_v1_14
     port map ( pci_exp_txp(0) => pcie_tx_p,
@@ -417,157 +385,16 @@ begin  -- IMP
                cfg_lcommand  => open,
                fast_train_simulation_only => '0',
                gt_loopback   => gt_loopback,
-               gt_debug      => gt_debug,
-               refclkout   => pcie_clkout,
+               gt_debug      => open,
+               refclkout   => pcie_clkout_b,
                sys_clk     => pcie_clk,
-               sys_reset_n => rst_n );
+               sys_reset_n => rst_n,
+               pll_lock    => pcie_plllock );
 
   debug <= (others=>'0');
 
-   U_icon : v5_icon port map ( 
-      CONTROL0 => csControl0,
-      CONTROL1 => csControl1
-   );
-
-   U_ila : v5_ila port map (
-      CONTROL => csControl0,
-      CLK     => csClk,
-      DATA    => csData,
-      TRIG0(3 downto 0) => csData(27 downto 24),
-      TRIG0(5 downto 4) => csData(52 downto 51),
-      TRIG0(7 downto 6) => "00"
-   );
-
-   U_vio : v5_vio port map (
-       CONTROL  => csControl1,
-       CLK      => csClk,
-       SYNC_IN  => csStat,
-       SYNC_OUT => csCntrl
-   );
-
---  csClk <= trn_clk;
-  csClk <= gt_debug(28);
-  cs_p: process (csClk,rst)
-  begin
-    if rst='1' then
-      csData <= (others=>'0');
-    elsif rising_edge(csClk) then
---       case csCntrl(1 downto 0) is
---         when "00"   => csData(63 downto 32) <= trn_td(63 downto 32);
---         when "01"   => csData(63 downto 32) <= trn_td(31 downto  0);
---         when "10"   => csData(63 downto 32) <= trn_rd(63 downto 32);
---         when others => csData(63 downto 32) <= trn_rd(31 downto  0);
---       end case;
-      
---       csData(31 downto 28) <= x"0";
---       csData(27)           <= '0';
---       case rxState is
---         when Full   => csData(26 downto 24) <= "001";
---         when Word0  => csData(26 downto 24) <= "010";
---         when Word1  => csData(26 downto 24) <= "100";
---         when others => csData(26 downto 24) <= "000";
---       end case;
-
---       csData(23)           <= '0';
---       case txState is
---         when Empty  => csData(22 downto 20) <= "001";
---         when Word0  => csData(22 downto 20) <= "010";
---         when Word1  => csData(22 downto 20) <= "100";
---         when others => csData(22 downto 20) <= "000";
---       end case;
-
-      csData(63 downto 32) <= gt_debug_r(31 downto 0);
-      csData(31 downto 20) <= gt_debug_r(43 downto 32);
-
-      csData(19 downto 16) <= read_en & urx_empty & write_en & utx_empty;
-      csData(15 downto 12) <= trn_tdst_dsc_n & trn_tsrc_dsc_n & '0' & trn_rsrc_dsc_n;
-      csData(11 downto  8) <= "00" & trn_trem_n(0) & trn_rrem_n(0);
-      csData( 7 downto  0) <= trn_tsof_n & trn_teof_n & trn_tsrc_rdy_n & trn_tdst_rdy_n &
-                              trn_rsof_n & trn_reof_n & trn_rsrc_rdy_n & trn_rdst_rdy_n;
-      
-    end if;
-  end process cs_p;
-  
---   csClk <= apuClk;
---   cs_p: process (apuClk,apuClkRst)
---   begin
---     if apuClkRst='1' then
---       csData <= (others=>'0');
---     elsif rising_edge(apuClk) then
---       case csCntrl(1 downto 0) is
---         when "00"   => csData(63 downto 32) <= apuLoadFromPpc.data(  0 to  31);
---         when "01"   => csData(63 downto 32) <= apuLoadFromPpc.data( 32 to  63);
---         when "10"   => csData(63 downto 32) <= apuLoadFromPpc.data( 64 to  95);
---         when others => csData(63 downto 32) <= apuLoadFromPpc.data( 96 to 127);
---       end case;
---       case csCntrl(1 downto 0) is
---         when "00"   => csData(31 downto 8) <= cpu_txd(119 downto 96);
---         when "01"   => csData(31 downto 8) <= cpu_txd( 87 downto 64);
---         when "10"   => csData(31 downto 8) <= cpu_txd( 55 downto 32);
---         when others => csData(31 downto 8) <= cpu_txd( 23 downto  0);
---       end case;
---       case txState is
---         when Empty => csData(7 downto 5) <= "001";
---         when Word0 => csData(7 downto 5) <= "010";
---         when Word1 => csData(7 downto 5) <= "100";
---         when others => csData(7 downto 5) <= "000";
---       end case;
---       csData(4) <= urx_empty;
---       csData(3) <= uread_en;
---       csData(2) <= utx_empty;
---       csData(1) <= uwrite_en;
---       csData(0) <= apuLoadFromPpc.enable;
---     end if;
---   end process cs_p;
-  
-  csStat <= rst &
-            trn_rst &
-            trn_lnk_up_n & 
-            trn_rerrfwd_n &
-            x"0";
-
-  pcie_rst_n <= not csCntrl(3) and not csr_rst;
-
-  gt_d: block
-    signal clkcnt0,clkcnt1,clkcnt2,clkcnt3 : std_logic_vector(3 downto 0);
-  begin  -- block gt_d
-    cnt0_p: process (gt_debug(28))
-    begin  -- process cnt0_p
-      if rising_edge(gt_debug(28)) then
-        clkcnt0 <= clkcnt0+1;
-      end if;
-    end process cnt0_p;
-    cnt1_p: process (gt_debug(29))
-    begin  -- process cnt0_p
-      if rising_edge(gt_debug(29)) then
-        clkcnt1 <= clkcnt1+1;
-      end if;
-    end process cnt1_p;
-    cnt2_p: process (gt_debug(30))
-    begin  -- process cnt0_p
-      if rising_edge(gt_debug(30)) then
-        clkcnt2 <= clkcnt2+1;
-      end if;
-    end process cnt2_p;
-    cnt3_p: process (gt_debug(31))
-    begin  -- process cnt0_p
-      if rising_edge(gt_debug(31)) then
-        clkcnt3 <= clkcnt3+1;
-      end if;
-    end process cnt3_p;
-
-    gt_r: process (csClk)
-    begin  -- process gt_r
-      if rising_edge(csClk) then
-        gt_debug_r(27 downto 0)  <= gt_debug(27 downto 0);
-        gt_debug_r(28) <= clkcnt0(3);
-        gt_debug_r(29) <= clkcnt1(3);
-        gt_debug_r(30) <= clkcnt2(3);
-        gt_debug_r(31) <= clkcnt3(3);
-        gt_debug_r(43 downto 32)  <= gt_debug(43 downto 32);
-      end if;
-    end process gt_r;
-  end block gt_d;
+  pcie_rst_n <= not csr_rst;
+  pcie_clkout <= pcie_clkout_b;
   
   -- Interface
 

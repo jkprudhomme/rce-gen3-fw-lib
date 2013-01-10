@@ -53,6 +53,7 @@
 // Description: This is the top-level PCI Express wrapper.
 //--------------------------------------------------------------------------------
 `timescale 1ns/1ns
+//`define GTP_DEBUG 1
 
 module endpoint_blk_plus_v1_14 # ( 
   parameter        C_XDEVICE = "xc5vfx70t",
@@ -265,7 +266,8 @@ module endpoint_blk_plus_v1_14 # (
     input                                      sys_clk,
     // sys_clk_n              : in  std_logic;
     output                                     refclkout,
-    input                                      sys_reset_n
+    input                                      sys_reset_n,
+    output                                     pll_lock
 );  
 
 
