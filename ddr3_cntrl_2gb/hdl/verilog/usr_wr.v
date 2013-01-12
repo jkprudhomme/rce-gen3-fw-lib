@@ -269,8 +269,7 @@ usr_ram_d #
       //***********************************************************************
 
 
-      for (wdf_di_i = 0; wdf_di_i < MASK_WIDTH; 
-         wdf_di_i = wdf_di_i + 1) begin: gen_wdf_data_in
+      for (wdf_di_i = 0; wdf_di_i < MASK_WIDTH;  wdf_di_i = wdf_di_i + 1) begin: gen_wdf_data_in
       assign i_wdf_data_in[(16*wdf_di_i)+15:(16*wdf_di_i)]
                = {i_wdf_data_fall_in[(8*wdf_di_i)+7:(8*wdf_di_i)],
                   i_wdf_data_rise_in[(8*wdf_di_i)+7:(8*wdf_di_i)]};
