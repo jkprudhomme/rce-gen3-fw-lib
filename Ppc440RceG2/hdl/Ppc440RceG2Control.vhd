@@ -13,6 +13,7 @@ use work.Version.all;
 -- Address Map
 --    0x00      = Version (read only)
 --    0x01      = Reset   (write only)
+--    0x02      = Timer   (read only)
 --    0x10      = Enable  - Crit Interrupt
 --    0x11      = Status  - Crit Interrupt
 --    0x12      = Enable  - Ext Interrupt 0
@@ -75,6 +76,7 @@ architecture structure of Ppc440RceG2Control is
    signal intOutput   : std_logic_vector(0 to 7);
    signal iextInt     : std_logic;
    signal icritInt    : std_logic;
+   signal itimer      : std_logic_vector(0 to 15);
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -120,11 +122,14 @@ begin
       -- FPGA Version Read, 0x00
       FpgaVersion when readAddr = 0 else 
 
+      -- Timer Read, 0x02
+      FpgaVersion when readAddr = 2 else 
+
       -- Interrupt enable register, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E
-      x"0000" & intEnable(conv_integer(readAddr(1 to 3))) when readAddr(0) = '1' and readAddr(4) = '0' else
+      itimer & intEnable(conv_integer(readAddr(1 to 3))) when readAddr(0) = '1' and readAddr(4) = '0' else
 
       -- Interrupt status register, 0x11, 0x13, 0x15, 0x17, 0x19, 0x1B, 0x1D, 0x1F
-      x"0000" & intStatus(conv_integer(readAddr(1 to 3))) when readAddr(0) = '1' and readAddr(4) = '1' else
+      itimer & intStatus(conv_integer(readAddr(1 to 3))) when readAddr(0) = '1' and readAddr(4) = '1' else
 
       -- Other addresses
       x"00000000";
@@ -187,7 +192,9 @@ begin
    process (apuClk, apuClkRst ) begin
       if apuClkRst = '1' then
          apuReset <= (others=>'0') after tpd;
+         itimer   <= (others=>'0') after tpd;
       elsif rising_edge(apuClk) then
+         itimer <= itimer + 1 after tpd;
          if apuWriteFromPpc.enable = '1' and writeAddr(0 to 4) = 1 then
             apuReset <= writeData after tpd;
          else

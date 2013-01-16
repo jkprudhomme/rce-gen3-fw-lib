@@ -49,6 +49,22 @@ end pcie_debug;
 
 architecture IMP of pcie_debug is
 
+   COMPONENT pcie_fifo
+     PORT (
+       rst : IN STD_LOGIC;
+       wr_clk : IN STD_LOGIC;
+       rd_clk : IN STD_LOGIC;
+       din : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
+       wr_en : IN STD_LOGIC;
+       rd_en : IN STD_LOGIC;
+       dout : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
+       full : OUT STD_LOGIC;
+       empty : OUT STD_LOGIC;
+       valid : OUT STD_LOGIC;
+       wr_data_count : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
+     );
+   END COMPONENT;
+
 --  component endpoint_blk_plus_v1_15  port (
   component endpoint_blk_plus_v1_14  port (
     pci_exp_rxn : in std_logic_vector((1 - 1) downto 0);
@@ -164,94 +180,166 @@ architecture IMP of pcie_debug is
   signal trn_rdst_rdy_n : std_logic;
   signal trn_rrem_n     : std_logic_vector(7 downto 0);
 
-  signal gt_loopback, gt_loopback_next : std_logic_vector(2 downto 0);
+  signal gt_loopback, gt_loopback_next, gt_loopback_reg : std_logic_vector(2 downto 0);
   
   signal cfg_bus_number           : std_logic_vector(7 downto 0);
   signal cfg_device_number        : std_logic_vector(4 downto 0);
   signal cfg_function_number      : std_logic_vector(2 downto 0);
 
-  signal cpu_txd, cpu_txd_next : std_logic_vector(127 downto 0);
-  signal cpu_rxd, cpu_rxd_next : std_logic_vector(127 downto 0);
-  signal write_en, uwrite_en, uwrite_en_next : std_logic;
-  signal read_en, uread_en, uread_en_next : std_logic;
-  signal urx_empty, urx_empty_next : std_logic;
-  signal utx_empty, utx_empty_next : std_logic;
-  
   type Tx_State is (Empty, Word0, Word1);
   signal txState, txState_next : Tx_State;
-  type Rx_State is (Full, Word0, Word1);
-  signal rxState, rxState_next : Rx_State;
   
-  signal csr_value : std_logic_vector(31 downto 0);
-  signal csr_rst, csr_rst_next : std_logic;
+  signal csr_value, csr_value1, csr_value2 : std_logic_vector(31 downto 0);
+  signal csr_rst, csr_rst_next,csr_rst_reg : std_logic;
 
   signal rst_n : std_logic;
   signal pcie_clkout_b : std_logic;
   signal pcie_clkcnt : std_logic_vector(3 downto 0);
   signal trn_clkcnt : std_logic_vector(3 downto 0);
   signal pcie_plllock : std_logic;
-  
+
+  signal txFifoWrEn1  : std_logic;
+  signal txFifoWrEn2  : std_logic;
+  signal txFifoDin1   : std_logic_vector(127 downto 0);
+  signal txFifoDin2   : std_logic_vector(127 downto 0);
+  signal txFifoEmpty1 : std_logic;
+  signal txFifoEmpty2 : std_logic;
+  signal txFifoRdEn   : std_logic;
+  signal txFifoValid  : std_logic;
+  signal txFifoDout   : std_logic_vector(127 downto 0);
+  signal rxFifoWrEn1  : std_logic;
+  signal rxFifoWrEn2  : std_logic;
+  signal rxFifoDin1   : std_logic_vector(127 downto 0);
+  signal rxFifoDin2   : std_logic_vector(127 downto 0);
+  signal rxFifoRdEn   : std_logic;
+  signal rxFifoValid  : std_logic;
+  signal rxFifoDout   : std_logic_vector(127 downto 0);
+  signal rxFifoCount  : std_logic_vector(3 downto 0);
+  signal rxFifoAFull  : std_logic;
+ 
 begin  -- IMP
 
-  rst_n         <= not rst;
+  -- Transmit FIFO
+  process (apuClk, apuClkRst)
+  begin 
+    if apuClkRst='1' then
+      txFifoWrEn1  <= '0';
+      txFifoWrEn2  <= '0';
+      txFifoDin1   <= (others=>'0');
+      txFifoDin2   <= (others=>'0');
+      txFifoEmpty2 <= '0';
+    elsif rising_edge(apuClk) then
+      txFifoWrEn1  <= apuLoadFromPpc.enable;
+      txFifoWrEn2  <= txFifoWrEn1;
+      txFifoDin1   <= apuLoadFromPpc.data;
+      txFifoDin2   <= txFifoDin1;
+      txFifoEmpty2 <= txFifoEmpty1;
+    end if;
+  end process;
 
-  -- Transmit FIFO filling
-  uwrite_en_next <= '1' when (utx_empty='1' and apuLoadFromPpc.enable='1') else
-                    '0' when utx_empty='0' else
-                    uwrite_en;
+   U_tx_fifo : pcie_fifo
+      PORT MAP (
+         rst           => apuClkRst,
+         wr_clk        => apuClk,
+         rd_clk        => trn_clk,
+         din           => txFifoDin2,
+         wr_en         => txFifoWrEn2,
+         rd_en         => txFifoRdEn,
+         dout          => txFifoDout,
+         full          => open,
+         empty         => txFifoEmpty1,
+         valid         => txFifoValid,
+         wr_data_count => open
+      );
 
-  utx_empty_next <= '1' when txState=Empty else
-                    '0';
-  
-  txState_next <= Word0 when (txState=Empty and write_en='1') else
+  apuLoadToPpc.full <= not txFifoEmpty2;
+
+  rst_n <= not rst;
+
+  txState_next <= Word0 when (txState=Empty and txFifoValid ='1') else
                   Word1 when (txState=Word0 and trn_tsrc_rdy_n='0' and trn_tdst_rdy_n='0') else
                   Empty when (txState=Word1 and trn_tsrc_rdy_n='0' and trn_tdst_rdy_n='0') else
                   txState;
 
-  cpu_txd_next(127 downto 0) <= apuLoadFromPpc.data(0 to 127) when (utx_empty='1' and apuLoadFromPpc.enable='1') else
-                                cpu_txd;
+  txFifoRdEn <= '1' when (txState=Word1 and trn_tsrc_rdy_n='0' and trn_tdst_rdy_n='0') else '0';
 
   trn_tsrc_rdy_n <= '1' when txState=Empty else '0';
   trn_teof_n     <= '0' when txState=Word1 else '1';
   trn_tsof_n     <= '0' when txState=Word0 else '1';
-  trn_trem_n     <= x"00" when (txState=Word1 and cpu_txd(126 downto 125)="10") else x"0F";
+  trn_trem_n     <= x"00" when (txState=Word1 and txFifoDout(126 downto 125)="10") else x"0F";
   trn_tsrc_dsc_n <= '1';
-  trn_td         <= cpu_txd( 63 downto  0) when txState=Word1 else
-                    cpu_txd(127 downto 64);
-  
-  -- Receive FIFO emptying
-  uread_en_next  <= '1' when (urx_empty='0' and apuStoreFromPpc.enable='1') else
-                    '0' when urx_empty='1' else
-                    uread_en;
+  trn_td         <= txFifoDout( 63 downto  0) when txState=Word1 else txFifoDout(127 downto 64);
 
-  urx_empty_next <= '1' when (rxState=Word0) else
-                    '0';
-  
-  rxState_next <= Word0 when (rxState=Full  and read_en='1') else
-                  Word1 when (rxState=Word0 and trn_rsrc_rdy_n='0' and trn_rdst_rdy_n='0') else
-                  Full  when (rxState=Word1 and trn_rsrc_rdy_n='0' and trn_rdst_rdy_n='0') else
-                  rxState;
+ 
+  -- Receive FIFO
+  apuStoreToPpc.data <= rxFifoDout;
+  rxFifoRdEn         <= apuStoreFromPpc.enable;
 
-  cpu_rxd_next(127 downto 64) <= trn_rd when rxState=Word0 else
-                                 cpu_rxd(127 downto 64);                                 
-  
-  cpu_rxd_next( 63 downto  0) <= trn_rd when rxState=Word1 else
-                                 cpu_rxd( 63 downto  0);                                 
-  trn_rdst_rdy_n <= '1' when rxState=Full else '0';
-  
-  
+   U_rx_fifo : pcie_fifo
+      PORT MAP (
+         rst           => apuClkRst,
+         wr_clk        => trn_clk,
+         rd_clk        => apuClk,
+         din           => rxFifoDin2,
+         wr_en         => rxFifoWrEn2,
+         rd_en         => rxFifoRdEn,
+         dout          => rxFifoDout,
+         full          => open,
+         empty         => open,
+         valid         => rxFifoValid,
+         wr_data_count => rxFifoCount
+      );
+
+  process (trn_clk, rst)
+  begin
+    if rst='1' then
+       rxFifoAFull  <= '0';
+       rxFifoWrEn1  <= '0';
+       rxFifoWrEn2  <= '0';
+       rxFifoDin1   <= (others=>'0');
+       rxFifoDin2   <= (others=>'0');
+    elsif rising_edge(trn_clk) then
+
+       if rxFifoCount = 0 then
+          rxFifoAFull <= '0';
+       else
+          rxFifoAFull <= '1';
+       end if;
+
+      if trn_rsrc_rdy_n='0' and trn_rdst_rdy_n='0' then
+         if trn_rsof_n = '0' then
+            rxFifoDin1(127 downto 64) <= trn_rd;
+            rxFifoWrEn1               <= '0';
+         elsif trn_reof_n = '0' then
+            rxFifoDin1(63 downto 0)   <= trn_rd;
+            rxFifoWrEn1               <= '1';
+         else
+            rxFifoWrEn1  <= '0';
+         end if;
+      else
+         rxFifoWrEn1  <= '0';
+      end if;
+
+      rxFifoWrEn2  <= rxFifoWrEn1;
+      rxFifoDin2   <= rxFifoDin1;
+
+    end if;
+  end process;
+
+  trn_rdst_rdy_n <= rxFifoAFull;
+
   -- Control/Status
-  csr_value(31 downto 16) <= rst & trn_rst_n & trn_lnk_up_n & trn_rerrfwd_n &
-                             trn_tdst_rdy_n  & trn_tsrc_rdy_n & trn_rdst_rdy_n  & trn_rsrc_rdy_n &
-                             pcie_plllock & cfg_pcie_link_state_n &
-                             urx_empty & uread_en & utx_empty & uwrite_en;
-  csr_value(15 downto  0) <= pcie_clkcnt &
-                             trn_clkcnt &
-                             x"0" &
-                             gt_loopback & csr_rst;
+  csr_value1(31 downto 16) <= rst & trn_rst_n & trn_lnk_up_n & trn_rerrfwd_n &
+                              trn_tdst_rdy_n  & trn_tsrc_rdy_n & trn_rdst_rdy_n  & trn_rsrc_rdy_n &
+                              pcie_plllock & cfg_pcie_link_state_n &
+                              (not rxFifoValid) & '0' & txFifoEmpty1 & '0';
+  csr_value1(15 downto  0) <= pcie_clkcnt &
+                              trn_clkcnt &
+                              x"0" &
+                              gt_loopback & csr_rst;
 
   csr_rst_next  <= apuWriteFromPpc.regB(31) when (apuWriteFromPpc.enable='1') else
-                   csr_rst;
+                   csr_rst_reg;
   
   gt_loopback_next <= apuWriteFromPpc.regB(28 to 30) when (apuWriteFromPpc.enable='1') else
                       gt_loopback;
@@ -259,39 +347,30 @@ begin  -- IMP
   fcm_clk_p: process (apuClk, apuClkRst)
   begin 
     if apuClkRst='1' then
-      cpu_txd           <= (others=>'0');
-      uwrite_en         <= '0';
-      utx_empty         <= '1';
-      uread_en          <= '0';
-      urx_empty         <= '1';
       csr_rst           <= '0';
+      csr_rst_reg       <= '0';
       gt_loopback       <= "000";
+      gt_loopback_reg   <= "000";
+      csr_value2        <= (others=>'0');
+      csr_value         <= (others=>'0');
     elsif rising_edge(apuClk) then
-      cpu_txd           <= cpu_txd_next;
-      uwrite_en         <= uwrite_en_next;
-      utx_empty         <= utx_empty_next;
-      uread_en          <= uread_en_next;
-      urx_empty         <= urx_empty_next;
-      csr_rst           <= csr_rst_next;
-      gt_loopback       <= gt_loopback_next;
+      csr_rst_reg       <= csr_rst_next;
+      csr_rst           <= csr_rst_reg;
+      gt_loopback_reg   <= gt_loopback_next;
+      gt_loopback       <= gt_loopback_reg;
+      csr_value2        <= csr_value1;
+      csr_value         <= csr_value2;
     end if;
   end process fcm_clk_p;
+
 
   trn_clk_p: process (trn_clk, rst)
   begin
     if rst='1' then
       txState <= Empty;
-      rxState <= Word0;
-      cpu_rxd <= (others=>'0');
-      write_en<= '0';
-      read_en <= '0';
       trn_clkcnt <= (others=>'0');
     elsif rising_edge(trn_clk) then
       txState <= txState_next;
-      rxState <= rxState_next;
-      cpu_rxd <= cpu_rxd_next;
-      write_en<= uwrite_en;
-      read_en <= uread_en;
       trn_clkcnt <= trn_clkcnt+1;
     end if;
   end process trn_clk_p;
@@ -397,12 +476,8 @@ begin  -- IMP
   pcie_clkout <= pcie_clkout_b;
   
   -- Interface
-
   apuWriteToPpc.full   <= '0';
   apuReadToPpc .result <= csr_value;
   apuReadToPpc .status <= x"0";
-  apuLoadToPpc .full   <= not utx_empty;
-  apuStoreToPpc.data   <= cpu_rxd when urx_empty='0' else
-                          (others=>'1');
   
 end IMP;
