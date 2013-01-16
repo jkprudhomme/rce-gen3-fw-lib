@@ -87,6 +87,7 @@ begin
    apuReadToPpc.status <= (others=>'0');
    apuWriteToPpc.full  <= '0';
    apuReadToPpc.empty  <= '1';
+   apuReadToPpc.ready  <= '1';
    -- apuReadFromPpc.regB
    -- apuReadFromPpc.enable
 

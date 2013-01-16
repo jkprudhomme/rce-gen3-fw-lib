@@ -431,11 +431,11 @@ fifo72x512sdwrite readDataFifo(
 // chipscope
 `ifdef USE_CHIPSCOPE
 
-chipscope_icon icon0 (
+usd_icon icon0 (
    .CONTROL0(csControl)
 );
 
-chipscope_ila ila0 (
+usd_ila ila0 (
    .CONTROL(csControl),
 //   .CLK(sysClk200Buf),
    .CLK(apuClk),

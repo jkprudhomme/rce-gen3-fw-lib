@@ -213,6 +213,7 @@ begin
    apuReadToPpc.result  <= resFifoData;
    apuReadToPpc.status  <= "00" & resFifoAlmostEmpty & resFifoEmpty;
    apuReadToPpc.empty   <= resFifoEmpty;
+   apuReadToPpc.ready   <= '1';
 
    -- Transmit FIFO
    txFifoData           <= apuLoadFromPpc.data(0 to 63);
@@ -225,6 +226,7 @@ begin
   
    apuStoreToPpc.data   <= rxFifoData & x"0000000000000000";
    apuStoreToPpc.empty  <= rxFifoEmpty;
+   apuStoreToPpc.ready  <= '1';
 
 end EthMac1G;
 

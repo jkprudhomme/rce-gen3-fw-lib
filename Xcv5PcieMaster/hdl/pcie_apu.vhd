@@ -272,8 +272,9 @@ begin  -- IMP
 
  
   -- Receive FIFO
-  apuStoreToPpc.data <= rxFifoDout;
-  rxFifoRdEn         <= apuStoreFromPpc.enable;
+  apuStoreToPpc.data  <= rxFifoDout;
+  apuStoreToPpc.ready <= '1';
+  rxFifoRdEn          <= apuStoreFromPpc.enable;
 
    U_rx_fifo : pcie_fifo
       PORT MAP (
@@ -477,7 +478,8 @@ begin  -- IMP
   
   -- Interface
   apuWriteToPpc.full   <= '0';
-  apuReadToPpc .result <= csr_value;
-  apuReadToPpc .status <= x"0";
+  apuReadToPpc.result  <= csr_value;
+  apuReadToPpc.status  <= x"0";
+  apuReadToPpc.ready   <= '1';
   
 end IMP;

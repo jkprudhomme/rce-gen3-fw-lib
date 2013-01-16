@@ -217,6 +217,7 @@ begin  -- IMP
   apuReadToPpc.result  <= apu_bram_dout;
   apuReadToPpc.status  <= (others=>'0');
   apuReadToPpc.empty   <= not interrupt;
+  apuReadToPpc.ready   <= '1';
 
 end IMP;
 

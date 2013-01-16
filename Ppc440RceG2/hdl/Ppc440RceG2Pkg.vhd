@@ -60,12 +60,14 @@ package Ppc440RceG2Pkg is
      empty  : std_logic;
      result : std_logic_vector(0 to 31);
      status : std_logic_vector(0 to 3);
+     ready  : std_logic;
   end record;
 
   type ApuReadToPpcVector is array (integer range<>) of ApuReadToPpcType;
 
   constant ApuReadToPpcInit : ApuReadToPpcType := ( empty  =>'1', 
                                                     result => (others=>'0'), 
+                                                    ready => '1',
                                                     status => (others=>'0') );
 
   -- Load command. Signals from PPC.
@@ -116,11 +118,13 @@ package Ppc440RceG2Pkg is
   type ApuStoreToPpcType is record
      data   : std_logic_vector(0 to 127);
      empty  : std_logic;
+     ready  : std_logic;
   end record;
 
   type ApuStoreToPpcVector is array (integer range<>) of ApuStoreToPpcType;
 
   constant ApuStoreToPpcInit : ApuStoreToPpcType := ( data  => (others=>'0'),
+                                                      ready => '1',
                                                       empty => '1' );
 
   ----------------------------------
