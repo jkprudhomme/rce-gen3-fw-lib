@@ -67,7 +67,13 @@ entity Ppc440RceG2 is
 
       -- I2C
       modScl                     : inout std_logic;
-      modSda                     : inout std_logic
+      modSda                     : inout std_logic;
+
+      -- uSD
+      sdClk                      : out   std_logic;
+      sdCmd                      : inout std_logic;
+      sdData                     : inout std_logic_vector(3 downto 0)
+
    );
 end Ppc440RceG2;
 
@@ -775,10 +781,10 @@ begin
    );
 
    -- Unused APU interfaces
-   iapuReadToPpc(4 to 5)    <= (others=>ApuReadToPpcInit);
-   iapuWriteToPpc(4 to 5)   <= (others=>ApuWriteToPpcInit);
-   iapuStoreToPpc(16 to 31) <= (others=>ApuStoreToPpcInit);
-   iapuLoadToPpc(16 to 31)  <= (others=>ApuLoadToPpcInit);
+   iapuReadToPpc(4)         <= ApuReadToPpcInit;
+   iapuWriteToPpc(4)        <= ApuWriteToPpcInit;
+   iapuStoreToPpc(16 to 30) <= (others=>ApuStoreToPpcInit);
+   iapuLoadToPpc(16 to 30)  <= (others=>ApuLoadToPpcInit);
 
 
    ----------------------------------------------------------------------------
@@ -799,6 +805,29 @@ begin
       apuLoadFull     => iapuLoadFull,
       apuStoreEmpty   => iapuStoreEmpty
     );
+
+
+   ----------------------------------------------------------------------------
+   -- uSD Controller
+   ----------------------------------------------------------------------------
+   U_Ppc440RceG2uSd : Ppc440RceG2uSd port map (
+      cpuClk200MhzRst  => intClk200MhzAdjRst,
+      cpuClk200Mhz     => intClk200MhzAdj,
+      apuClk           => intClk234_375MhzAdj,
+      apuClkRst        => intClk234_375MhzAdjRst,
+      apuWriteFromPpc  => iapuWriteFromPpc(5),
+      apuWriteToPpc    => iapuWriteToPpc(5),
+      apuReadFromPpc   => iapuReadFromPpc(5),
+      apuReadToPpc     => iapuReadToPpc(5),
+      apuLoadFromPpc   => iapuLoadFromPpc(31),
+      apuLoadToPpc     => iapuLoadToPpc(31),
+      apuStoreFromPpc  => iapuStoreFromPpc(31),
+      apuStoreToPpc    => iapuStoreToPpc(31),
+      apuReset         => iapuReset(31),
+      sdClk            => sdClk,
+      sdCmd            => sdCmd,
+      sdData           => sdData
+   );
 
 end architecture structure;
 

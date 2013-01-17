@@ -177,7 +177,10 @@ package Ppc440RceG2Pkg is
       apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 15);
       apuReset                   : out std_logic_vector(0 to 15);
       modScl                     : inout std_logic;
-      modSda                     : inout std_logic
+      modSda                     : inout std_logic;
+      sdClk                      : out   std_logic;
+      sdCmd                      : inout std_logic;
+      sdData                     : inout std_logic_vector(3 downto 0)
     );
   end component;
 
@@ -348,6 +351,27 @@ package Ppc440RceG2Pkg is
       apuStoreEmpty              : in  std_logic_vector(0 to 31)
     );
   end component;
+
+   component Ppc440RceG2uSd is
+      port ( 
+         cpuClk200MhzRst  : in  std_logic;
+         cpuClk200Mhz     : in  std_logic;
+         apuClk           : in  std_logic;
+         apuClkRst        : in  std_logic;
+         apuWriteFromPpc  : in  ApuWriteFromPpcType;
+         apuWriteToPpc    : out ApuWriteToPpcType;
+         apuReadFromPpc   : in  ApuReadFromPpcType;
+         apuReadToPpc     : out ApuReadToPpcType;
+         apuLoadFromPpc   : in  ApuLoadFromPpcType;
+         apuLoadToPpc     : out ApuLoadToPpcType;
+         apuStoreFromPpc  : in  ApuStoreFromPpcType;
+         apuStoreToPpc    : out ApuStoreToPpcType;
+         apuReset         : in    std_logic;
+         sdClk            : out   std_logic;
+         sdCmd            : inout std_logic;
+         sdData           : inout std_logic_vector(3 downto 0)
+      );
+   end component;
 
 end Ppc440RceG2Pkg;
 
