@@ -145,7 +145,6 @@ architecture IMP of pcie_debug is
 
     fast_train_simulation_only : in STD_LOGIC;
 
-    gt_loopback   : in  std_logic_vector( 2 downto 0);
 --               gt_debug      : out std_logic_vector(43 downto 0);
 --               pll_lock      : out std_logic;
 
@@ -178,8 +177,6 @@ architecture IMP of pcie_debug is
   signal trn_rdst_rdy_n : std_logic;
   signal trn_rrem_n     : std_logic_vector(7 downto 0);
 
-  signal gt_loopback, gt_loopback_next, gt_loopback_reg : std_logic_vector(2 downto 0);
-  
   signal cfg_bus_number           : std_logic_vector(7 downto 0);
   signal cfg_device_number        : std_logic_vector(4 downto 0);
   signal cfg_function_number      : std_logic_vector(2 downto 0);
@@ -334,28 +331,21 @@ begin  -- IMP
   csr_value1(15 downto  0) <= pcie_clkcnt &
                               trn_clkcnt &
                               x"0" &
-                              gt_loopback & csr_rst;
+                              "000" & csr_rst;
 
   csr_rst_next  <= apuWriteFromPpc.regB(31) when (apuWriteFromPpc.enable='1') else
                    csr_rst_reg;
-  
-  gt_loopback_next <= apuWriteFromPpc.regB(28 to 30) when (apuWriteFromPpc.enable='1') else
-                      gt_loopback;
   
   fcm_clk_p: process (apuClk, apuClkRst)
   begin 
     if apuClkRst='1' then
       csr_rst           <= '0';
       csr_rst_reg       <= '0';
-      gt_loopback       <= "000";
-      gt_loopback_reg   <= "000";
       csr_value2        <= (others=>'0');
       csr_value         <= (others=>'0');
     elsif rising_edge(apuClk) then
       csr_rst_reg       <= csr_rst_next;
       csr_rst           <= csr_rst_reg;
-      gt_loopback_reg   <= gt_loopback_next;
-      gt_loopback       <= gt_loopback_reg;
       csr_value2        <= csr_value1;
       csr_value         <= csr_value2;
     end if;
@@ -461,7 +451,6 @@ begin  -- IMP
                cfg_lcommand  => open,
                fast_train_simulation_only => '0',
 
-               gt_loopback   => gt_loopback,
 --               gt_debug      => open,
 --               pll_lock    => pcie_plllock,
                refclkout   => pcie_clkout_b,
