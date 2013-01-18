@@ -191,15 +191,40 @@ begin
    cpuClk234_375MhzRst        <= intClk234_375MhzAdjRst;
 
    -- External APU interfaces
-   apuReadFromPpc          <= iapuReadFromPpc(0 to 3);
-   iapuReadToPpc(0 to 3)   <= apuReadToPpc;
-   apuWriteFromPpc         <= iapuWriteFromPpc(0 to 3);
-   iapuWriteToPpc(0 to 3)  <= apuWriteToPpc;
-   apuLoadFromPpc          <= iapuLoadFromPpc(0 to 15);
-   iapuLoadToPpc(0 to 15)  <= apuLoadToPpc;
-   apuStoreFromPpc         <= iapuStoreFromPpc(0 to 15);
-   iapuStoreToPpc(0 to 15) <= apuStoreToPpc;
-   apuReset                <= iapuReset(0 to 15);
+   -- For SD fix:
+   --   swap read/write 1 and 5
+   --   swap load/store 1 and 31
+   --   swap reset      0 and 31
+   apuReadFromPpc(0)        <= iapuReadFromPpc(0);
+   apuReadFromPpc(1)        <= iapuReadFromPpc(5); -- Swap
+   apuReadFromPpc(2 to 3)   <= iapuReadFromPpc(2 to 3);
+   iapuReadToPpc(0)         <= apuReadToPpc(0);
+   iapuReadToPpc(5)         <= apuReadToPpc(1); -- Swap
+   iapuReadToPpc(2 to 3)    <= apuReadToPpc(2 to 3);
+
+   apuWriteFromPpc(0)       <= iapuWriteFromPpc(0);
+   apuWriteFromPpc(1)       <= iapuWriteFromPpc(5); -- Swap
+   apuWriteFromPpc(2 to 3)  <= iapuWriteFromPpc(2 to 3);
+   iapuWriteToPpc(0)        <= apuWriteToPpc(0);
+   iapuWriteToPpc(5)        <= apuWriteToPpc(1); -- Swap
+   iapuWriteToPpc(2 to 3)   <= apuWriteToPpc(2 to 3);
+
+   apuLoadFromPpc(0)        <= iapuLoadFromPpc(0);
+   apuLoadFromPpc(1)        <= iapuLoadFromPpc(31);  -- Swap
+   apuLoadFromPpc(2 to 15)  <= iapuLoadFromPpc(2 to 15);
+   iapuLoadToPpc(0)         <= apuLoadToPpc(0);
+   iapuLoadToPpc(31)        <= apuLoadToPpc(1);  -- Swap
+   iapuLoadToPpc(2 to 15)   <= apuLoadToPpc(2 to 15);
+
+   apuStoreFromPpc(0)       <= iapuStoreFromPpc(0);
+   apuStoreFromPpc(1)       <= iapuStoreFromPpc(31);  -- Swap
+   apuStoreFromPpc(2 to 15) <= iapuStoreFromPpc(2 to 15);
+   iapuStoreToPpc(0)        <= apuStoreToPpc(0);
+   iapuStoreToPpc(31)       <= apuStoreToPpc(1);  -- Swap
+   iapuStoreToPpc(2 to 15)  <= apuStoreToPpc(2 to 15);
+
+   apuReset(0)              <= iapuReset(31);
+   apuReset(1 to 15)        <= iapuReset(1 to 15);
 
    ----------------------------------------------------------------------------
    -- Instantiate PPC440 Processor Block Primitive
@@ -810,20 +835,21 @@ begin
    ----------------------------------------------------------------------------
    -- uSD Controller
    ----------------------------------------------------------------------------
+   -- Uses external read/write load/store reset space. See mapping above
    U_Ppc440RceG2uSd : Ppc440RceG2uSd port map (
       cpuClk200MhzRst  => intClk200MhzAdjRst,
       cpuClk200Mhz     => intClk200MhzAdj,
       apuClk           => intClk234_375MhzAdj,
       apuClkRst        => intClk234_375MhzAdjRst,
-      apuWriteFromPpc  => iapuWriteFromPpc(5),
-      apuWriteToPpc    => iapuWriteToPpc(5),
-      apuReadFromPpc   => iapuReadFromPpc(5),
-      apuReadToPpc     => iapuReadToPpc(5),
-      apuLoadFromPpc   => iapuLoadFromPpc(31),
-      apuLoadToPpc     => iapuLoadToPpc(31),
-      apuStoreFromPpc  => iapuStoreFromPpc(31),
-      apuStoreToPpc    => iapuStoreToPpc(31),
-      apuReset         => iapuReset(31),
+      apuWriteFromPpc  => iapuWriteFromPpc(1),
+      apuWriteToPpc    => iapuWriteToPpc(1),
+      apuReadFromPpc   => iapuReadFromPpc(1),
+      apuReadToPpc     => iapuReadToPpc(1),
+      apuLoadFromPpc   => iapuLoadFromPpc(1),
+      apuLoadToPpc     => iapuLoadToPpc(1),
+      apuStoreFromPpc  => iapuStoreFromPpc(1),
+      apuStoreToPpc    => iapuStoreToPpc(1),
+      apuReset         => iapuReset(0),
       sdClk            => sdClk,
       sdCmd            => sdCmd,
       sdData           => sdData
