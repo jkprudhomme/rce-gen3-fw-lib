@@ -65,17 +65,11 @@ architecture IMP of pcie_debug is
      );
    END COMPONENT;
 
---  component endpoint_blk_plus_v1_15  port (
-  component endpoint_blk_plus_v1_14  port (
+  component endpoint_blk_plus_v1_15  port (
     pci_exp_rxn : in std_logic_vector((1 - 1) downto 0);
     pci_exp_rxp : in std_logic_vector((1 - 1) downto 0);
     pci_exp_txn : out std_logic_vector((1 - 1) downto 0);
     pci_exp_txp : out std_logic_vector((1 - 1) downto 0);
-
-    sys_clk : in STD_LOGIC;
-    sys_reset_n : in STD_LOGIC;
-    refclkout         : out std_logic;
-    pll_lock : out std_logic;
 
     trn_clk : out STD_LOGIC; 
     trn_reset_n : out STD_LOGIC; 
@@ -151,9 +145,13 @@ architecture IMP of pcie_debug is
 
     fast_train_simulation_only : in STD_LOGIC;
 
-    gt_loopback : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    gt_debug : out STD_LOGIC_VECTOR ( 43 downto 0 )
+    gt_loopback   : in  std_logic_vector( 2 downto 0);
+--               gt_debug      : out std_logic_vector(43 downto 0);
+--               pll_lock      : out std_logic;
 
+    sys_clk : in STD_LOGIC;
+    sys_reset_n : in STD_LOGIC;
+    refclkout         : out std_logic
     );
 
   end component;
@@ -272,9 +270,8 @@ begin  -- IMP
 
  
   -- Receive FIFO
-  apuStoreToPpc.data  <= rxFifoDout;
-  apuStoreToPpc.ready <= '1';
-  rxFifoRdEn          <= apuStoreFromPpc.enable;
+  apuStoreToPpc.data <= rxFifoDout;
+  rxFifoRdEn         <= apuStoreFromPpc.enable;
 
    U_rx_fifo : pcie_fifo
       PORT MAP (
@@ -385,8 +382,7 @@ begin  -- IMP
     end if;
   end process pcie_clk_p;
   
---  endpoint : endpoint_blk_plus_v1_15
-  endpoint : endpoint_blk_plus_v1_14
+  endpoint : endpoint_blk_plus_v1_15
     port map ( pci_exp_txp(0) => pcie_tx_p,
                pci_exp_txn(0) => pcie_tx_n,
                pci_exp_rxp(0) => pcie_rx_p,
@@ -464,22 +460,23 @@ begin  -- IMP
                cfg_lstatus   => open,
                cfg_lcommand  => open,
                fast_train_simulation_only => '0',
+
                gt_loopback   => gt_loopback,
-               gt_debug      => open,
+--               gt_debug      => open,
+--               pll_lock    => pcie_plllock,
                refclkout   => pcie_clkout_b,
                sys_clk     => pcie_clk,
-               sys_reset_n => rst_n,
-               pll_lock    => pcie_plllock );
+               sys_reset_n => rst_n );
 
   debug <= (others=>'0');
-
-  pcie_rst_n <= not csr_rst;
+  pcie_plllock <= '0';
+  
+  pcie_rst_n  <= not csr_rst;
   pcie_clkout <= pcie_clkout_b;
   
   -- Interface
   apuWriteToPpc.full   <= '0';
-  apuReadToPpc.result  <= csr_value;
-  apuReadToPpc.status  <= x"0";
-  apuReadToPpc.ready   <= '1';
+  apuReadToPpc .result <= csr_value;
+  apuReadToPpc .status <= x"0";
   
 end IMP;

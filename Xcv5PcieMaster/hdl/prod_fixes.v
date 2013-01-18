@@ -117,7 +117,7 @@ module prod_fixes
                    MWAIT  = 'h8,
                    MDONE  = 'h10;
    reg  [MASTER_STATE_SIZE-1:0]
-	 	   curr_master_state, next_master_state;
+                   curr_master_state, next_master_state;
    parameter [8:0] D_0       = 9'h000;
    parameter [8:0] TS1       = 9'h04A;
    parameter [8:0] TS2       = 9'h045;
@@ -140,6 +140,7 @@ module prod_fixes
    
    parameter [3:0] LT_POLLING  = 4'b0010;
    parameter [3:0] LT_CONFIG   = 4'b0011;
+   parameter [3:0] LT_L0       = 4'b0100;
    parameter [3:0] LT_RECOVERY = 4'b1100;
    
    parameter       IS_D = 1'b0;
@@ -273,7 +274,7 @@ module prod_fixes
       endcase
             
    end
-
+   
    always @(posedge clk) 
    begin : FSM_SYNC_L0
       if (!bit_reset_n)
@@ -282,28 +283,27 @@ module prod_fixes
          curr_state_l0 <= next_state_l0;
    end
 
-
 `ifdef MASTER_CONFIG
    always @(curr_master_state, curr_state_l0, l0_pipe_rx_input, l0_ltssm_state_d)
    begin: FSM_COMB_MASTER
       if (l0_ltssm_state_d == LT_CONFIG) begin
             if (curr_master_state == MRSET)
                    next_master_state <= MLINK;
-	    else if (curr_master_state == MLINK && curr_state_l0 == Q_TS) begin
+            else if (curr_master_state == MLINK && curr_state_l0 == Q_TS) begin
                    if (l0_pipe_rx_input == D_0)
                           next_master_state <= MLANE;
                    else if (l0_pipe_rx_input == PAD)
                           next_master_state <= curr_master_state;
                    else
                           next_master_state <= MDONE;
-	    end else if (curr_master_state == MLANE && curr_state_l0 == SYM2) begin
+            end else if (curr_master_state == MLANE && curr_state_l0 == SYM2) begin
                    if (l0_pipe_rx_input == PAD)
                           next_master_state <= curr_master_state;
                    else if (l0_pipe_rx_input == D_0)
                           next_master_state <= MWAIT;
                    else
                           next_master_state <= MDONE;
-	    end else if (curr_master_state == MWAIT) begin
+            end else if (curr_master_state == MWAIT) begin
                    if (l0_pipe_rx_input == TS2)
                           next_master_state <= MDONE;
                    else
@@ -317,12 +317,12 @@ module prod_fixes
    always @(posedge clk) 
    begin : FSM_SYNC_MASTER
       if (!bit_reset_n)
-	 curr_master_state <= MRSET;
+         curr_master_state <= MRSET;
       else
-	 curr_master_state <= next_master_state;
+         curr_master_state <= next_master_state;
    end
 `endif
-   
+
 ////////////////////////////Lane 1///////////////////// 
    always @(curr_state_l1, l1_pipe_rx_input, l0_ltssm_state_d)
    begin: FSM_COMB_L1
@@ -886,27 +886,43 @@ assign upcfgcap_cycle = upcfgcap_cycle_l0;
 
      if (upcfgcap_cycle_l7 == 1'b1) 
         pipe_rx_data_l7_out <= 8'h02;
+     else // CW fix
+        pipe_rx_data_l7_out <= pipe_rx_data_l7; // CW fix
 
      if (upcfgcap_cycle_l6 == 1'b1)         
         pipe_rx_data_l6_out <= 8'h02;
+     else // CW fix
+        pipe_rx_data_l6_out <= pipe_rx_data_l6; // CW fix
         
      if (upcfgcap_cycle_l5 == 1'b1)         
         pipe_rx_data_l5_out <= 8'h02;
+     else // CW fix
+        pipe_rx_data_l5_out <= pipe_rx_data_l5; // CW fix
         
      if (upcfgcap_cycle_l4 == 1'b1)         
         pipe_rx_data_l4_out <= 8'h02;
+     else // CW fix
+        pipe_rx_data_l4_out <= pipe_rx_data_l4; // CW fix
 
      if (upcfgcap_cycle_l3 == 1'b1)          
         pipe_rx_data_l3_out <= 8'h02;
+     else // CW fix
+        pipe_rx_data_l3_out <= pipe_rx_data_l3; // CW fix
         
      if (upcfgcap_cycle_l2 == 1'b1)          
         pipe_rx_data_l2_out <= 8'h02;
+     else // CW fix
+        pipe_rx_data_l2_out <= pipe_rx_data_l2; // CW fix
         
      if (upcfgcap_cycle_l1 == 1'b1)          
         pipe_rx_data_l1_out <= 8'h02;
+     else // CW fix
+        pipe_rx_data_l1_out <= pipe_rx_data_l1; // CW fix
         
      if (upcfgcap_cycle_l0 == 1'b1)          
         pipe_rx_data_l0_out <= 8'h02;
+     else // CW fix
+        pipe_rx_data_l0_out <= pipe_rx_data_l0; // CW fix
 
         pipe_rx_data_k_out <= pipe_rx_data_k;
         pipe_rx_valid_out  <= pipe_rx_valid;
@@ -958,7 +974,7 @@ assign upcfgcap_cycle = upcfgcap_cycle_l0;
 
 `ifdef MASTER_CONFIG
      end else if ((curr_master_state == MLINK && curr_state_l0 == Q_TS) ||
-     	          (curr_master_state == MLANE && curr_state_l0 == SYM2)) begin
+                  (curr_master_state == MLANE && curr_state_l0 == SYM2)) begin
         pipe_rx_data_l7_out <= pipe_rx_data_l7;
         pipe_rx_data_l6_out <= pipe_rx_data_l6;
         pipe_rx_data_l5_out <= pipe_rx_data_l5;
@@ -984,7 +1000,7 @@ assign upcfgcap_cycle = upcfgcap_cycle_l0;
         
         pipe_rx_data_k_out  <= pipe_rx_data_k;
         pipe_rx_valid_out   <= pipe_rx_valid;
-	
+        
 `endif
 
      // Normal
@@ -999,6 +1015,11 @@ assign upcfgcap_cycle = upcfgcap_cycle_l0;
         pipe_rx_data_l0_out <= pipe_rx_data_l0;
         
         pipe_rx_data_k_out <= pipe_rx_data_k;
+        
+        //JA Added work around test for NAK issue
+        if(l0_ltssm_state_d  == LT_L0)
+          pipe_rx_valid_out  <= 8'hff;
+        else
         pipe_rx_valid_out  <= pipe_rx_valid;
         
      end     

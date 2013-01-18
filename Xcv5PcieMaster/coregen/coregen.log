@@ -2,84 +2,148 @@ Welcome to Xilinx CORE Generator.
 Help system initialized.
 The IP Catalog has been reloaded.
 Opening project file
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMast
-er/coregen/coregen.cgp.
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/coregen.cgp.
+WARNING:sim:991 - The project IP instance 'endpoint_blk_plus_v1_15' for IP
+   'Endpoint Block Plus for PCI Express v1.15' was generated with a different
+   version of the IP than is currently in the IP Catalog. It was originally
+   generated using IP with the packaged timestamp '2012-01-07+13:55'; the IP in
+   the current catalog has a different packaged timestamp '2012-07-21+06:17'.
+   This mismatch is due to changes made to the IP in the user repositories. It
+   may affect some functionality of the IP, if there are differences between
+   these two versions of the IP.
 Customize and GenerateINFO:sim:172 - Generating IP...
 Applying current project options...
 Finished applying current project options.
-Resolving generics for 'pcie_fifo'...
-Applying external generics to 'pcie_fifo'...
-Delivering associated files for 'pcie_fifo'...
-WARNING:sim - Component fifo_generator_v9_2 does not have a valid model name for
-   VHDL synthesis
-Delivering EJava files for 'pcie_fifo'...
-Generating implementation netlist for 'pcie_fifo'...
-INFO:sim - Pre-processing HDL files for 'pcie_fifo'...
-WARNING:sim - BlackBox generator run option '-ifmt' found multiple times. Only
-   the first occurence is considered.
-Running synthesis for 'pcie_fifo'
-Running ngcbuild...
-Writing VHO instantiation template for 'pcie_fifo'...
-Writing VHDL instantiation wrapper for 'pcie_fifo'...
-Writing VHDL behavioral simulation model for 'pcie_fifo'...
-WARNING:sim - Overwriting existing file
-   /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieM
-   aster/coregen/tmp/_cg/pcie_fifo/doc/fifo_generator_v9_2_vinfo.html with file
-   from view xilinx_documentation
-Delivered 3 files into directory
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMast
-er/coregen/tmp/_cg/pcie_fifo
-Delivered 1 file into directory
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMast
-er/coregen/tmp/_cg/pcie_fifo
+Customizing IP...
+Release 14.2 - Xilinx CORE Generator IP GUI Launcher P.28xd (lin)
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+Finished Customizing.
+Generating IP...
+Configuring files for pcie_icon root...
+Gathering HDL files for pcie_icon root...
+Creating XST project for pcie_icon...
+Creating XST script file for pcie_icon...
+Creating XST instantiation file for pcie_icon...
+Running XST for pcie_icon...
+XST: HDL Compilation
+XST: Design Hierarchy Analysis
+XST: HDL Analysis
+XST: HDL Synthesis
+XST: Advanced HDL Synthesis
+XST: Low Level Synthesis
+Creating XST project for pcie_icon_padded...
+Creating XST script file for pcie_icon_padded...
+Creating XST instantation file for pcie_icon_padded...
+Running XST for pcie_icon_padded...
+Generating VHDL wrapper
+Not generating Verilog wrapper
+Creating ISE instantiation template for pcie_icon...
+Skipping Verilog instantiation template for pcie_icon...
+Finished Generation.
+Generating IP instantiation template...
 Generating ASY schematic symbol...
 INFO:sim:949 - Finished generation of ASY schematic symbol.
 Generating metadata file...
-Generating ISE project file for 'pcie_fifo'...
 Generating ISE project...
-XCO file found: pcie_fifo.xco
-XMDF file found: pcie_fifo_xmdf.tcl
+XCO file found: pcie_icon.xco
+XMDF file found: pcie_icon_xmdf.tcl
 Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMast
-er/coregen/tmp/_cg/pcie_fifo.asy -view all -origin_type imported
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_ic
+on.asy -view all -origin_type imported
 Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMast
-er/coregen/tmp/_cg/pcie_fifo.ngc -view all -origin_type created
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_ic
+on.ngc -view all -origin_type created
 Checking file
-"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMas
-ter/coregen/tmp/_cg/pcie_fifo.ngc" for project device match ...
+"/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_i
+con.ngc" for project device match ...
 File
-"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMas
-ter/coregen/tmp/_cg/pcie_fifo.ngc" device information matches project device.
+"/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_i
+con.ngc" device information matches project device.
 Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMast
-er/coregen/tmp/_cg/pcie_fifo.vhd -view all -origin_type created
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_ic
+on.vhd -view all -origin_type created
 INFO:HDLCompiler:1061 - Parsing VHDL file
-   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5Pcie
-   Master/coregen/tmp/_cg/pcie_fifo.vhd" into library work
+   "/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pci
+   e_icon.vhd" into library work
 INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
 Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMast
-er/coregen/tmp/_cg/pcie_fifo.vho -view all -origin_type imported
-Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5PcieMast
-er/coregen/tmp/_cg/pcie_fifo_synth.vhd -view all -origin_type created
-INFO:HDLCompiler:1061 - Parsing VHDL file
-   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5Pcie
-   Master/coregen/tmp/_cg/pcie_fifo_synth.vhd" into library work
-INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
-WARNING:ProjectMgmt - Duplicate Design Unit 'pcie_fifo' found in library 'work'
-WARNING:ProjectMgmt -   
-   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5Pcie
-   Master/coregen/tmp/_cg/pcie_fifo.vhd" line 43 (active)
-WARNING:ProjectMgmt -   
-   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/Xcv5Pcie
-   Master/coregen/tmp/_cg/pcie_fifo_synth.vhd" line 57 
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_ic
+on.vho -view all -origin_type imported
 INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
    Please set the new top explicitly by running the "project set top" command.
    To re-calculate the new top automatically, set the "Auto Implementation Top"
    property to true.
-Top level has been set to "/pcie_fifo"
+Top level has been set to "/pcie_icon"
+Generating README file...
+Generating FLIST file...
+INFO:sim:948 - Finished FLIST file generation.
+Launching README viewer...
+Moving files to output directory...
+Finished moving files to output directory
+Saved CGP file for project 'coregen'.
+Customize and GenerateINFO:sim:172 - Generating IP...
+Applying current project options...
+Finished applying current project options.
+Customizing IP...
+Release 14.2 - Xilinx CORE Generator IP GUI Launcher P.28xd (lin)
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+Finished Customizing.
+Generating IP...
+Configuring files for pcie_ila root...
+Gathering HDL files for pcie_ila root...
+Creating XST project for pcie_ila...
+Creating XST script file for pcie_ila...
+Creating XST instantiation file for pcie_ila...
+Running XST for pcie_ila...
+XST: HDL Compilation
+XST: Design Hierarchy Analysis
+XST: HDL Analysis
+XST: HDL Synthesis
+XST: Advanced HDL Synthesis
+XST: Low Level Synthesis
+Creating XST project for pcie_ila_padded...
+Creating XST script file for pcie_ila_padded...
+Creating XST instantation file for pcie_ila_padded...
+Running XST for pcie_ila_padded...
+Generating VHDL wrapper
+Not generating Verilog wrapper
+Creating ISE instantiation template for pcie_ila...
+Skipping Verilog instantiation template for pcie_ila...
+Finished Generation.
+Generating IP instantiation template...
+Generating ASY schematic symbol...
+INFO:sim:949 - Finished generation of ASY schematic symbol.
+Generating metadata file...
+Generating ISE project...
+XCO file found: pcie_ila.xco
+XMDF file found: pcie_ila_xmdf.tcl
+Adding
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_il
+a.asy -view all -origin_type imported
+Adding
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_il
+a.ngc -view all -origin_type created
+Checking file
+"/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_i
+la.ngc" for project device match ...
+File
+"/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_i
+la.ngc" device information matches project device.
+Adding
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_il
+a.vhd -view all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pci
+   e_ila.vhd" into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/u1/weaver/cob_dpm/trunk/firmware/modules/Xcv5PcieMaster/coregen/tmp/_cg/pcie_il
+a.vho -view all -origin_type imported
+INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
+   Please set the new top explicitly by running the "project set top" command.
+   To re-calculate the new top automatically, set the "Auto Implementation Top"
+   property to true.
+Top level has been set to "/pcie_ila"
 Generating README file...
 Generating FLIST file...
 INFO:sim:948 - Finished FLIST file generation.

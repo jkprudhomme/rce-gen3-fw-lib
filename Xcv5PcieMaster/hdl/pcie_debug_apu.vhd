@@ -445,6 +445,7 @@ begin  -- IMP
        SYNC_OUT => csCntrl
    );
 
+  pcie_plllock <= gt_debug(27);
 --  csClk <= trn_clk;
   csClk <= gt_debug(28);
   cs_p: process (csClk,rst)
