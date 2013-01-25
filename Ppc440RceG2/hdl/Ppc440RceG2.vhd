@@ -230,12 +230,10 @@ begin
    iapuStoreToPpc(2 to 31)  <= apuStoreToPpc(2 to 31);
 
    -- Reset Mapping
-   --    -- 0    = External
-   --    -- 1    = uSD
-   --    -- 2-31 = External
-   apuReset(0)       <= iapuReset(0);
-   apuReset(1)       <= '0';
-   apuReset(2 to 31) <= iapuReset(2 to 31);
+   --    -- 0    = uSD
+   --    -- 1-31 = External
+   apuReset(0)       <= '0';
+   apuReset(1 to 31) <= iapuReset(1 to 31);
 
    ----------------------------------------------------------------------------
    -- Instantiate PPC440 Processor Block Primitive
