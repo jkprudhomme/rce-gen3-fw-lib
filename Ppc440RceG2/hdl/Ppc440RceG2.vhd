@@ -55,15 +55,15 @@ entity Ppc440RceG2 is
       ppcDmDcrDbusOut            : out std_logic_vector(0 to 31);
 
       -- APU Components
-      apuReadFromPpc             : out ApuReadFromPpcVector(0 to 3);
-      apuReadToPpc               : in  ApuReadToPpcVector(0 to 3);
-      apuWriteFromPpc            : out ApuWriteFromPpcVector(0 to 3);
-      apuWriteToPpc              : in  ApuWriteToPpcVector(0 to 3);
-      apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 15);
-      apuLoadToPpc               : in  ApuLoadToPpcVector(0 to 15);
-      apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 15);
-      apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 15);
-      apuReset                   : out std_logic_vector(0 to 15);
+      apuReadFromPpc             : out ApuReadFromPpcVector(0 to 7);
+      apuReadToPpc               : in  ApuReadToPpcVector(0 to 7);
+      apuWriteFromPpc            : out ApuWriteFromPpcVector(0 to 7);
+      apuWriteToPpc              : in  ApuWriteToPpcVector(0 to 7);
+      apuLoadFromPpc             : out ApuLoadFromPpcVector(0 to 31);
+      apuLoadToPpc               : in  ApuLoadToPpcVector(0 to 31);
+      apuStoreFromPpc            : out ApuStoreFromPpcVector(0 to 31);
+      apuStoreToPpc              : in  ApuStoreToPpcVector(0 to 31);
+      apuReset                   : out std_logic_vector(0 to 31);
 
       -- I2C
       modScl                     : inout std_logic;
@@ -190,41 +190,52 @@ begin
    cpuClk234_375Mhz           <= intClk234_375MhzAdj;
    cpuClk234_375MhzRst        <= intClk234_375MhzAdjRst;
 
+   ----------------------------------------
    -- External APU interfaces
-   -- For SD fix:
-   --   swap read/write 1 and 5
-   --   swap load/store 1 and 31
-   --   swap reset      0 and 31
+   ----------------------------------------
+   -- Read/Write Mapping
+   --    -- 0   = External
+   --    -- 1   = uSD
+   --    -- 2-5 = External
+   --    -- 6   = Internal controller
+   --    -- 7   = I2C
    apuReadFromPpc(0)        <= iapuReadFromPpc(0);
-   apuReadFromPpc(1)        <= iapuReadFromPpc(5); -- Swap
-   apuReadFromPpc(2 to 3)   <= iapuReadFromPpc(2 to 3);
+   apuReadFromPpc(1)        <= ApuReadFromPpcInit; -- Internal
+   apuReadFromPpc(2 to 5)   <= iapuReadFromPpc(2 to 5);
+   apuReadFromPpc(6 to 7)   <= (others=>ApuReadFromPpcInit); -- Internal
    iapuReadToPpc(0)         <= apuReadToPpc(0);
-   iapuReadToPpc(5)         <= apuReadToPpc(1); -- Swap
-   iapuReadToPpc(2 to 3)    <= apuReadToPpc(2 to 3);
+   iapuReadToPpc(2 to 5)    <= apuReadToPpc(2 to 5);
 
    apuWriteFromPpc(0)       <= iapuWriteFromPpc(0);
-   apuWriteFromPpc(1)       <= iapuWriteFromPpc(5); -- Swap
-   apuWriteFromPpc(2 to 3)  <= iapuWriteFromPpc(2 to 3);
+   apuWriteFromPpc(1)       <= ApuWriteFromPpcInit; -- Internal
+   apuWriteFromPpc(2 to 5)  <= iapuWriteFromPpc(2 to 5);
+   apuWriteFromPpc(6 to 7)  <= (others=>ApuWriteFromPpcInit); -- Internal
    iapuWriteToPpc(0)        <= apuWriteToPpc(0);
-   iapuWriteToPpc(5)        <= apuWriteToPpc(1); -- Swap
-   iapuWriteToPpc(2 to 3)   <= apuWriteToPpc(2 to 3);
+   iapuWriteToPpc(2 to 5)   <= apuWriteToPpc(2 to 5);
 
+   -- Load/Store Mapping
+   --    -- 0    = External
+   --    -- 1    = uSD
+   --    -- 2-31 = External
    apuLoadFromPpc(0)        <= iapuLoadFromPpc(0);
-   apuLoadFromPpc(1)        <= iapuLoadFromPpc(31);  -- Swap
-   apuLoadFromPpc(2 to 15)  <= iapuLoadFromPpc(2 to 15);
+   apuLoadFromPpc(1)        <= ApuLoadFromPpcInit; -- Internal
+   apuLoadFromPpc(2 to 31)  <= iapuLoadFromPpc(2 to 31);
    iapuLoadToPpc(0)         <= apuLoadToPpc(0);
-   iapuLoadToPpc(31)        <= apuLoadToPpc(1);  -- Swap
-   iapuLoadToPpc(2 to 15)   <= apuLoadToPpc(2 to 15);
+   iapuLoadToPpc(2 to 31)   <= apuLoadToPpc(2 to 31);
 
    apuStoreFromPpc(0)       <= iapuStoreFromPpc(0);
-   apuStoreFromPpc(1)       <= iapuStoreFromPpc(31);  -- Swap
-   apuStoreFromPpc(2 to 15) <= iapuStoreFromPpc(2 to 15);
+   apuStoreFromPpc(1)       <= ApuStoreFromPpcInit; -- Internal
+   apuStoreFromPpc(2 to 31) <= iapuStoreFromPpc(2 to 31);
    iapuStoreToPpc(0)        <= apuStoreToPpc(0);
-   iapuStoreToPpc(31)       <= apuStoreToPpc(1);  -- Swap
-   iapuStoreToPpc(2 to 15)  <= apuStoreToPpc(2 to 15);
+   iapuStoreToPpc(2 to 31)  <= apuStoreToPpc(2 to 31);
 
-   apuReset(0)              <= iapuReset(31);
-   apuReset(1 to 15)        <= iapuReset(1 to 15);
+   -- Reset Mapping
+   --    -- 0    = External
+   --    -- 1    = uSD
+   --    -- 2-31 = External
+   apuReset(0)       <= iapuReset(0);
+   apuReset(1)       <= '0';
+   apuReset(2 to 31) <= iapuReset(2 to 31);
 
    ----------------------------------------------------------------------------
    -- Instantiate PPC440 Processor Block Primitive
@@ -804,13 +815,6 @@ begin
       apuLoadFull           => iapuLoadFull,
       apuStoreEmpty         => iapuStoreEmpty
    );
-
-   -- Unused APU interfaces
-   iapuReadToPpc(4)         <= ApuReadToPpcInit;
-   iapuWriteToPpc(4)        <= ApuWriteToPpcInit;
-   iapuStoreToPpc(16 to 30) <= (others=>ApuStoreToPpcInit);
-   iapuLoadToPpc(16 to 30)  <= (others=>ApuLoadToPpcInit);
-
 
    ----------------------------------------------------------------------------
    -- Reset/Interupt Controller
