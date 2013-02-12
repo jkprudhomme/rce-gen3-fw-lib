@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!--
+###############################################################
+#
+# (c) Copyright 2009 Xilinx, Inc. All rights reserved.
+#
+# This file contains confidential and proprietary information
+# of Xilinx, Inc. and is protected under U.S. and
+# international copyright and other intellectual property
+# laws.
+#
+# DISCLAIMER
+# This disclaimer is not a license and does not grant any
+# rights to the materials distributed herewith. Except as
+# otherwise provided in a valid license issued to you by
+# Xilinx, and to the maximum extent permitted by applicable
+# law: (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND
+# WITH ALL FAULTS, AND XILINX HEREBY DISCLAIMS ALL WARRANTIES
+# AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY, INCLUDING
+# BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-
+# INFRINGEMENT, OR FITNESS FOR ANY PARTICULAR PURPOSE; and
+# (2) Xilinx shall not be liable (whether in contract or tort,
+# including negligence, or under any other theory of
+# liability) for any loss or damage of any kind or nature
+# related to, arising under or in connection with these
+# materials, including for any direct, or any indirect,
+# special, incidental, or consequential loss or damage
+# (including loss of data, profits, goodwill, or any type of
+# loss or damage suffered as a result of any action brought
+# by a third party) even if such damage or loss was
+# reasonably foreseeable or Xilinx had been advised of the
+# possibility of the same.
+#
+# CRITICAL APPLICATIONS
+# Xilinx products are not designed or intended to be fail-
+# safe, or for use in any application requiring fail-safe
+# performance, such as life-support or safety devices or
+# systems, Class III medical devices, nuclear facilities,
+# applications related to the deployment of airbags, or any
+# other applications that could lead to death, personal
+# injury, or severe property or environmental damage
+# (individually and collectively, "Critical
+# Applications"). Customer assumes the sole risk and
+# liability of any use of Xilinx products in Critical
+# Applications, subject only to applicable laws and
+# regulations governing limitations on product liability.
+#
+# THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS
+# PART OF THIS FILE AT ALL TIMES.
+#
+#  All rights reserved.
+###############################################################
+-->
+
+<!DOCTYPE doc SYSTEM "../../ipdialog.dtd" [
+        <!-- -->
+	<!ENTITY C_MAX_PIXELS '
+	<widget id="C_MAX_PIXELS">
+		<key>C_MAX_PIXELS</key>
+		<label>Max Clocks Per Line</label>
+		<tip>The maximum number of Horizontal Clock periods that can be detected or generated per line, including blanking period.</tip>
+        <value type="enum" default="4096">
+            <range>
+                <discrete data="128" display="128"/>
+                <discrete data="256" display="256"/>
+                <discrete data="512" display="512"/>
+                <discrete data="1024" display="1024"/>
+                <discrete data="2048" display="2048"/>
+                <discrete data="4096" display="4096"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_MAX_LINES '
+	<widget id="C_MAX_LINES">
+		<key>C_MAX_LINES</key>
+		<label>Max Lines Per Frame</label>
+		<tip>The maximum number of Vertical Lines that can be detected or generated per frame, including blanking period.</tip>
+        <value type="enum" default="4096">
+            <range>
+                <discrete data="128" display="128"/>
+                <discrete data="256" display="256"/>
+                <discrete data="512" display="512"/>
+                <discrete data="1024" display="1024"/>
+                <discrete data="2048" display="2048"/>
+                <discrete data="4096" display="4096"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_NUM_FSYNCS '
+	<widget id="C_NUM_FSYNCS">
+		<key>C_NUM_FSYNCS</key>
+		<label>Frame Syncs</label>
+		<tip>The number of Frame Sync Outputs to generate. The timing of the frame syncs can be configured.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="1" max="16" step="1"/>
+            </range>
+        </value>
+	</widget>
+        '>
+	<!ENTITY C_GENERATE_EN '
+	<widget id="C_GENERATE_EN">
+		<key>C_GENERATE_EN</key>
+		<label>Enable Generation</label>
+                <tip>Enable generating Video Timing output signals.</tip>
+        <value type="int" default="0">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_DETECT_EN '
+	<widget id="C_DETECT_EN">
+		<key>C_DETECT_EN</key>
+		<label>Enable Detection</label>
+		<tip>Enable detecting Video Timing input signals.</tip>
+        <value type="int" default="0">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_DET_AUTO_SWITCH '
+	<widget id="C_DET_AUTO_SWITCH">
+		<key>C_DET_AUTO_SWITCH</key>
+		<label>Auto Generation Mode</label>
+		<tip>If enabled, then the generated Video Timing output signals will be updated based upon the detected input signals. Otherwise, the Video Timing Controller Generator will either use the configured parameters or use the detected parameters after the first lock.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_GEN_HBLANK_EN '
+	<widget id="C_GEN_HBLANK_EN">
+		<key>C_GEN_HBLANK_EN</key>
+		<label>Horizontal Blank Generation</label>
+		<tip>Enable generating the Horizontal Blank output.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_GEN_HSYNC_EN '
+	<widget id="C_GEN_HSYNC_EN">
+		<key>C_GEN_HSYNC_EN</key>
+		<label>Horizontal Sync Generation</label>
+		<tip>Enable generating the Horizontal Sync output.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_GEN_VBLANK_EN '
+	<widget id="C_GEN_VBLANK_EN">
+		<key>C_GEN_VBLANK_EN</key>
+		<label>Vertical Blank Generation</label>
+		<tip>Enable generating the Vertical Blank output.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_GEN_VSYNC_EN '
+	<widget id="C_GEN_VSYNC_EN">
+		<key>C_GEN_VSYNC_EN</key>
+		<label>Vertical Sync Generation</label>
+		<tip>Enable generating the Vertical Sync output.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_GEN_AVIDEO_EN '
+	<widget id="C_GEN_AVIDEO_EN">
+		<key>C_GEN_AVIDEO_EN</key>
+		<label>Active Video Generation</label>
+		<tip>Enable generating the Active Video output.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_GEN_ACHROMA_EN '
+	<widget id="C_GEN_ACHROMA_EN">
+		<key>C_GEN_ACHROMA_EN</key>
+		<label>Active Chroma Generation</label>
+		<tip>Enable generating the Active Chroma output.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_DET_HBLANK_EN '
+	<widget id="C_DET_HBLANK_EN">
+		<key>C_DET_HBLANK_EN</key>
+		<label>Horizontal Blank Detection</label>
+		<tip>Enable detecting the Horizontal Blank input.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_DET_HSYNC_EN '
+	<widget id="C_DET_HSYNC_EN">
+		<key>C_DET_HSYNC_EN</key>
+		<label>Horizontal Sync Detection</label>
+		<tip>Enable detecting the Horizontal Sync input.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_DET_VBLANK_EN '
+	<widget id="C_DET_VBLANK_EN">
+		<key>C_DET_VBLANK_EN</key>
+		<label>Vertical Blank Detection</label>
+		<tip>Enable detecting the Vertical Blank input.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_DET_VSYNC_EN '
+	<widget id="C_DET_VSYNC_EN">
+		<key>C_DET_VSYNC_EN</key>
+		<label>Vertical Sync Detection</label>
+		<tip>Enable detecting the Vertical Sync input.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_DET_AVIDEO_EN '
+	<widget id="C_DET_AVIDEO_EN">
+		<key>C_DET_AVIDEO_EN</key>
+		<label>Active Video Detection</label>
+		<tip>Enable detecting the Active Video input.</tip>
+        <value type="int" default="1">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+	'>
+	<!ENTITY C_DET_ACHROMA_EN '
+	<widget id="C_DET_ACHROMA_EN">
+		<key>C_DET_ACHROMA_EN</key>
+		<label>Active Chroma Detection</label>
+		<tip>Enable detecting the Active Chroma input.</tip>
+        <value type="int" default="0">
+            <range>
+                <intrange min="0" max="1" step="1"/>
+            </range>
+        </value>
+	</widget>
+        '>
+]>
+
+<doc>
+	    <view id="User">
+		    <display>User</display>
+		    <group id="General">
+			    <display>General</display>
+			    <item>&C_MAX_PIXELS;</item>
+			    <item>&C_MAX_LINES;</item>
+			    <item>&C_NUM_FSYNCS;</item>
+                    </group>
+		    <group id="Generation_Options">
+			    <display>Generation Options</display>
+                            <item>&C_GENERATE_EN;</item>
+			    <item>&C_DET_AUTO_SWITCH;</item>
+			    <item>&C_GEN_VBLANK_EN;</item>
+			    <item>&C_GEN_VSYNC_EN;</item>
+			    <item>&C_GEN_HBLANK_EN;</item>
+			    <item>&C_GEN_HSYNC_EN;</item>
+			    <item>&C_GEN_AVIDEO_EN;</item>
+                            <item>&C_GEN_ACHROMA_EN;</item>
+		    </group>
+		    <group id="Detection_Options">
+			    <display>Detection Options</display>
+			    <item>&C_DETECT_EN;</item>
+			    <item>&C_DET_VBLANK_EN;</item>
+			    <item>&C_DET_VSYNC_EN;</item>
+			    <item>&C_DET_HBLANK_EN;</item>
+			    <item>&C_DET_HSYNC_EN;</item>
+			    <item>&C_DET_AVIDEO_EN;</item>
+			    <item>&C_DET_ACHROMA_EN;</item>
+		    </group>
+	    </view>
+	    <view id="System">
+		    <display>System</display>
+		    <group id="Addresses">
+			    <display>Addresses</display>
+			    <item>&C_BASEADDR;</item>
+			    <item>&C_HIGHADDR;</item>
+                    </group>
+		    <group id="Hidden">
+			    <display>Hidden</display>
+			    <item>&C_FAMILY;</item>
+                    </group>
+	    </view>
+</doc>
+

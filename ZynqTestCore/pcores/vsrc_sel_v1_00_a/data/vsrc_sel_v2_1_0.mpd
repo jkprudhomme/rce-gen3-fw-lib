@@ -1,0 +1,27 @@
+BEGIN vsrc_sel
+
+## Peripheral Options
+OPTION IPTYPE = PERIPHERAL
+OPTION IMP_NETLIST = TRUE
+OPTION HDL = VHDL
+OPTION IP_GROUP = USER
+
+PARAMETER C_NUM_CHANNELS = 1, DT = INTEGER, RANGE = (1:4), ASSIGNMENT = REQUIRE
+
+## Ports
+
+PORT video_clk_1 = "",   DIR = I, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT video_clk_2 = "",   DIR = I, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT hsync_1 = "",   DIR = I, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT hsync_2 = "",   DIR = I, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT vsync_1 = "",   DIR = I, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT vsync_2 = "",   DIR = I, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT de_1 = "",   DIR = I, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT de_2 = "",   DIR = I, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT video_clk = "",   DIR = O, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT hsync = "",   DIR = O, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT vsync = "",   DIR = O, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT de = "",   DIR = O, VEC = [(C_NUM_CHANNELS-1) : 0]
+PORT video_sel = "",   DIR = I
+
+END

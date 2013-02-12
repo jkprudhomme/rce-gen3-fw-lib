@@ -1,0 +1,89 @@
+##----------------------------------------------------------------
+##      _____
+##     /     \
+##    /____   \____
+##   / \===\   \==/
+##  /___\===\___\/  AVNET
+##       \======/
+##        \====/    
+##---------------------------------------------------------------
+##
+## This design is the property of Avnet.  Publication of this
+## design is not authorized without written consent from Avnet.
+## 
+## Please direct any questions to:  technical.support@avnet.com
+##
+## Disclaimer:
+##    Avnet, Inc. makes no warranty for the use of this code or design.
+##    This code is provided  "As Is". Avnet, Inc assumes no responsibility for
+##    any errors, which may appear in this code, nor does it make a commitment
+##    to update the information contained herein. Avnet, Inc specifically
+##    disclaims any implied warranties of fitness for a particular purpose.
+##                     Copyright(c) 2011 Avnet, Inc.
+##                             All rights reserved.
+##
+##----------------------------------------------------------------
+##
+## Create Date:         Aug 31, 2011
+## Design Name:         FMC-IMAGEON
+## Module Name:         fmc_imageon_hdmi_in_v2_1_0.mpd
+## Project Name:        FMC-IMAGEON
+## Target Devices:      Spartan-6, Virtex-6, Kintex-7
+## Avnet Boards:        FMC-IMAGEON
+##
+## Tool versions:       ISE 13.4
+##
+## Description:         FMC-IMAGEON HDMI input interface.
+##                      Microprocessor Peripheral Description
+##
+## Dependencies:        
+##
+## Revision:            Aug 31, 2011: 1.01 Initial version
+##                      Nov 11, 2011: 1.02 Add CCIR656 decode logic
+##                                         Remove VSYNC/HSYNC ports
+##                      Feb 06, 2012: 1.03 Fix sync de-embed logic
+##                                         Change IOB attribute from "TRUE" to "FORCE"
+##
+##----------------------------------------------------------------
+
+BEGIN fmc_imageon_hdmi_in
+
+## Peripheral Options
+OPTION IPTYPE = PERIPHERAL
+OPTION IMP_NETLIST = TRUE
+OPTION HDL = VHDL
+OPTION IP_GROUP = USER
+
+## IO Interfaces
+IO_INTERFACE IO_IF = HDMII_IO, IO_TYPE = AVT_FMC_IMAGEON_HDMII_V1
+
+## Bus Interfaces
+BUS_INTERFACE BUS = XSVI_VIDEO_OUT,   BUS_STD = XSVI,         BUS_TYPE = INITIATOR
+
+## Generics for VHDL or Parameters for Verilog
+PARAMETER C_FAMILY = spartan6, DT = STRING
+
+PARAMETER C_DATA_WIDTH      = 16, DT = INTEGER, DESC = DATA_WIDTH,      RANGE = (16)
+
+## Ports
+PORT clk = "", DIR = I
+
+## IO Pins
+PORT io_hdmii_spdif = "", DIR = I              , IO_IF = HDMII_IO, IO_IS = spdif
+PORT io_hdmii_video = "", DIR = I, VEC = [15:0], IO_IF = HDMII_IO, IO_IS = video
+
+## XSVI Output Port
+#PORT xsvi_vsync_o        = "vsync",        DIR = O,                             BUS = XSVI_VIDEO_OUT
+#PORT xsvi_hsync_o        = "hsync",        DIR = O,                             BUS = XSVI_VIDEO_OUT
+PORT xsvi_vblank_o       = "vblank",       DIR = O,                             BUS = XSVI_VIDEO_OUT
+PORT xsvi_hblank_o       = "hblank",       DIR = O,                             BUS = XSVI_VIDEO_OUT
+PORT xsvi_active_video_o = "active_video", DIR = O,                             BUS = XSVI_VIDEO_OUT
+PORT xsvi_video_data_o   = "video_data",   DIR = O, VEC = [(C_DATA_WIDTH-1):0], BUS = XSVI_VIDEO_OUT
+
+## Audio Port
+PORT audio_spdif = "", DIR = O
+
+## Debug Port
+PORT debug_o = "", DIR = O, VEC = [23:0]
+
+END

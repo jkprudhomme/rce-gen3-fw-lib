@@ -1,0 +1,1481 @@
+Release 14.2 - xst P.28xd (lin64)
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+--> 
+Parameter TMPDIR set to /u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/synthesis/xst_temp_dir/
+
+
+Total REAL time to Xst completion: 1.00 secs
+Total CPU time to Xst completion: 0.07 secs
+ 
+--> 
+
+TABLE OF CONTENTS
+  1) Synthesis Options Summary
+  2) HDL Parsing
+  3) HDL Elaboration
+  4) HDL Synthesis
+       4.1) HDL Synthesis Report
+  5) Advanced HDL Synthesis
+       5.1) Advanced HDL Synthesis Report
+  6) Low Level Synthesis
+  7) Partition Report
+  8) Design Summary
+       8.1) Primitive and Black Box Usage
+       8.2) Device utilization summary
+       8.3) Partition Resource Summary
+       8.4) Timing Report
+            8.4.1) Clock Information
+            8.4.2) Asynchronous Control Signals Information
+            8.4.3) Timing Summary
+            8.4.4) Timing Details
+            8.4.5) Cross Clock Domains Report
+
+
+=========================================================================
+*                      Synthesis Options Summary                        *
+=========================================================================
+---- Source Parameters
+Input Format                       : MIXED
+Input File Name                    : "system_axi_epc_0_wrapper_xst.prj"
+Verilog Include Directory          : {"/u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/pcores/" "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxBFMinterface/pcores/" "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/" }
+
+---- Target Parameters
+Target Device                      : xc7z020clg484-1
+Output File Name                   : "../implementation/system_axi_epc_0_wrapper.ngc"
+
+---- Source Options
+Top Module Name                    : system_axi_epc_0_wrapper
+
+---- Target Options
+Add IO Buffers                     : NO
+
+---- General Options
+Optimization Goal                  : speed
+Netlist Hierarchy                  : as_optimized
+Optimization Effort                : 1
+Hierarchy Separator                : /
+
+---- Other Options
+Cores Search Directories           : {../implementation}
+
+=========================================================================
+
+
+=========================================================================
+*                          HDL Parsing                                  *
+=========================================================================
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/family.vhd" into library proc_common_v3_00_a
+Parsing package <family>.
+Parsing package body <family>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/family_support.vhd" into library proc_common_v3_00_a
+Parsing package <family_support>.
+Parsing package body <family_support>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/coregen_comp_defs.vhd" into library proc_common_v3_00_a
+Parsing package <coregen_comp_defs>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/common_types_pkg.vhd" into library proc_common_v3_00_a
+Parsing package <Common_Types>.
+Parsing package body <Common_Types>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/proc_common_pkg.vhd" into library proc_common_v3_00_a
+Parsing package <proc_common_pkg>.
+Parsing package body <proc_common_pkg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/conv_funs_pkg.vhd" into library proc_common_v3_00_a
+Parsing package <conv_funs_pkg>.
+Parsing package body <conv_funs_pkg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ipif_pkg.vhd" into library proc_common_v3_00_a
+Parsing package <ipif_pkg>.
+Parsing package body <ipif_pkg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/async_fifo_fg.vhd" into library proc_common_v3_00_a
+Parsing entity <async_fifo_fg>.
+Parsing architecture <implementation> of entity <async_fifo_fg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/sync_fifo_fg.vhd" into library proc_common_v3_00_a
+Parsing entity <sync_fifo_fg>.
+Parsing architecture <implementation> of entity <sync_fifo_fg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/basic_sfifo_fg.vhd" into library proc_common_v3_00_a
+Parsing entity <basic_sfifo_fg>.
+Parsing architecture <implementation> of entity <basic_sfifo_fg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/blk_mem_gen_wrapper.vhd" into library proc_common_v3_00_a
+Parsing entity <blk_mem_gen_wrapper>.
+Parsing architecture <implementation> of entity <blk_mem_gen_wrapper>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/addsub.vhd" into library proc_common_v3_00_a
+Parsing entity <addsub>.
+Parsing architecture <imp> of entity <addsub>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/counter_bit.vhd" into library proc_common_v3_00_a
+Parsing entity <counter_bit>.
+Parsing architecture <imp> of entity <counter_bit>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/counter.vhd" into library proc_common_v3_00_a
+Parsing entity <Counter>.
+Parsing architecture <imp> of entity <counter>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/direct_path_cntr.vhd" into library proc_common_v3_00_a
+Parsing entity <direct_path_cntr>.
+Parsing architecture <imp> of entity <direct_path_cntr>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/direct_path_cntr_ai.vhd" into library proc_common_v3_00_a
+Parsing entity <direct_path_cntr_ai>.
+Parsing architecture <imp> of entity <direct_path_cntr_ai>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/down_counter.vhd" into library proc_common_v3_00_a
+Parsing entity <down_counter>.
+Parsing architecture <simulation> of entity <down_counter>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/eval_timer.vhd" into library proc_common_v3_00_a
+Parsing entity <eval_timer>.
+Parsing architecture <imp> of entity <eval_timer>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/inferred_lut4.vhd" into library proc_common_v3_00_a
+Parsing entity <inferred_lut4>.
+Parsing architecture <implementation> of entity <inferred_lut4>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ipif_steer.vhd" into library proc_common_v3_00_a
+Parsing entity <IPIF_Steer>.
+Parsing architecture <IMP> of entity <ipif_steer>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ipif_steer128.vhd" into library proc_common_v3_00_a
+Parsing entity <ipif_steer128>.
+Parsing architecture <IMP> of entity <ipif_steer128>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ipif_mirror128.vhd" into library proc_common_v3_00_a
+Parsing entity <ipif_mirror128>.
+Parsing architecture <IMP> of entity <ipif_mirror128>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg.vhd" into library proc_common_v3_00_a
+Parsing entity <ld_arith_reg>.
+Parsing architecture <imp> of entity <ld_arith_reg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg2.vhd" into library proc_common_v3_00_a
+Parsing entity <ld_arith_reg2>.
+Parsing architecture <imp> of entity <ld_arith_reg2>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/mux_onehot.vhd" into library proc_common_v3_00_a
+Parsing entity <mux_onehot>.
+Parsing architecture <imp> of entity <mux_onehot>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_bits.vhd" into library proc_common_v3_00_a
+Parsing entity <or_bits>.
+Parsing architecture <implementation> of entity <or_bits>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_muxcy.vhd" into library proc_common_v3_00_a
+Parsing entity <or_muxcy>.
+Parsing architecture <implementation> of entity <or_muxcy>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_gate.vhd" into library proc_common_v3_00_a
+Parsing entity <or_gate>.
+Parsing architecture <imp> of entity <or_gate>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_gate128.vhd" into library proc_common_v3_00_a
+Parsing entity <or_gate128>.
+Parsing architecture <imp> of entity <or_gate128>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_adder_bit.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_adder_bit>.
+Parsing architecture <implementation> of entity <pf_adder_bit>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_adder.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_adder>.
+Parsing architecture <implementation> of entity <pf_adder>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_counter_bit.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_counter_bit>.
+Parsing architecture <implementation> of entity <pf_counter_bit>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_counter.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_counter>.
+Parsing architecture <implementation> of entity <pf_counter>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_counter_top.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_counter_top>.
+Parsing architecture <implementation> of entity <pf_counter_top>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_occ_counter.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_occ_counter>.
+Parsing architecture <implementation> of entity <pf_occ_counter>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_occ_counter_top.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_occ_counter_top>.
+Parsing architecture <implementation> of entity <pf_occ_counter_top>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_dpram_select.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_dpram_select>.
+Parsing architecture <implementation> of entity <pf_dpram_select>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pselect.vhd" into library proc_common_v3_00_a
+Parsing entity <pselect>.
+Parsing architecture <imp> of entity <pselect>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pselect_mask.vhd" into library proc_common_v3_00_a
+Parsing entity <pselect_mask>.
+Parsing architecture <imp> of entity <pselect_mask>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl16_fifo.vhd" into library proc_common_v3_00_a
+Parsing entity <srl16_fifo>.
+Parsing architecture <implementation> of entity <srl16_fifo>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo.vhd" into library proc_common_v3_00_a
+Parsing entity <SRL_FIFO>.
+Parsing architecture <IMP> of entity <srl_fifo>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo2.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo2>.
+Parsing architecture <imp> of entity <srl_fifo2>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo3.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo3>.
+Parsing architecture <imp> of entity <srl_fifo3>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo_rbu.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo_rbu>.
+Parsing architecture <imp> of entity <srl_fifo_rbu>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/valid_be.vhd" into library proc_common_v3_00_a
+Parsing entity <valid_be>.
+Parsing architecture <implementation> of entity <valid_be>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_with_enable_f.vhd" into library proc_common_v3_00_a
+Parsing entity <or_with_enable_f>.
+Parsing architecture <implementation> of entity <or_with_enable_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/muxf_struct_f.vhd" into library proc_common_v3_00_a
+Parsing entity <muxf_struct>.
+Parsing architecture <imp> of entity <muxf_struct>.
+Parsing entity <muxf_struct_f>.
+Parsing architecture <imp> of entity <muxf_struct_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/cntr_incr_decr_addn_f.vhd" into library proc_common_v3_00_a
+Parsing entity <cntr_incr_decr_addn_f>.
+Parsing architecture <imp> of entity <cntr_incr_decr_addn_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/dynshreg_f.vhd" into library proc_common_v3_00_a
+Parsing entity <dynshreg_f>.
+Parsing architecture <behavioral> of entity <dynshreg_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/dynshreg_i_f.vhd" into library proc_common_v3_00_a
+Parsing entity <dynshreg_i_f>.
+Parsing architecture <behavioral> of entity <dynshreg_i_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/mux_onehot_f.vhd" into library proc_common_v3_00_a
+Parsing entity <mux_onehot_f>.
+Parsing architecture <imp> of entity <mux_onehot_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo_rbu_f.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo_rbu_f>.
+Parsing architecture <imp> of entity <srl_fifo_rbu_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo_f.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo_f>.
+Parsing architecture <imp> of entity <srl_fifo_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/compare_vectors_f.vhd" into library proc_common_v3_00_a
+Parsing entity <compare_vectors_f>.
+Parsing architecture <imp> of entity <compare_vectors_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pselect_f.vhd" into library proc_common_v3_00_a
+Parsing entity <pselect_f>.
+Parsing architecture <imp> of entity <pselect_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/counter_f.vhd" into library proc_common_v3_00_a
+Parsing entity <counter_f>.
+Parsing architecture <imp> of entity <counter_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_muxcy_f.vhd" into library proc_common_v3_00_a
+Parsing entity <or_muxcy_f>.
+Parsing architecture <implementation> of entity <or_muxcy_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_gate_f.vhd" into library proc_common_v3_00_a
+Parsing entity <or_gate_f>.
+Parsing architecture <imp> of entity <or_gate_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/soft_reset.vhd" into library proc_common_v3_00_a
+Parsing entity <soft_reset>.
+Parsing architecture <implementation> of entity <soft_reset>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/family.vhd" into library proc_common_v3_00_a
+Parsing package <family>.
+Parsing package body <family>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/family_support.vhd" into library proc_common_v3_00_a
+Parsing package <family_support>.
+Parsing package body <family_support>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/coregen_comp_defs.vhd" into library proc_common_v3_00_a
+Parsing package <coregen_comp_defs>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/common_types_pkg.vhd" into library proc_common_v3_00_a
+Parsing package <Common_Types>.
+Parsing package body <Common_Types>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/proc_common_pkg.vhd" into library proc_common_v3_00_a
+Parsing package <proc_common_pkg>.
+Parsing package body <proc_common_pkg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/conv_funs_pkg.vhd" into library proc_common_v3_00_a
+Parsing package <conv_funs_pkg>.
+Parsing package body <conv_funs_pkg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ipif_pkg.vhd" into library proc_common_v3_00_a
+Parsing package <ipif_pkg>.
+Parsing package body <ipif_pkg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/async_fifo_fg.vhd" into library proc_common_v3_00_a
+Parsing entity <async_fifo_fg>.
+Parsing architecture <implementation> of entity <async_fifo_fg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/sync_fifo_fg.vhd" into library proc_common_v3_00_a
+Parsing entity <sync_fifo_fg>.
+Parsing architecture <implementation> of entity <sync_fifo_fg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/basic_sfifo_fg.vhd" into library proc_common_v3_00_a
+Parsing entity <basic_sfifo_fg>.
+Parsing architecture <implementation> of entity <basic_sfifo_fg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/blk_mem_gen_wrapper.vhd" into library proc_common_v3_00_a
+Parsing entity <blk_mem_gen_wrapper>.
+Parsing architecture <implementation> of entity <blk_mem_gen_wrapper>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/addsub.vhd" into library proc_common_v3_00_a
+Parsing entity <addsub>.
+Parsing architecture <imp> of entity <addsub>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/counter_bit.vhd" into library proc_common_v3_00_a
+Parsing entity <counter_bit>.
+Parsing architecture <imp> of entity <counter_bit>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/counter.vhd" into library proc_common_v3_00_a
+Parsing entity <Counter>.
+Parsing architecture <imp> of entity <counter>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/direct_path_cntr.vhd" into library proc_common_v3_00_a
+Parsing entity <direct_path_cntr>.
+Parsing architecture <imp> of entity <direct_path_cntr>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/direct_path_cntr_ai.vhd" into library proc_common_v3_00_a
+Parsing entity <direct_path_cntr_ai>.
+Parsing architecture <imp> of entity <direct_path_cntr_ai>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/down_counter.vhd" into library proc_common_v3_00_a
+Parsing entity <down_counter>.
+Parsing architecture <simulation> of entity <down_counter>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/eval_timer.vhd" into library proc_common_v3_00_a
+Parsing entity <eval_timer>.
+Parsing architecture <imp> of entity <eval_timer>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/inferred_lut4.vhd" into library proc_common_v3_00_a
+Parsing entity <inferred_lut4>.
+Parsing architecture <implementation> of entity <inferred_lut4>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ipif_steer.vhd" into library proc_common_v3_00_a
+Parsing entity <IPIF_Steer>.
+Parsing architecture <IMP> of entity <ipif_steer>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ipif_steer128.vhd" into library proc_common_v3_00_a
+Parsing entity <ipif_steer128>.
+Parsing architecture <IMP> of entity <ipif_steer128>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ipif_mirror128.vhd" into library proc_common_v3_00_a
+Parsing entity <ipif_mirror128>.
+Parsing architecture <IMP> of entity <ipif_mirror128>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg.vhd" into library proc_common_v3_00_a
+Parsing entity <ld_arith_reg>.
+Parsing architecture <imp> of entity <ld_arith_reg>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg2.vhd" into library proc_common_v3_00_a
+Parsing entity <ld_arith_reg2>.
+Parsing architecture <imp> of entity <ld_arith_reg2>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/mux_onehot.vhd" into library proc_common_v3_00_a
+Parsing entity <mux_onehot>.
+Parsing architecture <imp> of entity <mux_onehot>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_bits.vhd" into library proc_common_v3_00_a
+Parsing entity <or_bits>.
+Parsing architecture <implementation> of entity <or_bits>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_muxcy.vhd" into library proc_common_v3_00_a
+Parsing entity <or_muxcy>.
+Parsing architecture <implementation> of entity <or_muxcy>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_gate.vhd" into library proc_common_v3_00_a
+Parsing entity <or_gate>.
+Parsing architecture <imp> of entity <or_gate>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_gate128.vhd" into library proc_common_v3_00_a
+Parsing entity <or_gate128>.
+Parsing architecture <imp> of entity <or_gate128>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_adder_bit.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_adder_bit>.
+Parsing architecture <implementation> of entity <pf_adder_bit>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_adder.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_adder>.
+Parsing architecture <implementation> of entity <pf_adder>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_counter_bit.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_counter_bit>.
+Parsing architecture <implementation> of entity <pf_counter_bit>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_counter.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_counter>.
+Parsing architecture <implementation> of entity <pf_counter>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_counter_top.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_counter_top>.
+Parsing architecture <implementation> of entity <pf_counter_top>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_occ_counter.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_occ_counter>.
+Parsing architecture <implementation> of entity <pf_occ_counter>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_occ_counter_top.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_occ_counter_top>.
+Parsing architecture <implementation> of entity <pf_occ_counter_top>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pf_dpram_select.vhd" into library proc_common_v3_00_a
+Parsing entity <pf_dpram_select>.
+Parsing architecture <implementation> of entity <pf_dpram_select>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pselect.vhd" into library proc_common_v3_00_a
+Parsing entity <pselect>.
+Parsing architecture <imp> of entity <pselect>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pselect_mask.vhd" into library proc_common_v3_00_a
+Parsing entity <pselect_mask>.
+Parsing architecture <imp> of entity <pselect_mask>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl16_fifo.vhd" into library proc_common_v3_00_a
+Parsing entity <srl16_fifo>.
+Parsing architecture <implementation> of entity <srl16_fifo>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo.vhd" into library proc_common_v3_00_a
+Parsing entity <SRL_FIFO>.
+Parsing architecture <IMP> of entity <srl_fifo>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo2.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo2>.
+Parsing architecture <imp> of entity <srl_fifo2>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo3.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo3>.
+Parsing architecture <imp> of entity <srl_fifo3>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo_rbu.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo_rbu>.
+Parsing architecture <imp> of entity <srl_fifo_rbu>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/valid_be.vhd" into library proc_common_v3_00_a
+Parsing entity <valid_be>.
+Parsing architecture <implementation> of entity <valid_be>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_with_enable_f.vhd" into library proc_common_v3_00_a
+Parsing entity <or_with_enable_f>.
+Parsing architecture <implementation> of entity <or_with_enable_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/muxf_struct_f.vhd" into library proc_common_v3_00_a
+Parsing entity <muxf_struct>.
+Parsing architecture <imp> of entity <muxf_struct>.
+Parsing entity <muxf_struct_f>.
+Parsing architecture <imp> of entity <muxf_struct_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/cntr_incr_decr_addn_f.vhd" into library proc_common_v3_00_a
+Parsing entity <cntr_incr_decr_addn_f>.
+Parsing architecture <imp> of entity <cntr_incr_decr_addn_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/dynshreg_f.vhd" into library proc_common_v3_00_a
+Parsing entity <dynshreg_f>.
+Parsing architecture <behavioral> of entity <dynshreg_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/dynshreg_i_f.vhd" into library proc_common_v3_00_a
+Parsing entity <dynshreg_i_f>.
+Parsing architecture <behavioral> of entity <dynshreg_i_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/mux_onehot_f.vhd" into library proc_common_v3_00_a
+Parsing entity <mux_onehot_f>.
+Parsing architecture <imp> of entity <mux_onehot_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo_rbu_f.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo_rbu_f>.
+Parsing architecture <imp> of entity <srl_fifo_rbu_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/srl_fifo_f.vhd" into library proc_common_v3_00_a
+Parsing entity <srl_fifo_f>.
+Parsing architecture <imp> of entity <srl_fifo_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/compare_vectors_f.vhd" into library proc_common_v3_00_a
+Parsing entity <compare_vectors_f>.
+Parsing architecture <imp> of entity <compare_vectors_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/pselect_f.vhd" into library proc_common_v3_00_a
+Parsing entity <pselect_f>.
+Parsing architecture <imp> of entity <pselect_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/counter_f.vhd" into library proc_common_v3_00_a
+Parsing entity <counter_f>.
+Parsing architecture <imp> of entity <counter_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_muxcy_f.vhd" into library proc_common_v3_00_a
+Parsing entity <or_muxcy_f>.
+Parsing architecture <implementation> of entity <or_muxcy_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_gate_f.vhd" into library proc_common_v3_00_a
+Parsing entity <or_gate_f>.
+Parsing architecture <imp> of entity <or_gate_f>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/soft_reset.vhd" into library proc_common_v3_00_a
+Parsing entity <soft_reset>.
+Parsing architecture <implementation> of entity <soft_reset>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/address_decoder.vhd" into library axi_lite_ipif_v1_01_a
+Parsing entity <address_decoder>.
+Parsing architecture <IMP> of entity <address_decoder>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/slave_attachment.vhd" into library axi_lite_ipif_v1_01_a
+Parsing entity <slave_attachment>.
+Parsing architecture <imp> of entity <slave_attachment>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/axi_lite_ipif.vhd" into library axi_lite_ipif_v1_01_a
+Parsing entity <axi_lite_ipif>.
+Parsing architecture <imp> of entity <axi_lite_ipif>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/ipic_if_decode.vhd" into library axi_epc_v1_00_a
+Parsing entity <ipic_if_decode>.
+Parsing architecture <imp> of entity <ipic_if_decode>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/sync_cntl.vhd" into library axi_epc_v1_00_a
+Parsing entity <sync_cntl>.
+Parsing architecture <imp> of entity <sync_cntl>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/async_counters.vhd" into library axi_epc_v1_00_a
+Parsing entity <async_counters>.
+Parsing architecture <imp> of entity <async_counters>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/async_statemachine.vhd" into library axi_epc_v1_00_a
+Parsing entity <async_statemachine>.
+Parsing architecture <imp> of entity <async_statemachine>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/async_cntl.vhd" into library axi_epc_v1_00_a
+Parsing entity <async_cntl>.
+Parsing architecture <imp> of entity <async_cntl>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/access_mux.vhd" into library axi_epc_v1_00_a
+Parsing entity <access_mux>.
+Parsing architecture <imp> of entity <access_mux>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/address_gen.vhd" into library axi_epc_v1_00_a
+Parsing entity <address_gen>.
+Parsing architecture <imp> of entity <address_gen>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/data_steer.vhd" into library axi_epc_v1_00_a
+Parsing entity <data_steer>.
+Parsing architecture <imp> of entity <data_steer>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/epc_core.vhd" into library axi_epc_v1_00_a
+Parsing entity <epc_core>.
+Parsing architecture <imp> of entity <epc_core>.
+Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/axi_epc.vhd" into library axi_epc_v1_00_a
+Parsing entity <axi_epc>.
+Parsing architecture <imp> of entity <axi_epc>.
+Parsing VHDL file "/u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/hdl/system_axi_epc_0_wrapper.vhd" into library work
+Parsing entity <system_axi_epc_0_wrapper>.
+Parsing architecture <STRUCTURE> of entity <system_axi_epc_0_wrapper>.
+
+=========================================================================
+*                            HDL Elaboration                            *
+=========================================================================
+
+Elaborating entity <system_axi_epc_0_wrapper> (architecture <STRUCTURE>) from library <work>.
+
+Elaborating entity <axi_epc> (architecture <imp>) with generics from library <axi_epc_v1_00_a>.
+
+Elaborating entity <axi_lite_ipif> (architecture <imp>) with generics from library <axi_lite_ipif_v1_01_a>.
+
+Elaborating entity <slave_attachment> (architecture <imp>) with generics from library <axi_lite_ipif_v1_01_a>.
+WARNING:HDLCompiler:746 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/slave_attachment.vhd" Line 255: Range is empty (null range)
+
+Elaborating entity <address_decoder> (architecture <IMP>) with generics from library <axi_lite_ipif_v1_01_a>.
+INFO:HDLCompiler:679 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/slave_attachment.vhd" Line 412. Case statement is complete. others clause is never selected
+
+Elaborating entity <epc_core> (architecture <imp>) with generics from library <axi_epc_v1_00_a>.
+
+Elaborating entity <ipic_if_decode> (architecture <imp>) with generics from library <axi_epc_v1_00_a>.
+
+Elaborating entity <sync_cntl> (architecture <imp>) with generics from library <axi_epc_v1_00_a>.
+INFO:HDLCompiler:679 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/sync_cntl.vhd" Line 809. Case statement is complete. others clause is never selected
+
+Elaborating entity <ld_arith_reg> (architecture <imp>) with generics from library <proc_common_v3_00_a>.
+WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg.vhd" Line 166: <mult_and> remains a black-box since it has no binding entity.
+WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg.vhd" Line 173: <muxcy> remains a black-box since it has no binding entity.
+WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg.vhd" Line 181: <xorcy> remains a black-box since it has no binding entity.
+WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg.vhd" Line 188: <fdre> remains a black-box since it has no binding entity.
+
+Elaborating entity <async_cntl> (architecture <imp>) with generics from library <axi_epc_v1_00_a>.
+
+Elaborating entity <address_gen> (architecture <imp>) with generics from library <axi_epc_v1_00_a>.
+
+Elaborating entity <data_steer> (architecture <imp>) with generics from library <axi_epc_v1_00_a>.
+
+Elaborating entity <access_mux> (architecture <imp>) with generics from library <axi_epc_v1_00_a>.
+
+=========================================================================
+*                           HDL Synthesis                               *
+=========================================================================
+
+Synthesizing Unit <system_axi_epc_0_wrapper>.
+    Related source file is "/u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/hdl/system_axi_epc_0_wrapper.vhd".
+    Summary:
+	no macro.
+Unit <system_axi_epc_0_wrapper> synthesized.
+
+Synthesizing Unit <axi_epc>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/axi_epc.vhd".
+WARNING:Xst:37 - Detected unknown constraint/property "sigis". This constraint/property is not supported by the current software release and will be ignored.
+WARNING:Xst:37 - Detected unknown constraint/property "sigis". This constraint/property is not supported by the current software release and will be ignored.
+WARNING:Xst:37 - Detected unknown constraint/property "sigis". This constraint/property is not supported by the current software release and will be ignored.
+WARNING:Xst:37 - Detected unknown constraint/property "sigis". This constraint/property is not supported by the current software release and will be ignored.
+        C_S_AXI_CLK_PERIOD_PS = 10000
+        C_PRH_CLK_PERIOD_PS = 20000
+        C_FAMILY = "zynq"
+        C_INSTANCE = "axi_epc_0"
+        C_S_AXI_ADDR_WIDTH = 32
+        C_S_AXI_DATA_WIDTH = 32
+        C_NUM_PERIPHERALS = 1
+        C_PRH_MAX_AWIDTH = 32
+        C_PRH_MAX_DWIDTH = 32
+        C_PRH_MAX_ADWIDTH = 32
+        C_PRH_CLK_SUPPORT = 0
+        C_PRH_BURST_SUPPORT = 0
+        C_PRH0_BASEADDR = "01000000000001110000000000000000"
+        C_PRH0_HIGHADDR = "01000000000001111111111111111111"
+        C_PRH0_FIFO_ACCESS = 0
+        C_PRH0_FIFO_OFFSET = 0
+        C_PRH0_AWIDTH = 32
+        C_PRH0_DWIDTH = 32
+        C_PRH0_DWIDTH_MATCH = 0
+        C_PRH0_SYNC = 1
+        C_PRH0_BUS_MULTIPLEX = 0
+        C_PRH0_ADDR_TSU = 0
+        C_PRH0_ADDR_TH = 0
+        C_PRH0_ADS_WIDTH = 0
+        C_PRH0_CSN_TSU = 0
+        C_PRH0_CSN_TH = 0
+        C_PRH0_WRN_WIDTH = 0
+        C_PRH0_WR_CYCLE = 0
+        C_PRH0_DATA_TSU = 0
+        C_PRH0_DATA_TH = 0
+        C_PRH0_RDN_WIDTH = 0
+        C_PRH0_RD_CYCLE = 0
+        C_PRH0_DATA_TOUT = 0
+        C_PRH0_DATA_TINV = 0
+        C_PRH0_RDY_TOUT = 0
+        C_PRH0_RDY_WIDTH = 200
+        C_PRH1_BASEADDR = "11111111111111111111111111111111"
+        C_PRH1_HIGHADDR = "00000000000000000000000000000000"
+        C_PRH1_FIFO_ACCESS = 0
+        C_PRH1_FIFO_OFFSET = 0
+        C_PRH1_AWIDTH = 32
+        C_PRH1_DWIDTH = 32
+        C_PRH1_DWIDTH_MATCH = 0
+        C_PRH1_SYNC = 1
+        C_PRH1_BUS_MULTIPLEX = 0
+        C_PRH1_ADDR_TSU = 0
+        C_PRH1_ADDR_TH = 0
+        C_PRH1_ADS_WIDTH = 0
+        C_PRH1_CSN_TSU = 0
+        C_PRH1_CSN_TH = 0
+        C_PRH1_WRN_WIDTH = 0
+        C_PRH1_WR_CYCLE = 0
+        C_PRH1_DATA_TSU = 0
+        C_PRH1_DATA_TH = 0
+        C_PRH1_RDN_WIDTH = 0
+        C_PRH1_RD_CYCLE = 0
+        C_PRH1_DATA_TOUT = 0
+        C_PRH1_DATA_TINV = 0
+        C_PRH1_RDY_TOUT = 0
+        C_PRH1_RDY_WIDTH = 0
+        C_PRH2_BASEADDR = "11111111111111111111111111111111"
+        C_PRH2_HIGHADDR = "00000000000000000000000000000000"
+        C_PRH2_FIFO_ACCESS = 0
+        C_PRH2_FIFO_OFFSET = 0
+        C_PRH2_AWIDTH = 32
+        C_PRH2_DWIDTH = 32
+        C_PRH2_DWIDTH_MATCH = 0
+        C_PRH2_SYNC = 1
+        C_PRH2_BUS_MULTIPLEX = 0
+        C_PRH2_ADDR_TSU = 0
+        C_PRH2_ADDR_TH = 0
+        C_PRH2_ADS_WIDTH = 0
+        C_PRH2_CSN_TSU = 0
+        C_PRH2_CSN_TH = 0
+        C_PRH2_WRN_WIDTH = 0
+        C_PRH2_WR_CYCLE = 0
+        C_PRH2_DATA_TSU = 0
+        C_PRH2_DATA_TH = 0
+        C_PRH2_RDN_WIDTH = 0
+        C_PRH2_RD_CYCLE = 0
+        C_PRH2_DATA_TOUT = 0
+        C_PRH2_DATA_TINV = 0
+        C_PRH2_RDY_TOUT = 0
+        C_PRH2_RDY_WIDTH = 0
+        C_PRH3_BASEADDR = "11111111111111111111111111111111"
+        C_PRH3_HIGHADDR = "00000000000000000000000000000000"
+        C_PRH3_FIFO_ACCESS = 0
+        C_PRH3_FIFO_OFFSET = 0
+        C_PRH3_AWIDTH = 32
+        C_PRH3_DWIDTH = 32
+        C_PRH3_DWIDTH_MATCH = 0
+        C_PRH3_SYNC = 1
+        C_PRH3_BUS_MULTIPLEX = 0
+        C_PRH3_ADDR_TSU = 0
+        C_PRH3_ADDR_TH = 0
+        C_PRH3_ADS_WIDTH = 0
+        C_PRH3_CSN_TSU = 0
+        C_PRH3_CSN_TH = 0
+        C_PRH3_WRN_WIDTH = 0
+        C_PRH3_WR_CYCLE = 0
+        C_PRH3_DATA_TSU = 0
+        C_PRH3_DATA_TH = 0
+        C_PRH3_RDN_WIDTH = 0
+        C_PRH3_RD_CYCLE = 0
+        C_PRH3_DATA_TOUT = 0
+        C_PRH3_DATA_TINV = 0
+        C_PRH3_RDY_TOUT = 0
+        C_PRH3_RDY_WIDTH = 0
+    Set property "MAX_FANOUT = 10000" for signal <S_AXI_ACLK>.
+WARNING:Xst:37 - Detected unknown constraint/property "sigis". This constraint/property is not supported by the current software release and will be ignored.
+    Set property "MAX_FANOUT = 10000" for signal <S_AXI_ARESETN>.
+WARNING:Xst:37 - Detected unknown constraint/property "sigis". This constraint/property is not supported by the current software release and will be ignored.
+    Set property "MAX_FANOUT = 10000" for signal <PRH_Clk>.
+WARNING:Xst:37 - Detected unknown constraint/property "sigis". This constraint/property is not supported by the current software release and will be ignored.
+    Set property "MAX_FANOUT = 10000" for signal <PRH_Rst>.
+WARNING:Xst:37 - Detected unknown constraint/property "sigis". This constraint/property is not supported by the current software release and will be ignored.
+WARNING:Xst:647 - Input <PRH_Clk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <PRH_Rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Found 1-bit register for signal <bus2ip_reset_active_high>.
+    Summary:
+	inferred   1 D-type flip-flop(s).
+	inferred   3 Multiplexer(s).
+Unit <axi_epc> synthesized.
+
+Synthesizing Unit <axi_lite_ipif>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/axi_lite_ipif.vhd".
+        C_S_AXI_DATA_WIDTH = 32
+        C_S_AXI_ADDR_WIDTH = 32
+        C_S_AXI_MIN_SIZE = "11111111111111111111111111111111"
+        C_USE_WSTRB = 1
+        C_DPHASE_TIMEOUT = 0
+        C_ARD_ADDR_RANGE_ARRAY = ("0000000000000000000000000000000001000000000001110000000000000000","0000000000000000000000000000000001000000000001111111111111111111")
+        C_ARD_NUM_CE_ARRAY = (1)
+        C_FAMILY = "zynq"
+    Summary:
+	no macro.
+Unit <axi_lite_ipif> synthesized.
+
+Synthesizing Unit <slave_attachment>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/slave_attachment.vhd".
+        C_ARD_ADDR_RANGE_ARRAY = ("0000000000000000000000000000000001000000000001110000000000000000","0000000000000000000000000000000001000000000001111111111111111111")
+        C_ARD_NUM_CE_ARRAY = (1)
+        C_IPIF_ABUS_WIDTH = 32
+        C_IPIF_DBUS_WIDTH = 32
+        C_S_AXI_MIN_SIZE = "11111111111111111111111111111111"
+        C_USE_WSTRB = 1
+        C_DPHASE_TIMEOUT = 0
+        C_FAMILY = "zynq"
+INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/slave_attachment.vhd" line 336: Output port <CS_for_gaps> of the instance <I_DECODER> is unconnected or connected to loadless signal.
+    Found 2-bit register for signal <state>.
+    Found 2-bit register for signal <s_axi_rresp_i>.
+    Found 32-bit register for signal <s_axi_rdata_i>.
+    Found 1-bit register for signal <s_axi_rvalid_i>.
+    Found 2-bit register for signal <s_axi_bresp_i>.
+    Found 1-bit register for signal <s_axi_bvalid_i>.
+    Found 1-bit register for signal <rst>.
+    Found finite state machine <FSM_0> for signal <state>.
+    -----------------------------------------------------------------------
+    | States             | 4                                              |
+    | Transitions        | 10                                             |
+    | Inputs             | 6                                              |
+    | Outputs            | 3                                              |
+    | Clock              | S_AXI_ACLK (rising_edge)                       |
+    | Reset              | rst (positive)                                 |
+    | Reset type         | synchronous                                    |
+    | Reset State        | sm_idle                                        |
+    | Power Up State     | sm_idle                                        |
+    | Encoding           | auto                                           |
+    | Implementation     | LUT                                            |
+    -----------------------------------------------------------------------
+    Summary:
+	inferred  39 D-type flip-flop(s).
+	inferred   3 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+Unit <slave_attachment> synthesized.
+
+Synthesizing Unit <address_decoder>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/address_decoder.vhd".
+        C_BUS_AWIDTH = 32
+        C_S_AXI_MIN_SIZE = "11111111111111111111111111111111"
+        C_ARD_ADDR_RANGE_ARRAY = ("0000000000000000000000000000000001000000000001110000000000000000","0000000000000000000000000000000001000000000001111111111111111111")
+        C_ARD_NUM_CE_ARRAY = (1)
+        C_FAMILY = "nofamily"
+WARNING:Xst:647 - Input <Address_In_Erly> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus_RNW> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Found 1-bit register for signal <Bus_RNW_reg>.
+    Found 1-bit register for signal <ce_out_i>.
+    Found 1-bit register for signal <cs_out_i>.
+    Summary:
+	inferred   3 D-type flip-flop(s).
+Unit <address_decoder> synthesized.
+
+Synthesizing Unit <epc_core>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/epc_core.vhd".
+        C_SPLB_CLK_PERIOD_PS = 10000
+        LOCAL_CLK_PERIOD_PS = 10000
+        C_SPLB_AWIDTH = 32
+        C_SPLB_DWIDTH = 32
+        C_SPLB_NATIVE_DWIDTH = 32
+        C_FAMILY = "zynq"
+        C_NUM_PERIPHERALS = 1
+        C_PRH_MAX_AWIDTH = 32
+        C_PRH_MAX_DWIDTH = 32
+        C_PRH_MAX_ADWIDTH = 32
+        C_PRH_CLK_SUPPORT = 0
+        C_PRH_BURST_SUPPORT = 0
+        C_PRH0_FIFO_ACCESS = 0
+        C_PRH0_AWIDTH = 32
+        C_PRH0_DWIDTH = 32
+        C_PRH0_DWIDTH_MATCH = 0
+        C_PRH0_SYNC = 1
+        C_PRH0_BUS_MULTIPLEX = 0
+        C_PRH0_ADDR_TSU = 0
+        C_PRH0_ADDR_TH = 0
+        C_PRH0_ADS_WIDTH = 0
+        C_PRH0_CSN_TSU = 0
+        C_PRH0_CSN_TH = 0
+        C_PRH0_WRN_WIDTH = 0
+        C_PRH0_WR_CYCLE = 0
+        C_PRH0_DATA_TSU = 0
+        C_PRH0_DATA_TH = 0
+        C_PRH0_RDN_WIDTH = 0
+        C_PRH0_RD_CYCLE = 0
+        C_PRH0_DATA_TOUT = 0
+        C_PRH0_DATA_TINV = 0
+        C_PRH0_RDY_TOUT = 0
+        C_PRH0_RDY_WIDTH = 200
+        C_PRH1_FIFO_ACCESS = 0
+        C_PRH1_AWIDTH = 32
+        C_PRH1_DWIDTH = 32
+        C_PRH1_DWIDTH_MATCH = 0
+        C_PRH1_SYNC = 1
+        C_PRH1_BUS_MULTIPLEX = 0
+        C_PRH1_ADDR_TSU = 0
+        C_PRH1_ADDR_TH = 0
+        C_PRH1_ADS_WIDTH = 0
+        C_PRH1_CSN_TSU = 0
+        C_PRH1_CSN_TH = 0
+        C_PRH1_WRN_WIDTH = 0
+        C_PRH1_WR_CYCLE = 0
+        C_PRH1_DATA_TSU = 0
+        C_PRH1_DATA_TH = 0
+        C_PRH1_RDN_WIDTH = 0
+        C_PRH1_RD_CYCLE = 0
+        C_PRH1_DATA_TOUT = 0
+        C_PRH1_DATA_TINV = 0
+        C_PRH1_RDY_TOUT = 0
+        C_PRH1_RDY_WIDTH = 0
+        C_PRH2_FIFO_ACCESS = 0
+        C_PRH2_AWIDTH = 32
+        C_PRH2_DWIDTH = 32
+        C_PRH2_DWIDTH_MATCH = 0
+        C_PRH2_SYNC = 1
+        C_PRH2_BUS_MULTIPLEX = 0
+        C_PRH2_ADDR_TSU = 0
+        C_PRH2_ADDR_TH = 0
+        C_PRH2_ADS_WIDTH = 0
+        C_PRH2_CSN_TSU = 0
+        C_PRH2_CSN_TH = 0
+        C_PRH2_WRN_WIDTH = 0
+        C_PRH2_WR_CYCLE = 0
+        C_PRH2_DATA_TSU = 0
+        C_PRH2_DATA_TH = 0
+        C_PRH2_RDN_WIDTH = 0
+        C_PRH2_RD_CYCLE = 0
+        C_PRH2_DATA_TOUT = 0
+        C_PRH2_DATA_TINV = 0
+        C_PRH2_RDY_TOUT = 0
+        C_PRH2_RDY_WIDTH = 0
+        C_PRH3_FIFO_ACCESS = 0
+        C_PRH3_AWIDTH = 32
+        C_PRH3_DWIDTH = 32
+        C_PRH3_DWIDTH_MATCH = 0
+        C_PRH3_SYNC = 1
+        C_PRH3_BUS_MULTIPLEX = 0
+        C_PRH3_ADDR_TSU = 0
+        C_PRH3_ADDR_TH = 0
+        C_PRH3_ADS_WIDTH = 0
+        C_PRH3_CSN_TSU = 0
+        C_PRH3_CSN_TH = 0
+        C_PRH3_WRN_WIDTH = 0
+        C_PRH3_WR_CYCLE = 0
+        C_PRH3_DATA_TSU = 0
+        C_PRH3_DATA_TH = 0
+        C_PRH3_RDN_WIDTH = 0
+        C_PRH3_RD_CYCLE = 0
+        C_PRH3_DATA_TOUT = 0
+        C_PRH3_DATA_TINV = 0
+        C_PRH3_RDY_TOUT = 0
+        C_PRH3_RDY_WIDTH = 0
+        MAX_PERIPHERALS = 4
+        PRH0_FIFO_ADDRESS = "01000000000001110000000000000000"
+        PRH1_FIFO_ADDRESS = "11111111111111111111111111111111"
+        PRH2_FIFO_ADDRESS = "11111111111111111111111111111111"
+        PRH3_FIFO_ADDRESS = "11111111111111111111111111111111"
+    Summary:
+	no macro.
+Unit <epc_core> synthesized.
+
+Synthesizing Unit <ipic_if_decode>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/ipic_if_decode.vhd".
+        C_SPLB_DWIDTH = 32
+        C_NUM_PERIPHERALS = 1
+        C_PRH_CLK_SUPPORT = 0
+        C_PRH0_DWIDTH_MATCH = 0
+        C_PRH1_DWIDTH_MATCH = 0
+        C_PRH2_DWIDTH_MATCH = 0
+        C_PRH3_DWIDTH_MATCH = 0
+        C_PRH0_DWIDTH = 32
+        C_PRH1_DWIDTH = 32
+        C_PRH2_DWIDTH = 32
+        C_PRH3_DWIDTH = 32
+        MAX_PERIPHERALS = 4
+        NO_PRH_SYNC = 0
+        NO_PRH_ASYNC = 1
+        PRH_SYNC = "1111"
+        NO_PRH_BUS_MULTIPLEX = 1
+        PRH_BUS_MULTIPLEX = "0000"
+        NO_PRH_DWIDTH_MATCH = 1
+        PRH_DWIDTH_MATCH = "0000"
+WARNING:Xst:647 - Input <Local_Clk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Local_Rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <IP_sync_req_rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Found 1-bit register for signal <Dev_fifo_access>.
+    Found 1-bit register for signal <Dev_rnw>.
+    Found 1-bit register for signal <dev_sync_i>.
+    Found 3-bit register for signal <dev_dbus_width_i>.
+    Found 1-bit register for signal <dev_in_access_int_d1>.
+    Found 1-bit register for signal <ip_sync_Wrack_d1>.
+    Found 1-bit register for signal <ip_sync_Wrack_d2>.
+    Found 1-bit register for signal <ip_sync_Wrack_d3>.
+    Found 1-bit register for signal <ip_sync_Wrack_d4>.
+    Found 1-bit register for signal <ip_sync_Rdack_d1>.
+    Found 1-bit register for signal <ip_sync_Rdack_d2>.
+    Found 1-bit register for signal <ip_sync_Rdack_d3>.
+    Found 1-bit register for signal <ip_sync_Rdack_d4>.
+    Found 1-bit register for signal <local_sync_req>.
+    Found 1-bit register for signal <Dev_id>.
+    Summary:
+	inferred  16 D-type flip-flop(s).
+Unit <ipic_if_decode> synthesized.
+
+Synthesizing Unit <sync_cntl>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/sync_cntl.vhd".
+        C_SPLB_NATIVE_DWIDTH = 32
+        C_NUM_PERIPHERALS = 1
+        C_PRH_CLK_SUPPORT = 0
+        C_PRH0_ADDR_TSU = 0
+        C_PRH1_ADDR_TSU = 0
+        C_PRH2_ADDR_TSU = 0
+        C_PRH3_ADDR_TSU = 0
+        C_PRH0_ADDR_TH = 0
+        C_PRH1_ADDR_TH = 0
+        C_PRH2_ADDR_TH = 0
+        C_PRH3_ADDR_TH = 0
+        C_PRH0_ADS_WIDTH = 0
+        C_PRH1_ADS_WIDTH = 0
+        C_PRH2_ADS_WIDTH = 0
+        C_PRH3_ADS_WIDTH = 0
+        C_PRH0_RDY_WIDTH = 200
+        C_PRH1_RDY_WIDTH = 0
+        C_PRH2_RDY_WIDTH = 0
+        C_PRH3_RDY_WIDTH = 0
+        LOCAL_CLK_PERIOD_PS = 10000
+        MAX_PERIPHERALS = 4
+        ADDRCNT_WIDTH = 2
+        NO_PRH_SYNC = 0
+        PRH_SYNC = "1111"
+        NO_PRH_DWIDTH_MATCH = 1
+    Set property "ASYNC_REG = TRUE" for instance <SOME_DEV_SYNC_GEN.I_SYNC_DEV_RDY_CNT>.
+WARNING:Xst:647 - Input <Bus2IP_BE> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_dbus_width> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Sync_ce> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Steer_index> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_Clk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_Rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <IPIC_sync_ack_rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Found 1-bit register for signal <Sync_CS_n>.
+    Found 1-bit register for signal <Sync_RNW>.
+    Found 1-bit register for signal <Sync_addr_ph>.
+    Found 1-bit register for signal <Sync_data_oe>.
+    Found 4-bit register for signal <state_cs>.
+    Found 1-bit register for signal <ip_sync_ack_i>.
+    Found 1-bit register for signal <IP_sync_errack>.
+    Found 1-bit register for signal <Sync_ADS>.
+INFO:Xst:1799 - State ads_turn_around is never reached in FSM <state_cs>.
+    Found finite state machine <FSM_1> for signal <state_cs>.
+    -----------------------------------------------------------------------
+    | States             | 11                                             |
+    | Transitions        | 19                                             |
+    | Inputs             | 7                                              |
+    | Outputs            | 11                                             |
+    | Clock              | Local_Clk (rising_edge)                        |
+    | Reset              | Local_Rst (positive)                           |
+    | Reset type         | synchronous                                    |
+    | Reset State        | idle                                           |
+    | Power Up State     | idle                                           |
+    | Encoding           | auto                                           |
+    | Implementation     | LUT                                            |
+    -----------------------------------------------------------------------
+    WARNING:Xst:2404 -  FFs/Latches <Sync_Burst<0:0>> (without init value) have a constant value of 0 in block <sync_cntl>.
+    Summary:
+	inferred   7 D-type flip-flop(s).
+	inferred  29 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+Unit <sync_cntl> synthesized.
+
+Synthesizing Unit <ld_arith_reg>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg.vhd".
+        C_ADD_SUB_NOT = false
+        C_REG_WIDTH = 1
+        C_RESET_VALUE = "0"
+        C_LD_WIDTH = 1
+        C_LD_OFFSET = 0
+        C_AD_WIDTH = 1
+        C_AD_OFFSET = 0
+INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/ld_arith_reg.vhd" line 294: Output port <O> of the instance <PERBIT_GEN[0].MUXCY_i1> is unconnected or connected to loadless signal.
+    Summary:
+	inferred   1 Multiplexer(s).
+Unit <ld_arith_reg> synthesized.
+
+Synthesizing Unit <async_cntl>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/async_cntl.vhd".
+        PRH_SYNC = "1111"
+        NO_PRH_ASYNC = 1
+        C_SPLB_NATIVE_DWIDTH = 32
+        C_PRH0_ADDR_TSU = 0
+        C_PRH0_ADDR_TH = 0
+        C_PRH0_WRN_WIDTH = 0
+        C_PRH0_DATA_TSU = 0
+        C_PRH0_RDN_WIDTH = 0
+        C_PRH0_DATA_TOUT = 0
+        C_PRH0_DATA_TH = 0
+        C_PRH0_DATA_TINV = 0
+        C_PRH0_RDY_TOUT = 0
+        C_PRH0_RDY_WIDTH = 200
+        C_PRH0_ADS_WIDTH = 0
+        C_PRH0_CSN_TSU = 0
+        C_PRH0_CSN_TH = 0
+        C_PRH0_WR_CYCLE = 0
+        C_PRH0_RD_CYCLE = 0
+        C_PRH1_ADDR_TSU = 0
+        C_PRH1_ADDR_TH = 0
+        C_PRH1_WRN_WIDTH = 0
+        C_PRH1_DATA_TSU = 0
+        C_PRH1_RDN_WIDTH = 0
+        C_PRH1_DATA_TOUT = 0
+        C_PRH1_DATA_TH = 0
+        C_PRH1_DATA_TINV = 0
+        C_PRH1_RDY_TOUT = 0
+        C_PRH1_RDY_WIDTH = 0
+        C_PRH1_ADS_WIDTH = 0
+        C_PRH1_CSN_TSU = 0
+        C_PRH1_CSN_TH = 0
+        C_PRH1_WR_CYCLE = 0
+        C_PRH1_RD_CYCLE = 0
+        C_PRH2_ADDR_TSU = 0
+        C_PRH2_ADDR_TH = 0
+        C_PRH2_WRN_WIDTH = 0
+        C_PRH2_DATA_TSU = 0
+        C_PRH2_RDN_WIDTH = 0
+        C_PRH2_DATA_TOUT = 0
+        C_PRH2_DATA_TH = 0
+        C_PRH2_DATA_TINV = 0
+        C_PRH2_RDY_TOUT = 0
+        C_PRH2_RDY_WIDTH = 0
+        C_PRH2_ADS_WIDTH = 0
+        C_PRH2_CSN_TSU = 0
+        C_PRH2_CSN_TH = 0
+        C_PRH2_WR_CYCLE = 0
+        C_PRH2_RD_CYCLE = 0
+        C_PRH3_ADDR_TSU = 0
+        C_PRH3_ADDR_TH = 0
+        C_PRH3_WRN_WIDTH = 0
+        C_PRH3_DATA_TSU = 0
+        C_PRH3_RDN_WIDTH = 0
+        C_PRH3_DATA_TOUT = 0
+        C_PRH3_DATA_TH = 0
+        C_PRH3_DATA_TINV = 0
+        C_PRH3_RDY_TOUT = 0
+        C_PRH3_RDY_WIDTH = 0
+        C_PRH3_ADS_WIDTH = 0
+        C_PRH3_CSN_TSU = 0
+        C_PRH3_CSN_TH = 0
+        C_PRH3_WR_CYCLE = 0
+        C_PRH3_RD_CYCLE = 0
+        C_BUS_CLOCK_PERIOD_PS = 10000
+        C_NUM_PERIPHERALS = 1
+        C_MAX_PERIPHERALS = 4
+WARNING:Xst:647 - Input <Bus2IP_CS> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_RdCE> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_WrCE> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_BE> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Asynch_ce> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_RNW> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <IPIC_Asynch_req> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_FIFO_access> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_in_access> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Asynch_prh_rdy> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_dwidth_match> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_bus_multiplexed> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Clk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Summary:
+	no macro.
+Unit <async_cntl> synthesized.
+
+Synthesizing Unit <address_gen>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/address_gen.vhd".
+        C_PRH_MAX_AWIDTH = 32
+        NO_PRH_DWIDTH_MATCH = 1
+        NO_PRH_SYNC = 0
+        NO_PRH_ASYNC = 1
+        ADDRCNT_WIDTH = 2
+WARNING:Xst:647 - Input <Dev_dbus_width> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_Clk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_Rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Local_Clk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Local_Rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_fifo_access> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_sync> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_dwidth_match> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Async_addr_cnt_ld> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Async_addr_cnt_ce> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Sync_addr_cnt_ld> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Sync_addr_cnt_ce> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Summary:
+	no macro.
+Unit <address_gen> synthesized.
+
+Synthesizing Unit <data_steer>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/data_steer.vhd".
+        C_SPLB_NATIVE_DWIDTH = 32
+        C_PRH_MAX_DWIDTH = 32
+        ALL_PRH_DWIDTH_MATCH = 0
+        NO_PRH_DWIDTH_MATCH = 1
+        NO_PRH_SYNC = 0
+        NO_PRH_ASYNC = 1
+        ADDRCNT_WIDTH = 2
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[0].SYNC_RDREG_BYTE_GEN[0].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[0].SYNC_RDREG_BYTE_GEN[1].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[0].SYNC_RDREG_BYTE_GEN[2].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[0].SYNC_RDREG_BYTE_GEN[3].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[0].SYNC_RDREG_BYTE_GEN[4].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[0].SYNC_RDREG_BYTE_GEN[5].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[0].SYNC_RDREG_BYTE_GEN[6].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[0].SYNC_RDREG_BYTE_GEN[7].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[1].SYNC_RDREG_BYTE_GEN[0].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[1].SYNC_RDREG_BYTE_GEN[1].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[1].SYNC_RDREG_BYTE_GEN[2].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[1].SYNC_RDREG_BYTE_GEN[3].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[1].SYNC_RDREG_BYTE_GEN[4].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[1].SYNC_RDREG_BYTE_GEN[5].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[1].SYNC_RDREG_BYTE_GEN[6].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[1].SYNC_RDREG_BYTE_GEN[7].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[2].SYNC_RDREG_BYTE_GEN[0].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[2].SYNC_RDREG_BYTE_GEN[1].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[2].SYNC_RDREG_BYTE_GEN[2].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[2].SYNC_RDREG_BYTE_GEN[3].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[2].SYNC_RDREG_BYTE_GEN[4].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[2].SYNC_RDREG_BYTE_GEN[5].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[2].SYNC_RDREG_BYTE_GEN[6].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[2].SYNC_RDREG_BYTE_GEN[7].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[3].SYNC_RDREG_BYTE_GEN[0].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[3].SYNC_RDREG_BYTE_GEN[1].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[3].SYNC_RDREG_BYTE_GEN[2].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[3].SYNC_RDREG_BYTE_GEN[3].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[3].SYNC_RDREG_BYTE_GEN[4].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[3].SYNC_RDREG_BYTE_GEN[5].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[3].SYNC_RDREG_BYTE_GEN[6].SYNC_RDREG_BIT>.
+    Set property "ASYNC_REG = TRUE" for instance <NO_DEV_DWIDTH_MATCH_GEN.SOME_DEV_SYNC_GEN.SYNC_RDREG_GEN[3].SYNC_RDREG_BYTE_GEN[7].SYNC_RDREG_BIT>.
+WARNING:Xst:647 - Input <Addr_suffix> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_Clk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Bus2IP_Rst> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_bus_multiplex> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_sync> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_rnw> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Dev_dwidth_match> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Async_en> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Found 4-bit register for signal <PRH_BE>.
+    Summary:
+	inferred   4 D-type flip-flop(s).
+	inferred   7 Multiplexer(s).
+Unit <data_steer> synthesized.
+
+Synthesizing Unit <access_mux>.
+    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_epc_v1_00_a/hdl/vhdl/access_mux.vhd".
+        C_NUM_PERIPHERALS = 1
+        C_PRH_MAX_AWIDTH = 32
+        C_PRH_MAX_DWIDTH = 32
+        C_PRH_MAX_ADWIDTH = 32
+        C_PRH0_AWIDTH = 32
+        C_PRH1_AWIDTH = 32
+        C_PRH2_AWIDTH = 32
+        C_PRH3_AWIDTH = 32
+        C_PRH0_DWIDTH = 32
+        C_PRH1_DWIDTH = 32
+        C_PRH2_DWIDTH = 32
+        C_PRH3_DWIDTH = 32
+        C_PRH0_BUS_MULTIPLEX = 0
+        C_PRH1_BUS_MULTIPLEX = 0
+        C_PRH2_BUS_MULTIPLEX = 0
+        C_PRH3_BUS_MULTIPLEX = 0
+        MAX_PERIPHERALS = 4
+        NO_PRH_SYNC = 0
+        NO_PRH_ASYNC = 1
+        NO_PRH_BUS_MULTIPLEX = 1
+WARNING:Xst:647 - Input <Async_CS_n> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Sync_addr_ph> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Async_ADS> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Async_Rd_n> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Async_Wr_n> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Async_addr_ph> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <Async_data_oe> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Found 1-bit register for signal <PRH_ADS>.
+    Found 1-bit register for signal <PRH_RNW>.
+    Found 1-bit register for signal <PRH_Burst>.
+    Found 32-bit register for signal <PRH_Data_T>.
+    Found 32-bit register for signal <PRH_Data_O>.
+    Found 32-bit register for signal <PRH_Addr>.
+    Found 1-bit register for signal <PRH_CS_n>.
+    WARNING:Xst:2404 -  FFs/Latches <PRH_Rd_n<0:0>> (without init value) have a constant value of 1 in block <access_mux>.
+    WARNING:Xst:2404 -  FFs/Latches <PRH_Wr_n<0:0>> (without init value) have a constant value of 1 in block <access_mux>.
+    Summary:
+	inferred 100 D-type flip-flop(s).
+	inferred   1 Multiplexer(s).
+Unit <access_mux> synthesized.
+
+=========================================================================
+HDL Synthesis Report
+
+Macro Statistics
+# Registers                                            : 39
+ 1-bit register                                        : 31
+ 2-bit register                                        : 2
+ 3-bit register                                        : 1
+ 32-bit register                                       : 4
+ 4-bit register                                        : 1
+# Multiplexers                                         : 46
+ 1-bit 2-to-1 multiplexer                              : 34
+ 32-bit 2-to-1 multiplexer                             : 4
+ 4-bit 2-to-1 multiplexer                              : 8
+# FSMs                                                 : 2
+# Xors                                                 : 3
+ 1-bit xor2                                            : 3
+
+=========================================================================
+
+=========================================================================
+*                       Advanced HDL Synthesis                          *
+=========================================================================
+
+
+=========================================================================
+Advanced HDL Synthesis Report
+
+Macro Statistics
+# Registers                                            : 205
+ Flip-Flops                                            : 205
+# Multiplexers                                         : 45
+ 1-bit 2-to-1 multiplexer                              : 33
+ 32-bit 2-to-1 multiplexer                             : 4
+ 4-bit 2-to-1 multiplexer                              : 8
+# FSMs                                                 : 2
+# Xors                                                 : 3
+ 1-bit xor2                                            : 3
+
+=========================================================================
+
+=========================================================================
+*                         Low Level Synthesis                           *
+=========================================================================
+WARNING:Xst:1293 - FF/Latch <s_axi_rresp_i_0> has a constant value of 0 in block <slave_attachment>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1896 - Due to other FF/Latch trimming, FF/Latch <s_axi_bresp_i_0> has a constant value of 0 in block <slave_attachment>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1293 - FF/Latch <dev_dbus_width_i_2> has a constant value of 0 in block <ipic_if_decode>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1896 - Due to other FF/Latch trimming, FF/Latch <dev_dbus_width_i_1> has a constant value of 0 in block <ipic_if_decode>. This FF/Latch will be trimmed during the optimization process.
+INFO:Xst:2261 - The FF/Latch <dev_sync_i> in Unit <ipic_if_decode> is equivalent to the following 2 FFs/Latches, which will be removed : <dev_dbus_width_i_0> <Dev_id_0> 
+INFO:Xst:2261 - The FF/Latch <sync_data_oe_i_31> in Unit <access_mux> is equivalent to the following 31 FFs/Latches, which will be removed : <sync_data_oe_i_30> <sync_data_oe_i_29> <sync_data_oe_i_28> <sync_data_oe_i_27> <sync_data_oe_i_26> <sync_data_oe_i_25> <sync_data_oe_i_24> <sync_data_oe_i_23> <sync_data_oe_i_22> <sync_data_oe_i_21> <sync_data_oe_i_20> <sync_data_oe_i_19> <sync_data_oe_i_18> <sync_data_oe_i_17> <sync_data_oe_i_16> <sync_data_oe_i_15> <sync_data_oe_i_14> <sync_data_oe_i_13> <sync_data_oe_i_12> <sync_data_oe_i_11> <sync_data_oe_i_10> <sync_data_oe_i_9> <sync_data_oe_i_8> <sync_data_oe_i_7> <sync_data_oe_i_6> <sync_data_oe_i_5> <sync_data_oe_i_4> <sync_data_oe_i_3> <sync_data_oe_i_2> <sync_data_oe_i_1> <sync_data_oe_i_0> 
+INFO:Xst:2261 - The FF/Latch <I_DECODER/ce_out_i_0> in Unit <slave_attachment> is equivalent to the following FF/Latch, which will be removed : <I_DECODER/cs_out_i_0> 
+Analyzing FSM <MFsm> for best encoding.
+Optimizing FSM <axi_epc_0/AXI_LITE_IPIF_I/I_SLAVE_ATTACHMENT/FSM_0> on signal <state[1:2]> with user encoding.
+----------------------
+ State    | Encoding
+----------------------
+ sm_idle  | 00
+ sm_read  | 01
+ sm_write | 10
+ sm_resp  | 11
+----------------------
+Analyzing FSM <MFsm> for best encoding.
+Optimizing FSM <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/FSM_1> on signal <state_cs[1:4]> with user encoding.
+--------------------------------
+ State              | Encoding
+--------------------------------
+ idle               | 0000
+ ads_assert         | 0001
+ ads_deassert       | 0010
+ ads_pre_data_phase | 0011
+ ads_data_phase     | 0100
+ ads_turn_around    | unreached
+ pre_data_phase     | 0110
+ data_phase         | 0111
+ ack_gen            | 1000
+ errack_gen         | 1001
+ turn_around        | 1010
+--------------------------------
+
+Optimizing unit <system_axi_epc_0_wrapper> ...
+
+Optimizing unit <slave_attachment> ...
+
+Optimizing unit <ipic_if_decode> ...
+
+Optimizing unit <sync_cntl> ...
+
+Optimizing unit <ld_arith_reg> ...
+
+Optimizing unit <data_steer> ...
+
+Optimizing unit <access_mux> ...
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/ACCESS_MUX_I/PRH_Burst> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:2677 - Node <axi_epc_0/AXI_LITE_IPIF_I/I_SLAVE_ATTACHMENT/I_DECODER/Bus_RNW_reg> of sequential type is unconnected in block <system_axi_epc_0_wrapper>.
+WARNING:Xst:2677 - Node <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/Sync_addr_ph> of sequential type is unconnected in block <system_axi_epc_0_wrapper>.
+WARNING:Xst:1293 - FF/Latch <axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip_sync_Rdack_d2> has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1896 - Due to other FF/Latch trimming, FF/Latch <axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip_sync_Wrack_d2> has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/Sync_ADS> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1896 - Due to other FF/Latch trimming, FF/Latch <axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip_sync_Rdack_d3> has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1896 - Due to other FF/Latch trimming, FF/Latch <axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip_sync_Wrack_d3> has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <axi_epc_0/EPC_CORE_I/ACCESS_MUX_I/PRH_ADS> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1896 - Due to other FF/Latch trimming, FF/Latch <axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip_sync_Rdack_d4> has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1896 - Due to other FF/Latch trimming, FF/Latch <axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip_sync_Wrack_d4> has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1898 - Due to constant pushing, FF/Latch <axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip_sync_Rdack_d1> is unconnected in block <system_axi_epc_0_wrapper>.
+WARNING:Xst:1898 - Due to constant pushing, FF/Latch <axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip_sync_Wrack_d1> is unconnected in block <system_axi_epc_0_wrapper>.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+INFO:Xst:2261 - The FF/Latch <axi_epc_0/bus2ip_reset_active_high> in Unit <system_axi_epc_0_wrapper> is equivalent to the following FF/Latch, which will be removed : <axi_epc_0/AXI_LITE_IPIF_I/I_SLAVE_ATTACHMENT/rst> 
+
+Mapping all equations...
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+Building and optimizing final netlist ...
+Found area constraint ratio of 100 (+ 0) on block system_axi_epc_0_wrapper, actual ratio is 0.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+FlipFlop axi_epc_0/AXI_LITE_IPIF_I/I_SLAVE_ATTACHMENT/I_DECODER/ce_out_i_0 has been replicated 1 time(s)
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+
+Final Macro Processing ...
+
+=========================================================================
+Final Register Report
+
+Macro Statistics
+# Registers                                            : 160
+ Flip-Flops                                            : 160
+
+=========================================================================
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1710 - FF/Latch <axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_ADS_ASSERT_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1> (without init value) has a constant value of 0 in block <system_axi_epc_0_wrapper>. This FF/Latch will be trimmed during the optimization process.
+
+=========================================================================
+*                           Partition Report                            *
+=========================================================================
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+=========================================================================
+*                            Design Summary                             *
+=========================================================================
+
+Top Level Output File Name         : system_axi_epc_0_wrapper.ngc
+
+Primitive and Black Box Usage:
+------------------------------
+# BELS                             : 160
+#      GND                         : 1
+#      INV                         : 2
+#      LUT2                        : 41
+#      LUT3                        : 76
+#      LUT4                        : 1
+#      LUT5                        : 13
+#      LUT6                        : 14
+#      MULT_AND                    : 3
+#      MUXCY                       : 3
+#      MUXF7                       : 2
+#      VCC                         : 1
+#      XORCY                       : 3
+# FlipFlops/Latches                : 160
+#      FD                          : 75
+#      FDR                         : 13
+#      FDRE                        : 69
+#      FDS                         : 2
+#      FDSE                        : 1
+
+Device utilization summary:
+---------------------------
+
+Selected Device : 7z020clg484-1 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:             160  out of  106400     0%  
+ Number of Slice LUTs:                  147  out of  53200     0%  
+    Number used as Logic:               147  out of  53200     0%  
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:    180
+   Number with an unused Flip Flop:      20  out of    180    11%  
+   Number with an unused LUT:            33  out of    180    18%  
+   Number of fully used LUT-FF pairs:   127  out of    180    70%  
+   Number of unique control sets:         8
+
+IO Utilization: 
+ Number of IOs:                         289
+ Number of bonded IOBs:                   0  out of    200     0%  
+
+Specific Feature Utilization:
+
+---------------------------
+Partition Resource Summary:
+---------------------------
+
+  No Partitions were found in this design.
+
+---------------------------
+
+
+=========================================================================
+Timing Report
+
+NOTE: THESE TIMING NUMBERS ARE ONLY A SYNTHESIS ESTIMATE.
+      FOR ACCURATE TIMING INFORMATION PLEASE REFER TO THE TRACE REPORT
+      GENERATED AFTER PLACE-and-ROUTE.
+
+Clock Information:
+------------------
+-----------------------------------+------------------------------------------------------------------+-------+
+Clock Signal                       | Clock buffer(FF name)                                            | Load  |
+-----------------------------------+------------------------------------------------------------------+-------+
+S_AXI_ACLK                         | NONE(axi_epc_0/AXI_LITE_IPIF_I/I_SLAVE_ATTACHMENT/state_FSM_FFd1)| 160   |
+-----------------------------------+------------------------------------------------------------------+-------+
+INFO:Xst:2169 - HDL ADVISOR - Some clock signals were not automatically buffered by XST with BUFG/BUFR resources. Please use the buffer_type constraint in order to insert these buffers to the clock signals to help prevent skew problems.
+
+Asynchronous Control Signals Information:
+----------------------------------------
+No asynchronous control signals found in this design
+
+Timing Summary:
+---------------
+Speed Grade: -1
+
+   Minimum period: 2.488ns (Maximum Frequency: 401.929MHz)
+   Minimum input arrival time before clock: 1.530ns
+   Maximum output required time after clock: 0.964ns
+   Maximum combinational path delay: No path found
+
+Timing Details:
+---------------
+All values displayed in nanoseconds (ns)
+
+=========================================================================
+Timing constraint: Default period analysis for Clock 'S_AXI_ACLK'
+  Clock period: 2.488ns (frequency: 401.929MHz)
+  Total number of paths / destination ports: 573 / 249
+-------------------------------------------------------------------------
+Delay:               2.488ns (Levels of Logic = 4)
+  Source:            axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/local_sync_req (FF)
+  Destination:       axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_RDY_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1 (FF)
+  Source Clock:      S_AXI_ACLK rising
+  Destination Clock: S_AXI_ACLK rising
+
+  Data Path: axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/local_sync_req to axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_RDY_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDR:C->Q              3   0.282   0.616  axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/local_sync_req (axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/local_sync_req)
+     LUT3:I0->O            2   0.053   0.419  axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/next_addr_ph_Dev_rnw_OR_19_o411 (axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/next_addr_ph_Dev_rnw_OR_19_o41)
+     LUT6:I5->O            1   0.053   0.413  axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/Mmux_next_pre_data_ph11 (axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/next_pre_data_ph)
+     begin scope: 'axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_RDY_CNT:LOAD'
+     LUT2:I1->O            1   0.053   0.399  PERBIT_GEN[0].CE1 (PERBIT_GEN[0].CE)
+     FDRE:CE                   0.200          PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1
+    ----------------------------------------
+    Total                      2.488ns (0.641ns logic, 1.847ns route)
+                                       (25.8% logic, 74.2% route)
+
+=========================================================================
+Timing constraint: Default OFFSET IN BEFORE for Clock 'S_AXI_ACLK'
+  Total number of paths / destination ports: 265 / 181
+-------------------------------------------------------------------------
+Offset:              1.530ns (Levels of Logic = 3)
+  Source:            PRH_Rdy<0> (PAD)
+  Destination:       axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_RDY_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1 (FF)
+  Destination Clock: S_AXI_ACLK rising
+
+  Data Path: PRH_Rdy<0> to axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_RDY_CNT/PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     LUT5:I0->O            3   0.053   0.499  axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/Mmux_dev_rdy_addrcnt_ce11 (axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/dev_rdy_addrcnt_ce)
+     begin scope: 'axi_epc_0/EPC_CORE_I/SYNC_CNTL_I/SOME_DEV_SYNC_GEN.I_SYNC_DEV_RDY_CNT:OP'
+     LUT2:I0->O            1   0.053   0.399  PERBIT_GEN[0].CE1 (PERBIT_GEN[0].CE)
+     FDRE:CE                   0.200          PERBIT_GEN[0].FF_RST0_GEN.FDRE_i1
+    ----------------------------------------
+    Total                      1.530ns (0.632ns logic, 0.898ns route)
+                                       (41.3% logic, 58.7% route)
+
+=========================================================================
+Timing constraint: Default OFFSET OUT AFTER for Clock 'S_AXI_ACLK'
+  Total number of paths / destination ports: 147 / 141
+-------------------------------------------------------------------------
+Offset:              0.964ns (Levels of Logic = 1)
+  Source:            axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/Dev_rnw (FF)
+  Destination:       S_AXI_AWREADY (PAD)
+  Source Clock:      S_AXI_ACLK rising
+
+  Data Path: axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/Dev_rnw to S_AXI_AWREADY
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDSE:C->Q             5   0.282   0.629  axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/Dev_rnw (axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/Dev_rnw)
+     LUT3:I0->O            1   0.053   0.000  axi_epc_0/EPC_CORE_I/IPIC_DECODE_I/ip2bus_Wrack_i1 (S_AXI_WREADY)
+    ----------------------------------------
+    Total                      0.964ns (0.335ns logic, 0.629ns route)
+                                       (34.8% logic, 65.2% route)
+
+=========================================================================
+
+Cross Clock Domains Report:
+--------------------------
+
+Clock to Setup on destination clock S_AXI_ACLK
+---------------+---------+---------+---------+---------+
+               | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock   |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+---------------+---------+---------+---------+---------+
+S_AXI_ACLK     |    2.488|         |         |         |
+---------------+---------+---------+---------+---------+
+
+=========================================================================
+
+
+Total REAL time to Xst completion: 46.00 secs
+Total CPU time to Xst completion: 12.62 secs
+ 
+--> 
+
+
+Total memory usage is 599096 kilobytes
+
+Number of errors   :    0 (   0 filtered)
+Number of warnings :  102 (   0 filtered)
+Number of infos    :    8 (   0 filtered)
+
