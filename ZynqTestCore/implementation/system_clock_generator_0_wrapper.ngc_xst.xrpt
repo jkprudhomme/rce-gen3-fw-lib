@@ -1,50 +1,46 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-<document OS="lin64" product="ISE" version="14.2">
+<document OS="lin64" product="ISE" version="14.4">
 
   <!--The data in this file is primarily intended for consumption by Xilinx tools.
     The structure and the elements are likely to change over the next few releases.
     This means code written to parse this file will need to be revisited each subsequent release.-->
 
-  <application stringID="Xst" timeStamp="Wed Feb  6 21:52:56 2013">
+  <application stringID="Xst" timeStamp="Thu Feb 14 13:32:08 2013">
     <section stringID="User_Env">
       <table stringID="User_EnvVar">
         <column stringID="variable"/>
         <column stringID="value"/>
         <row stringID="row" value="0">
           <item stringID="variable" value="PATH"/>
-          <item stringID="value" value="/afs/slac.stanford.edu/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE//bin/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/bin/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE/bin/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/gnu/microblaze/lin64/bin:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/gnu/powerpc-eabi/lin64/bin:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE//bin/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK//bin/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/PlanAhead/bin:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/common/bin/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE/sysgen/util:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE/sysgen/bin:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/../../Vivado/2012.2/bin:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/gnu/arm/lin64/bin:/afs/slac.stanford.edu/g/reseng/vol9/synopsys/D-2010.03/fpga/bin:/usr/afsws/bin:/usr/local/bin:/usr/bin/X11:/afs/slac.stanford.edu/g/reseng/vol4/thunderbird/17_0:/afs/slac.stanford.edu/g/reseng/vol4/firefox/17_0_1:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/bin:/usr/bin:/sbin:/usr/sbin:/u1/wine/bin"/>
+          <item stringID="value" value="/afs/slac.stanford.edu/g/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE//bin/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/bin/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/bin/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/gnu/microblaze/lin64/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/gnu/powerpc-eabi/lin64/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE//bin/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK//bin/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/../../Vivado_HLS/2012.4/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/sysgen/util:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/sysgen/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/../../../DocNav:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/../../Vivado/2012.4/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/PlanAhead/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/gnu/arm/lin/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/gnu/microblaze/linux_toolchain/lin64_be/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/gnu/microblaze/linux_toolchain/lin64_le/bin:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/common/bin/lin64:/afs/slac.stanford.edu/g/reseng/vol9/synopsys/D-2010.03/fpga/bin:/usr/afsws/bin:/usr/local/bin:/usr/bin/X11:/afs/slac.stanford.edu/g/reseng/vol4/thunderbird/17_0:/afs/slac.stanford.edu/g/reseng/vol4/firefox/17_0_1:/usr/lib64/qt-3.3/bin:/usr/kerberos/bin:/usr/bin:/bin:/usr/X11R6/bin:/sbin:/usr/sbin:/u1/wine/bin"/>
         </row>
         <row stringID="row" value="1">
           <item stringID="variable" value="XILINX_VIVADO"/>
-          <item stringID="value" value="/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/../../Vivado/2012.2"/>
+          <item stringID="value" value="/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/../../Vivado/2012.4"/>
         </row>
         <row stringID="row" value="2">
-          <item stringID="variable" value="XILINX_COMMON_TOOLS"/>
-          <item stringID="value" value="/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/common"/>
+          <item stringID="variable" value="LD_LIBRARY_PATH"/>
+          <item stringID="value" value="/afs/slac.stanford.edu/g/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE//lib/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/lib/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/lib/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE//lib/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK//lib/lin64:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/smartmodel/lin64/installed_lin64/lib:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/sysgen/lib:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/common/lib/lin64:/afs/slac.stanford.edu/g/reseng/vol4/firefox/17_0_1:/afs/slac.stanford.edu/g/reseng/vol4/thunderbird/17_0:/usr/local/lib:/usr/local/bin:/u1/wine/lib"/>
         </row>
         <row stringID="row" value="3">
-          <item stringID="variable" value="LD_LIBRARY_PATH"/>
-          <item stringID="value" value="/afs/slac.stanford.edu/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE//lib/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/lib/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE/lib/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE//lib/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK//lib/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/common/lib/lin64:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE/smartmodel/lin64/installed_lin64/lib:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE/sysgen/lib:/afs/slac.stanford.edu/g/reseng/vol4/firefox/17_0_1:/afs/slac.stanford.edu/g/reseng/vol4/thunderbird/17_0:/usr/local/lib:/usr/local/bin:/u1/wine/lib"/>
+          <item stringID="variable" value="XILINX"/>
+          <item stringID="value" value="/afs/slac.stanford.edu/g/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK:/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE"/>
         </row>
         <row stringID="row" value="4">
-          <item stringID="variable" value="XILINX"/>
-          <item stringID="value" value="/afs/slac.stanford.edu/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE/:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK:/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE"/>
+          <item stringID="variable" value="XILINX_PLANAHEAD"/>
+          <item stringID="value" value="/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/PlanAhead"/>
         </row>
         <row stringID="row" value="5">
-          <item stringID="variable" value="XILINX_PLANAHEAD"/>
-          <item stringID="value" value="/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/PlanAhead"/>
+          <item stringID="variable" value="XILINX_EDK"/>
+          <item stringID="value" value="/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK"/>
         </row>
         <row stringID="row" value="6">
-          <item stringID="variable" value="XILINX_EDK"/>
-          <item stringID="value" value="/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK"/>
+          <item stringID="variable" value="XILINX_DSP"/>
+          <item stringID="value" value="/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE"/>
         </row>
         <row stringID="row" value="7">
-          <item stringID="variable" value="XILINX_DSP"/>
-          <item stringID="value" value="/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE"/>
-        </row>
-        <row stringID="row" value="8">
           <item stringID="variable" value="LMC_HOME"/>
-          <item stringID="value" value="/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/ISE/smartmodel/lin64/installed_lin64"/>
+          <item stringID="value" value="/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/ISE/smartmodel/lin64/installed_lin64"/>
         </row>
       </table>
       <item stringID="User_EnvOs" value="OS Information">
@@ -73,7 +69,7 @@
       <item DEFAULT="/" stringID="XST_HIERARCHYSEPARATOR" value="/"/>
       <item DEFAULT="Yes" label="-iobuf" stringID="XST_IOBUF" value="NO"/>
       <item DEFAULT="" label="-sd" stringID="XST_SD" value="{../implementation}"/>
-      <item DEFAULT="" label="-vlgincdir" stringID="XST_VLGINCDIR" value="{&quot;/u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/pcores/&quot; &quot;/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxBFMinterface/pcores/&quot; &quot;/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/&quot; }"/>
+      <item DEFAULT="" label="-vlgincdir" stringID="XST_VLGINCDIR" value="{&quot;/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqTestCore/pcores/&quot; &quot;/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxBFMinterface/pcores/&quot; &quot;/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/&quot; }"/>
     </section>
     <section stringID="XST_UNISIM_SUMMARY">
       <item dataType="int" stringID="XST_NUM_BUFG" value="1"/>

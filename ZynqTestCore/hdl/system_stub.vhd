@@ -25,8 +25,9 @@ entity system_stub is
     axi_epc_0_PRH_Rdy_pin : in std_logic;
     axi_epc_0_PRH_Data_I_pin : in std_logic_vector(0 to 31);
     axi_epc_0_PRH_Data_O_pin : out std_logic_vector(0 to 31);
+    axi_epc_0_PRH_Rst_pin : in std_logic;
     axi_epc_0_PRH_Clk_pin : in std_logic;
-    axi_epc_0_PRH_Rst_pin : in std_logic
+    axiClk : out std_logic
   );
 end system_stub;
 
@@ -50,8 +51,9 @@ architecture STRUCTURE of system_stub is
       axi_epc_0_PRH_Rdy_pin : in std_logic;
       axi_epc_0_PRH_Data_I_pin : in std_logic_vector(0 to 31);
       axi_epc_0_PRH_Data_O_pin : out std_logic_vector(0 to 31);
+      axi_epc_0_PRH_Rst_pin : in std_logic;
       axi_epc_0_PRH_Clk_pin : in std_logic;
-      axi_epc_0_PRH_Rst_pin : in std_logic
+      axiClk : out std_logic
     );
   end component;
 
@@ -78,8 +80,9 @@ begin
       axi_epc_0_PRH_Rdy_pin => axi_epc_0_PRH_Rdy_pin,
       axi_epc_0_PRH_Data_I_pin => axi_epc_0_PRH_Data_I_pin,
       axi_epc_0_PRH_Data_O_pin => axi_epc_0_PRH_Data_O_pin,
+      axi_epc_0_PRH_Rst_pin => axi_epc_0_PRH_Rst_pin,
       axi_epc_0_PRH_Clk_pin => axi_epc_0_PRH_Clk_pin,
-      axi_epc_0_PRH_Rst_pin => axi_epc_0_PRH_Rst_pin
+      axiClk => axiClk
     );
 
 end architecture STRUCTURE;

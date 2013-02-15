@@ -1,11 +1,11 @@
-Release 14.2 - xst P.28xd (lin64)
+Release 14.4 - xst P.49d (lin64)
 Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
 --> 
-Parameter TMPDIR set to /u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/synthesis/xst_temp_dir/
+Parameter TMPDIR set to /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqTestCore/synthesis/xst_temp_dir/
 
 
-Total REAL time to Xst completion: 0.00 secs
-Total CPU time to Xst completion: 0.05 secs
+Total REAL time to Xst completion: 1.00 secs
+Total CPU time to Xst completion: 0.07 secs
  
 --> 
 
@@ -37,7 +37,7 @@ TABLE OF CONTENTS
 ---- Source Parameters
 Input Format                       : MIXED
 Input File Name                    : "system_axi_bram_ctrl_0_wrapper_xst.prj"
-Verilog Include Directory          : {"/u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/pcores/" "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxBFMinterface/pcores/" "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/" }
+Verilog Include Directory          : {"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqTestCore/pcores/" "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxBFMinterface/pcores/" "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/" }
 
 ---- Target Parameters
 Target Device                      : xc7z020clg484-1
@@ -64,64 +64,64 @@ Cores Search Directories           : {../implementation}
 =========================================================================
 *                          HDL Parsing                                  *
 =========================================================================
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <SRL_FIFO>.
 Parsing architecture <IMP> of entity <srl_fifo>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_bram_ctrl_funcs.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_bram_ctrl_funcs.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing package <axi_bram_ctrl_funcs>.
 Parsing package body <axi_bram_ctrl_funcs>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_lite_if.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_lite_if.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <axi_lite_if>.
 Parsing architecture <IMP> of entity <axi_lite_if>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/checkbit_handler_64.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/checkbit_handler_64.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <checkbit_handler_64>.
 Parsing architecture <IMP> of entity <checkbit_handler_64>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/checkbit_handler.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/checkbit_handler.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <checkbit_handler>.
 Parsing architecture <IMP> of entity <checkbit_handler>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/correct_one_bit_64.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/correct_one_bit_64.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <Correct_One_Bit_64>.
 Parsing architecture <IMP> of entity <correct_one_bit_64>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/correct_one_bit.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/correct_one_bit.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <Correct_One_Bit>.
 Parsing architecture <IMP> of entity <correct_one_bit>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/xor18.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/xor18.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <XOR18>.
 Parsing architecture <IMP> of entity <xor18>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/parity.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/parity.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <Parity>.
 Parsing architecture <IMP> of entity <parity>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/ecc_gen.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/ecc_gen.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <ecc_gen>.
 Parsing architecture <trans> of entity <ecc_gen>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/lite_ecc_reg.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/lite_ecc_reg.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <lite_ecc_reg>.
 Parsing architecture <implementation> of entity <lite_ecc_reg>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_lite.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_lite.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <axi_lite>.
 Parsing architecture <implementation> of entity <axi_lite>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/sng_port_arb.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/sng_port_arb.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <sng_port_arb>.
 Parsing architecture <implementation> of entity <sng_port_arb>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/ua_narrow.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/ua_narrow.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <ua_narrow>.
 Parsing architecture <implementation> of entity <ua_narrow>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wrap_brst.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wrap_brst.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <wrap_brst>.
 Parsing architecture <implementation> of entity <wrap_brst>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <rd_chnl>.
 Parsing architecture <implementation> of entity <rd_chnl>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <wr_chnl>.
 Parsing architecture <implementation> of entity <wr_chnl>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <full_axi>.
 Parsing architecture <implementation> of entity <full_axi>.
-Parsing VHDL file "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_bram_ctrl.vhd" into library axi_bram_ctrl_v1_03_a
+Parsing VHDL file "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_bram_ctrl.vhd" into library axi_bram_ctrl_v1_03_a
 Parsing entity <axi_bram_ctrl>.
 Parsing architecture <implementation> of entity <axi_bram_ctrl>.
-Parsing VHDL file "/u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/hdl/system_axi_bram_ctrl_0_wrapper.vhd" into library work
+Parsing VHDL file "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqTestCore/hdl/system_axi_bram_ctrl_0_wrapper.vhd" into library work
 Parsing entity <system_axi_bram_ctrl_0_wrapper>.
 Parsing architecture <STRUCTURE> of entity <system_axi_bram_ctrl_0_wrapper>.
 
@@ -134,41 +134,41 @@ Elaborating entity <system_axi_bram_ctrl_0_wrapper> (architecture <STRUCTURE>) f
 Elaborating entity <axi_bram_ctrl> (architecture <implementation>) with generics from library <axi_bram_ctrl_v1_03_a>.
 
 Elaborating entity <full_axi> (architecture <implementation>) with generics from library <axi_bram_ctrl_v1_03_a>.
-WARNING:HDLCompiler:746 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" Line 448: Range is empty (null range)
-WARNING:HDLCompiler:220 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" Line 625: Assignment ignored
-WARNING:HDLCompiler:746 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" Line 370: Range is empty (null range)
+WARNING:HDLCompiler:746 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" Line 448: Range is empty (null range)
+WARNING:HDLCompiler:220 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" Line 625: Assignment ignored
+WARNING:HDLCompiler:746 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" Line 370: Range is empty (null range)
 
 Elaborating entity <wr_chnl> (architecture <implementation>) with generics from library <axi_bram_ctrl_v1_03_a>.
 
 Elaborating entity <wrap_brst> (architecture <implementation>) with generics from library <axi_bram_ctrl_v1_03_a>.
-INFO:HDLCompiler:679 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" Line 2184. Case statement is complete. others clause is never selected
-INFO:HDLCompiler:679 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" Line 3569. Case statement is complete. others clause is never selected
+INFO:HDLCompiler:679 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" Line 2184. Case statement is complete. others clause is never selected
+INFO:HDLCompiler:679 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" Line 3569. Case statement is complete. others clause is never selected
 
 Elaborating entity <SRL_FIFO> (architecture <IMP>) with generics from library <axi_bram_ctrl_v1_03_a>.
-WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 197: <fdr> remains a black-box since it has no binding entity.
-WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 173: <muxcy_l> remains a black-box since it has no binding entity.
-WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 181: <xorcy> remains a black-box since it has no binding entity.
-WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 188: <fdre> remains a black-box since it has no binding entity.
-WARNING:HDLCompiler:89 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 137: <srl16e> remains a black-box since it has no binding entity.
+WARNING:HDLCompiler:89 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 197: <fdr> remains a black-box since it has no binding entity.
+WARNING:HDLCompiler:89 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 173: <muxcy_l> remains a black-box since it has no binding entity.
+WARNING:HDLCompiler:89 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 181: <xorcy> remains a black-box since it has no binding entity.
+WARNING:HDLCompiler:89 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 188: <fdre> remains a black-box since it has no binding entity.
+WARNING:HDLCompiler:89 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" Line 137: <srl16e> remains a black-box since it has no binding entity.
 
 Elaborating entity <rd_chnl> (architecture <implementation>) with generics from library <axi_bram_ctrl_v1_03_a>.
-INFO:HDLCompiler:679 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd" Line 2147. Case statement is complete. others clause is never selected
-INFO:HDLCompiler:679 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd" Line 3776. Case statement is complete. others clause is never selected
-INFO:HDLCompiler:679 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd" Line 5030. Case statement is complete. others clause is never selected
-WARNING:HDLCompiler:634 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" Line 475: Net <bram_addr_int[31]> does not have a driver.
+INFO:HDLCompiler:679 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd" Line 2147. Case statement is complete. others clause is never selected
+INFO:HDLCompiler:679 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd" Line 3776. Case statement is complete. others clause is never selected
+INFO:HDLCompiler:679 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd" Line 5030. Case statement is complete. others clause is never selected
+WARNING:HDLCompiler:634 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" Line 475: Net <bram_addr_int[31]> does not have a driver.
 
 =========================================================================
 *                           HDL Synthesis                               *
 =========================================================================
 
 Synthesizing Unit <system_axi_bram_ctrl_0_wrapper>.
-    Related source file is "/u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_proj/hdl/system_axi_bram_ctrl_0_wrapper.vhd".
+    Related source file is "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqTestCore/hdl/system_axi_bram_ctrl_0_wrapper.vhd".
     Summary:
 	no macro.
 Unit <system_axi_bram_ctrl_0_wrapper> synthesized.
 
 Synthesizing Unit <axi_bram_ctrl>.
-    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_bram_ctrl.vhd".
+    Related source file is "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/axi_bram_ctrl.vhd".
         C_S_AXI_ADDR_WIDTH = 32
         C_S_AXI_DATA_WIDTH = 32
         C_S_AXI_ID_WIDTH = 12
@@ -187,7 +187,7 @@ WARNING:Xst:647 - Input <S_AXI_ARSIZE> is never used. This port will be preserve
 Unit <axi_bram_ctrl> synthesized.
 
 Synthesizing Unit <full_axi>.
-    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd".
+    Related source file is "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd".
         C_S_AXI_ADDR_WIDTH = 32
         C_S_AXI_DATA_WIDTH = 32
         C_S_AXI_ID_WIDTH = 12
@@ -215,34 +215,34 @@ WARNING:Xst:647 - Input <S_AXI_CTRL_WVALID> is never used. This port will be pre
 WARNING:Xst:647 - Input <S_AXI_CTRL_BREADY> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
 WARNING:Xst:647 - Input <S_AXI_CTRL_ARVALID> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
 WARNING:Xst:647 - Input <S_AXI_CTRL_RREADY> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <AW2Arb_BVALID_Cnt> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sng_BRAM_Addr_Ld> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <BRAM_Addr_En> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <FaultInjectClr> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <CE_Failing_We> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sl_CE> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sl_UE> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Active_Wr> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <AW2Arb_Busy> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <AW2Arb_Active_Clr> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sng_BRAM_Addr_Rst> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sng_BRAM_Addr_Ld_En> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sng_BRAM_Addr_Inc> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sng_BRAM_Addr_Ld> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <BRAM_Addr_En> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <CE_Failing_We> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sl_CE> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sl_UE> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <AR2Arb_Active_Clr> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sng_BRAM_Addr_Ld_En> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sng_BRAM_Addr_Inc> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <AW2Arb_BVALID_Cnt> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sng_BRAM_Addr_Ld> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <BRAM_Addr_En> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <FaultInjectClr> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <CE_Failing_We> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sl_CE> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sl_UE> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Active_Wr> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <AW2Arb_Busy> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <AW2Arb_Active_Clr> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sng_BRAM_Addr_Rst> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sng_BRAM_Addr_Ld_En> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 870: Output port <Sng_BRAM_Addr_Inc> of the instance <I_WR_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sng_BRAM_Addr_Ld> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <BRAM_Addr_En> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <CE_Failing_We> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sl_CE> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sl_UE> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <AR2Arb_Active_Clr> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sng_BRAM_Addr_Ld_En> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/full_axi.vhd" line 963: Output port <Sng_BRAM_Addr_Inc> of the instance <I_RD_CHNL> is unconnected or connected to loadless signal.
 WARNING:Xst:2935 - Signal 'bram_addr_int', unconnected in block 'full_axi', is tied to its initial value (000000000000000000000000000000).
     Summary:
 	no macro.
 Unit <full_axi> synthesized.
 
 Synthesizing Unit <wr_chnl>.
-    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd".
+    Related source file is "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd".
         C_AXI_ADDR_WIDTH = 32
         C_BRAM_ADDR_ADJUST_FACTOR = 2
         C_AXI_DATA_WIDTH = 32
@@ -261,8 +261,8 @@ WARNING:Xst:647 - Input <BRAM_RdData> is never used. This port will be preserved
 WARNING:Xst:647 - Input <AXI_AWLOCK> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
 WARNING:Xst:647 - Input <Enable_ECC> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
 WARNING:Xst:647 - Input <Arb2AW_Active> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" line 3669: Output port <Addr> of the instance <BID_FIFO> is unconnected or connected to loadless signal.
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" line 3669: Output port <FIFO_Full> of the instance <BID_FIFO> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" line 3669: Output port <Addr> of the instance <BID_FIFO> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wr_chnl.vhd" line 3669: Output port <FIFO_Full> of the instance <BID_FIFO> is unconnected or connected to loadless signal.
     Found 1-bit register for signal <axi_awaddr_pipe<30>>.
     Found 1-bit register for signal <axi_awaddr_pipe<29>>.
     Found 1-bit register for signal <axi_awaddr_pipe<28>>.
@@ -381,7 +381,7 @@ INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxP
 Unit <wr_chnl> synthesized.
 
 Synthesizing Unit <wrap_brst>.
-    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wrap_brst.vhd".
+    Related source file is "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/wrap_brst.vhd".
         C_AXI_ADDR_WIDTH = 32
         C_BRAM_ADDR_ADJUST_FACTOR = 2
         C_AXI_DATA_WIDTH = 32
@@ -396,16 +396,16 @@ WARNING:Xst:647 - Input <bram_addr_int<31:6>> is never used. This port will be p
 Unit <wrap_brst> synthesized.
 
 Synthesizing Unit <SRL_FIFO>.
-    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd".
+    Related source file is "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd".
         C_DATA_BITS = 12
         C_DEPTH = 8
         C_XON = false
-INFO:Xst:3210 - "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" line 246: Output port <LO> of the instance <Addr_Counters[3].MUXCY_L_I> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/srl_fifo.vhd" line 246: Output port <LO> of the instance <Addr_Counters[3].MUXCY_L_I> is unconnected or connected to loadless signal.
     Summary:
 Unit <SRL_FIFO> synthesized.
 
 Synthesizing Unit <rd_chnl>.
-    Related source file is "/afs/slac/g/reseng/vol14/Xilinx/14.2/14.2/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd".
+    Related source file is "/u/ey/rherbst/reseng/vol15/Xilinx/14.4/14.4/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_bram_ctrl_v1_03_a/hdl/vhdl/rd_chnl.vhd".
         C_AXI_ADDR_WIDTH = 32
         C_BRAM_ADDR_ADJUST_FACTOR = 2
         C_AXI_DATA_WIDTH = 32
@@ -943,13 +943,13 @@ BRAM_Clk_B     |    3.601|         |         |         |
 =========================================================================
 
 
-Total REAL time to Xst completion: 20.00 secs
-Total CPU time to Xst completion: 16.38 secs
+Total REAL time to Xst completion: 35.00 secs
+Total CPU time to Xst completion: 16.02 secs
  
 --> 
 
 
-Total memory usage is 590020 kilobytes
+Total memory usage is 590120 kilobytes
 
 Number of errors   :    0 (   0 filtered)
 Number of warnings :   40 (   0 filtered)

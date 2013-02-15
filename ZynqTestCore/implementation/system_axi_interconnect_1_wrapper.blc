@@ -7,11 +7,9 @@ apped/ngcbuild -p xc7z020clg484-1 -intstyle silent -i -sd ..
 system_axi_interconnect_1_wrapper.ngc ../system_axi_interconnect_1_wrapper
 
 Reading NGO file
-"/u2/xilinx/zynq_dev/hw_project/pa_proj/zynq_base_trd.srcs/sources_1/edk/xps_pro
-j/implementation/axi_interconnect_1_wrapper/system_axi_interconnect_1_wrapper.ng
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqTestCor
+e/implementation/axi_interconnect_1_wrapper/system_axi_interconnect_1_wrapper.ng
 c" ...
-Loading design module
-"../system_axi_interconnect_1_wrapper_fifo_generator_v9_1.ngc"...
 
 Partition Implementation Status
 -------------------------------
@@ -24,10 +22,10 @@ NGCBUILD Design Results Summary:
   Number of errors:     0
   Number of warnings:   0
 
-Total memory usage is 500788 kilobytes
+Total memory usage is 492484 kilobytes
 
 Writing NGC file "../system_axi_interconnect_1_wrapper.ngc" ...
 Total REAL time to NGCBUILD completion:  7 sec
-Total CPU time to NGCBUILD completion:   7 sec
+Total CPU time to NGCBUILD completion:   6 sec
 
 Writing NGCBUILD log file "../system_axi_interconnect_1_wrapper.blc"...

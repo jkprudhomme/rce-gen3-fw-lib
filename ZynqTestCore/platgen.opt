@@ -3,11 +3,7 @@ xc7z020clg484-1
 -lang
 vhdl
 -intstyle
-pa
--toplevel
-no
--ti
-system_i
+default
 -msg
 __xps/ise/xmsgprops.lst
 system.mhs
