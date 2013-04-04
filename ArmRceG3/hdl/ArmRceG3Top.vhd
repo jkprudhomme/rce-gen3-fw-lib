@@ -63,7 +63,7 @@ entity ArmRceG3 is
       axiHpSlaveClk0      : in     std_logic;
       axiHpSlaveResetN    : out    std_logic_vector(3 downto 0);
       axiHpSlaveFromArm   : out    AxiSlaveVector(3 downto 0);
-      axiHpSlaveToArm     : in     AxiMasterVector(3 downto 0);
+      axiHpSlaveToArm     : in     AxiMasterVector(3 downto 0)
 
    );
 end ArmRceG3;
