@@ -64,7 +64,7 @@ package ArmRceG3Pkg is
       awcache               : std_logic_vector(3  downto 0);
       awlen                 : std_logic_vector(3  downto 0);
       awqos                 : std_logic_vector(3  downto 0);
-      wstrb                 : std_logic_vector(3  downto 0);
+      wstrb                 : std_logic_vector(7  downto 0); -- 4 for GPs
       aruser                : std_logic_vector(4  downto 0); -- ACP
       awuser                : std_logic_vector(4  downto 0); -- ACP
    end record;
@@ -98,7 +98,7 @@ package ArmRceG3Pkg is
       awcache               => "0000",
       awlen                 => "0000",
       awqos                 => "0000",
-      wstrb                 => "0000",
+      wstrb                 => "00000000",
       aruser                => "00000",
       awuser                => "00000"
    );

@@ -22,8 +22,9 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.processing_system7_pkg.all;
 
-entity ArmRceG3 is
+entity ArmRceG3Top is
    port (
 
       -- Clocks
@@ -66,9 +67,9 @@ entity ArmRceG3 is
       axiHpSlaveToArm     : in     AxiMasterVector(3 downto 0)
 
    );
-end ArmRceG3;
+end ArmRceG3Top;
 
-architecture structure of ArmRceG3 is
+architecture structure of ArmRceG3Top is
 
    -- Local signals
 
@@ -81,7 +82,7 @@ begin
    -----------------------------------------------------------------------------------
    -- Processor system module
    -----------------------------------------------------------------------------------
-   U_PS7: processing_system_7 
+   U_PS7: processing_system7
       generic map (
          C_USE_DEFAULT_ACP_USER_VAL      =>  1,
          C_S_AXI_ACP_ARUSER_VAL          =>  31,
@@ -184,7 +185,7 @@ begin
          ENET1_GMII_RX_DV                 => '0',
          ENET1_GMII_RX_ER                 => '0',
          ENET1_GMII_TX_CLK                => '0',
-         ENET0_MDIO_I                     => '0',
+         ENET1_MDIO_I                     => '0',
          ENET1_EXT_INTIN                  => '0',
          ENET1_GMII_RXD                   => "00000000",
 
@@ -363,7 +364,7 @@ begin
          M_AXI_GP0_AWCACHE                => axiGpMasterFromArm(0).awcache,
          M_AXI_GP0_AWLEN                  => axiGpMasterFromArm(0).awlen,
          M_AXI_GP0_AWQOS                  => axiGpMasterFromArm(0).awqos,
-         M_AXI_GP0_WSTRB                  => axiGpMasterFromArm(0).wstrb,
+         M_AXI_GP0_WSTRB                  => axiGpMasterFromArm(0).wstrb(3 downto 0),
          M_AXI_GP0_ACLK                   => axiGpMasterClk0,
          M_AXI_GP0_ARREADY                => axiGpMasterToArm(0).arready,
          M_AXI_GP0_AWREADY                => axiGpMasterToArm(0).awready,
@@ -405,7 +406,7 @@ begin
          M_AXI_GP1_AWCACHE                => axiGpMasterFromArm(1).awcache,
          M_AXI_GP1_AWLEN                  => axiGpMasterFromArm(1).awlen,
          M_AXI_GP1_AWQOS                  => axiGpMasterFromArm(1).awqos,
-         M_AXI_GP1_WSTRB                  => axiGpMasterFromArm(1).wstrb,
+         M_AXI_GP1_WSTRB                  => axiGpMasterFromArm(1).wstrb(3 downto 0),
          M_AXI_GP1_ACLK                   => axiGpMasterClk1,
          M_AXI_GP1_ARREADY                => axiGpMasterToArm(1).arready,
          M_AXI_GP1_AWREADY                => axiGpMasterToArm(1).awready,
@@ -439,9 +440,9 @@ begin
          S_AXI_GP0_RREADY                 => axiGpSlaveToArm(0).rready,
          S_AXI_GP0_WLAST                  => axiGpSlaveToArm(0).wlast,
          S_AXI_GP0_WVALID                 => axiGpSlaveToArm(0).wvalid,
-         S_AXI_GP0_ARID                   => axiGpSlaveToArm(0).arid,
-         S_AXI_GP0_AWID                   => axiGpSlaveToArm(0).awid,
-         S_AXI_GP0_WID                    => axiGpSlaveToArm(0).wid,
+         S_AXI_GP0_ARID                   => axiGpSlaveToArm(0).arid(5 downto 0),
+         S_AXI_GP0_AWID                   => axiGpSlaveToArm(0).awid(5 downto 0),
+         S_AXI_GP0_WID                    => axiGpSlaveToArm(0).wid(5 downto 0),
          S_AXI_GP0_ARBURST                => axiGpSlaveToArm(0).arburst,
          S_AXI_GP0_ARLOCK                 => axiGpSlaveToArm(0).arlock,
          S_AXI_GP0_ARSIZE                 => axiGpSlaveToArm(0).arsize,
@@ -459,7 +460,7 @@ begin
          S_AXI_GP0_AWCACHE                => axiGpSlaveToArm(0).awcache,
          S_AXI_GP0_AWLEN                  => axiGpSlaveToArm(0).awlen,
          S_AXI_GP0_AWQOS                  => axiGpSlaveToArm(0).awqos,
-         S_AXI_GP0_WSTRB                  => axiGpSlaveToArm(0).wstrb,
+         S_AXI_GP0_WSTRB                  => axiGpSlaveToArm(0).wstrb(3 downto 0),
 
          -- S_AXI_GP1
          S_AXI_GP1_ARESETN                => axiGpSlaveResetN(1),
@@ -481,9 +482,9 @@ begin
          S_AXI_GP1_RREADY                 => axiGpSlaveToArm(1).rready,
          S_AXI_GP1_WLAST                  => axiGpSlaveToArm(1).wlast,
          S_AXI_GP1_WVALID                 => axiGpSlaveToArm(1).wvalid,
-         S_AXI_GP1_ARID                   => axiGpSlaveToArm(1).arid,
-         S_AXI_GP1_AWID                   => axiGpSlaveToArm(1).awid,
-         S_AXI_GP1_WID                    => axiGpSlaveToArm(1).wid,
+         S_AXI_GP1_ARID                   => axiGpSlaveToArm(1).arid(5 downto 0),
+         S_AXI_GP1_AWID                   => axiGpSlaveToArm(1).awid(5 downto 0),
+         S_AXI_GP1_WID                    => axiGpSlaveToArm(1).wid(5 downto 0),
          S_AXI_GP1_ARBURST                => axiGpSlaveToArm(1).arburst,
          S_AXI_GP1_ARLOCK                 => axiGpSlaveToArm(1).arlock,
          S_AXI_GP1_ARSIZE                 => axiGpSlaveToArm(1).arsize,
@@ -501,7 +502,7 @@ begin
          S_AXI_GP1_AWCACHE                => axiGpSlaveToArm(1).awcache,
          S_AXI_GP1_AWLEN                  => axiGpSlaveToArm(1).awlen,
          S_AXI_GP1_AWQOS                  => axiGpSlaveToArm(1).awqos,
-         S_AXI_GP1_WSTRB                  => axiGpSlaveToArm(1).wstrb,
+         S_AXI_GP1_WSTRB                  => axiGpSlaveToArm(1).wstrb(3 downto 0),
 
          -- S_AXI_ACP
          S_AXI_ACP_ARESETN                => axiAcpSlaveResetN,
@@ -511,8 +512,8 @@ begin
          S_AXI_ACP_RLAST                  => axiAcpSlaveFromArm.rlast,
          S_AXI_ACP_RVALID                 => axiAcpSlaveFromArm.rvalid,
          S_AXI_ACP_WREADY                 => axiAcpSlaveFromArm.wready,
-         S_AXI_ACP_BID                    => axiAcpSlaveFromArm.bid(3 downto 0),
-         S_AXI_ACP_RID                    => axiAcpSlaveFromArm.rid(3 downto 0),
+         S_AXI_ACP_BID                    => axiAcpSlaveFromArm.bid(2 downto 0),
+         S_AXI_ACP_RID                    => axiAcpSlaveFromArm.rid(2 downto 0),
          S_AXI_ACP_BRESP                  => axiAcpSlaveFromArm.bresp,
          S_AXI_ACP_RRESP                  => axiAcpSlaveFromArm.rresp,
          S_AXI_ACP_RDATA                  => axiAcpSlaveFromArm.rdata,
@@ -523,9 +524,9 @@ begin
          S_AXI_ACP_RREADY                 => axiAcpSlaveToArm.rready,
          S_AXI_ACP_WLAST                  => axiAcpSlaveToArm.wlast,
          S_AXI_ACP_WVALID                 => axiAcpSlaveToArm.wvalid,
-         S_AXI_ACP_ARID                   => axiAcpSlaveToArm.arid,
-         S_AXI_ACP_AWID                   => axiAcpSlaveToArm.awid,
-         S_AXI_ACP_WID                    => axiAcpSlaveToArm.wid,
+         S_AXI_ACP_ARID                   => axiAcpSlaveToArm.arid(2 downto 0),
+         S_AXI_ACP_AWID                   => axiAcpSlaveToArm.awid(2 downto 0),
+         S_AXI_ACP_WID                    => axiAcpSlaveToArm.wid(2 downto 0),
          S_AXI_ACP_ARBURST                => axiAcpSlaveToArm.arburst,
          S_AXI_ACP_ARLOCK                 => axiAcpSlaveToArm.arlock,
          S_AXI_ACP_ARSIZE                 => axiAcpSlaveToArm.arsize,
@@ -543,9 +544,9 @@ begin
          S_AXI_ACP_AWCACHE                => axiAcpSlaveToArm.awcache,
          S_AXI_ACP_AWLEN                  => axiAcpSlaveToArm.awlen,
          S_AXI_ACP_AWQOS                  => axiAcpSlaveToArm.awqos,
-         S_AXI_ACP_WSTRB                  => axiAcpSlaveToArm.wstrb,
-         S_AXI_ACP_ARUSER                 => axiAcpSlaveToArm.racount,
-         S_AXI_ACP_AWUSER                 => axiAcpSlaveToArm.wacount,
+         S_AXI_ACP_WSTRB                  => axiAcpSlaveToArm.wstrb(3 downto 0),
+         S_AXI_ACP_ARUSER                 => axiAcpSlaveToArm.aruser,
+         S_AXI_ACP_AWUSER                 => axiAcpSlaveToArm.awuser,
 
          -- S_AXI_HP_0
          S_AXI_HP0_ARESETN                => axiHpSlaveResetN(0),
@@ -573,9 +574,9 @@ begin
          S_AXI_HP0_WVALID                 => axiHpSlaveToArm(0).wvalid,
          S_AXI_HP0_RDISSUECAP1_EN         => axiHpSlaveToArm(0).rdissuecap1_en,
          S_AXI_HP0_WRISSUECAP1_EN         => axiHpSlaveToArm(0).wrissuecap1_en,
-         S_AXI_HP0_ARID                   => axiHpSlaveToArm(0).arid,
-         S_AXI_HP0_AWID                   => axiHpSlaveToArm(0).awid,
-         S_AXI_HP0_WID                    => axiHpSlaveToArm(0).wid,
+         S_AXI_HP0_ARID                   => axiHpSlaveToArm(0).arid(5 downto 0),
+         S_AXI_HP0_AWID                   => axiHpSlaveToArm(0).awid(5 downto 0),
+         S_AXI_HP0_WID                    => axiHpSlaveToArm(0).wid(5 downto 0),
          S_AXI_HP0_ARBURST                => axiHpSlaveToArm(0).arburst,
          S_AXI_HP0_ARLOCK                 => axiHpSlaveToArm(0).arlock,
          S_AXI_HP0_ARSIZE                 => axiHpSlaveToArm(0).arsize,
@@ -603,8 +604,8 @@ begin
          S_AXI_HP1_RLAST                  => axiHpSlaveFromArm(1).rlast,
          S_AXI_HP1_RVALID                 => axiHpSlaveFromArm(1).rvalid,
          S_AXI_HP1_WREADY                 => axiHpSlaveFromArm(1).wready,
-         S_AXI_HP1_BID                    => axiHpSlaveFromArm(1).bid(5 downto 1),
-         S_AXI_HP1_RID                    => axiHpSlaveFromArm(1).rid(5 downto 1),
+         S_AXI_HP1_BID                    => axiHpSlaveFromArm(1).bid(5 downto 0),
+         S_AXI_HP1_RID                    => axiHpSlaveFromArm(1).rid(5 downto 0),
          S_AXI_HP1_BRESP                  => axiHpSlaveFromArm(1).bresp,
          S_AXI_HP1_RRESP                  => axiHpSlaveFromArm(1).rresp,
          S_AXI_HP1_RDATA                  => axiHpSlaveFromArm(1).rdata,
@@ -621,9 +622,9 @@ begin
          S_AXI_HP1_WVALID                 => axiHpSlaveToArm(1).wvalid,
          S_AXI_HP1_RDISSUECAP1_EN         => axiHpSlaveToArm(1).rdissuecap1_en,
          S_AXI_HP1_WRISSUECAP1_EN         => axiHpSlaveToArm(1).wrissuecap1_en,
-         S_AXI_HP1_ARID                   => axiHpSlaveToArm(1).arid,
-         S_AXI_HP1_AWID                   => axiHpSlaveToArm(1).awid,
-         S_AXI_HP1_WID                    => axiHpSlaveToArm(1).wid,
+         S_AXI_HP1_ARID                   => axiHpSlaveToArm(1).arid(5 downto 0),
+         S_AXI_HP1_AWID                   => axiHpSlaveToArm(1).awid(5 downto 0),
+         S_AXI_HP1_WID                    => axiHpSlaveToArm(1).wid(5 downto 0),
          S_AXI_HP1_ARBURST                => axiHpSlaveToArm(1).arburst,
          S_AXI_HP1_ARLOCK                 => axiHpSlaveToArm(1).arlock,
          S_AXI_HP1_ARSIZE                 => axiHpSlaveToArm(1).arsize,
@@ -651,8 +652,8 @@ begin
          S_AXI_HP2_RLAST                  => axiHpSlaveFromArm(2).rlast,
          S_AXI_HP2_RVALID                 => axiHpSlaveFromArm(2).rvalid,
          S_AXI_HP2_WREADY                 => axiHpSlaveFromArm(2).wready,
-         S_AXI_HP2_BID                    => axiHpSlaveFromArm(2).bid(5 downto 2),
-         S_AXI_HP2_RID                    => axiHpSlaveFromArm(2).rid(5 downto 2),
+         S_AXI_HP2_BID                    => axiHpSlaveFromArm(2).bid(5 downto 0),
+         S_AXI_HP2_RID                    => axiHpSlaveFromArm(2).rid(5 downto 0),
          S_AXI_HP2_BRESP                  => axiHpSlaveFromArm(2).bresp,
          S_AXI_HP2_RRESP                  => axiHpSlaveFromArm(2).rresp,
          S_AXI_HP2_RDATA                  => axiHpSlaveFromArm(2).rdata,
@@ -667,11 +668,11 @@ begin
          S_AXI_HP2_RREADY                 => axiHpSlaveToArm(2).rready,
          S_AXI_HP2_WLAST                  => axiHpSlaveToArm(2).wlast,
          S_AXI_HP2_WVALID                 => axiHpSlaveToArm(2).wvalid,
-         S_AXI_HP2_RDISSUECAP2_EN         => axiHpSlaveToArm(2).rdissuecap2_en,
-         S_AXI_HP2_WRISSUECAP2_EN         => axiHpSlaveToArm(2).wrissuecap2_en,
-         S_AXI_HP2_ARID                   => axiHpSlaveToArm(2).arid,
-         S_AXI_HP2_AWID                   => axiHpSlaveToArm(2).awid,
-         S_AXI_HP2_WID                    => axiHpSlaveToArm(2).wid,
+         S_AXI_HP2_RDISSUECAP1_EN         => axiHpSlaveToArm(2).rdissuecap1_en,
+         S_AXI_HP2_WRISSUECAP1_EN         => axiHpSlaveToArm(2).wrissuecap1_en,
+         S_AXI_HP2_ARID                   => axiHpSlaveToArm(2).arid(5 downto 0),
+         S_AXI_HP2_AWID                   => axiHpSlaveToArm(2).awid(5 downto 0),
+         S_AXI_HP2_WID                    => axiHpSlaveToArm(2).wid(5 downto 0),
          S_AXI_HP2_ARBURST                => axiHpSlaveToArm(2).arburst,
          S_AXI_HP2_ARLOCK                 => axiHpSlaveToArm(2).arlock,
          S_AXI_HP2_ARSIZE                 => axiHpSlaveToArm(2).arsize,
@@ -699,8 +700,8 @@ begin
          S_AXI_HP3_RLAST                  => axiHpSlaveFromArm(3).rlast,
          S_AXI_HP3_RVALID                 => axiHpSlaveFromArm(3).rvalid,
          S_AXI_HP3_WREADY                 => axiHpSlaveFromArm(3).wready,
-         S_AXI_HP3_BID                    => axiHpSlaveFromArm(3).bid(5 downto 3),
-         S_AXI_HP3_RID                    => axiHpSlaveFromArm(3).rid(5 downto 3),
+         S_AXI_HP3_BID                    => axiHpSlaveFromArm(3).bid(5 downto 0),
+         S_AXI_HP3_RID                    => axiHpSlaveFromArm(3).rid(5 downto 0),
          S_AXI_HP3_BRESP                  => axiHpSlaveFromArm(3).bresp,
          S_AXI_HP3_RRESP                  => axiHpSlaveFromArm(3).rresp,
          S_AXI_HP3_RDATA                  => axiHpSlaveFromArm(3).rdata,
@@ -715,11 +716,11 @@ begin
          S_AXI_HP3_RREADY                 => axiHpSlaveToArm(3).rready,
          S_AXI_HP3_WLAST                  => axiHpSlaveToArm(3).wlast,
          S_AXI_HP3_WVALID                 => axiHpSlaveToArm(3).wvalid,
-         S_AXI_HP3_RDISSUECAP3_EN         => axiHpSlaveToArm(3).rdissuecap3_en,
-         S_AXI_HP3_WRISSUECAP3_EN         => axiHpSlaveToArm(3).wrissuecap3_en,
-         S_AXI_HP3_ARID                   => axiHpSlaveToArm(3).arid,
-         S_AXI_HP3_AWID                   => axiHpSlaveToArm(3).awid,
-         S_AXI_HP3_WID                    => axiHpSlaveToArm(3).wid,
+         S_AXI_HP3_RDISSUECAP1_EN         => axiHpSlaveToArm(3).rdissuecap1_en,
+         S_AXI_HP3_WRISSUECAP1_EN         => axiHpSlaveToArm(3).wrissuecap1_en,
+         S_AXI_HP3_ARID                   => axiHpSlaveToArm(3).arid(5 downto 0),
+         S_AXI_HP3_AWID                   => axiHpSlaveToArm(3).awid(5 downto 0),
+         S_AXI_HP3_WID                    => axiHpSlaveToArm(3).wid(5 downto 0),
          S_AXI_HP3_ARBURST                => axiHpSlaveToArm(3).arburst,
          S_AXI_HP3_ARLOCK                 => axiHpSlaveToArm(3).arlock,
          S_AXI_HP3_ARSIZE                 => axiHpSlaveToArm(3).arsize,
@@ -776,42 +777,48 @@ begin
          Core1_nFIQ                       => '0',
          Core1_nIRQ                       => '0',
 
-         -- DMA
+         -- DMA 0
          DMA0_DATYPE                      => open,
          DMA0_DAVALID                     => open,
          DMA0_DRREADY                     => open,
          DMA0_RSTN                        => open,
-         DMA1_DATYPE                      => open,
-         DMA1_DAVALID                     => open,
-         DMA1_DRREADY                     => open,
-         DMA1_RSTN                        => open,
-         DMA2_DATYPE                      => open,
-         DMA2_DAVALID                     => open,
-         DMA2_DRREADY                     => open,
-         DMA2_RSTN                        => open,
-         DMA3_DATYPE                      => open,
-         DMA3_DAVALID                     => open,
-         DMA3_DRREADY                     => open,
-         DMA3_RSTN                        => open,
          DMA0_ACLK                        => '0',
          DMA0_DAREADY                     => '0',
          DMA0_DRLAST                      => '0',
          DMA0_DRVALID                     => '0',
+         DMA0_DRTYPE                      => "00",
+
+         -- DMA 1
+         DMA1_DATYPE                      => open,
+         DMA1_DAVALID                     => open,
+         DMA1_DRREADY                     => open,
+         DMA1_RSTN                        => open,
          DMA1_ACLK                        => '0',
          DMA1_DAREADY                     => '0',
          DMA1_DRLAST                      => '0',
          DMA1_DRVALID                     => '0',
+         DMA1_DRTYPE                      => "00",
+
+         -- DMA 2
+         DMA2_DATYPE                      => open,
+         DMA2_DAVALID                     => open,
+         DMA2_DRREADY                     => open,
+         DMA2_RSTN                        => open,
          DMA2_ACLK                        => '0',
          DMA2_DAREADY                     => '0',
          DMA2_DRLAST                      => '0',
          DMA2_DRVALID                     => '0',
+         DMA2_DRTYPE                      => "00",
+
+         -- DMA 3
+         DMA3_DATYPE                      => open,
+         DMA3_DAVALID                     => open,
+         DMA3_DRREADY                     => open,
+         DMA3_RSTN                        => open,
          DMA3_ACLK                        => '0',
          DMA3_DAREADY                     => '0',
          DMA3_DRLAST                      => '0',
-         DMA3_DRVALID,                    => '0',
-         DMA0_DRTYPE                      => "00",
-         DMA1_DRTYPE                      => "00",
-         DMA2_DRTYPE                      => "00",
+         DMA3_DRVALID                     => '0',
          DMA3_DRTYPE                      => "00",
      
          -- FCLK
@@ -819,10 +826,10 @@ begin
          FCLK_CLK2                        => fclkClk2,
          FCLK_CLK1                        => fclkClk1,
          FCLK_CLK0                        => fclkClk0,
-         FCLK_CLKTRIG3_N                  => '0',
-         FCLK_CLKTRIG2_N                  => '0',
-         FCLK_CLKTRIG1_N                  => '0',
-         FCLK_CLKTRIG0_N                  => '0',
+         FCLK_CLKTRIG3_N                  => '1',
+         FCLK_CLKTRIG2_N                  => '1',
+         FCLK_CLKTRIG1_N                  => '1',
+         FCLK_CLKTRIG0_N                  => '1',
          FCLK_RESET3_N                    => fclkRst3N,
          FCLK_RESET2_N                    => fclkRst2N,
          FCLK_RESET1_N                    => fclkRst1N,
@@ -836,11 +843,11 @@ begin
     
          -- FTMT
          FTMT_F2P_TRIG                    => "0000",
-         FTMT_F2P_TRIGACK                 => "0000",
-         FTMT_F2P_DEBUG,                  => x"00000000",
+         FTMT_F2P_TRIGACK                 => open,
+         FTMT_F2P_DEBUG                   => x"00000000",
          FTMT_P2F_TRIGACK                 => "0000",
-         FTMT_P2F_TRIG                    => "0000",
-         FTMT_P2F_DEBUG                   => x"00000000",
+         FTMT_P2F_TRIG                    => open,
+         FTMT_P2F_DEBUG                   => open,
 
          -- FIDLE
          FPGA_IDLE_N                      => '0',
@@ -881,55 +888,38 @@ begin
       );
 
    -- Unused AXI Master GP Signals
-   --axiGpMasterToArm(1 downto 0).rcount
-   --axiGpMasterToArm(1 downto 0).wcount
-   --axiGpMasterToArm(1 downto 0).racount
-   --axiGpMasterToArm(1 downto 0).wacount
-   --axiGpMasterToArm(1 downto 0).rdata(63 downto 32)
-   axiGpMasterFromArm(1 downto 0).rdissuecap1_en       <= (others=>'0');
-   axiGpMasterFromArm(1 downto 0).wrissuecap1_en       <= (others=>'0');
-   axiGpMasterFromArm(1 downto 0).aruser               <= (others=>"00000");
-   axiGpMasterFromArm(1 downto 0).awuser               <= (others=>"00000");
-   axiGpMasterFromArm(1 downto 0).wdata(63 downto 32)  <= (others=>(others=>'0'));
+   U_UnusedMasterGP: for i in 0 to 1 generate
+      axiGpMasterFromArm(i).rdissuecap1_en      <= '0';
+      axiGpMasterFromArm(i).wrissuecap1_en      <= '0';
+      axiGpMasterFromArm(i).aruser              <= "00000";
+      axiGpMasterFromArm(i).awuser              <= "00000";
+      axiGpMasterFromArm(i).wdata(63 downto 32) <= (others=>'0');
+      axiGpMasterFromArm(i).wstrb(7 downto 4)   <= "0000";
+   end generate;
 
    -- Unused AXI Slave GP Signals
-   axiGpSlaveFromArm(1 downto 0).rcount                <= (others=>(others=>'0'));
-   axiGpSlaveFromArm(1 downto 0).wcount                <= (others=>(others=>'0'));
-   axiGpSlaveFromArm(1 downto 0).racount               <= (others=>(others=>'0'));
-   axiGpSlaveFromArm(1 downto 0).wacount               <= (others=>(others=>'0'));
-   axiGpSlaveFromArm(1 downto 0).rdata(63 downto 32)   <= (others=>(others=>'0'));
-   axiGpSlaveFromArm(1 downto 0).bid(11 downto 6)      <= (others=>(others=>'0'));
-   axiGpSlaveFromArm(1 downto 0).rid(11 downto 6)      <= (others=>(others=>'0'));
-   --axiGpSlaveToArm(1 downto 0).rdissuecap1_en
-   --axiGpSlaveToArm(1 downto 0).wrissuecap1_en
-   --axiGpSlaveToArm(1 downto 0).aruser
-   --axiGpSlaveToArm(1 downto 0).awuser
-   --axiGpSlaveToArm(1 downto 0).wdata(63 downto 32)
-   --axiGpSlaveToArm(1 downto 0).arid(11 downto 6)
-   --axiGpSlaveToArm(1 downto 0).awid(11 downto 6)
-   --axiGpSlaveToArm(1 downto 0).wid(11 downto 6)
+   U_UnusedSlaveGP: for i in 0 to 1 generate
+      axiGpSlaveFromArm(i).rcount              <= (others=>'0');
+      axiGpSlaveFromArm(i).wcount              <= (others=>'0');
+      axiGpSlaveFromArm(i).racount             <= (others=>'0');
+      axiGpSlaveFromArm(i).wacount             <= (others=>'0');
+      axiGpSlaveFromArm(i).rdata(63 downto 32) <= (others=>'0');
+      axiGpSlaveFromArm(i).bid(11 downto 6)    <= (others=>'0');
+      axiGpSlaveFromArm(i).rid(11 downto 6)    <= (others=>'0');
+   end generate;
 
    -- Unused AXI ACP Signals
-   axiAcpSlaveFromArm.rcount                <= (others=>(others=>'0'));
-   axiAcpSlaveFromArm.wcount                <= (others=>(others=>'0'));
-   axiAcpSlaveFromArm.racount               <= (others=>(others=>'0'));
-   axiAcpSlaveFromArm.wacount               <= (others=>(others=>'0'));
-   axiAcpSlaveFromArm.bid(11 downto 4)      <= (others=>(others=>'0'));
-   axiAcpSlaveFromArm.rid(11 downto 4)      <= (others=>(others=>'0'));
-   --axiAcpSlaveToArm.rdissuecap1_en
-   --axiAcpSlaveToArm.wrissuecap1_en
-   --axiAcpSlaveToArm.arid(11 downto 4)
-   --axiAcpSlaveToArm.awid(11 downto 4)
-   --axiAcpSlaveToArm.wid(11 downto 4)
+   axiAcpSlaveFromArm.rcount           <= (others=>'0');
+   axiAcpSlaveFromArm.wcount           <= (others=>'0');
+   axiAcpSlaveFromArm.racount          <= (others=>'0');
+   axiAcpSlaveFromArm.wacount          <= (others=>'0');
+   axiAcpSlaveFromArm.bid(11 downto 3) <= (others=>'0');
+   axiAcpSlaveFromArm.rid(11 downto 3) <= (others=>'0');
 
    -- Unused AXI Slave HP Signals
-   axiGpSlaveFromArm(3 downto 0).bid(11 downto 6)      <= (others=>(others=>'0'));
-   axiGpSlaveFromArm(1 downto 0).rid(11 downto 6)      <= (others=>(others=>'0'));
-   --axiGpSlaveToArm(3 downto 0).aruser
-   --axiGpSlaveToArm(3 downto 0).awuser
-   --axiGpSlaveToArm(3 downto 0).arid(11 downto 6)
-   --axiGpSlaveToArm(3 downto 0).awid(11 downto 6)
-   --axiGpSlaveToArm(3 downto 0).wid(11 downto 6)
+   U_UnusedSlaveHP: for i in 0 to 3 generate
+      axiHpSlaveFromArm(i).bid(11 downto 6) <= (others=>'0');
+      axiHpSlaveFromArm(i).rid(11 downto 6) <= (others=>'0');
+   end generate;
 
 end architecture structure;
-

@@ -19,7 +19,7 @@ use IEEE.numeric_std.all;
 
 package processing_system7_pkg is
 
-   component processing_system_7 is
+   component processing_system7 is
       generic (
          C_USE_DEFAULT_ACP_USER_VAL      : integer := 1;
          C_S_AXI_ACP_ARUSER_VAL          : integer := 31;
@@ -61,7 +61,7 @@ package processing_system7_pkg is
          C_DM_WIDTH                      : integer := 4;
          C_MIO_PRIMITIVE                 : integer := 54;
          C_PACKAGE_NAME                  : string  := "clg484"
-      ) 
+      ); 
       port (
   
          -- FMIO CAN0
@@ -122,7 +122,7 @@ package processing_system7_pkg is
          ENET1_GMII_RX_DV                : in  std_logic;
          ENET1_GMII_RX_ER                : in  std_logic;
          ENET1_GMII_TX_CLK               : in  std_logic;
-         ENET0_MDIO_I                    : in  std_logic;
+         ENET1_MDIO_I                    : in  std_logic;
          ENET1_EXT_INTIN                 : in  std_logic;
          ENET1_GMII_RXD                  : in  std_logic_vector(7 downto 0);  
 
@@ -259,15 +259,15 @@ package processing_system7_pkg is
          -- FTPORT
          TRACE_CLK                       : in  std_logic;
          TRACE_CTL                       : out std_logic;
-         TRACE_DATA                      : out std_logic(31 downto 0);
+         TRACE_DATA                      : out std_logic_vector(31 downto 0);
      
          -- USB 0
-         USB0_PORT_INDCTL                : out std_logic(1 downto 0);
+         USB0_PORT_INDCTL                : out std_logic_vector(1 downto 0);
          USB0_VBUS_PWRSELECT             : out std_logic;
          USB0_VBUS_PWRFAULT              : in  std_logic;
 
          -- USB 1
-         USB1_PORT_INDCTL                : out std_logic(1 downto 0);
+         USB1_PORT_INDCTL                : out std_logic_vector(1 downto 0);
          USB1_VBUS_PWRSELECT             : out std_logic;
          USB1_VBUS_PWRFAULT              : in  std_logic;
         
@@ -746,7 +746,7 @@ package processing_system7_pkg is
          DMA3_ACLK                       : in  std_logic;
          DMA3_DAREADY                    : in  std_logic;
          DMA3_DRLAST                     : in  std_logic;
-         DMA3_DRVALID,                   : in  std_logic; 
+         DMA3_DRVALID                    : in  std_logic; 
          DMA0_DRTYPE                     : in  std_logic_vector(1 downto 0);
          DMA1_DRTYPE                     : in  std_logic_vector(1 downto 0);
          DMA2_DRTYPE                     : in  std_logic_vector(1 downto 0);
@@ -775,7 +775,7 @@ package processing_system7_pkg is
          -- FTMT
          FTMT_F2P_TRIG                   : in  std_logic_vector(3  downto 0);
          FTMT_F2P_TRIGACK                : out std_logic_vector(3  downto 0);
-         FTMT_F2P_DEBUG,                 : in  std_logic_vector(31 downto 0); 
+         FTMT_F2P_DEBUG                  : in  std_logic_vector(31 downto 0); 
          FTMT_P2F_TRIGACK                : in  std_logic_vector(3  downto 0);
          FTMT_P2F_TRIG                   : out std_logic_vector(3  downto 0);
          FTMT_P2F_DEBUG                  : out std_logic_vector(31 downto 0);
@@ -815,7 +815,7 @@ package processing_system7_pkg is
          -- Clock and reset
          PS_SRSTB                        : in    std_logic;
          PS_CLK                          : in    std_logic;
-         PS_PORB                         : in    std_logic;
+         PS_PORB                         : in    std_logic
       );
    end component;
 
