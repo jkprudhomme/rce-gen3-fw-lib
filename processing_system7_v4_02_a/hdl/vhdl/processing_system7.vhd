@@ -481,7 +481,7 @@ package processing_system7_pkg is
          S_AXI_ACP_AWCACHE               : in  std_logic_vector(3  downto 0);
          S_AXI_ACP_AWLEN                 : in  std_logic_vector(3  downto 0);
          S_AXI_ACP_AWQOS                 : in  std_logic_vector(3  downto 0);
-         S_AXI_ACP_WSTRB                 : in  std_logic_vector(3  downto 0);
+         S_AXI_ACP_WSTRB                 : in  std_logic_vector(7  downto 0);
          S_AXI_ACP_ARUSER                : in  std_logic_vector(4  downto 0);
          S_AXI_ACP_AWUSER                : in  std_logic_vector(4  downto 0);
      
