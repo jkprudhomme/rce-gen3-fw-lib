@@ -37,6 +37,14 @@ entity ArmRceG3Top is
       fclkRst1N                : out    std_logic;
       fclkRst0N                : out    std_logic;
 
+      -- Event Interface
+      eventEventO              : out    std_logic;
+      eventStandbyWfe          : out    std_logic_vector(1 downto 0);
+      eventEventI              : in     std_logic;
+   
+      -- Interrupts
+      armInt                   : in     std_logic_vector(15 downto 0);
+
       -- AXI GP Master
       axiGpMasterClk1          : in     std_logic;
       axiGpMasterClk0          : in     std_logic;
@@ -779,7 +787,7 @@ begin
          IRQ_P2F_SPI1                     => open,
          IRQ_P2F_UART1                    => open,
          IRQ_P2F_CAN1                     => open,
-         IRQ_F2P                          => x"0000",
+         IRQ_F2P                          => armInt,
          Core0_nFIQ                       => '0',
          Core0_nIRQ                       => '0',
          Core1_nFIQ                       => '0',
@@ -861,10 +869,10 @@ begin
          FPGA_IDLE_N                      => '0',
      
          -- EVENT
-         EVENT_EVENTO                     => open,
-         EVENT_STANDBYWFE                 => open,
+         EVENT_EVENTO                     => eventEventO,
+         EVENT_STANDBYWFE                 => eventStandbyWfe,
          EVENT_STANDBYWFI                 => open,
-         EVENT_EVENTI                     => '0',
+         EVENT_EVENTI                     => eventEventI,
      
          -- DARB
          DDR_ARB                          => "0000",
