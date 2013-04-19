@@ -51,11 +51,13 @@ package ArmRceG3Pkg is
       arprot                : std_logic_vector(2  downto 0);
       arcache               : std_logic_vector(3  downto 0);
       arqos                 : std_logic_vector(3  downto 0);
-      rdissuecap1_en        : std_logic; -- HP0-3
       aruser                : std_logic_vector(4  downto 0); -- ACP
 
       -- Read data channel
       rready                : std_logic;
+
+      -- Control 
+      rdissuecap1_en        : std_logic;                     -- HP0-3
 
    end record;
 
@@ -71,9 +73,9 @@ package ArmRceG3Pkg is
       arprot                => "000",
       arcache               => "0000",
       arqos                 => "0000",
-      rdissuecap1_en        => '0',
       aruser                => "00000",
       rready                => '0'
+      rdissuecap1_en        => '0',
    );
 
    -- Vector
@@ -89,7 +91,6 @@ package ArmRceG3Pkg is
 
       -- Read Address channel
       arready               : std_logic;
-      racount               : std_logic_vector(2  downto 0); -- HP0-3
 
       -- Read data channel
       rdata                 : std_logic_vector(63 downto 0); -- 32 bits for GP0/GP1 
@@ -97,6 +98,9 @@ package ArmRceG3Pkg is
       rvalid                : std_logic;
       rid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 4 for ACP, 6 for HP
       rresp                 : std_logic_vector(1  downto 0);
+
+      -- Status
+      racount               : std_logic_vector(2  downto 0); -- HP0-3
       rcount                : std_logic_vector(7  downto 0); -- HP0-3
 
    end record;
@@ -104,12 +108,12 @@ package ArmRceG3Pkg is
    -- Initialization constants
    constant AxiReadSlaveInit : AxiReadSlaveType := ( 
       arready               => '0',
-      racount               => "000",
       rdata                 => x"0000000000000000",
       rlast                 => '0',
       rvalid                => '0',
       rid                   => x"000",
       rresp                 => "00",
+      racount               => "000",
       rcount                => x"00"
    );
 
@@ -135,7 +139,6 @@ package ArmRceG3Pkg is
       awcache               : std_logic_vector(3  downto 0);
       awprot                : std_logic_vector(2  downto 0);
       awqos                 : std_logic_vector(3  downto 0);
-      wrissuecap1_en        : std_logic; -- HP0-3
       awuser                : std_logic_vector(4  downto 0); -- ACP
 
       -- Write data channel
@@ -147,6 +150,9 @@ package ArmRceG3Pkg is
 
       -- Write ack channel
       bready                : std_logic;
+
+      -- Control
+      wrissuecap1_en        : std_logic;                     -- HP0-3
 
    end record;
 
@@ -162,7 +168,6 @@ package ArmRceG3Pkg is
       awcache               => "0000",
       awprot                => "000",
       awqos                 => "0000",
-      wrissuecap1_en        => '0',
       awuser                => "00000",
       wdata                 => x"0000000000000000",
       wlast                 => '0',
@@ -170,6 +175,7 @@ package ArmRceG3Pkg is
       wid                   => x"000",
       wstrb                 => "00000000",
       bready                => '0'
+      wrissuecap1_en        => '0',
    );
 
    -- Vector
@@ -185,27 +191,30 @@ package ArmRceG3Pkg is
 
       -- Write address channel
       awready               : std_logic;
-      wacount               : std_logic_vector(5  downto 0); -- HP0-3
 
       -- Write data channel
       wready                : std_logic;
-      wcount                : std_logic_vector(7  downto 0); -- HP0-3
 
       -- Write ack channel
       bresp                 : std_logic_vector(1  downto 0);
       bvalid                : std_logic;
       bid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 4 for ACP, 6 for HP
+
+      -- Status
+      wacount               : std_logic_vector(5  downto 0); -- HP0-3
+      wcount                : std_logic_vector(7  downto 0); -- HP0-3
+
    end record;
 
    -- Initialization constants
    constant AxiWriteSlaveInit : AxiWriteSlaveType := ( 
       awready               => '0',
-      wacount               => "000000",
       wready                => '0',
-      wcount                => x"00",
       bresp                 => "00",
       bvalid                => '0',
       bid                   => x"000"
+      wacount               => "000000",
+      wcount                => x"00",
    );
 
    -- Vector
