@@ -1,2 +1,0 @@
-VHDL axi_bram_ctrl_0_bram_block_1_elaborate_v1_00_a /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqTestCore/hdl/elaborate/axi_bram_ctrl_0_bram_block_1_elaborate_v1_00_a/hdl/vhdl/axi_bram_ctrl_0_bram_block_1_elaborate.vhd
-vhdl work ../hdl/system_axi_bram_ctrl_0_bram_block_1_wrapper.vhd
