@@ -27,11 +27,14 @@ package ArmRceG3Pkg is
    ----------------------------------
    -- Types
    ----------------------------------
-   subtype word32Type is std_logic_vector(31 downto 0);
-   type word32Array   is array (integer range<>) of word32Type;
+   subtype Word32Type is std_logic_vector(31 downto 0);
+   type Word32Array   is array (integer range<>) of Word32Type;
 
-   subtype word36Type is std_logic_vector(35 downto 0);
-   type word36Array   is array (integer range<>) of word36Type;
+   subtype Word36Type is std_logic_vector(35 downto 0);
+   type Word36Array   is array (integer range<>) of Word36Type;
+
+   subtype Word64Type is std_logic_vector(63 downto 0);
+   type Word64Array   is array (integer range<>) of Word64Type;
 
    --------------------------------------------------------
    -- AXI bus, read master signal record
