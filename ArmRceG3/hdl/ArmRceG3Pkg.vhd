@@ -74,8 +74,8 @@ package ArmRceG3Pkg is
       arcache               => "0000",
       arqos                 => "0000",
       aruser                => "00000",
-      rready                => '0'
-      rdissuecap1_en        => '0',
+      rready                => '0',
+      rdissuecap1_en        => '0'
    );
 
    -- Vector
@@ -174,8 +174,8 @@ package ArmRceG3Pkg is
       wvalid                => '0',
       wid                   => x"000",
       wstrb                 => "00000000",
-      bready                => '0'
-      wrissuecap1_en        => '0',
+      bready                => '0',
+      wrissuecap1_en        => '0'
    );
 
    -- Vector
@@ -212,9 +212,9 @@ package ArmRceG3Pkg is
       wready                => '0',
       bresp                 => "00",
       bvalid                => '0',
-      bid                   => x"000"
+      bid                   => x"000",
       wacount               => "000000",
-      wcount                => x"00",
+      wcount                => x"00"
    );
 
    -- Vector
