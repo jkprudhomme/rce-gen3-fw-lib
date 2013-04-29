@@ -25,199 +25,247 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
-use ieee.std_logic_unsigned.all;
 
 library unisim;
 use unisim.vcomponents.all;
 
 use work.Ppc440RceG2Pkg.all;
+use work.i2cPkg.all;
+use work.StdRtlPkg.all;
 
 entity Ppc440RceG2I2c is
-  generic ( REG_INIT     : i2c_reg_vector(4 to 511) := (others=>x"00000000") );
+  generic (
+    TPD_G      : time                   := 1 ns;
+    I2C_ADDR_G : integer range 0 to 128 := 0);
   port (
-    rst_i     : in  std_logic;
+    iicSysClk : in std_logic;
+    iicSysRst : in std_logic;
 
-    -- Client interface
-    rst_o     : out std_logic;
-    clk32     : in  std_logic;
+    cpuReset : out std_logic;
 
     -- APU Interface
-    apuClk           : in  std_logic;
-    apuWriteFromPpc  : in  ApuWriteFromPpcType;
-    apuWriteToPpc    : out ApuWriteToPpcType;
-    apuReadFromPpc   : in  ApuReadFromPpcType;
-    apuReadToPpc     : out ApuReadToPpcType;
+    apuClk          : in  std_logic;
+    apuRst          : in  std_logic;
+    apuWriteFromPpc : in  ApuWriteFromPpcType;
+    apuWriteToPpc   : out ApuWriteToPpcType;
+    apuReadFromPpc  : in  ApuReadFromPpcType;
+    apuReadToPpc    : out ApuReadToPpcType;
 
     -- IIC Interface
-    iic_addr    : in  std_logic_vector(6 downto 0);
-    iic_clki    : in  std_logic;
-    iic_clko    : out std_logic;
-    iic_clkt    : out std_logic;
-    iic_datai   : in  std_logic;
-    iic_datao   : out std_logic;
-    iic_datat   : out std_logic;
-    --
-    debug       : out std_logic_vector(15 downto 0)
-    );
+    i2ci : in  i2c_in_type;
+    i2co : out i2c_out_type);
+
 end Ppc440RceG2I2c;
 
 architecture IMP of Ppc440RceG2I2c is
 
-  component i2c_block
-  port (
-    clk         : in    std_logic;
-    rst_i       : in    std_logic;
-    rrq         : out   std_logic;
-    irq         : out   std_logic;
-    -- I2C bus signals
-    saddr       : in    std_logic_vector(6 downto 0);
-    sda_i       : in    std_logic;
-    sda_o       : out   std_logic;
-    sda_t       : out   std_logic;
-    scl_i       : in    std_logic;
-    scl_o       : out   std_logic;
-    scl_t       : out   std_logic;
-    -- BRAM interface
-    rclk        : out   std_logic;
-    rden        : out   std_logic;
-    wren        : out   std_logic;
-    addr        : out   std_logic_vector(15 downto 0);
-    datai       : in    std_logic_vector( 7 downto 0);
-    datao       : out   std_logic_vector( 7 downto 0)
-    );
-  end component;
- 
-  signal interrupt     : std_logic;
-  signal iic_bram_clk  : std_logic;
-  signal iic_bram_rd   : std_logic;
-  signal iic_bram_wr   : std_logic;
-  signal iic_bram_en   : std_logic;
-  signal iic_bram_addr : std_logic_vector(15 downto 0);
-  signal iic_bram_dout : std_logic_vector( 7 downto 0);
-  signal iic_bram_din  : std_logic_vector( 7 downto 0);
+  -- i2cSysClk domain signals
+  signal i2cWrEn   : std_logic;
+  signal i2cAddr   : std_logic_vector(15 downto 0);
+  signal i2cWrData : std_logic_vector(7 downto 0);
+  signal i2cRdData : std_logic_vector(7 downto 0);
 
+  type StateType is (WAIT_WR_S, WR_DATA_S, WR_ADDR_S, WR_FF_S);
+  type SysRegType is record
+    startup   : sl;
+    interrupt : slv(3 downto 0);
+    cpuReset  : slv(7 downto 0);
+    state     : StateType;
+    addr      : slv(15 downto 0);
+    wrEn      : sl;
+    wrData    : slv(7 downto 0);
+  end record SysRegType;
+
+  signal sysR, sysRin : SysRegType;
+
+  -- apuClk domain signals
   signal apu_bram_wr   : std_logic;
   signal apu_bram_addr : std_logic_vector(15 downto 0);
   signal apu_bram_dout : std_logic_vector(31 downto 0);
   signal apu_bram_din  : std_logic_vector(31 downto 0);
-  
-  constant REGADDR : std_logic_vector(apu_bram_addr'range) := std_logic_vector(conv_unsigned(-2,apu_bram_addr'length));
-  constant RSPADDR : std_logic_vector(apu_bram_addr'range) := std_logic_vector(conv_unsigned(-1,apu_bram_addr'length));
-  
-  signal rrq : std_logic;
-  signal rst_b : std_logic;
-  signal rst_b_next : std_logic;
 
-  function INIT_FN ( REG_INIT : i2c_reg_vector;
-                     index    : unsigned(7 downto 0) )
-    return bit_vector is
-    variable i : integer := conv_integer(index & "000");
-    variable y : bit_vector(0 to 255);
-  begin 
-    for j in 0 to 7 loop
-      if (i+j)<REG_INIT'left then
-        y(j*32 to j*32+31) := (others=>'0');
-      elsif (i+j)>REG_INIT'right then
-        y(j*32 to j*32+31) := (others=>'0');
-      else
-        y(j*32 to j*32+31) := REG_INIT(i+j);
-      end if;
-    end loop;  -- j
-    return y;
-  end function INIT_FN;
-    
+  type ApuRegType is record
+    interrupt : slv(1 downto 0);
+    empty     : sl;
+  end record ApuRegType;
+
+  signal apuR, apuRin : ApuRegType;
+  
 begin  -- IMP
 
-  -- need logic to latch rst_o
-
-  reset_b : block
-    type Reset_State is (RInit, RWait, RCount, RIdle);
-    signal resetState, resetState_next : Reset_State;
-    
-    signal rst_cnt, rst_cnt_next : unsigned(2 downto 0);
-    constant TERM : unsigned(rst_cnt'range) := (others=>'0');
-  begin
-    rst_o <= rst_b;
-  
-    rst_b_next   <= '0' when resetState=RIdle else '1';
-    
-    rst_cnt_next <= (rst_cnt-1) when resetState_next=RCount else
-                    (TERM     );
-
-    resetState_next <= RWait  when (rrq='1') else
-                       RCount when (resetState=RWait  and rrq='0') else
-                       RIdle  when (resetState=RCount and rst_cnt=TERM) else
-                       resetState;
-    
-    rst_p : process(rst_i, clk32)
-    begin
-      if rst_i='1' then
-        rst_b      <= '1';
-        rst_cnt    <= TERM;
-        resetState <= RInit;
-      elsif rising_edge(clk32) then
-        rst_b      <= rst_b_next;
-        rst_cnt    <= rst_cnt_next;
-        resetState <= resetState_next;
-      end if;
-    end process rst_p;
-  end block reset_b;
-  
-  bram_0 : RAMB16_S9_S36  generic map ( INIT_00 => INIT_FN( REG_INIT, X"00" ) )
-                          port map ( DOB  => apu_bram_dout,
-                                     DOPB => open,
-                                     ADDRB=> apu_bram_addr(8 downto 0),
-                                     CLKB => apuClk,
-                                     DIB  => apu_bram_din,
-                                     DIPB => x"0",
-                                     ENB  => '1',
-                                     SSRB => rst_i,
-                                     WEB  => apu_bram_wr,
-                                     DOA  => iic_bram_dout,
-                                     DOPA => open,
-                                     ADDRA => iic_bram_addr(10 downto 0),
-                                     CLKA => iic_bram_clk,
-                                     DIA  => iic_bram_din,
-                                     DIPA => "0",
-                                     ENA  => iic_bram_en,
-                                     SSRA => rst_i,
-                                     WEA  => iic_bram_wr );
-
-  iic_bram_en <= iic_bram_rd or iic_bram_wr;
-
-  i2c_b : i2c_block
---    generic map (CLK_FREQ_MHZ => CLK_FREQ_MHZ)
+  --------------------------------------------------------------------------------------------------
+  -- I2C Register Slave
+  --------------------------------------------------------------------------------------------------
+  i2cRegSlave_1 : entity work.i2cRegSlave
+    generic map (
+      TENBIT_G             => 0,
+      I2C_ADDR_G           => I2C_ADDR_G,  -- 1001001
+      OUTPUT_EN_POLARITY_G => 0,           -- IOBUFs enabled with low T signal
+      FILTER_G             => 4,
+      ADDR_SIZE_G          => 2,
+      DATA_SIZE_G          => 1,
+      ENDIANNESS_G         => 0)
     port map (
-      clk         => clk32,
-      rst_i       => rst_i,
-      rrq         => rrq,
-      irq         => interrupt,
-      -- I2C bus signals
-      saddr       => iic_addr,
-      sda_i       => iic_datai,
-      sda_o       => iic_datao,
-      sda_t       => iic_datat,
-      scl_i       => iic_clki,
-      scl_o       => iic_clko,
-      scl_t       => iic_clkt,
-      -- BRAM interface
-      rclk        => iic_bram_clk,
-      rden        => iic_bram_rd,
-      wren        => iic_bram_wr,
-      addr        => iic_bram_addr,
-      datai       => iic_bram_dout,
-      datao       => iic_bram_din );
+      sRst   => '0',
+      aRst   => iicSysRst,
+      clk    => iicSysClk,
+      addr   => i2cAddr,
+      wrEn   => i2cWrEn,
+      wrData => i2cWrData,
+      rdEn   => open,
+      rdData => i2cRdData,
+      i2ci   => i2ci,
+      i2co   => i2co);
 
-  -- Interface
-  apu_bram_wr          <= apuWriteFromPpc.enable;
-  apu_bram_addr        <= apuWriteFromPpc.regA(16 to 31);
-  apu_bram_din         <= apuWriteFromPpc.regB;
-  apuWriteToPpc.full   <= '0';
-  apuReadToPpc.result  <= apu_bram_dout;
-  apuReadToPpc.status  <= (others=>'0');
-  apuReadToPpc.empty   <= not interrupt;
-  apuReadToPpc.ready   <= '1';
+  --------------------------------------------------------------------------------------------------
+  -- iicSysClk Logic - Glue between i2cRegSlave and block RAM.
+  -- Assert cpuReset upon startup and hold until address 0x8000 is written to over i2c.
+  -- A write to 0x8000 causes cpuReset to be held high for 8 cycles and then dropped.
+  -- A write over i2c to 0b1xxxxxxxxxxxxxxx (where x != 0) causes an interrupt.
+  -- sysR.interrupt is held for 4 cycles so that it can be picked up an synchronized to the apuClk.
+  --
+  -- On an i2c write, in addition to the data be written at the specified address, the lower byte
+  -- of the address is written to address 0x07F8 and 0xFF is written to address 0x7FC.
+  --------------------------------------------------------------------------------------------------
+  iicSysClkComb : process (sysR, i2cWrData, i2cWrEn, i2cAddr) is
+    variable v : SysRegType;
+  begin
+    v := sysR;
+
+    -- Interrupt and cpuReset
+    v.interrupt := '0' & sysR.interrupt(3 downto 1);
+    v.cpuReset  := sysR.startup & sysR.cpuReset(7 downto 1);
+    if (i2cWrEn = '1' and i2cAddr(15) = '1') then
+      if (i2cAddr(14 downto 0) = "000000000000000") then
+        v.cpuReset := (others => '1');
+        v.startup  := '0';
+      else
+        v.interrupt := (others => '1');
+      end if;
+    end if;
+
+    -- Control writes to bram
+    v.wrData := i2cWrData;
+    v.wrEn   := '0';
+    v.addr   := i2cAddr;
+    case sysR.state is
+      when WAIT_WR_S =>
+        -- Upon I2C Write, first put wrData into bram at i2cAddr
+        if (i2cWrEn = '1') then
+          v.wrData := i2cWrData;
+          v.wrEn   := '1';
+          v.addr   := i2cAddr;
+          v.state  := WR_ADDR_S;
+        end if;
+      when WR_ADDR_S =>
+        -- Then write lower byte of address into bram at 0x07F8
+        v.wrData := i2cAddr(7 downto 0);
+        v.wrEn   := '1';
+        v.addr   := X"07F8";
+        v.state  := WR_FF_S;
+      when WR_FF_S =>
+        -- Then write 0xFF to bram at 0x07FC
+        v.wrData := X"FF";
+        v.wrEn   := '1';
+        v.addr   := X"07FC";
+        v.state  := WAIT_WR_S;
+      when others => null;
+    end case;
+
+    sysRin <= v;
+
+    cpuReset <= sysR.cpuReset(0);       -- Output cpuReset    
+  end process iicSysClkComb;
+
+  iicSysClkSeq : process (iicSysClk, iicSysRst) is
+  begin
+    if (iicSysRst = '1') then
+      sysR.startup   <= '1'             after TPD_G;
+      sysR.interrupt <= (others => '0') after TPD_G;
+      sysR.cpuReset  <= (others => '1') after TPD_G;
+      sysR.wrEn      <= '0'             after TPD_G;
+    -- Other bram signals don't need reset
+    elsif (rising_edge(iicSysClk)) then
+      sysR <= sysRin after TPD_G;
+    end if;
+  end process;
+
+  --------------------------------------------------------------------------------------------------
+  -- Block Ram
+  -- Side B: 8x2048 - I2C
+  -- Side A: 32x512 - APU
+  --------------------------------------------------------------------------------------------------
+  bram_0 : RAMB16_S9_S36
+    port map (
+      DOB   => apu_bram_dout,
+      DOPB  => open,
+      ADDRB => apu_bram_addr(8 downto 0),
+      CLKB  => apuClk,
+      DIB   => apu_bram_din,
+      DIPB  => x"0",
+      ENB   => '1',
+      SSRB  => '0',
+      WEB   => apu_bram_wr,
+      DOA   => i2cRdData,               -- connects directly to i2cRegSlave
+      DOPA  => open,
+      ADDRA => sysR.addr(10 downto 0),
+      CLKA  => iicSysClk,
+      DIA   => sysR.wrData,
+      DIPA  => "0",
+      ENA   => '1',
+      SSRA  => '0',
+      WEA   => sysR.wrEn);
+
+  --------------------------------------------------------------------------------------------------
+  -- apuClk Logic
+  --------------------------------------------------------------------------------------------------
+  apuClkComb : process (apuR, sysR, apu_bram_wr, apu_bram_addr) is
+    variable v : ApuRegType;
+  begin
+    v := apuR;
+
+    -- Synchronize interrupt to apuClk domain
+    v.interrupt := sysR.interrupt(0) & apuR.interrupt(1);
+
+    -- Set empty low when interrupt seen
+    if (apuR.interrupt(0) = '1') then
+      v.empty := '0';
+    end if;
+
+    -- Reset empty when addr "111111111" is written to
+    if (apu_bram_wr = '1' and apu_bram_addr(8 downto 0) = X"111111111") then
+      v.empty := '1';
+    end if;
+
+    apuRin <= v;
+  end process apuClkComb;
+
+  apuClkSeq : process (apuClk, apuRst) is
+  begin
+    if (apuRst = '1') then
+      apuR.interrupt <= (others => '0') after TPD_G;
+      apuR.empty     <= '1'             after TPD_G;
+    elsif (rising_edge(apuClk)) then
+      apuR <= apuRin after TPD_G;
+    end if;
+  end process apuClkSeq;
+
+  -- APU IO
+  apu_bram_wr         <= apuWriteFromPpc.enable;
+  apu_bram_addr       <= apuWriteFromPpc.regA(16 to 31);
+  apu_bram_din        <= apuWriteFromPpc.regB;
+  apuWriteToPpc.full  <= '0';
+  apuReadToPpc.result <= apu_bram_dout;
+  apuReadToPpc.status <= (others => '0');
+  apuReadToPpc.empty  <= apuR.empty;
+  apuReadToPpc.ready  <= '1';
+
+  
+
+
+
+
+
 
 end IMP;
 

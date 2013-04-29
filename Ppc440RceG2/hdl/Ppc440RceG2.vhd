@@ -8,6 +8,7 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.Ppc440RceG2Pkg.all;
+use work.i2cPkg.all;
 
 entity Ppc440RceG2 is
    port (
@@ -118,12 +119,8 @@ architecture structure of Ppc440RceG2 is
    signal intClk312_5MhzRst            : std_logic;
    signal intClk468_75MhzRst           : std_logic;
    signal intClk234_375MhzAdjRst       : std_logic;
-   signal iicClkO                      : std_logic;
-   signal iicClkI                      : std_logic;
-   signal iicClkT                      : std_logic; 
-   signal iicDataO                     : std_logic;
-   signal iicDataI                     : std_logic;
-   signal iicDataT                     : std_logic; 
+   signal i2co                         : i2c_out_type;
+   signal i2ci                         : i2c_in_type;
    signal extIrq                       : std_logic;
    signal resetReq                     : std_logic;
    signal fcmApuConfirmInstr           : std_logic;
@@ -735,34 +732,36 @@ begin
    ----------------------------------------------------------------------------
    -- I2C Slave
    ----------------------------------------------------------------------------
-   U_Ppc440RceG2I2c : Ppc440RceG2I2c port map (
-      rst_i           => intClk156_25MhzAdjRstPon,
-      rst_o           => resetReq,
-      clk32           => intClk156_25MhzAdj,
-      apuClk          => intClk234_375MhzAdj,
-      apuWriteFromPpc => iapuWriteFromPpc(7),
-      apuWriteToPpc   => iapuWriteToPpc(7),
-      apuReadFromPpc  => iapuReadFromPpc(7),
-      apuReadToPpc    => iapuReadToPpc(7),
-      iic_addr        => "1001001",
-      iic_clki        => iicClkI,
-      iic_clko        => iicClkO,
-      iic_clkt        => iicClkT,
-      iic_datai       => iicDataI,
-      iic_datao       => iicDataO,
-      iic_datat       => iicDataT,
-      debug           => open 
-   );
+   Ppc440RceG2I2c_1: entity work.Ppc440RceG2I2c
+     generic map (
+       TPD_G      => tpd,
+       I2C_ADDR_G => 74)
+     port map (
+       iicSysClk       => intClk156_25MhzAdj,
+       iicSysRst       => intClk156_25MhzAdjRstPon,
+       cpuReset        => resetReq,
+       apuClk          => intClk234_375MhzAdj,
+       apuRst          => intClk234_375MhzAdjRst,
+       apuWriteFromPpc => iapuWriteFromPpc(7),
+       apuWriteToPpc   => iapuWriteToPpc(7),
+       apuReadFromPpc  => iapuReadFromPpc(7),
+       apuReadToPpc    => iapuReadToPpc(7),
+       i2ci            => i2ci,
+       i2co            => i2co);
+   
+   U_I2cScl : IOBUF
+     port map (
+       IO => modScl,
+       I  => i2co.scl,
+       O  => i2ci.scl,
+       T  => i2co.scloen);
 
-   U_I2cScl : IOBUF port map ( IO => modScl,
-                               I  => iicClkO,
-                               O  => iicClkI,
-                               T  => iicClkT);
-
-   U_I2cSda : IOBUF port map ( IO => modSda,
-                               I  => iicDataO,
-                               O  => iicDataI,
-                               T  => iicDataT);
+   U_I2cSda : IOBUF
+     port map (
+       IO => modSda,
+       I  => i2co.sda,
+       O  => i2ci.sda,
+       T  => i2co.sdaoen);
 
    ----------------------------------------------------------------------------
    -- APU Interface
