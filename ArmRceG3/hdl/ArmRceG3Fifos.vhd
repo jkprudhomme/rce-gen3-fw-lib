@@ -223,7 +223,7 @@ begin
    -----------------------------------------
  
    -- One channel for now 
-   arbValid   <= fifoValid(0);
+   arbValid   <= fifoValid(0) and (not dirtyFlag(0));
    arbChannel <= "000";
    --signal fifoValid (7 downto 0)
    --signal curChannel            : std_logic_vector(2  downto 0);
