@@ -1,0 +1,15 @@
+# Output products list for <zynq_icon>
+zynq_icon.asy
+zynq_icon.constraints/zynq_icon.ucf
+zynq_icon.constraints/zynq_icon.xdc
+zynq_icon.gise
+zynq_icon.ngc
+zynq_icon.ucf
+zynq_icon.vhd
+zynq_icon.vho
+zynq_icon.xco
+zynq_icon.xdc
+zynq_icon.xise
+zynq_icon_flist.txt
+zynq_icon_readme.txt
+zynq_icon_xmdf.tcl

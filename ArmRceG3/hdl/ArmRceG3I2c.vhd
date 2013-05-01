@@ -45,15 +45,11 @@ entity ArmRceG3I2c is
       ponRst      : in  std_logic;
 
       -- Local bus interface
-      localClk    : in  std_logic;
-      localClkRst : in  std_logic;
-      localReq    : in  std_logic;
-      localAck    : out std_logic;
-      localWen    : in  std_logic;
-      localAddr   : in  std_logic_vector(15 downto 0);
-      localWrData : in  std_logic_vector(31 downto 0);
-      localRdData : out std_logic_vector(31 downto 0);
-      i2cIrq      : out std_logic;
+      localClk       : in  std_logic;
+      localClkRst    : in  std_logic;
+      localBusMaster : in  LocalBusMasterType;
+      localBusSlave  : out LocalBusSlaveType;
+      i2cIrq         : out std_logic;
 
       -- IIC Interface
       i2cSda      : inout std_logic;
@@ -69,7 +65,7 @@ architecture IMP of ArmRceG3I2c is
    signal i2cBramDout : std_logic_vector( 7 downto 0);
    signal i2cBramDin  : std_logic_vector( 7 downto 0);
    signal cpuBramWr   : std_logic;
-   signal cpuBramAddr : std_logic_vector(15 downto 0);
+   signal cpuBramAddr : std_logic_vector(8  downto 0);
    signal cpuBramDout : std_logic_vector(31 downto 0);
    signal cpuBramDin  : std_logic_vector(31 downto 0);
    signal i2cIn       : i2c_in_type;
@@ -98,9 +94,6 @@ architecture IMP of ArmRceG3I2c is
    constant TPD_G : time := 1 ns;
  
 begin
-
-   --i2cAddr <= "1001001";
-
 
    -------------------------
    -- I2c Slave
@@ -218,7 +211,7 @@ begin
       port map ( 
          DOB   => cpuBramDout,
          DOPB  => open,
-         ADDRB => cpuBramAddr(8 downto 0),
+         ADDRB => cpuBramAddr,
          CLKB  => localClk,
          DIB   => cpuBramDin,
          DIPB  => x"0",
@@ -239,17 +232,18 @@ begin
    -------------------------
    -- CPU Interface
    -------------------------
-   cpuBramWr   <= localReq and localWen;
-   cpuBramAddr <= localAddr;
-   cpuBramDin  <= localWrData;
-   localRdData <= cpuBramDout;
-   i2cIrq      <= sysR.interrupt(0);
+   cpuBramWr              <= localBusMaster.writeEnable;
+   cpuBramAddr            <= localBusMaster.addr(10 downto 2);
+   cpuBramDin             <= localBusMaster.writeData;
+   localBusSlave.readData <= cpuBramDout;
+   i2cIrq                 <= sysR.interrupt(0);
 
-   process(localClkRst, localClk) begin
+   -- One clock delay for read data valid
+   process ( localCLk, localClkRst ) begin
       if localClkRst = '1' then
-         localAck <= '0';
+         localBusSlave.readValid <= '0' after TPD_G;
       elsif rising_edge(localClk) then
-         localAck <= localReq;
+         localBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
       end if;
    end process;
 

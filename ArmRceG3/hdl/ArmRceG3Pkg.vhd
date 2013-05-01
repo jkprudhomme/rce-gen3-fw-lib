@@ -22,7 +22,7 @@ package ArmRceG3Pkg is
    ----------------------------------
    -- Constants
    ----------------------------------
-   constant tpd : time := 0.1 ns;
+   constant TPD_G : time := 0.1 ns;
 
    ----------------------------------
    -- Types
@@ -222,6 +222,50 @@ package ArmRceG3Pkg is
 
    -- Vector
    type AxiWriteSlaveVector is array (integer range<>) of AxiWriteSlaveType;
+
+   --------------------------------------------------------
+   -- Local Bus Master
+   --------------------------------------------------------
+
+   -- Base Record
+   type LocalBusMasterType is record
+      addr                    : std_logic_vector(31 downto 0); -- Held during enire cycle
+      addrValid               : std_logic; -- Pulsed for one cycle
+      readEnable              : std_logic; -- Pulsed for one cycle
+      writeEnable             : std_logic; -- Pulsed for one cycle
+      writeData               : std_logic_vector(31 downto 0);
+   end record;
+
+   -- Initialization constants
+   constant LocalBusMasterInit : LocalBusMasterType := ( 
+      addr                  => x"00000000",
+      addrValid             => '0',
+      readEnable            => '0',
+      writeEnable           => '0',
+      writeData             => x"00000000"
+   );
+
+   -- Vector
+   type LocalBusMasterVector is array (integer range<>) of LocalBusMasterType;
+
+   --------------------------------------------------------
+   -- Local Bus Slave
+   --------------------------------------------------------
+
+   -- Base Record
+   type LocalBusSlaveType is record
+      readValid               : std_logic;
+      readData                : std_logic_vector(31 downto 0);
+   end record;
+
+   -- Initialization constants
+   constant LocalBusSlaveInit : LocalBusSlaveType := ( 
+      readValid             => '0',
+      readData              => x"00000000"
+   );
+
+   -- Vector
+   type LocalBusSlaveVector is array (integer range<>) of LocalBusSlaveType;
 
 end ArmRceG3Pkg;
 
