@@ -24,6 +24,9 @@ entity ArmRceG3Fifos is
       localBusMaster          : in  LocalBusMasterType;
       localBusSlave           : out LocalBusSlaveType;
 
+      -- Interrupt
+      interrupt               : out std_logic;
+
       -- Debug
       debug                   : out std_logic_vector(127 downto 0)
    );
@@ -70,6 +73,8 @@ architecture structure of ArmRceG3Fifos is
    signal arbChannel            : std_logic_vector(2  downto 0);
    signal arbValid              : std_logic;
    signal writeDmaCache         : std_logic_vector(3  downto 0);
+   signal fifoEnable            : std_logic_vector(7  downto 0);
+   signal intEnable             : std_logic_vector(7  downto 0);
 
    -- States
    signal   curState   : std_logic_vector(1 downto 0);
@@ -99,6 +104,8 @@ begin
          dirtyClearEn     <= '0'                     after TPD_G;
          dirtyClearSel    <= (others=>'0')           after TPD_G;
          writeDmaCache    <= (others=>'0')           after TPD_G;
+         fifoEnable       <= (others=>'0')           after TPD_G;
+         intEnable        <= (others=>'0')           after TPD_G;
       elsif rising_edge(axiClk) then
          intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
 
@@ -130,12 +137,31 @@ begin
             end if;
             intLocalBusSlave.readData <= x"0000000" & writeDmaCache after TPD_G;
 
+         -- FIFO Enable 0x88030004
+         elsif localBusMaster.addr(23 downto 0) = x"030004" then
+            if localBusMaster.writeEnable = '1' then
+               fifoEnable <= localBusMaster.writeData(7 downto 0) after TPD_G;
+            end if;
+            intLocalBusSlave.readData <= x"000000" & fifoEnable after TPD_G;
+
+         -- Dirty status 0x8803000C
+         elsif localBusMaster.addr(23 downto 0) = x"03000C" then
+            intLocalBusSlave.readData <= x"000000" & dirtyFlag after TPD_G;
+
+         -- Int Enable 0x88030010
+         elsif localBusMaster.addr(23 downto 0) = x"030010" then
+            if localBusMaster.writeEnable = '1' then
+               intEnable <= localBusMaster.writeData(7 downto 0) after TPD_G;
+            end if;
+            intLocalBusSlave.readData <= x"000000" & intEnable after TPD_G;
+
          -- Unsupported
          else
             fifoWrEn                   <= '0'         after TPD_G;
             dirtyClearEn               <= '0'         after TPD_G;
             intLocalBusSlave.readData  <= x"deadbeef" after TPD_G;
          end if;
+
       end if;  
    end process;         
 
@@ -146,7 +172,7 @@ begin
    U_DirtyGen: for i in 0 to 7 generate
       process ( axiClk, axiClkRst ) begin
          if axiClkRst = '1' then
-            dirtyFlag(i) <= '1' after TPD_G;
+            dirtyFlag(i) <= '0' after TPD_G;
          elsif rising_edge(axiClk) then
             if dirtyClearEn = '1' and dirtyClearSel = i then
                dirtyFlag(i) <= '0' after TPD_G;
@@ -156,6 +182,8 @@ begin
          end if;
       end process;
    end generate;
+
+   interrupt <= dirtyFlag(0) and intEnable(0);
 
    -----------------------------------------
    -- State machine
@@ -223,7 +251,7 @@ begin
    -----------------------------------------
  
    -- One channel for now 
-   arbValid   <= fifoValid(0) and (not dirtyFlag(0));
+   arbValid   <= fifoValid(0) and (not dirtyFlag(0)) and fifoEnable(0);
    arbChannel <= "000";
    --signal fifoValid (7 downto 0)
    --signal curChannel            : std_logic_vector(2  downto 0);

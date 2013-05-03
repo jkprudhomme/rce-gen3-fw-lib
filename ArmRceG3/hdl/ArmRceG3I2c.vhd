@@ -122,15 +122,14 @@ begin
       );
 
    U_I2cScl : IOBUF port map ( IO => i2cScl,
-                               I  => i2cIn.scl,
-                               O  => i2cOut.scl,
+                               I  => i2cOut.scl,
+                               O  => i2cIn.scl,
                                T  => i2cOut.scloen);
 
    U_I2cSda : IOBUF port map ( IO => i2cSda,
-                               I  => i2cIn.sda,
-                               O  => i2cOut.sda,
+                               I  => i2cOut.sda,
+                               O  => i2cIn.sda,
                                T  => i2cOut.sdaoen);
-
 
    --------------------------------------------------------------------------------------------------
    -- iicSysClk Logic - Glue between i2cRegSlave and block RAM.

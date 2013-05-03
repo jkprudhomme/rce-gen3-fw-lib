@@ -152,7 +152,7 @@ begin
    axiHpSlaveWriteToArm       <= (others=>AxiWriteMasterInit);
    axiHpSlaveReadToArm        <= (others=>AxiReadMasterInit);
 
-   armInt(15 downto 0)        <= (others=>'0');
+   armInt(15 downto 1)        <= (others=>'0');
 
    --------------------------------------------
    -- Register Controller
@@ -234,6 +234,7 @@ begin
          axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArm,
          localBusMaster          => localBusMaster(2),
          localBusSlave           => localBusSlave(2),
+         interrupt               => armInt(0),
          debug                   => fifoDebug
       );
 
