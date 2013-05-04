@@ -75,6 +75,7 @@ architecture structure of ArmRceG3Fifos is
    signal writeDmaCache         : std_logic_vector(3  downto 0);
    signal fifoEnable            : std_logic_vector(7  downto 0);
    signal intEnable             : std_logic_vector(7  downto 0);
+   signal iinterrupt            : std_logic;
 
    -- States
    signal   curState   : std_logic_vector(1 downto 0);
@@ -183,7 +184,8 @@ begin
       end process;
    end generate;
 
-   interrupt <= dirtyFlag(0) and intEnable(0);
+   iinterrupt <= dirtyFlag(0) and intEnable(0);
+   interrupt <= iinterrupt;
 
    -----------------------------------------
    -- State machine
@@ -335,7 +337,8 @@ begin
    -- Debug
    ---------------------------
    debug(127 downto 113) <= (others=>'0'); -- External
-   debug(112 downto 105) <= (others=>'0');
+   debug(112 downto 106) <= (others=>'0');
+   debug(105)            <= iinterrupt;
    debug(104 downto 103) <= curState;
    debug(102)            <= writeDone;
    debug(101)            <= writeError;
