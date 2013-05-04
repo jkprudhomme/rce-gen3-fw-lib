@@ -42,7 +42,7 @@ package processing_system7_pkg is
          C_S_AXI_HP2_DATA_WIDTH          : integer := 64;
          C_S_AXI_HP3_DATA_WIDTH          : integer := 64;
          C_INCLUDE_ACP_TRANS_CHECK       : integer := 0;
-         C_NUM_F2P_INTR_INPUTS           : integer := 2;
+         C_NUM_F2P_INTR_INPUTS           : integer := 16;
          C_FCLK_CLK0_BUF                 : string  := "TRUE";
          C_FCLK_CLK1_BUF                 : string  := "TRUE";
          C_FCLK_CLK2_BUF                 : string  := "TRUE";
