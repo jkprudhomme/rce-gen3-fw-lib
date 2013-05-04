@@ -46,7 +46,7 @@ package ArmRceG3Pkg is
       -- Read Address channel
       arvalid               : std_logic;
       araddr                : std_logic_vector(31 downto 0);
-      arid                  : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 4 for ACP, 6 for HP
+      arid                  : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
       arlen                 : std_logic_vector(3  downto 0);
       arsize                : std_logic_vector(2  downto 0);
       arburst               : std_logic_vector(1  downto 0);
@@ -99,7 +99,7 @@ package ArmRceG3Pkg is
       rdata                 : std_logic_vector(63 downto 0); -- 32 bits for GP0/GP1 
       rlast                 : std_logic;
       rvalid                : std_logic;
-      rid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 4 for ACP, 6 for HP
+      rid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
       rresp                 : std_logic_vector(1  downto 0);
 
       -- Status
@@ -134,7 +134,7 @@ package ArmRceG3Pkg is
       -- Write address channel
       awvalid               : std_logic;
       awaddr                : std_logic_vector(31 downto 0);
-      awid                  : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 4 for ACP, 6 for HP
+      awid                  : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
       awlen                 : std_logic_vector(3  downto 0);
       awsize                : std_logic_vector(2  downto 0);
       awburst               : std_logic_vector(1  downto 0);
@@ -148,7 +148,7 @@ package ArmRceG3Pkg is
       wdata                 : std_logic_vector(63 downto 0); -- 32 bits for GP0/GP1
       wlast                 : std_logic;
       wvalid                : std_logic;
-      wid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 4 for ACP, 6 for HP
+      wid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
       wstrb                 : std_logic_vector(7  downto 0); -- 4 for GPs
 
       -- Write ack channel
@@ -201,7 +201,7 @@ package ArmRceG3Pkg is
       -- Write ack channel
       bresp                 : std_logic_vector(1  downto 0);
       bvalid                : std_logic;
-      bid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 4 for ACP, 6 for HP
+      bid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
 
       -- Status
       wacount               : std_logic_vector(5  downto 0); -- HP0-3

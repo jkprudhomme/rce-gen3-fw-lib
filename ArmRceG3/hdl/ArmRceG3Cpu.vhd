@@ -130,7 +130,7 @@ begin
          C_S_AXI_HP2_DATA_WIDTH          =>  64,
          C_S_AXI_HP3_DATA_WIDTH          =>  64,
          C_INCLUDE_ACP_TRANS_CHECK       =>  0,
-         C_NUM_F2P_INTR_INPUTS           =>  2,
+         C_NUM_F2P_INTR_INPUTS           =>  16,
          C_FCLK_CLK0_BUF                 =>  "TRUE",
          C_FCLK_CLK1_BUF                 =>  "TRUE",
          C_FCLK_CLK2_BUF                 =>  "TRUE",
