@@ -71,7 +71,7 @@ architecture IMP of ArmRceG3I2c is
    signal i2cIn       : i2c_in_type;
    signal i2cOut      : i2c_out_type;
 
-   type StateType is (WAIT_WR_S, WR_DATA_S, WR_ADDR_S, WR_FF_S);
+   type StateType is (WAIT_WR_S, WR_DATA_S, WR_ADDR_L, WR_ADDR_H, WR_FF_S);
    type SysRegType is record
       startup   : sl;
       interrupt : slv(3 downto 0);
@@ -169,13 +169,19 @@ begin
                v.wrData := i2cBramDin;
                v.wrEn   := '1';
                v.addr   := i2cBramAddr;
-               v.state  := WR_ADDR_S;
+               v.state  := WR_ADDR_L;
             end if;
-         when WR_ADDR_S =>
+         when WR_ADDR_L =>
             -- Then write lower byte of address into bram at 0x07F8
             v.wrData := i2cBramAddr(7 downto 0);
             v.wrEn   := '1';
             v.addr   := X"07F8";
+            v.state  := WR_ADDR_H;
+         when WR_ADDR_H =>
+            -- Then write upper byte of address into bram at 0x07F9
+            v.wrData := i2cBramAddr(15 downto 8);
+            v.wrEn   := '1';
+            v.addr   := X"07F9";
             v.state  := WR_FF_S;
          when WR_FF_S =>
             -- Then write 0xFF to bram at 0x07FC
