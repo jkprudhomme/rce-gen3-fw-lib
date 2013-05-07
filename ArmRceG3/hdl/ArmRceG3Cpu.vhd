@@ -37,12 +37,13 @@ entity ArmRceG3Cpu is
       fclkRst1                 : out    std_logic;
       fclkRst0                 : out    std_logic;
 
+      -- Common AXI Clock
+      axiClk                   : in     std_logic;
+
       -- Interrupts
       armInt                   : in     std_logic_vector(15 downto 0);
 
       -- AXI GP Master
-      axiGpMasterClk1          : in     std_logic;
-      axiGpMasterClk0          : in     std_logic;
       axiGpMasterReset         : out    std_logic_vector(1 downto 0);
       axiGpMasterWriteFromArm  : out    AxiWriteMasterVector(1 downto 0);
       axiGpMasterWriteToArm    : in     AxiWriteSlaveVector(1 downto 0);
@@ -50,8 +51,6 @@ entity ArmRceG3Cpu is
       axiGpMasterReadToArm     : in     AxiReadSlaveVector(1 downto 0);
 
       -- AXI GP Slave
-      axiGpSlaveClk1           : in     std_logic;
-      axiGpSlaveClk0           : in     std_logic;
       axiGpSlaveReset          : out    std_logic_vector(1 downto 0);
       axiGpSlaveWriteFromArm   : out    AxiWriteSlaveVector(1 downto 0);
       axiGpSlaveWriteToArm     : in     AxiWriteMasterVector(1 downto 0);
@@ -59,7 +58,6 @@ entity ArmRceG3Cpu is
       axiGpSlaveReadToArm      : in     AxiReadMasterVector(1 downto 0);
 
       -- AXI ACP Slave
-      axiAcpSlaveClk           : in     std_logic;
       axiAcpSlaveReset         : out    std_logic;
       axiAcpSlaveWriteFromArm  : out    AxiWriteSlaveType;
       axiAcpSlaveWriteToArm    : in     AxiWriteMasterType;
@@ -67,10 +65,6 @@ entity ArmRceG3Cpu is
       axiAcpSlaveReadToArm     : in     AxiReadMasterType;
 
       -- AXI HP Slave
-      axiHpSlaveClk3           : in     std_logic;
-      axiHpSlaveClk2           : in     std_logic;
-      axiHpSlaveClk1           : in     std_logic;
-      axiHpSlaveClk0           : in     std_logic;
       axiHpSlaveReset          : out    std_logic_vector(3 downto 0);
       axiHpSlaveWriteFromArm   : out    AxiWriteSlaveVector(3 downto 0);
       axiHpSlaveWriteToArm     : in     AxiWriteMasterVector(3 downto 0);
@@ -390,7 +384,7 @@ begin
          M_AXI_GP0_AWLEN                  => axiGpMasterWriteFromArm(0).awlen,
          M_AXI_GP0_AWQOS                  => axiGpMasterWriteFromArm(0).awqos,
          M_AXI_GP0_WSTRB                  => axiGpMasterWriteFromArm(0).wstrb(3 downto 0),
-         M_AXI_GP0_ACLK                   => axiGpMasterClk0,
+         M_AXI_GP0_ACLK                   => axiClk,
          M_AXI_GP0_ARREADY                => axiGpMasterReadToArm(0).arready,
          M_AXI_GP0_AWREADY                => axiGpMasterWriteToArm(0).awready,
          M_AXI_GP0_BVALID                 => axiGpMasterWriteToArm(0).bvalid,
@@ -432,7 +426,7 @@ begin
          M_AXI_GP1_AWLEN                  => axiGpMasterWriteFromArm(1).awlen,
          M_AXI_GP1_AWQOS                  => axiGpMasterWriteFromArm(1).awqos,
          M_AXI_GP1_WSTRB                  => axiGpMasterWriteFromArm(1).wstrb(3 downto 0),
-         M_AXI_GP1_ACLK                   => axiGpMasterClk1,
+         M_AXI_GP1_ACLK                   => axiClk,
          M_AXI_GP1_ARREADY                => axiGpMasterReadToArm(1).arready,
          M_AXI_GP1_AWREADY                => axiGpMasterWriteToArm(1).awready,
          M_AXI_GP1_BVALID                 => axiGpMasterWriteToArm(1).bvalid,
@@ -458,7 +452,7 @@ begin
          S_AXI_GP0_BRESP                  => axiGpSlaveWriteFromArm(0).bresp,
          S_AXI_GP0_RRESP                  => axiGpSlaveReadFromArm(0).rresp,
          S_AXI_GP0_RDATA                  => axiGpSlaveReadFromArm(0).rdata(31 downto 0),
-         S_AXI_GP0_ACLK                   => axiGpSlaveClk0,
+         S_AXI_GP0_ACLK                   => axiClk,
          S_AXI_GP0_ARVALID                => axiGpSlaveReadToArm(0).arvalid,
          S_AXI_GP0_AWVALID                => axiGpSlaveWriteToArm(0).awvalid,
          S_AXI_GP0_BREADY                 => axiGpSlaveWriteToArm(0).bready,
@@ -500,7 +494,7 @@ begin
          S_AXI_GP1_BRESP                  => axiGpSlaveWriteFromArm(1).bresp,
          S_AXI_GP1_RRESP                  => axiGpSlaveReadFromArm(1).rresp,
          S_AXI_GP1_RDATA                  => axiGpSlaveReadFromArm(1).rdata(31 downto 0),
-         S_AXI_GP1_ACLK                   => axiGpSlaveClk1,
+         S_AXI_GP1_ACLK                   => axiClk,
          S_AXI_GP1_ARVALID                => axiGpSlaveReadToArm(1).arvalid,
          S_AXI_GP1_AWVALID                => axiGpSlaveWriteToArm(1).awvalid,
          S_AXI_GP1_BREADY                 => axiGpSlaveWriteToArm(1).bready,
@@ -542,7 +536,7 @@ begin
          S_AXI_ACP_BRESP                  => axiAcpSlaveWriteFromArm.bresp,
          S_AXI_ACP_RRESP                  => axiAcpSlaveReadFromArm.rresp,
          S_AXI_ACP_RDATA                  => axiAcpSlaveReadFromArm.rdata,
-         S_AXI_ACP_ACLK                   => axiAcpSlaveClk,
+         S_AXI_ACP_ACLK                   => axiClk,
          S_AXI_ACP_ARVALID                => axiAcpSlaveReadToArm.arvalid,
          S_AXI_ACP_AWVALID                => axiAcpSlaveWriteToArm.awvalid,
          S_AXI_ACP_BREADY                 => axiAcpSlaveWriteToArm.bready,
@@ -590,7 +584,7 @@ begin
          S_AXI_HP0_WCOUNT                 => axiHpSlaveWriteFromArm(0).wcount,
          S_AXI_HP0_RACOUNT                => axiHpSlaveReadFromArm(0).racount,
          S_AXI_HP0_WACOUNT                => axiHpSlaveWriteFromArm(0).wacount,
-         S_AXI_HP0_ACLK                   => axiHpSlaveClk0,
+         S_AXI_HP0_ACLK                   => axiClk,
          S_AXI_HP0_ARVALID                => axiHpSlaveReadToArm(0).arvalid,
          S_AXI_HP0_AWVALID                => axiHpSlaveWriteToArm(0).awvalid,
          S_AXI_HP0_BREADY                 => axiHpSlaveWriteToArm(0).bready,
@@ -638,7 +632,7 @@ begin
          S_AXI_HP1_WCOUNT                 => axiHpSlaveWriteFromArm(1).wcount,
          S_AXI_HP1_RACOUNT                => axiHpSlaveReadFromArm(1).racount,
          S_AXI_HP1_WACOUNT                => axiHpSlaveWriteFromArm(1).wacount,
-         S_AXI_HP1_ACLK                   => axiHpSlaveClk0,
+         S_AXI_HP1_ACLK                   => axiClk,
          S_AXI_HP1_ARVALID                => axiHpSlaveReadToArm(1).arvalid,
          S_AXI_HP1_AWVALID                => axiHpSlaveWriteToArm(1).awvalid,
          S_AXI_HP1_BREADY                 => axiHpSlaveWriteToArm(1).bready,
@@ -686,7 +680,7 @@ begin
          S_AXI_HP2_WCOUNT                 => axiHpSlaveWriteFromArm(2).wcount,
          S_AXI_HP2_RACOUNT                => axiHpSlaveReadFromArm(2).racount,
          S_AXI_HP2_WACOUNT                => axiHpSlaveWriteFromArm(2).wacount,
-         S_AXI_HP2_ACLK                   => axiHpSlaveClk0,
+         S_AXI_HP2_ACLK                   => axiClk,
          S_AXI_HP2_ARVALID                => axiHpSlaveReadToArm(2).arvalid,
          S_AXI_HP2_AWVALID                => axiHpSlaveWriteToArm(2).awvalid,
          S_AXI_HP2_BREADY                 => axiHpSlaveWriteToArm(2).bready,
@@ -734,7 +728,7 @@ begin
          S_AXI_HP3_WCOUNT                 => axiHpSlaveWriteFromArm(3).wcount,
          S_AXI_HP3_RACOUNT                => axiHpSlaveReadFromArm(3).racount,
          S_AXI_HP3_WACOUNT                => axiHpSlaveWriteFromArm(3).wacount,
-         S_AXI_HP3_ACLK                   => axiHpSlaveClk0,
+         S_AXI_HP3_ACLK                   => axiClk,
          S_AXI_HP3_ARVALID                => axiHpSlaveReadToArm(3).arvalid,
          S_AXI_HP3_AWVALID                => axiHpSlaveWriteToArm(3).awvalid,
          S_AXI_HP3_BREADY                 => axiHpSlaveWriteToArm(3).bready,

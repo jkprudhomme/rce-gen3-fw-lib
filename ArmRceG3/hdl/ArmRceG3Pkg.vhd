@@ -27,6 +27,16 @@ package ArmRceG3Pkg is
    ----------------------------------
    -- Types
    ----------------------------------
+
+   subtype Word4Type is std_logic_vector(3 downto 0);
+   type Word4Array   is array (integer range<>) of Word4Type;
+
+   subtype Word15Type is std_logic_vector(14 downto 0);
+   type Word15Array   is array (integer range<>) of Word15Type;
+
+   subtype Word16Type is std_logic_vector(15 downto 0);
+   type Word16Array   is array (integer range<>) of Word16Type;
+
    subtype Word32Type is std_logic_vector(31 downto 0);
    type Word32Array   is array (integer range<>) of Word32Type;
 
@@ -35,6 +45,12 @@ package ArmRceG3Pkg is
 
    subtype Word64Type is std_logic_vector(63 downto 0);
    type Word64Array   is array (integer range<>) of Word64Type;
+
+   subtype Word72Type is std_logic_vector(71 downto 0);
+   type Word72Array   is array (integer range<>) of Word72Type;
+
+   subtype Word128Type is std_logic_vector(127 downto 0);
+   type Word128Array   is array (integer range<>) of Word128Type;
 
    --------------------------------------------------------
    -- AXI bus, read master signal record
@@ -266,6 +282,80 @@ package ArmRceG3Pkg is
 
    -- Vector
    type LocalBusSlaveVector is array (integer range<>) of LocalBusSlaveType;
+
+   --------------------------------------------------------
+   -- Write FIFO, To Fifo Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type WriteFifoToFifoType is record
+      data   : std_logic_vector(71 downto 0);
+      write  : std_logic;
+   end record;
+
+   -- Initialization constants
+   constant WriteFifoToFifoInit : WriteFifoToFifoType := ( 
+      data     => x"000000000000000000",
+      write    => '0'
+   );
+
+   -- Vector
+   type WriteFifoToFifoVector is array (integer range<>) of WriteFifoToFifoType;
+
+   --------------------------------------------------------
+   -- Write FIFO, From Fifo Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type WriteFifoFromFifoType is record
+      full       : std_logic;
+      almostFull : std_logic;
+   end record;
+
+   -- Initialization constants
+   constant WriteFifoFromFifoInit : WriteFifoFromFifoType := ( 
+      full       => '0',
+      almostFull => '0' 
+   );
+
+   -- Vector
+   type WriteFifoFromFifoVector is array (integer range<>) of WriteFifoFromFifoType;
+
+   --------------------------------------------------------
+   -- Read FIFO, To Fifo Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type ReadFifoToFifoType is record
+      read : std_logic;
+   end record;
+
+   -- Initialization constants
+   constant ReadFifoToFifoInit : ReadFifoToFifoType := ( 
+      read  => '0'
+   );
+
+   -- Vector
+   type ReadFifoToFifoVector is array (integer range<>) of ReadFifoToFifoType;
+
+   --------------------------------------------------------
+   -- Read FIFO, From Fifo Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type ReadFifoFromFifoType is record
+      valid  : std_logic;
+      data   : std_logic_vector(71 downto 0);
+   end record;
+
+   -- Initialization constants
+   constant ReadFifoFromFifoInit : ReadFifoFromFifoType := ( 
+      valid      => '0',
+      data       => x"000000000000000000"
+   );
+
+   -- Vector
+   type ReadFifoFromFifoVector is array (integer range<>) of ReadFifoFromFifoType;
 
 end ArmRceG3Pkg;
 

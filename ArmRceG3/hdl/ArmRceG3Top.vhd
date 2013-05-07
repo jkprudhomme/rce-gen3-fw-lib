@@ -76,11 +76,12 @@ architecture structure of ArmRceG3Top is
    signal axiHpSlaveReadFromArm    : AxiReadSlaveVector(3 downto 0);
    signal axiHpSlaveReadToArm      : AxiReadMasterVector(3 downto 0);
    signal armInt                   : std_logic_vector(15 downto 0);
-   signal sysClk100                : std_logic;
+   signal axiClk                : std_logic;
    signal control0                 : std_logic_vector(35 DOWNTO 0);
    signal trig0                    : std_logic_vector(127 DOWNTO 0);
    signal localBusMaster           : LocalBusMasterVector(15 downto 0);
    signal localBusSlave            : LocalBusSlaveVector(15 downto 0);
+   signal localBusReset            : std_logic;
    signal scratchPad               : std_logic_vector(31 downto 0);
    signal fifoDebug                : std_logic_vector(127 DOWNTO 0);
 
@@ -98,36 +99,28 @@ begin
          fclkClk3                 => open,
          fclkClk2                 => open,
          fclkClk1                 => open,
-         fclkClk0                 => sysClk100,
+         fclkClk0                 => axiClk,
          fclkRst3                 => open,
          fclkRst2                 => open,
          fclkRst1                 => open,
          fclkRst0                 => open,
+         axiClk                   => axiClk,
          armInt                   => armInt,
-         axiGpMasterClk1          => sysClk100,
-         axiGpMasterClk0          => sysClk100,
          axiGpMasterReset         => axiGpMasterReset,
          axiGpMasterWriteFromArm  => axiGpMasterWriteFromArm,
          axiGpMasterWriteToArm    => axiGpMasterWriteToArm,
          axiGpMasterReadFromArm   => axiGpMasterReadFromArm,
          axiGpMasterReadToArm     => axiGpMasterReadToArm,
-         axiGpSlaveClk1           => sysClk100,
-         axiGpSlaveClk0           => sysClk100,
          axiGpSlaveReset          => axiGpSlaveReset,
          axiGpSlaveWriteFromArm   => axiGpSlaveWriteFromArm,
          axiGpSlaveWriteToArm     => axiGpSlaveWriteToArm,
          axiGpSlaveReadFromArm    => axiGpSlaveReadFromArm,
          axiGpSlaveReadToArm      => axiGpSlaveReadToArm,
-         axiAcpSlaveClk           => sysClk100,
          axiAcpSlaveReset         => axiAcpSlaveReset,
          axiAcpSlaveWriteFromArm  => axiAcpSlaveWriteFromArm,
          axiAcpSlaveWriteToArm    => axiAcpSlaveWriteToArm,
          axiAcpSlaveReadFromArm   => axiAcpSlaveReadFromArm,
          axiAcpSlaveReadToArm     => axiAcpSlaveReadToArm,
-         axiHpSlaveClk3           => sysClk100,
-         axiHpSlaveClk2           => sysClk100,
-         axiHpSlaveClk1           => sysClk100,
-         axiHpSlaveClk0           => sysClk100,
          axiHpSlaveReset          => axiHpSlaveReset,
          axiHpSlaveWriteFromArm   => axiHpSlaveWriteFromArm,
          axiHpSlaveWriteToArm     => axiHpSlaveWriteToArm,
@@ -152,21 +145,22 @@ begin
    axiHpSlaveWriteToArm       <= (others=>AxiWriteMasterInit);
    axiHpSlaveReadToArm        <= (others=>AxiReadMasterInit);
 
-   armInt(15 downto 1)        <= (others=>'0');
+   armInt(15 downto 0)        <= (others=>'0');
 
    --------------------------------------------
-   -- Register Controller
+   -- Local Bus Controller
    --------------------------------------------
    
    -- GP1: 8000_0000 to BFFF_FFFF
    U_ArmRceG3LocalBus: entity work.ArmRceG3LocalBus 
       port map (
-         axiClk                  => sysClk100,
-         axiClkRst               => axiGpMasterReset(1),
+         axiClk                  => axiClk,
+         aximasterReset          => axiGpMasterReset(1),
          axiMasterReadFromArm    => axiGpMasterReadFromArm(1),
          axiMasterReadToArm      => axiGpMasterReadToArm(1),
          axiMasterWriteFromArm   => axiGpMasterWriteFromArm(1),
          axiMasterWriteToArm     => axiGpMasterWriteToArm(1),
+         localBusReset           => localBusReset,
          localBusMaster          => localBusMaster,
          localBusSlave           => localBusSlave
       );
@@ -177,11 +171,11 @@ begin
    -- Local Registers
    --------------------------------------------
 
-   process ( sysClk100, axiGpMasterReset ) begin
-      if axiGpMasterReset(1) = '1' then
+   process ( axiClk, localBusReset ) begin
+      if localBusReset = '1' then
          scratchPad       <= (others=>'0')     after TPD_G;
          localBusSlave(0) <= LocalBusSlaveInit after TPD_G;
-      elsif rising_edge(sysClk100) then
+      elsif rising_edge(axiClk) then
 
          -- 0x80000000
          if localBusMaster(0).addr(25 downto 2) = x"000000" then
@@ -212,11 +206,11 @@ begin
    U_ArmRceG3I2c : entity work.ArmRceG3I2c
       port map (
          ponRst         => axiGpMasterReset(1),
-         localClk       => sysClk100,
-         localClkRst    => axiGpMasterReset(1),
+         axiClk         => axiClk,
+         localBusReset  => localBusReset,
          localBusMaster => localBusMaster(1),
          localBusSlave  => localBusSlave(1),
-         i2cIrq         => open,
+         interrupt      => open,
          i2cSda         => i2cSda,
          i2cScl         => i2cScl
       );
@@ -226,15 +220,19 @@ begin
    --------------------------------------------
 
    -- 0x8800_0000 - 0x8BFF_FFFF
-   U_ArmRceG3Fifos: entity work.ArmRceG3Fifos 
+   U_ArmRceG3IbCntrl: entity work.ArmRceG3IbCntrl 
       port map (
-         axiClk                  => sysClk100,
-         axiClkRst               => axiAcpSlaveReset,
+         axiClk                  => axiClk,
+         axiAcpSlaveReset        => axiAcpSlaveReset,
          axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
          axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArm,
+         interrupt               => open,
+         localBusReset           => localBusReset,
          localBusMaster          => localBusMaster(2),
          localBusSlave           => localBusSlave(2),
-         interrupt               => armInt(0),
+         writeFifoClk            => (others=>'0'),
+         writeFifoToFifo         => (others=>WriteFifoToFifoInit),
+         writeFifoFromFifo       => open,
          debug                   => fifoDebug
       );
 
@@ -250,26 +248,11 @@ begin
    U_ila: zynq_ila
       port map (
          CONTROL => control0,
-         CLK     => sysClk100,
+         CLK     => axiClk,
          TRIG0   => trig0
       );
 
-   trig0(127)          <= axiGpMasterReadToArm(1).arready;
-   trig0(126)          <= axiGpMasterReadToArm(1).rvalid;
-   trig0(125)          <= axiGpMasterReadFromArm(1).arvalid;
-   trig0(124)          <= axiGpMasterReadFromArm(1).rready;
-   trig0(123)          <= axiGpMasterWriteFromArm(1).awvalid;
-   trig0(122)          <= axiGpMasterWriteFromArm(1).wlast;
-   trig0(121)          <= axiGpMasterWriteFromArm(1).wvalid;
-   trig0(120)          <= axiGpMasterWriteFromArm(1).bready;
-   trig0(119)          <= axiGpMasterWriteToArm(1).awready;
-   trig0(118)          <= axiGpMasterWriteToArm(1).wready;
-   trig0(117)          <= axiGpMasterWriteToArm(1).bvalid;
-   trig0(116)          <= localBusMaster(2).addrValid;
-   trig0(115)          <= localBusMaster(2).readEnable;
-   trig0(114)          <= localBusMaster(2).writeEnable;
-   trig0(113)          <= localBusSlave(2).readValid;
-   trig0(112 downto 0) <= fifoDebug(112 downto 0);
+   trig0 <= fifoDebug;
 
 end architecture structure;
 

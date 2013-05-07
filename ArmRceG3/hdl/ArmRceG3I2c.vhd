@@ -42,18 +42,20 @@ use work.StdRtlPkg.all;
 
 entity ArmRceG3I2c is
    port (
-      ponRst      : in  std_logic;
+      ponRst         : in  std_logic;
+
+      -- Clock
+      axiClk         : in  std_logic;
 
       -- Local bus interface
-      localClk       : in  std_logic;
-      localClkRst    : in  std_logic;
+      localBusReset  : in  std_logic;
       localBusMaster : in  LocalBusMasterType;
       localBusSlave  : out LocalBusSlaveType;
-      i2cIrq         : out std_logic;
+      interrupt      : out std_logic;
 
       -- IIC Interface
-      i2cSda      : inout std_logic;
-      i2cScl      : inout std_logic
+      i2cSda         : inout std_logic;
+      i2cScl         : inout std_logic
    );
 end ArmRceG3I2c;
 
@@ -111,7 +113,7 @@ begin
       ) port map (
          sRst   => '0',
          aRst   => ponRst,
-         clk    => localClk,
+         clk    => axiClk,
          addr   => i2cBramAddr,
          wrEn   => i2cBramWr,
          wrData => i2cBramDin,
@@ -196,15 +198,15 @@ begin
 
    end process iicSysClkComb;
 
-   iicSysClkSeq : process (localClk, localClkRst) is
+   iicSysClkSeq : process (axiClk, localBusReset) is
    begin
-      if (localClkRst = '1') then
+      if (localBusReset = '1') then
          sysR.startup   <= '1'             after TPD_G;
          sysR.interrupt <= (others => '0') after TPD_G;
          sysR.cpuReset  <= (others => '1') after TPD_G;
          sysR.wrEn      <= '0'             after TPD_G;
       -- Other bram signals don't need reset
-      elsif (rising_edge(localClk)) then
+      elsif (rising_edge(axiClk)) then
          sysR <= sysRin after TPD_G;
       end if;
    end process;
@@ -217,7 +219,7 @@ begin
          DOB   => cpuBramDout,
          DOPB  => open,
          ADDRB => cpuBramAddr,
-         CLKB  => localClk,
+         CLKB  => axiClk,
          DIB   => cpuBramDin,
          DIPB  => x"0",
          ENB   => '1',
@@ -226,7 +228,7 @@ begin
          DOA   => i2cBramDout,
          DOPA  => open,
          ADDRA => sysR.addr(10 downto 0),
-         CLKA  => localClk,
+         CLKA  => axiClk,
          DIA   => sysR.wrData,
          DIPA  => "0",
          ENA   => '1',
@@ -241,13 +243,13 @@ begin
    cpuBramAddr            <= localBusMaster.addr(10 downto 2);
    cpuBramDin             <= localBusMaster.writeData;
    localBusSlave.readData <= cpuBramDout;
-   i2cIrq                 <= sysR.interrupt(0);
+   interrupt              <= sysR.interrupt(0);
 
    -- One clock delay for read data valid
-   process ( localCLk, localClkRst ) begin
-      if localClkRst = '1' then
+   process ( axiClk, localBusReset ) begin
+      if localBusReset = '1' then
          localBusSlave.readValid <= '0' after TPD_G;
-      elsif rising_edge(localClk) then
+      elsif rising_edge(axiClk) then
          localBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
       end if;
    end process;
