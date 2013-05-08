@@ -26,17 +26,15 @@ use work.ArmRceG3Pkg.all;
 entity ZynqPcieMaster is
    port (
 
-      -- Clock
-      axiClk                  : in  std_logic;
-
       -- Local Bus
+      localBusClk             : in  std_logic;
       localBusReset           : in  std_logic;
       localBusMaster          : in  LocalBusMasterType;
       localBusSlave           : out LocalBusSlaveType;
 
       -- Master clock and reset
       pciRefClk               : in  std_logic;
-      ponReset                : in  std_logic;
+      ponResetL               : in  std_logic;
 
       -- PCIE Lines
       pcieRxP                 : in  std_logic;
@@ -53,10 +51,10 @@ architecture structure of ZynqPcieMaster is
          rst    : IN  STD_LOGIC;
          wr_clk : IN  STD_LOGIC;
          rd_clk : IN  STD_LOGIC;
-         din    : IN  STD_LOGIC_VECTOR(95 DOWNTO 0);
+         din    : IN  STD_LOGIC_VECTOR(94 DOWNTO 0);
          wr_en  : IN  STD_LOGIC;
          rd_en  : IN  STD_LOGIC;
-         dout   : OUT STD_LOGIC_VECTOR(95 DOWNTO 0);
+         dout   : OUT STD_LOGIC_VECTOR(94 DOWNTO 0);
          full   : OUT STD_LOGIC;
          empty  : OUT STD_LOGIC;
          valid  : OUT STD_LOGIC
@@ -64,17 +62,18 @@ architecture structure of ZynqPcieMaster is
    END COMPONENT;
 
    -- Local signals
-   signal wrFifoDin              : std_logic_vector(95 downto 0);
-   signal wrFifoDout             : std_logic_vector(95 downto 0);
+   signal intLocalBusSlave       : LocalBusSlaveType;
+   signal wrFifoDin              : std_logic_vector(94 downto 0);
+   signal wrFifoDout             : std_logic_vector(94 downto 0);
    signal wrFifoWrEn             : std_logic;
    signal wrFifoRdEn             : std_logic;
    signal wrFifoValid            : std_logic;
-   signal rdFifoDin              : std_logic_vector(95 downto 0);
-   signal rdFifoDout             : std_logic_vector(95 downto 0);
+   signal rdFifoDin              : std_logic_vector(94 downto 0);
+   signal rdFifoDout             : std_logic_vector(94 downto 0);
    signal rdFifoWrEn             : std_logic;
    signal rdFifoRdEn             : std_logic;
    signal rdFifoFull             : std_logic;
-   signal wrFifoValid            : std_logic;
+   signal rdFifoValid            : std_logic;
    signal pciClk                 : std_logic;
    signal pciClkRst              : std_logic;
    signal txBufAv                : std_logic_vector(5 downto 0);
@@ -82,7 +81,6 @@ architecture structure of ZynqPcieMaster is
    signal txValid                : std_logic;
    signal rxReady                : std_logic;
    signal rxValid                : std_logic;
-   signal rdFifoFull             : std_logic;
    signal linkUp                 : std_logic;
    signal cfgDout                : std_logic_vector(31 downto 0);
    signal cfgDin                 : std_logic_vector(31 downto 0);
@@ -97,22 +95,29 @@ architecture structure of ZynqPcieMaster is
    signal cfgDCommand2           : std_logic_vector(15 downto 0);
    signal cfgLStatus             : std_logic_vector(15 downto 0);
    signal cfgLCommand            : std_logic_vector(15 downto 0);
-   signal cfgPcieLinkState       : std_logic_vector(3  downto 0);
+   signal cfgPcieLinkState       : std_logic_vector(2  downto 0);
    signal cfgPmcsrPmeEn          : std_logic;
    signal cfgPmcsrPowerstate     : std_logic_vector(1  downto 0);
    signal cfgPmcsrPmeStatus      : std_logic;
    signal cfgReceivedFuncLvlRst  : std_logic;
-   signal cfgBusNumber           : std_logic_vector(15 downto 0);
-   signal cfgDeviceNumber        : std_logic_vector(15 downto 0);
-   signal cfgFunctionNumber      : std_logic_vector(15 downto 0);
+   signal cfgBusNumber           : std_logic_vector(7  downto 0);
+   signal cfgDeviceNumber        : std_logic_vector(4  downto 0);
+   signal cfgFunctionNumber      : std_logic_vector(2  downto 0);
    signal phyLinkUp              : std_logic;
+   signal pciExpTxP              : std_logic_vector(0  downto 0);
+   signal pciExpTxN              : std_logic_vector(0  downto 0);
+   signal pciExpRxP              : std_logic_vector(0  downto 0);
+   signal pciExpRxN              : std_logic_vector(0  downto 0);
 
 begin
+
+   -- Outputs
+   localBusSlave <= intLocalBusSlave;
 
    --------------------------------------------
    -- Registers: 0xBC00_0000 - 0xBFFF_FFFF
    --------------------------------------------
-   process ( axiClk, localBusReset ) begin
+   process ( localBusClk, localBusReset ) begin
       if localBusReset = '1' then
          intLocalBusSlave <= LocalBusSlaveInit       after TPD_G;
          wrFifoDin         <= (others=>'0')          after TPD_G;
@@ -120,12 +125,12 @@ begin
          rdFifoRdEn        <= '0'                    after TPD_G;
          cfgDin            <= (others=>'0')          after TPD_G;
          cfgAddr           <= (others=>'0')          after TPD_G;
-         cfgWrEn           <= (others=>'0')          after TPD_G;
-         cfgRdEn           <= (others=>'0')          after TPD_G;
+         cfgWrEn           <= '0'                    after TPD_G;
+         cfgRdEn           <= '0'                    after TPD_G;
          cfgBusNumber      <= (others=>'0')          after TPD_G;
          cfgDeviceNumber   <= (others=>'0')          after TPD_G;
          cfgFunctionNumber <= (others=>'0')          after TPD_G;
-      elsif rising_edge(axiClk) then
+      elsif rising_edge(localBusClk) then
          intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
          intLocalBusSlave.readData  <= x"deadbeef"               after TPD_G;
          wrFifoWrEn                 <= '0'                       after TPD_G;
@@ -156,8 +161,8 @@ begin
          -- Write FIFO QWord2, - 0xBC001008
          elsif localBusMaster.addr(23 downto 4) = x"001008" then
             if localBusMaster.writeEnable = '1' then
-               wrFifoDin(95 downto 64)   <= localBusMaster.writeData after TPD_G;
-               wrFifoWrEn                <= '1'                      after TPD_G;
+               wrFifoDin(94 downto 64)   <= localBusMaster.writeData(30 downto 0) after TPD_G;
+               wrFifoWrEn                <= '1'                                   after TPD_G;
             end if;
 
          -- Read FIFO QWord0, - 0xBC00100C
@@ -173,28 +178,27 @@ begin
          elsif localBusMaster.addr(23 downto 4) = x"001014" then
             intLocalBusSlave.readData(31)          <= rdFifoValid              after TPD_G;
             intLocalBusSlave.readData(30 downto 0) <= rdFifoDout(94 downto 64) after TPD_G;
-         end if;
 
          -- Config Bus Number, - 0xBC001018
          elsif localBusMaster.addr(23 downto 4) = x"001018" then
             if localBusMaster.writeEnable = '1' then
-               cfgBusNumber <= localBusMaster.writeData(15 downto 0) after TPD_G;
+               cfgBusNumber <= localBusMaster.writeData(7 downto 0) after TPD_G;
             end if;
-            intLocalBusSlave.readData <= x"0000" & cfgBusNumber after TPD_G;
+            intLocalBusSlave.readData <= x"000000" & cfgBusNumber after TPD_G;
 
          -- Config Device Number, - 0xBC00101C
          elsif localBusMaster.addr(23 downto 4) = x"00101C" then
             if localBusMaster.writeEnable = '1' then
-               cfgDeviceNumber <= localBusMaster.writeData(15 downto 0) after TPD_G;
+               cfgDeviceNumber <= localBusMaster.writeData(4 downto 0) after TPD_G;
             end if;
-            intLocalBusSlave.readData <= x"0000" & cfgDeviceNumber after TPD_G;
+            intLocalBusSlave.readData <= x"000000" & "000" & cfgDeviceNumber after TPD_G;
 
          -- Config Function Number, - 0xBC001020
          elsif localBusMaster.addr(23 downto 4) = x"001020" then
             if localBusMaster.writeEnable = '1' then
-               cfgFunctionNumber <= localBusMaster.writeData(15 downto 0) after TPD_G;
+               cfgFunctionNumber <= localBusMaster.writeData(2 downto 0) after TPD_G;
             end if;
-            intLocalBusSlave.readData <= x"0000" & cfgFunctionNumber after TPD_G;
+            intLocalBusSlave.readData <= x"0000000" & "0" & cfgFunctionNumber after TPD_G;
 
          -- Config Status, - 0xBC001024
          elsif localBusMaster.addr(23 downto 4) = x"001024" then
@@ -226,13 +230,15 @@ begin
 
          -- Other Status, - 0xBC00103C
          elsif localBusMaster.addr(23 downto 4) = x"00103C" then
-            intLocalBusSlave.readData(3 downto 0)   <= cfgPcieLinkState      after TPD_G;
+            intLocalBusSlave.readData(2 downto 0)   <= cfgPcieLinkState      after TPD_G;
+            intLocalBusSlave.readData(3)            <= '0'                   after TPD_G;
             intLocalBusSlave.readData(4)            <= phyLinkUp             after TPD_G;
             intLocalBusSlave.readData(6 downto 5)   <= cfgPmcsrPowerstate    after TPD_G;
             intLocalBusSlave.readData(7)            <= cfgPmcsrPmeEn         after TPD_G;
             intLocalBusSlave.readData(8)            <= cfgPmcsrPmeStatus     after TPD_G;
             intLocalBusSlave.readData(9)            <= cfgReceivedFuncLvlRst after TPD_G;
             intLocalBusSlave.readData(31 downto 10) <= (others=>'0')         after TPD_G;
+         end if;
       end if;  
    end process;         
 
@@ -243,9 +249,9 @@ begin
    U_WriteFifo : PcieFifo
       PORT map (
          rst    => localBusReset,
-         wr_clk => axiClk,
+         wr_clk => localBusClk,
          rd_clk => pciClk,
-         din    => wrFifoDin
+         din    => wrFifoDin,
          wr_en  => wrFifoWrEn,
          rd_en  => wrFifoRdEn,
          dout   => wrFifoDout,
@@ -255,14 +261,14 @@ begin
       );
 
    wrFifoRdEn <= txReady and txValid;
-   txValid    <= wrFifoValid when txBufAv xxxxx;
+   txValid    <= wrFifoValid when txBufAv > 1 else '0';
 
    U_ReadFifo : PcieFifo
       PORT map (
          rst    => localBusReset,
          wr_clk => pciClk,
-         rd_clk => axiClk,
-         din    => rdFifoDin
+         rd_clk => localBusClk,
+         din    => rdFifoDin,
          wr_en  => rdFifoWrEn,
          rd_en  => rdFifoRdEn,
          dout   => rdFifoDout,
@@ -278,12 +284,19 @@ begin
    -- PCI Express Core
    -----------------------------------------
 
+   pcieTxP      <= pciExpTxP(0);
+   pcieTxM      <= pciExpTxN(0);
+   pciExpRxP(0) <= pcieRxP;
+   pciExpRxN(0) <= pcieRxM;
+
    U_Pcie: entity work.pcie_7x_v1_9 
-      port map(
-         pci_exp_txp                                => pcieTxP,
-         pci_exp_txn                                => pcieTxM,
-         pci_exp_rxp                                => pcieRxP,
-         pci_exp_rxn                                => pcieRxM,
+      generic map (
+         PCIE_EXT_CLK                               => "FALSE"
+      ) port map (
+         pci_exp_txp                                => pciExpTxP,
+         pci_exp_txn                                => pciExpTxN,
+         pci_exp_rxp                                => pciExpRxP,
+         pci_exp_rxn                                => pciExpRxN,
          PIPE_PCLK_IN                               => '0',
          PIPE_RXUSRCLK_IN                           => '0',
          PIPE_RXOUTCLK_IN                           => (others=>'0'),
@@ -314,7 +327,7 @@ begin
          m_axis_rx_tlast                            => rdFifoDin(94),
          m_axis_rx_tvalid                           => rxValid,
          m_axis_rx_tready                           => rxReady,
-         m_axis_rx_tuser                            => rdFifoDin(93 downto 72)
+         m_axis_rx_tuser                            => rdFifoDin(93 downto 72),
          rx_np_ok                                   => '1',
          rx_np_req                                  => '1',
          fc_cpld                                    => open,
@@ -323,7 +336,7 @@ begin
          fc_nph                                     => open,
          fc_pd                                      => open,
          fc_ph                                      => open,
-         fc_sel                                     => open,
+         fc_sel                                     => "000",
          cfg_mgmt_do                                => cfgDout,
          cfg_mgmt_rd_wr_done                        => cfgRdValid,
          cfg_status                                 => cfgStatus,
@@ -380,7 +393,7 @@ begin
          cfg_interrupt_stat                         => '0',
          cfg_pciecap_interrupt_msgnum               => (others=>'0'),
          cfg_to_turnoff                             => open,
-         cfg_turnoff_ok                             => (others=>'0'),
+         cfg_turnoff_ok                             => '0',
          cfg_bus_number                             => open,
          cfg_device_number                          => open,
          cfg_function_number                        => open,
@@ -420,7 +433,7 @@ begin
          cfg_msg_received_deassert_int_d            => open,
          cfg_msg_received_setslotpowerlimit         => open,
          pl_directed_link_change                    => "00",
-         pl_directed_link_width                     => '0',
+         pl_directed_link_width                     => "00",
          pl_directed_link_speed                     => '0',
          pl_directed_link_auton                     => '0',
          pl_upstream_prefer_deemph                  => '0',
@@ -447,7 +460,7 @@ begin
          cfg_vc_tcvc_map                            => open,
          PIPE_MMCM_RST_N                            => '1',
          sys_clk                                    => pciRefClk,
-         sys_reset                                  => ponReset
+         sys_rst_n                                  => ponResetL
       );
 
 end architecture structure;

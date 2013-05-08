@@ -69,7 +69,11 @@ entity ArmRceG3Cpu is
       axiHpSlaveWriteFromArm   : out    AxiWriteSlaveVector(3 downto 0);
       axiHpSlaveWriteToArm     : in     AxiWriteMasterVector(3 downto 0);
       axiHpSlaveReadFromArm    : out    AxiReadSlaveVector(3 downto 0);
-      axiHpSlaveReadToArm      : in     AxiReadMasterVector(3 downto 0)
+      axiHpSlaveReadToArm      : in     AxiReadMasterVector(3 downto 0);
+
+      -- Ethernet
+      ethFromArm               : out    EthFromArmType;
+      ethToArm                 : in     EthToArmType
 
    );
 end ArmRceG3Cpu;
@@ -155,31 +159,31 @@ begin
          CAN1_PHY_RX                      => '0',
      
          -- FMIO ENET0
-         ENET0_GMII_TX_EN                 => open,
-         ENET0_GMII_TX_ER                 => open,
-         ENET0_MDIO_MDC                   => open,
-         ENET0_MDIO_O                     => open,
-         ENET0_MDIO_T                     => open,
-         ENET0_PTP_DELAY_REQ_RX           => open,
-         ENET0_PTP_DELAY_REQ_TX           => open,
-         ENET0_PTP_PDELAY_REQ_RX          => open,
-         ENET0_PTP_PDELAY_REQ_TX          => open,
-         ENET0_PTP_PDELAY_RESP_RX         => open,
-         ENET0_PTP_PDELAY_RESP_TX         => open,
-         ENET0_PTP_SYNC_FRAME_RX          => open,
-         ENET0_PTP_SYNC_FRAME_TX          => open,
-         ENET0_SOF_RX                     => open,
-         ENET0_SOF_TX                     => open,
-         ENET0_GMII_TXD                   => open,
-         ENET0_GMII_COL                   => '0',
-         ENET0_GMII_CRS                   => '0',
-         ENET0_GMII_RX_CLK                => '0',
-         ENET0_GMII_RX_DV                 => '0',
-         ENET0_GMII_RX_ER                 => '0',
-         ENET0_GMII_TX_CLK                => '0',
-         ENET0_MDIO_I                     => '0',
-         ENET0_EXT_INTIN                  => '0',
-         ENET0_GMII_RXD                   => "00000000",
+         ENET0_GMII_TX_EN                 => ethFromArm.enetGmiiTxEn,
+         ENET0_GMII_TX_ER                 => ethFromArm.enetGmiiTxEr,
+         ENET0_MDIO_MDC                   => ethFromArm.enetMdioMdc,
+         ENET0_MDIO_O                     => ethFromArm.enetMdioO,
+         ENET0_MDIO_T                     => ethFromArm.enetMdioT,
+         ENET0_PTP_DELAY_REQ_RX           => ethFromArm.enetPtpDelayReqRx,
+         ENET0_PTP_DELAY_REQ_TX           => ethFromArm.enetPtpDelayReqTx,
+         ENET0_PTP_PDELAY_REQ_RX          => ethFromArm.enetPtpPDelayReqRx,
+         ENET0_PTP_PDELAY_REQ_TX          => ethFromArm.enetPtpPDelayReqTx,
+         ENET0_PTP_PDELAY_RESP_RX         => ethFromArm.enetPtpPDelayRespRx,
+         ENET0_PTP_PDELAY_RESP_TX         => ethFromArm.enetPtpPDelayRespTx,
+         ENET0_PTP_SYNC_FRAME_RX          => ethFromArm.enetPtpSyncFrameRx,
+         ENET0_PTP_SYNC_FRAME_TX          => ethFromArm.enetPtpSyncFrameTx,
+         ENET0_SOF_RX                     => ethFromArm.enetSofRx,
+         ENET0_SOF_TX                     => ethFromArm.enetSofTx,
+         ENET0_GMII_TXD                   => ethFromArm.enetGmiiTxD,
+         ENET0_GMII_COL                   => ethToArm.enetGmiiCol,
+         ENET0_GMII_CRS                   => ethToArm.enetGmiiCrs,
+         ENET0_GMII_RX_CLK                => ethToArm.enetGmiiRxClk,
+         ENET0_GMII_RX_DV                 => ethToArm.enetGmiiRxDv,
+         ENET0_GMII_RX_ER                 => ethToArm.enetGmiiRxEr,
+         ENET0_GMII_TX_CLK                => ethToArm.enetGmiiTxClk,
+         ENET0_MDIO_I                     => ethToArm.enetMdioI,
+         ENET0_EXT_INTIN                  => ethToArm.enetExtInitN,
+         ENET0_GMII_RXD                   => ethToArm.enetGmiiRxd,
 
          -- FMIO ENET1
          ENET1_GMII_TX_EN                 => open,

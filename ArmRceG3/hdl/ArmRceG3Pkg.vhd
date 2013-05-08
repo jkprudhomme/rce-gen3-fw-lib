@@ -357,5 +357,85 @@ package ArmRceG3Pkg is
    -- Vector
    type ReadFifoFromFifoVector is array (integer range<>) of ReadFifoFromFifoType;
 
+   --------------------------------------------------------
+   -- Ethernet From ARM
+   --------------------------------------------------------
+
+   -- Base Record
+   type EthFromArmType is record
+      enetGmiiTxEn        : std_logic;
+      enetGmiiTxEr        : std_logic;
+      enetMdioMdc         : std_logic;
+      enetMdioO           : std_logic;
+      enetMdioT           : std_logic;
+      enetPtpDelayReqRx   : std_logic;
+      enetPtpDelayReqTx   : std_logic;
+      enetPtpPDelayReqRx  : std_logic;
+      enetPtpPDelayReqTx  : std_logic;
+      enetPtpPDelayRespRx : std_logic;
+      enetPtpPDelayRespTx : std_logic;
+      enetPtpSyncFrameRx  : std_logic;
+      enetPtpSyncFrameTx  : std_logic;
+      enetSofRx           : std_logic;
+      enetSofTx           : std_logic;
+      enetGmiiTxD         : std_logic_vector(7 downto 0);  
+   end record;
+
+   -- Initialization constants
+   constant EthFromArmInit : EthFromArmType := ( 
+      enetGmiiTxEn        => '0',
+      enetGmiiTxEr        => '0',
+      enetMdioMdc         => '0',
+      enetMdioO           => '0',
+      enetMdioT           => '0',
+      enetPtpDelayReqRx   => '0',
+      enetPtpDelayReqTx   => '0',
+      enetPtpPDelayReqRx  => '0',
+      enetPtpPDelayReqTx  => '0',
+      enetPtpPDelayRespRx => '0',
+      enetPtpPDelayRespTx => '0',
+      enetPtpSyncFrameRx  => '0',
+      enetPtpSyncFrameTx  => '0',
+      enetSofRx           => '0',
+      enetSofTx           => '0',
+      enetGmiiTxD         => (others=>'0')
+   );
+
+   -- Vector
+   type EthFromArmVector is array (integer range<>) of EthFromArmType;
+
+   --------------------------------------------------------
+   -- Ethernet To ARM
+   --------------------------------------------------------
+
+   -- Base Record
+   type EthToArmType is record
+      enetGmiiCol   : std_logic;
+      enetGmiiCrs   : std_logic;
+      enetGmiiRxClk : std_logic;
+      enetGmiiRxDv  : std_logic;
+      enetGmiiRxEr  : std_logic;
+      enetGmiiTxClk : std_logic;
+      enetMdioI     : std_logic;
+      enetExtInitN  : std_logic;
+      enetGmiiRxd   : std_logic_vector(7 downto 0);  
+   end record;
+
+   -- Initialization constants
+   constant EthToArmInit : EthToArmType := ( 
+      enetGmiiCol   => '0',
+      enetGmiiCrs   => '0',
+      enetGmiiRxClk => '0',
+      enetGmiiRxDv  => '0',
+      enetGmiiRxEr  => '0',
+      enetGmiiTxClk => '0',
+      enetMdioI     => '0',
+      enetExtInitN  => '0',
+      enetGmiiRxd   => (others=>'0')
+   );
+
+   -- Vector
+   type EthToArmVector is array (integer range<>) of EthToArmType;
+
 end ArmRceG3Pkg;
 

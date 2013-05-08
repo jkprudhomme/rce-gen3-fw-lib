@@ -5,64 +5,70 @@ Opening project file
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
 ter/coregen/coregen.cgp.
 Customize and GenerateINFO:sim:172 - Generating IP...
+WARNING:sim:100 - The Simulation File Type <Behavioral> is not valid for this
+   core. Overriding with File Type <Structural>.
 Applying current project options...
 Finished applying current project options.
-Resolving generics for 'PcieFifo'...
-Applying external generics to 'PcieFifo'...
-Delivering associated files for 'PcieFifo'...
-Delivering EJava files for 'PcieFifo'...
-Generating implementation netlist for 'PcieFifo'...
-INFO:sim - Pre-processing HDL files for 'PcieFifo'...
-WARNING:sim - BlackBox generator run option '-ifmt' found multiple times. Only
+WARNING:sim - VHDL simulation file type 'Behavioral' is not valid for this core.
+   Overriding with simulation file type 'Structural'.
+Resolving generics for 'ArmGigePhy'...
+WARNING:sim - VHDL simulation file type 'Behavioral' is not valid for this core.
+   Overriding with simulation file type 'Structural'.
+Applying external generics to 'ArmGigePhy'...
+Delivering associated files for 'ArmGigePhy'...
+Delivering EJava files for 'ArmGigePhy'...
+Generating implementation netlist for 'ArmGigePhy'...
+INFO:sim - Pre-processing HDL files for 'ArmGigePhy'...
+WARNING:sim - BlackBox generator run option '-iobuf' found multiple times. Only
    the first occurence is considered.
-Running synthesis for 'PcieFifo'
+WARNING:sim - BlackBox generator run option '-p' found multiple times. Only the
+   first occurence is considered.
+Running synthesis for 'ArmGigePhy'
 Running ngcbuild...
-Writing VHO instantiation template for 'PcieFifo'...
-Writing VHDL behavioral simulation model for 'PcieFifo'...
+Writing VHO instantiation template for 'ArmGigePhy'...
+WARNING:sim - VHDL simulation file type 'Behavioral' is not valid for this core.
+   Overriding with simulation file type 'Structural'.
+Writing VHDL structural simulation model for 'ArmGigePhy'...
 WARNING:sim - Overwriting existing file
    /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcie
-   Master/coregen/tmp/_cg/PcieFifo/doc/fifo_generator_v9_3_vinfo.html with file
+   Master/coregen/tmp/_cg/ArmGigePhy/doc/pg047-gig-eth-pcs-pma.pdf with file
    from view xilinx_documentation
-Delivered 3 files into directory
+Delivered 2 files into directory
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo
-Delivered 1 file into directory
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo
+ter/coregen/tmp/_cg/ArmGigePhy
 Generating ASY schematic symbol...
 INFO:sim:949 - Finished generation of ASY schematic symbol.
 Generating metadata file...
-Generating ISE project file for 'PcieFifo'...
 Generating ISE project...
-XCO file found: PcieFifo.xco
-XMDF file found: PcieFifo_xmdf.tcl
+XCO file found: ArmGigePhy.xco
+XMDF file found: ArmGigePhy_xmdf.tcl
 Adding
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo.asy -view all -origin_type imported
+ter/coregen/tmp/_cg/ArmGigePhy.asy -view all -origin_type imported
 Adding
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo.ngc -view all -origin_type created
+ter/coregen/tmp/_cg/ArmGigePhy.ngc -view all -origin_type created
 Checking file
 "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
-ster/coregen/tmp/_cg/PcieFifo.ngc" for project device match ...
+ster/coregen/tmp/_cg/ArmGigePhy.ngc" for project device match ...
 File
 "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
-ster/coregen/tmp/_cg/PcieFifo.ngc" device information matches project device.
+ster/coregen/tmp/_cg/ArmGigePhy.ngc" device information matches project device.
 Adding
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo.vhd -view all -origin_type created
+ter/coregen/tmp/_cg/ArmGigePhy.vhd -view all -origin_type created
 INFO:HDLCompiler:1061 - Parsing VHDL file
    "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
-   eMaster/coregen/tmp/_cg/PcieFifo.vhd" into library work
+   eMaster/coregen/tmp/_cg/ArmGigePhy.vhd" into library work
 INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
 Adding
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo.vho -view all -origin_type imported
+ter/coregen/tmp/_cg/ArmGigePhy.vho -view all -origin_type imported
 INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
    Please set the new top explicitly by running the "project set top" command.
    To re-calculate the new top automatically, set the "Auto Implementation Top"
    property to true.
-Top level has been set to "/PcieFifo"
+Top level has been set to "/ArmGigePhy"
 Generating README file...
 Generating FLIST file...
 INFO:sim:948 - Finished FLIST file generation.
@@ -71,66 +77,260 @@ Moving files to output directory...
 Finished moving files to output directory
 Saved CGP file for project 'coregen'.
 Recustomize and Generate (Under Original Project Settings)INFO:sim:172 - Generating IP...
-WARNING:sim - A core named 'PcieFifo' already exists in the project. Output
-   products for this core may be overwritten.
-Resolving generics for 'PcieFifo'...
-WARNING:sim - A core named 'PcieFifo' already exists in the project. Output
-   products for this core may be overwritten.
-Applying external generics to 'PcieFifo'...
-Delivering associated files for 'PcieFifo'...
-Delivering EJava files for 'PcieFifo'...
-Generating implementation netlist for 'PcieFifo'...
-INFO:sim - Pre-processing HDL files for 'PcieFifo'...
-WARNING:sim - BlackBox generator run option '-ifmt' found multiple times. Only
-   the first occurence is considered.
-Running synthesis for 'PcieFifo'
-Running ngcbuild...
-Writing VHO instantiation template for 'PcieFifo'...
-Writing VHDL behavioral simulation model for 'PcieFifo'...
-WARNING:sim - Overwriting existing file
-   /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcie
-   Master/coregen/tmp/_cg/PcieFifo/doc/fifo_generator_v9_3_vinfo.html with file
-   from view xilinx_documentation
-Delivered 3 files into directory
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo
-Delivered 1 file into directory
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo
+WARNING:sim:100 - The Simulation File Type <Behavioral> is not valid for this
+   core. Overriding with File Type <Structural>.
+Cancelled executing Tcl generator.
+Customize and GenerateINFO:sim:172 - Generating IP...
+WARNING:sim:100 - The Simulation File Type <Behavioral> is not valid for this
+   core. Overriding with File Type <Structural>.
+Applying current project options...
+Finished applying current project options.
+WARNING:sim - VHDL simulation file type 'Behavioral' is not valid for this core.
+   Overriding with simulation file type 'Structural'.
+Cancelled executing Tcl generator.
+Recustomize and Generate (Under Original Project Settings)INFO:sim:172 - Generating IP...
+WARNING:sim:100 - The Simulation File Type <Behavioral> is not valid for this
+   core. Overriding with File Type <Structural>.
+ERROR:sim - Could not open output file
+ERROR:sim -   
+   '/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+ERROR:sim -    eMaster/coregen/tmp/_cg/_dbg/xil_798.out'.
+ERROR:sim - Could not close output stream to
+ERROR:sim -   
+   '/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+ERROR:sim -    eMaster/coregen/tmp/_cg/_dbg/xil_798.out'.
+ERROR:sim - Could not make customization output file
+ERROR:sim -   
+   '/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+ERROR:sim -    eMaster/coregen/tmp/_cg/_dbg/xil_798.out' writable.
+ERROR:sim - Error writing to customization output file
+ERROR:sim -   
+   '/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+ERROR:sim -    eMaster/coregen/tmp/_cg/_dbg/xil_798.out'.
+WARNING:coreutil - couldn't change working directory to
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp": no such file or directory
+       while executing
+   "cd $cwd"
+       (procedure "::xilinx::GeneratorUtils::runIpGuiLauncher" line 23)
+       invoked from within
+   "::xilinx::GeneratorUtils::runIpGuiLauncher $componentInstanceID $inFileName
+   $outFileName"
+       (procedure "main" line 36)
+       invoked from within
+   "main $argc $argv"
+       invoked from within
+   "return [main $argc $argv]"
+       (file
+   "/afs/slac.stanford.edu/g/reseng/vol15/Xilinx/14.5/ISE_DS/ISE/coregen/reposit
+   ory/xilinx.com/generators/customization_generator_v1_0.tcl" line 58)ERROR:sim - Unable to evaluate Tcl file:
+   /afs/slac.stanford.edu/g/reseng/vol15/Xilinx/14.5/ISE_DS/ISE/coregen/reposito
+   ry/xilinx.com/generators/customization_generator_v1_0.tcl
+ERROR:sim - Failed executing Tcl generator.
+Customize and GenerateINFO:sim:172 - Generating IP...
+Applying current project options...
+Finished applying current project options.
+Resolving generics for 'ArmGigePhy'...
+Applying external generics to 'ArmGigePhy'...
+Delivering associated files for 'ArmGigePhy'...
+WARNING:sim - Component gtwizard_v2_5 does not have a valid model name for VHDL
+   synthesis
+Delivering EJava files for 'ArmGigePhy'...
 Generating ASY schematic symbol...
+INFO:sim:993 - The selected IP does not support an ASY schematic symbol.
 INFO:sim:949 - Finished generation of ASY schematic symbol.
 Generating metadata file...
-Regenerating ISE project file for 'PcieFifo'...
 Generating ISE project...
-XCO file found: PcieFifo.xco
-XMDF file found: PcieFifo_xmdf.tcl
+XCO file found: ArmGigePhy.xco
+XMDF file found: ArmGigePhy_xmdf.tcl
 Adding
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo.asy -view all -origin_type imported
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/ArmGigePhy_exdes.xcf -view all
+-origin_type imported
 Adding
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo.ngc -view all -origin_type created
-Checking file
-"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
-ster/coregen/tmp/_cg/PcieFifo.ngc" for project device match ...
-File
-"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
-ster/coregen/tmp/_cg/PcieFifo.ngc" device information matches project device.
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/ArmGigePhy_exdes.ucf -view all
+-origin_type created
 Adding
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo.vhd -view all -origin_type created
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_gt_usrclk_source.vhd
+-view all -origin_type created
 INFO:HDLCompiler:1061 - Parsing VHDL file
    "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
-   eMaster/coregen/tmp/_cg/PcieFifo.vhd" into library work
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_gt_usrclk_source
+   .vhd" into library work
 INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
 Adding
 /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
-ter/coregen/tmp/_cg/PcieFifo.vho -view all -origin_type imported
-INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
-   Please set the new top explicitly by running the "project set top" command.
-   To re-calculate the new top automatically, set the "Auto Implementation Top"
-   property to true.
-Top level has been set to "/PcieFifo"
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_init.vhd -view all
+-origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_init.vhd" into
+   library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_sync_block.vhd -view
+all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_sync_block.vhd"
+   into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_tx_startup_fsm.vhd
+-view all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_tx_startup_fsm.v
+   hd" into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_rx_startup_fsm.vhd
+-view all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_rx_startup_fsm.v
+   hd" into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_recclk_monitor.vhd
+-view all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_recclk_monitor.v
+   hd" into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_gt_frame_gen.vhd -view
+all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_gt_frame_gen.vhd
+   " into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_gt_frame_check.vhd
+-view all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_gt_frame_check.v
+   hd" into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/armgigephy_gt.vhd -view all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/armgigephy_gt.vhd" into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/armgigephy.vhd -view all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/armgigephy.vhd" into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_exdes.vhd -view all
+-origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/armgigephy_exdes.vhd" into
+   library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/armgigephy.vho -view all -origin_type imported
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/data_vio.ngc -view all
+-origin_type created
+Checking file
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
+ster/coregen/tmp/_cg/ArmGigePhy/example_design/data_vio.ngc" for project device
+match ...
+WARNING:coreutil - WARNING:ProjectMgmt - The file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+      eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/data_vio.ngc" device
+      information, 7v585tffg1157-2, does not match the current project device,
+      xc7z030fbg484-2.
+   Adding
+   /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcie
+   Master/coregen/tmp/_cg/ArmGigePhy/example_design/ila.ngc -view all
+   -origin_type created
+Checking file
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
+ster/coregen/tmp/_cg/ArmGigePhy/example_design/ila.ngc" for project device match
+...
+WARNING:ProjectMgmt - The file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/ila.ngc" device
+   information, 7v585tffg1157-2, does not match the current project device,
+   xc7z030fbg484-2.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/icon.ngc -view all -origin_type
+created
+Checking file
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
+ster/coregen/tmp/_cg/ArmGigePhy/example_design/icon.ngc" for project device
+match ...
+WARNING:ProjectMgmt - The file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/icon.ngc" device
+   information, 7v585tffg1157-2, does not match the current project device,
+   xc7z030fbg484-2.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_vio.ngc -view all
+-origin_type created
+Checking file
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
+ster/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_vio.ngc" for project
+device match ...
+WARNING:coreutil - WARNING:ProjectMgmt - The file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+      eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_vio.ngc"
+   device
+      information, 7vx485tffg1761-2, does not match the current project device,
+      xc7z030fbg484-2.
+Adding
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_ila.ngc -view all
+-origin_type created
+Checking file
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
+ster/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_ila.ngc" for project
+device match ...
+WARNING:coreutil - WARNING:ProjectMgmt - The file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+      eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_ila.ngc"
+   device
+      information, 7vx485tffg1761-2, does not match the current project device,
+      xc7z030fbg484-2.
+   Adding
+   /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcie
+   Master/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_icon.ngc -view all
+   -origin_type created
+Checking file
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMa
+ster/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_icon.ngc" for project
+device match ...
+WARNING:ProjectMgmt - The file
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPci
+   eMaster/coregen/tmp/_cg/ArmGigePhy/example_design/chipscope_icon.ngc" device
+   information, 7vx485tffg1761-2, does not match the current project device,
+   xc7z030fbg484-2.
+WARNING: This core does not have a top level called "/ArmGigePhy"
+WARNING: Top level has been set to "/ArmGigePhy_exdes"
 Generating README file...
 Generating FLIST file...
 INFO:sim:948 - Finished FLIST file generation.

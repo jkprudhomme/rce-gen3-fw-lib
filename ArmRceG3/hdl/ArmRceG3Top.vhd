@@ -28,12 +28,21 @@ entity ArmRceG3Top is
    port (
 
       -- LEDs
-      led1                     : out   std_logic;
-      led2                     : out   std_logic;
+      led                      : out   std_logic_vector(1 downto 0);
 
       -- I2C
       i2cSda                   : inout std_logic;
-      i2cScl                   : inout std_logic
+      i2cScl                   : inout std_logic;
+
+      -- PCI Express Local Bus
+      pcieLocalBusClk          : out   std_logic;
+      pcieLocalBusReset        : out   std_logic;
+      pcieLocalBusMaster       : out   LocalBusMasterType;
+      pcieLocalBusSlave        : in    LocalBusSlaveType;
+
+      -- Ethernet
+      ethFromArm               : out   EthFromArmType;
+      ethToArm                 : in    EthToArmType
 
    );
 end ArmRceG3Top;
@@ -87,9 +96,6 @@ architecture structure of ArmRceG3Top is
 
 begin
 
-   led1 <= scratchPad(0);
-   led2 <= scratchPad(1);
-
    --------------------------------------------
    -- Processor Core
    --------------------------------------------
@@ -125,7 +131,9 @@ begin
          axiHpSlaveWriteFromArm   => axiHpSlaveWriteFromArm,
          axiHpSlaveWriteToArm     => axiHpSlaveWriteToArm,
          axiHpSlaveReadFromArm    => axiHpSlaveReadFromArm,
-         axiHpSlaveReadToArm      => axiHpSlaveReadToArm
+         axiHpSlaveReadToArm      => axiHpSlaveReadToArm,
+         ethFromArm               => ethFromArm,
+         ethToArm                 => ethToArm
       );
 
    --axiGpMasterWriteFromArm(0)
@@ -165,7 +173,14 @@ begin
          localBusSlave           => localBusSlave
       );
 
-   localBusSlave(15 downto 3) <= (others=>LocalBusSlaveInit);
+   -- PCI Express Local Bus
+   pcieLocalBusClk    <= axiClk;
+   pcieLocalBusReset  <= localBusReset;
+   pcieLocalBusMaster <= localBusMaster(15);
+   localBusSlave(15)  <= pcieLocalBusSlave;
+
+   -- Unused
+   localBusSlave(14 downto 3) <= (others=>LocalBusSlaveInit);
 
    --------------------------------------------
    -- Local Registers
@@ -197,6 +212,10 @@ begin
          end if;
       end if;  
    end process;         
+
+   -- LED Debug
+   led(0) <= scratchPad(0);
+   led(1) <= scratchPad(1);
 
    --------------------------------------------
    -- I2C Controller
