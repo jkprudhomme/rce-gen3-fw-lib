@@ -34,11 +34,17 @@ entity ArmRceG3Top is
       i2cSda                   : inout std_logic;
       i2cScl                   : inout std_logic;
 
-      -- PCI Express Local Bus
-      pcieLocalBusClk          : out   std_logic;
-      pcieLocalBusReset        : out   std_logic;
-      pcieLocalBusMaster       : out   LocalBusMasterType;
-      pcieLocalBusSlave        : in    LocalBusSlaveType;
+      -- Clocks
+      axiClk                   : out   std_logic;
+      axiClkRst                : out   std_logic;
+      sysClk125                : out   std_logic;
+      sysClk125Rst             : out   std_logic;
+      sysClk200                : out   std_logic;
+      sysClk200Rst             : out   std_logic;
+
+      -- External Local Bus
+      localBusMaster           : out   LocalBusMasterVector(15 downto 15);
+      localBusSlave            : in    LocalBusSlaveVector(15 downto 15);
 
       -- Ethernet
       ethFromArm               : out   EthFromArmType;
@@ -64,6 +70,14 @@ architecture structure of ArmRceG3Top is
    end component;
 
    -- Local signals
+   signal fclkClk3                 : std_logic;
+   signal fclkClk2                 : std_logic;
+   signal fclkClk1                 : std_logic;
+   signal fclkClk0                 : std_logic;
+   signal fclkRst3                 : std_logic;
+   signal fclkRst2                 : std_logic;
+   signal fclkRst1                 : std_logic;
+   signal fclkRst0                 : std_logic;
    signal axiGpMasterReset         : std_logic_vector(1 downto 0);
    signal axiGpMasterWriteFromArm  : AxiWriteMasterVector(1 downto 0);
    signal axiGpMasterWriteToArm    : AxiWriteSlaveVector(1 downto 0);
@@ -85,14 +99,19 @@ architecture structure of ArmRceG3Top is
    signal axiHpSlaveReadFromArm    : AxiReadSlaveVector(3 downto 0);
    signal axiHpSlaveReadToArm      : AxiReadMasterVector(3 downto 0);
    signal armInt                   : std_logic_vector(15 downto 0);
-   signal axiClk                : std_logic;
    signal control0                 : std_logic_vector(35 DOWNTO 0);
    signal trig0                    : std_logic_vector(127 DOWNTO 0);
-   signal localBusMaster           : LocalBusMasterVector(15 downto 0);
-   signal localBusSlave            : LocalBusSlaveVector(15 downto 0);
-   signal localBusReset            : std_logic;
+   signal intLocalBusMaster        : LocalBusMasterVector(15 downto 0);
+   signal intLocalBusSlave         : LocalBusSlaveVector(15 downto 0);
+   signal intLocalBusReset         : std_logic;
    signal scratchPad               : std_logic_vector(31 downto 0);
    signal fifoDebug                : std_logic_vector(127 DOWNTO 0);
+   signal iaxiClk                  : std_logic;
+   signal iaxiClkRst               : std_logic;
+   signal isysClk125               : std_logic;
+   signal isysClk125Rst            : std_logic;
+   signal isysClk200               : std_logic;
+   signal isysClk200Rst            : std_logic;
 
 begin
 
@@ -102,15 +121,15 @@ begin
 
    U_ArmRceG3Cpu : entity work.ArmRceG3Cpu 
       port map (
-         fclkClk3                 => open,
-         fclkClk2                 => open,
-         fclkClk1                 => open,
-         fclkClk0                 => axiClk,
-         fclkRst3                 => open,
-         fclkRst2                 => open,
-         fclkRst1                 => open,
-         fclkRst0                 => open,
-         axiClk                   => axiClk,
+         fclkClk3                 => fclkClk3,
+         fclkClk2                 => fclkClk2,
+         fclkClk1                 => fclkClk1,
+         fclkClk0                 => fclkClk0,
+         fclkRst3                 => fclkRst3,
+         fclkRst2                 => fclkRst2,
+         fclkRst1                 => fclkRst1,
+         fclkRst0                 => fclkRst0,
+         axiClk                   => iaxiClk,
          armInt                   => armInt,
          axiGpMasterReset         => axiGpMasterReset,
          axiGpMasterWriteFromArm  => axiGpMasterWriteFromArm,
@@ -156,59 +175,89 @@ begin
    armInt(15 downto 0)        <= (others=>'0');
 
    --------------------------------------------
+   -- Clock Generation
+   --------------------------------------------
+   U_ArmRceG2Clocks: entity work.ArmRceG3Clocks
+      port map (
+         fclkClk3                 => fclkClk3,
+         fclkClk2                 => fclkClk2,
+         fclkClk1                 => fclkClk1,
+         fclkClk0                 => fclkClk0,
+         fclkRst3                 => fclkRst3,
+         fclkRst2                 => fclkRst2,
+         fclkRst1                 => fclkRst1,
+         fclkRst0                 => fclkRst0,
+         axiGpMasterReset         => axiGpMasterReset,
+         axiGpSlaveReset          => axiGpSlaveReset,
+         axiAcpSlaveReset         => axiAcpSlaveReset,
+         axiHpSlaveReset          => axiHpSlaveReset,
+         axiClk                   => iaxiClk,
+         axiClkRst                => iaxiClkRst,
+         sysClk125                => isysClk125,
+         sysClk125Rst             => isysClk125Rst,
+         sysClk200                => isysClk200,
+         sysClk200Rst             => isysClk200Rst
+      );
+
+   -- Output clocks
+   axiClk       <= iaxiClk;
+   axiClkRst    <= iaxiClkRst;
+   sysClk125    <= isysClk125;
+   sysClk125Rst <= isysClk125Rst;
+   sysClk200    <= isysClk200;
+   sysClk200Rst <= isysClk200Rst;
+
+   --------------------------------------------
    -- Local Bus Controller
    --------------------------------------------
    
    -- GP1: 8000_0000 to BFFF_FFFF
    U_ArmRceG3LocalBus: entity work.ArmRceG3LocalBus 
       port map (
-         axiClk                  => axiClk,
-         aximasterReset          => axiGpMasterReset(1),
+         axiClk                  => iaxiClk,
+         axiClkRst               => iaxiClkRst,
          axiMasterReadFromArm    => axiGpMasterReadFromArm(1),
          axiMasterReadToArm      => axiGpMasterReadToArm(1),
          axiMasterWriteFromArm   => axiGpMasterWriteFromArm(1),
          axiMasterWriteToArm     => axiGpMasterWriteToArm(1),
-         localBusReset           => localBusReset,
-         localBusMaster          => localBusMaster,
-         localBusSlave           => localBusSlave
+         localBusMaster          => intLocalBusMaster,
+         localBusSlave           => intLocalBusSlave
       );
 
-   -- PCI Express Local Bus
-   pcieLocalBusClk    <= axiClk;
-   pcieLocalBusReset  <= localBusReset;
-   pcieLocalBusMaster <= localBusMaster(15);
-   localBusSlave(15)  <= pcieLocalBusSlave;
+   -- External Local Bus
+   localBusMaster                 <= intLocalBusMaster(15 downto 15);
+   intLocalBusSlave(15 downto 15) <= localBusSlave;
 
    -- Unused
-   localBusSlave(14 downto 3) <= (others=>LocalBusSlaveInit);
+   intLocalBusSlave(14 downto 3) <= (others=>LocalBusSlaveInit);
 
    --------------------------------------------
    -- Local Registers
    --------------------------------------------
 
-   process ( axiClk, localBusReset ) begin
-      if localBusReset = '1' then
-         scratchPad       <= (others=>'0')     after TPD_G;
-         localBusSlave(0) <= LocalBusSlaveInit after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( iaxiClk, iaxiClkRst ) begin
+      if iaxiClkRst = '1' then
+         scratchPad          <= (others=>'0')     after TPD_G;
+         intLocalBusSlave(0) <= LocalBusSlaveInit after TPD_G;
+      elsif rising_edge(iaxiClk) then
 
          -- 0x80000000
-         if localBusMaster(0).addr(25 downto 2) = x"000000" then
-            localBusSlave(0).readData  <= FpgaVersion                  after TPD_G;
-            localBusSlave(0).readValid <= localBusMaster(0).readEnable after TPD_G;
+         if intLocalBusMaster(0).addr(25 downto 2) = x"000000" then
+            intLocalBusSlave(0).readData  <= FpgaVersion                  after TPD_G;
+            intLocalBusSlave(0).readValid <= intLocalBusMaster(0).readEnable after TPD_G;
 
          -- 0x80000004
-         elsif localBusMaster(0).addr(25 downto 2) = x"000001" then
-            if localBusMaster(0).writeEnable = '1' then
-               scratchPad <= localBusMaster(0).writeData after TPD_G;   
+         elsif intLocalBusMaster(0).addr(25 downto 2) = x"000001" then
+            if intLocalBusMaster(0).writeEnable = '1' then
+               scratchPad <= intLocalBusMaster(0).writeData after TPD_G;   
             end if;
-            localBusSlave(0).readData  <= scratchPad                   after TPD_G;
-            localBusSlave(0).readValid <= localBusMaster(0).readEnable after TPD_G;
+            intLocalBusSlave(0).readData  <= scratchPad                   after TPD_G;
+            intLocalBusSlave(0).readValid <= intLocalBusMaster(0).readEnable after TPD_G;
 
          -- Unsupported
          else
-            localBusSlave(0).readData  <= x"deadbeef"                  after TPD_G;
-            localBusSlave(0).readValid <= localBusMaster(0).readEnable after TPD_G;
+            intLocalBusSlave(0).readData  <= x"deadbeef"                  after TPD_G;
+            intLocalBusSlave(0).readValid <= intLocalBusMaster(0).readEnable after TPD_G;
          end if;
       end if;  
    end process;         
@@ -225,10 +274,10 @@ begin
    U_ArmRceG3I2c : entity work.ArmRceG3I2c
       port map (
          ponRst         => axiGpMasterReset(1),
-         axiClk         => axiClk,
-         localBusReset  => localBusReset,
-         localBusMaster => localBusMaster(1),
-         localBusSlave  => localBusSlave(1),
+         axiClk         => iaxiClk,
+         axiClkRst      => iaxiClkRst,
+         localBusMaster => intLocalBusMaster(1),
+         localBusSlave  => intLocalBusSlave(1),
          interrupt      => open,
          i2cSda         => i2cSda,
          i2cScl         => i2cScl
@@ -241,14 +290,13 @@ begin
    -- 0x8800_0000 - 0x8BFF_FFFF
    U_ArmRceG3IbCntrl: entity work.ArmRceG3IbCntrl 
       port map (
-         axiClk                  => axiClk,
-         axiAcpSlaveReset        => axiAcpSlaveReset,
+         axiClk                  => iaxiClk,
+         axiClkRst               => iaxiClkRst,
          axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
          axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArm,
          interrupt               => open,
-         localBusReset           => localBusReset,
-         localBusMaster          => localBusMaster(2),
-         localBusSlave           => localBusSlave(2),
+         localBusMaster          => intLocalBusMaster(2),
+         localBusSlave           => intLocalBusSlave(2),
          writeFifoClk            => (others=>'0'),
          writeFifoToFifo         => (others=>WriteFifoToFifoInit),
          writeFifoFromFifo       => open,
@@ -267,7 +315,7 @@ begin
    U_ila: zynq_ila
       port map (
          CONTROL => control0,
-         CLK     => axiClk,
+         CLK     => iaxiClk,
          TRIG0   => trig0
       );
 

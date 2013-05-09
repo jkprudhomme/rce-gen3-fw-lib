@@ -34,7 +34,7 @@ entity ArmRceG3IbBurst is
       axiClk                  : in  std_logic;
 
       -- AXI ACP Master
-      axiAcpSlaveReset        : in  std_logic;
+      axiClkRst               : in  std_logic;
       axiAcpSlaveWriteFromArm : in  AxiWriteSlaveType;
       axiAcpSlaveWriteToArm   : out AxiWriteMasterType;
 
@@ -135,8 +135,8 @@ begin
    -- Memory Toggle tracking
    -----------------------------------------
    
-   process ( axiClk, axiAcpSlaveReset ) begin
-      if axiAcpSlaveReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          memSelect  <= '0'           after TPD_G;
          memValid   <= '0'           after TPD_G;
          memAddress <= (others=>'0') after TPD_G;
@@ -179,7 +179,7 @@ begin
 
    U_Fifo: ArmAFifo72x512
       port map (
-         rst           => axiAcpSlaveReset,
+         rst           => axiClkRst,
          wr_clk        => writeFifoClk,
          rd_clk        => axiClk,
          din           => writeFifoToFifo.data,
@@ -193,8 +193,8 @@ begin
       );
 
    -- FIFO almost full
-   process ( writeFifoClk, axiAcpSlaveReset ) begin
-      if axiAcpSlaveReset = '1' then
+   process ( writeFifoClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          iWriteFifoFromFifo.almostFull <= '1' after TPD_G;
       elsif rising_edge(writeFifoClk) then
          if fifoCount > 500 or iWriteFifoFromFifo.full = '1' then
@@ -209,8 +209,8 @@ begin
    -- Allows a cache line to be pulled from the FIFO and examined
    -- before the write access is started
    U_FifoPipeGen : for i in 0 to 3 generate
-      process ( axiClk, axiAcpSlaveReset ) begin
-         if axiAcpSlaveReset = '1' then
+      process ( axiClk, axiClkRst ) begin
+         if axiClkRst = '1' then
             fifoValid(i) <= '0' after TPD_G;
          elsif rising_edge(axiClk) then
             if fifoShift(i) = '1' then
@@ -260,8 +260,8 @@ begin
    iAxiAcpSlaveWriteToArm.wrissuecap1_en <= '0';
 
    -- Sync states
-   process ( axiClk, axiAcpSlaveReset ) begin
-      if axiAcpSlaveReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          iMemDirtySet                   <= (others=>'0') after TPD_G;
          curInFrame                     <= '0'           after TPD_G;
          curState                       <= ST_IDLE       after TPD_G;

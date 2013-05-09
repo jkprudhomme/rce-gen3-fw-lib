@@ -49,16 +49,15 @@ entity ArmRceG3LocalBus is
 
       -- Clocks & Reset
       axiClk                  : in     std_logic;
+      axiClkRst               : in     std_logic;
 
       -- AXI Master
-      axiMasterReset          : in     std_logic;
       axiMasterReadFromArm    : in     AxiReadMasterType;
       axiMasterReadToArm      : out    AxiReadSlaveType;
       axiMasterWriteFromArm   : in     AxiWriteMasterType;
       axiMasterWriteToArm     : out    AxiWriteSlaveType;
 
       -- Local bus slaves
-      localBusReset           : out    std_logic;
       localBusMaster          : out    LocalBusMasterVector(15 downto 0);
       localBusSlave           : in     LocalBusSlaveVector(15 downto 0)
    );
@@ -98,11 +97,10 @@ begin
    axiMasterReadToArm   <= intMasterReadToArm;
    axiMasterWriteToArm  <= intMasterWriteToArm;
    localBusMaster       <= intLocalBusMaster;
-   localBusReset        <= axiMasterReset;
 
    -- Sync states
-   process ( axiClk, axiMasterReset ) begin
-      if axiMasterReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          curState             <= ST_IDLE                      after TPD_G;
          curSlave             <= (others=>'0')                after TPD_G;
          intMasterReadToArm   <= AxiReadSlaveInit             after TPD_G;

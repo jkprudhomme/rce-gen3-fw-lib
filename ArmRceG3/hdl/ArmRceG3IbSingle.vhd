@@ -32,7 +32,7 @@ entity ArmRceG3IbSingle is
       axiClk                  : in  std_logic;
 
       -- AXI ACP Master
-      axiAcpSlaveReset        : in  std_logic;
+      axiClkRst               : in  std_logic;
       axiAcpSlaveWriteFromArm : in  AxiWriteSlaveType;
       axiAcpSlaveWriteToArm   : out AxiWriteMasterType;
 
@@ -122,8 +122,8 @@ begin
    -- Memory Toggle tracking
    -----------------------------------------
    
-   process ( axiClk, axiAcpSlaveReset ) begin
-      if axiAcpSlaveReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          memSelect  <= '0'           after TPD_G;
          memValid   <= '0'           after TPD_G;
          memAddress <= (others=>'0') after TPD_G;
@@ -166,7 +166,7 @@ begin
 
    U_Fifo: ArmAFifo36x512
       port map (
-         rst           => axiAcpSlaveReset,
+         rst           => axiClkRst,
          wr_clk        => writeFifoClk,
          rd_clk        => axiClk,
          din           => writeFifoToFifo.data(35 downto 0),
@@ -180,8 +180,8 @@ begin
       );
 
    -- FIFO almost full
-   process ( writeFifoClk, axiAcpSlaveReset ) begin
-      if axiAcpSlaveReset = '1' then
+   process ( writeFifoClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          iWriteFifoFromFifo.almostFull <= '1' after TPD_G;
       elsif rising_edge(writeFifoClk) then
          if fifoCount > 500 or iWriteFifoFromFifo.full = '1' then
@@ -193,8 +193,8 @@ begin
    end process;
 
    -- Output pipeline, 1 extra register after FIFO.
-   process ( axiClk, axiAcpSlaveReset ) begin
-      if axiAcpSlaveReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          fifoValid(0) <= '0' after TPD_G;
       elsif rising_edge(axiClk) then
          if fifoShift(0) = '1' then
@@ -237,8 +237,8 @@ begin
    iAxiAcpSlaveWriteToArm.wrissuecap1_en <= '0';
 
    -- Sync states
-   process ( axiClk, axiAcpSlaveReset ) begin
-      if axiAcpSlaveReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          iMemDirtySet                   <= (others=>'0') after TPD_G;
          curState                       <= ST_IDLE       after TPD_G;
          iAxiAcpSlaveWriteToArm.wvalid  <= '0'           after TPD_G;

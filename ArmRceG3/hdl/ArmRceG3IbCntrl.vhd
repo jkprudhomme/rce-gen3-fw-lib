@@ -30,7 +30,7 @@ entity ArmRceG3IbCntrl is
       axiClk                  : in  std_logic;
 
       -- AXI ACP Master
-      axiAcpSlaveReset        : in  std_logic;
+      axiClkRst               : in  std_logic;
       axiAcpSlaveWriteFromArm : in  AxiWriteSlaveType;
       axiAcpSlaveWriteToArm   : out AxiWriteMasterType;
 
@@ -38,7 +38,6 @@ entity ArmRceG3IbCntrl is
       interrupt               : out std_logic_vector(14 downto 0);
 
       -- Local Bus
-      localBusReset           : in  std_logic;
       localBusMaster          : in  LocalBusMasterType;
       localBusSlave           : out LocalBusSlaveType;
 
@@ -88,8 +87,8 @@ begin
    --------------------------------------------
    -- Registers: 0x8800_0000 - 0x8BFF_FFFF
    --------------------------------------------
-   process ( axiClk, localBusReset ) begin
-      if localBusReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          intLocalBusSlave <= LocalBusSlaveInit       after TPD_G;
          dmaConfig        <= (others=>(others=>'0')) after TPD_G;
          fifoWrEn         <= '0'                     after TPD_G;
@@ -185,8 +184,8 @@ begin
                 or dirtyFlagFifoSet(12) or dirtyFlagFifoSet(13) or dirtyFlagFifoSet(14);
 
    U_DirtyGen: for i in 0 to 14 generate
-      process ( axiClk, axiAcpSlaveReset ) begin
-         if axiAcpSlaveReset = '1' then
+      process ( axiClk, axiClkRst ) begin
+         if axiClkRst = '1' then
             dirtyFlag(i) <= '0' after TPD_G;
          elsif rising_edge(axiClk) then
             if dirtyClearEn = '1' and dirtyClearSel = i then
@@ -210,7 +209,7 @@ begin
       ) port map (
          clk      => axiClk,
          aRst     => '0',
-         sRst     => axiAcpSlaveReset,
+         sRst     => axiClkRst,
          req      => fifoReq(7 downto 0),
          selected => arbSelect,
          valid    => arbValid,
@@ -232,7 +231,7 @@ begin
       U_Fifo: entity work.ArmRceG3IbBurst 
          port map (
             axiClk                  => axiClk,
-            axiAcpSlaveReset        => axiAcpSlaveReset,
+            axiClkRst               => axiClkRst,
             axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
             axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArmFifo(i),
             fifoReq                 => fifoReq(i),
@@ -265,7 +264,7 @@ begin
       U_Fifo: entity work.ArmRceG3IbSingle
          port map (
             axiClk                  => axiClk,
-            axiAcpSlaveReset        => axiAcpSlaveReset,
+            axiClkRst               => axiClkRst,
             axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
             axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArmFifo(i),
             fifoReq                 => fifoReq(i),

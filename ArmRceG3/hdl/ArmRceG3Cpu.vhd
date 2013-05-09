@@ -139,7 +139,7 @@ begin
          C_TRACE_BUFFER_CLOCK_DELAY      =>  12,
          USE_TRACE_DATA_EDGE_DETECTOR    =>  0,
          C_PS7_SI_REV                    =>  "PRODUCTION",
-         C_EN_EMIO_ENET0                 =>  0,
+         C_EN_EMIO_ENET0                 =>  1,
          C_EN_EMIO_ENET1                 =>  0,
          C_EN_EMIO_TRACE                 =>  0,
          C_DQ_WIDTH                      =>  32,

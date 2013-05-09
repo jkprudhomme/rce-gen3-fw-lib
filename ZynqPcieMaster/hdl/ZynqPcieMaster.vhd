@@ -27,14 +27,17 @@ entity ZynqPcieMaster is
    port (
 
       -- Local Bus
-      localBusClk             : in  std_logic;
-      localBusReset           : in  std_logic;
+      axiClk                  : in  std_logic;
+      axiClkRst               : in  std_logic;
       localBusMaster          : in  LocalBusMasterType;
       localBusSlave           : out LocalBusSlaveType;
 
       -- Master clock and reset
       pciRefClk               : in  std_logic;
       ponResetL               : in  std_logic;
+
+      -- Reset output
+      pcieResetL              : out std_logic;
 
       -- PCIE Lines
       pcieRxP                 : in  std_logic;
@@ -113,12 +116,13 @@ begin
 
    -- Outputs
    localBusSlave <= intLocalBusSlave;
+   pcieResetL    <= ponResetL;
 
    --------------------------------------------
    -- Registers: 0xBC00_0000 - 0xBFFF_FFFF
    --------------------------------------------
-   process ( localBusClk, localBusReset ) begin
-      if localBusReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          intLocalBusSlave <= LocalBusSlaveInit       after TPD_G;
          wrFifoDin         <= (others=>'0')          after TPD_G;
          wrFifoWrEn        <= '0'                    after TPD_G;
@@ -130,7 +134,7 @@ begin
          cfgBusNumber      <= (others=>'0')          after TPD_G;
          cfgDeviceNumber   <= (others=>'0')          after TPD_G;
          cfgFunctionNumber <= (others=>'0')          after TPD_G;
-      elsif rising_edge(localBusClk) then
+      elsif rising_edge(axiClk) then
          intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
          intLocalBusSlave.readData  <= x"deadbeef"               after TPD_G;
          wrFifoWrEn                 <= '0'                       after TPD_G;
@@ -248,8 +252,8 @@ begin
 
    U_WriteFifo : PcieFifo
       PORT map (
-         rst    => localBusReset,
-         wr_clk => localBusClk,
+         rst    => axiClkRst,
+         wr_clk => axiClk,
          rd_clk => pciClk,
          din    => wrFifoDin,
          wr_en  => wrFifoWrEn,
@@ -265,9 +269,9 @@ begin
 
    U_ReadFifo : PcieFifo
       PORT map (
-         rst    => localBusReset,
+         rst    => axiClkRst,
          wr_clk => pciClk,
-         rd_clk => localBusClk,
+         rd_clk => axiClk,
          din    => rdFifoDin,
          wr_en  => rdFifoWrEn,
          rd_en  => rdFifoRdEn,

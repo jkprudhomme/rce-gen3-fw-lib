@@ -44,11 +44,11 @@ entity ArmRceG3I2c is
    port (
       ponRst         : in  std_logic;
 
-      -- Clock
+      -- Clock and reset
       axiClk         : in  std_logic;
+      axiClkRst      : in  std_logic;
 
       -- Local bus interface
-      localBusReset  : in  std_logic;
       localBusMaster : in  LocalBusMasterType;
       localBusSlave  : out LocalBusSlaveType;
       interrupt      : out std_logic;
@@ -198,9 +198,9 @@ begin
 
    end process iicSysClkComb;
 
-   iicSysClkSeq : process (axiClk, localBusReset) is
+   iicSysClkSeq : process (axiClk, axiClkRst) is
    begin
-      if (localBusReset = '1') then
+      if (axiClkRst = '1') then
          sysR.startup   <= '1'             after TPD_G;
          sysR.interrupt <= (others => '0') after TPD_G;
          sysR.cpuReset  <= (others => '1') after TPD_G;
@@ -246,8 +246,8 @@ begin
    interrupt              <= sysR.interrupt(0);
 
    -- One clock delay for read data valid
-   process ( axiClk, localBusReset ) begin
-      if localBusReset = '1' then
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
          localBusSlave.readValid <= '0' after TPD_G;
       elsif rising_edge(axiClk) then
          localBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
