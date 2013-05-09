@@ -191,8 +191,8 @@ begin
    lockedReset <= ponReset or (not mmcmLocked);
 
    -- Combine AXI bus resets
-   axiCombinedRst <= lockedReset when axiGpMasterReset /= "00" or axiGpSlaveReset /= "00" or 
-                                      axiAcpSlaveReset /= '0'  or axiHpSlaveReset /= "0000" else '1';
+   axiCombinedRst <= lockedReset when (axiGpMasterReset = "00" and axiGpSlaveReset = "00" and
+                                       axiAcpSlaveReset = '0'  and axiHpSlaveReset = "0000") else '1';
 
    U_axiClkRstGen : entity work.RstSync
       generic map (
