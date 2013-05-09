@@ -172,7 +172,7 @@ begin
    axiHpSlaveWriteToArm       <= (others=>AxiWriteMasterInit);
    axiHpSlaveReadToArm        <= (others=>AxiReadMasterInit);
 
-   armInt(15 downto 0)        <= (others=>'0');
+   armInt(15)                 <= '0';
 
    --------------------------------------------
    -- Clock Generation
@@ -294,7 +294,7 @@ begin
          axiClkRst               => iaxiClkRst,
          axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
          axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArm,
-         interrupt               => open,
+         interrupt               => armInt(14 downto 0),
          localBusMaster          => intLocalBusMaster(2),
          localBusSlave           => intLocalBusSlave(2),
          writeFifoClk            => (others=>'0'),
