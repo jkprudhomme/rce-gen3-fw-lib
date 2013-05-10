@@ -177,7 +177,7 @@ begin
    --------------------------------------------
    -- Clock Generation
    --------------------------------------------
-   U_ArmRceG2Clocks: entity work.ArmRceG3Clocks
+   U_ArmRceG3Clocks: entity work.ArmRceG3Clocks
       port map (
          fclkClk3                 => fclkClk3,
          fclkClk2                 => fclkClk2,

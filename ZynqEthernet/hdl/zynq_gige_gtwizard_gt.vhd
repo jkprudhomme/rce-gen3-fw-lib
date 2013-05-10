@@ -516,7 +516,7 @@ begin
         CPLLLOCKEN                      =>      tied_to_vcc_i,
         CPLLPD                          =>      tied_to_ground_i,
         CPLLREFCLKLOST                  =>      CPLLREFCLKLOST_OUT,
-        CPLLREFCLKSEL                   =>      "001",
+        CPLLREFCLKSEL                   =>      "111",
         CPLLRESET                       =>      CPLLRESET_IN,
         GTRSVD                          =>      "0000000000000000",
         PCSRSVDIN                       =>      "0000000000000000",
@@ -528,10 +528,10 @@ begin
         ---------------------------------- Channel ---------------------------------
         CLKRSVD                         =>      "0000",
         -------------------------- Channel - Clocking Ports ------------------------
-        GTGREFCLK                       =>      tied_to_ground_i,
+        GTGREFCLK                       =>      GTREFCLK0_IN,
         GTNORTHREFCLK0                  =>      tied_to_ground_i,
         GTNORTHREFCLK1                  =>      tied_to_ground_i,
-        GTREFCLK0                       =>      GTREFCLK0_IN,
+        GTREFCLK0                       =>      '0',
         GTREFCLK1                       =>      tied_to_ground_i,
         GTSOUTHREFCLK0                  =>      tied_to_ground_i,
         GTSOUTHREFCLK1                  =>      tied_to_ground_i,
