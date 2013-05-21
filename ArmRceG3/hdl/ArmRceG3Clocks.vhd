@@ -196,10 +196,10 @@ begin
 
    U_axiClkRstGen : entity work.RstSync
       generic map (
-         DELAY_G        => 1 ns,
+         TPD_G        => 1 ns,
          IN_POLARITY_G  => '1',
          OUT_POLARITY_G => '1',
-         HOLD_CYCLES_G  => 16
+         RELEASE_DELAY_G  => 16
       )
       port map (
         clk      => iaxiClk,
@@ -209,10 +209,10 @@ begin
 
    U_sysClk200RstGen : entity work.RstSync
       generic map (
-         DELAY_G        => 1 ns,
+         TPD_G        => 1 ns,
          IN_POLARITY_G  => '1',
          OUT_POLARITY_G => '1',
-         HOLD_CYCLES_G  => 16
+         RELEASE_DELAY_G  => 16
       )
       port map (
         clk      => isysClk200,
@@ -222,10 +222,10 @@ begin
 
    U_sysClk125RstGen : entity work.RstSync
       generic map (
-         DELAY_G        => 1 ns,
+         TPD_G        => 1 ns,
          IN_POLARITY_G  => '1',
          OUT_POLARITY_G => '1',
-         HOLD_CYCLES_G  => 16
+         RELEASE_DELAY_G  => 16
       )
       port map (
         clk      => isysClk125,

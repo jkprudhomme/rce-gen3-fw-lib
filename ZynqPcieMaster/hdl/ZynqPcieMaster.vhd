@@ -175,65 +175,65 @@ begin
             rdFifoRdEn                <= localBusMaster.readEnable after TPD_G;
 
          -- Read FIFO QWord1, - 0xBC001010
-         elsif localBusMaster.addr(23 downto 4) = x"001010" then
+         elsif localBusMaster.addr(23 downto 0) = x"001010" then
             intLocalBusSlave.readData <= rdFifoDout(63 downto 32) after TPD_G;
 
          -- Read FIFO QWord2, - 0xBC001014
-         elsif localBusMaster.addr(23 downto 4) = x"001014" then
+         elsif localBusMaster.addr(23 downto 0) = x"001014" then
             intLocalBusSlave.readData(31)          <= rdFifoValid              after TPD_G;
             intLocalBusSlave.readData(30 downto 0) <= rdFifoDout(94 downto 64) after TPD_G;
 
          -- Config Bus Number, - 0xBC001018
-         elsif localBusMaster.addr(23 downto 4) = x"001018" then
+         elsif localBusMaster.addr(23 downto 0) = x"001018" then
             if localBusMaster.writeEnable = '1' then
                cfgBusNumber <= localBusMaster.writeData(7 downto 0) after TPD_G;
             end if;
             intLocalBusSlave.readData <= x"000000" & cfgBusNumber after TPD_G;
 
          -- Config Device Number, - 0xBC00101C
-         elsif localBusMaster.addr(23 downto 4) = x"00101C" then
+         elsif localBusMaster.addr(23 downto 0) = x"00101C" then
             if localBusMaster.writeEnable = '1' then
                cfgDeviceNumber <= localBusMaster.writeData(4 downto 0) after TPD_G;
             end if;
             intLocalBusSlave.readData <= x"000000" & "000" & cfgDeviceNumber after TPD_G;
 
          -- Config Function Number, - 0xBC001020
-         elsif localBusMaster.addr(23 downto 4) = x"001020" then
+         elsif localBusMaster.addr(23 downto 0) = x"001020" then
             if localBusMaster.writeEnable = '1' then
                cfgFunctionNumber <= localBusMaster.writeData(2 downto 0) after TPD_G;
             end if;
             intLocalBusSlave.readData <= x"0000000" & "0" & cfgFunctionNumber after TPD_G;
 
          -- Config Status, - 0xBC001024
-         elsif localBusMaster.addr(23 downto 4) = x"001024" then
+         elsif localBusMaster.addr(23 downto 0) = x"001024" then
             intLocalBusSlave.readData <= x"0000" & cfgStatus after TPD_G;
 
          -- Config Status, - 0xBC001028
-         elsif localBusMaster.addr(23 downto 4) = x"001028" then
+         elsif localBusMaster.addr(23 downto 0) = x"001028" then
             intLocalBusSlave.readData <= x"0000" & cfgCommand after TPD_G;
 
-         -- Config DStatus, - 0xBC001028
-         elsif localBusMaster.addr(23 downto 4) = x"001028" then
+         -- Config DStatus, - 0xBC00102C
+         elsif localBusMaster.addr(23 downto 0) = x"00102C" then
             intLocalBusSlave.readData <= x"0000" & cfgDStatus after TPD_G;
 
-         -- Config DStatus, - 0xBC00102C
-         elsif localBusMaster.addr(23 downto 4) = x"00102C" then
+         -- Config DStatus, - 0xBC001030
+         elsif localBusMaster.addr(23 downto 0) = x"001030" then
             intLocalBusSlave.readData <= x"0000" & cfgDCommand after TPD_G;
 
-         -- Config DStatus2, - 0xBC001030
-         elsif localBusMaster.addr(23 downto 4) = x"001030" then
+         -- Config DStatus2, - 0xBC001034
+         elsif localBusMaster.addr(23 downto 0) = x"001034" then
             intLocalBusSlave.readData <= x"0000" & cfgDCommand2 after TPD_G;
 
-         -- Config LStatus, - 0xBC001034
-         elsif localBusMaster.addr(23 downto 4) = x"001034" then
+         -- Config LStatus, - 0xBC001038
+         elsif localBusMaster.addr(23 downto 0) = x"001038" then
             intLocalBusSlave.readData <= x"0000" & cfgLStatus after TPD_G;
 
-         -- Config LStatus, - 0xBC001038
-         elsif localBusMaster.addr(23 downto 4) = x"001038" then
+         -- Config LStatus, - 0xBC00103C
+         elsif localBusMaster.addr(23 downto 0) = x"00103C" then
             intLocalBusSlave.readData <= x"0000" & cfgLCommand after TPD_G;
 
-         -- Other Status, - 0xBC00103C
-         elsif localBusMaster.addr(23 downto 4) = x"00103C" then
+         -- Other Status, - 0xBC001040
+         elsif localBusMaster.addr(23 downto 0) = x"001040" then
             intLocalBusSlave.readData(2 downto 0)   <= cfgPcieLinkState      after TPD_G;
             intLocalBusSlave.readData(3)            <= '0'                   after TPD_G;
             intLocalBusSlave.readData(4)            <= phyLinkUp             after TPD_G;
