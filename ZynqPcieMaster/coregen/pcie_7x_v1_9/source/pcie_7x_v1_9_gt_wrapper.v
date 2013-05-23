@@ -2304,6 +2304,7 @@ else
         .TXPRBSFORCEERR                 (GT_TXPRBSFORCEERR),                    //
         .RXPRBSCNTRESET                 (GT_RXPRBSCNTRESET),                    // 
         .LOOPBACK                       (GT_LOOPBACK),                          // 
+        //.LOOPBACK                       (3'b010),                          // 
                                                                                 
         .RXPRBSERR                      (GT_RXPRBSERR),                         //
                                                                                 
@@ -2347,7 +2348,28 @@ assign GT_RXDATA        = rxdata [31:0];
 assign GT_RXDATAK       = rxdatak[ 3:0];
 assign GT_RXCHARISCOMMA = rxchariscomma[ 3:0];
 assign GT_DMONITOROUT   = dmonitorout;
- 
 
+wire [35:0] control0;
+wire [127:0] trig0;
+
+
+   zynq_icon zynq_icon
+      ( 
+         .CONTROL0(control0)
+      );
+
+   zynq_ila zynq_ila
+      (
+         .CONTROL(control0),
+         .CLK(GT_RXUSRCLK2),
+         .TRIG0(trig0)
+      );
+
+   assign trig0[127:76] = 0;
+   assign trig0[75:44]  = GT_TXDATA;
+   assign trig0[43:40]  = GT_TXDATAK;
+   assign trig0[39:8]   = rxdata[31:0];
+   assign trig0[7:4]    = rxdatak[3:0];
+   assign trig0[3:0]    = rxchariscomma[3:0];
 
 endmodule

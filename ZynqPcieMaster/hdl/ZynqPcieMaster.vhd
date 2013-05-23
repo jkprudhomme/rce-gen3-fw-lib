@@ -34,7 +34,7 @@ entity ZynqPcieMaster is
 
       -- Master clock and reset
       pciRefClk               : in  std_logic;
-      ponResetL               : in  std_logic;
+      ponReset                : in  std_logic;
 
       -- Reset output
       pcieResetL              : out std_logic;
@@ -111,12 +111,18 @@ architecture structure of ZynqPcieMaster is
    signal pciExpTxN              : std_logic_vector(0  downto 0);
    signal pciExpRxP              : std_logic_vector(0  downto 0);
    signal pciExpRxN              : std_logic_vector(0  downto 0);
+   signal intResetL              : std_logic;
+   signal remResetL              : std_logic;
+   signal pcieEnable             : std_logic;
+   signal debugCount             : std_logic_vector(15 downto 0);
 
 begin
 
    -- Outputs
    localBusSlave <= intLocalBusSlave;
-   pcieResetL    <= ponResetL;
+   --pcieResetL    <= '0' when intResetL = '0' else 'Z';
+   pcieResetL    <= intResetL and remResetL;
+   intResetL     <= (not ponReset) and pcieEnable;
 
    --------------------------------------------
    -- Registers: 0xBC00_0000 - 0xBFFF_FFFF
@@ -134,6 +140,8 @@ begin
          cfgBusNumber      <= (others=>'0')          after TPD_G;
          cfgDeviceNumber   <= (others=>'0')          after TPD_G;
          cfgFunctionNumber <= (others=>'0')          after TPD_G;
+         pcieEnable        <= '0'                    after TPD_G;
+         remResetL         <= '0'                    after TPD_G;
       elsif rising_edge(axiClk) then
          intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
          intLocalBusSlave.readData  <= x"deadbeef"               after TPD_G;
@@ -235,13 +243,28 @@ begin
          -- Other Status, - 0xBC001040
          elsif localBusMaster.addr(23 downto 0) = x"001040" then
             intLocalBusSlave.readData(2 downto 0)   <= cfgPcieLinkState      after TPD_G;
-            intLocalBusSlave.readData(3)            <= '0'                   after TPD_G;
+            intLocalBusSlave.readData(3)            <= linkUp                after TPD_G;
             intLocalBusSlave.readData(4)            <= phyLinkUp             after TPD_G;
             intLocalBusSlave.readData(6 downto 5)   <= cfgPmcsrPowerstate    after TPD_G;
             intLocalBusSlave.readData(7)            <= cfgPmcsrPmeEn         after TPD_G;
             intLocalBusSlave.readData(8)            <= cfgPmcsrPmeStatus     after TPD_G;
             intLocalBusSlave.readData(9)            <= cfgReceivedFuncLvlRst after TPD_G;
-            intLocalBusSlave.readData(31 downto 10) <= (others=>'0')         after TPD_G;
+            intLocalBusSlave.readData(11 downto 10) <= (others=>'0')         after TPD_G;
+            intLocalBusSlave.readData(12)           <= pciClkRst             after TPD_G;
+            intLocalBusSlave.readData(15 downto 13) <= (others=>'0')         after TPD_G;
+            intLocalBusSlave.readData(31 downto 16) <= debugCount            after TPD_G;
+
+         -- Enable Register - 0xBC001044
+         elsif localBusMaster.addr(23 downto 0) = x"001044" then
+            if localBusMaster.writeEnable = '1' then
+               pcieEnable <= localBusMaster.writeData(0) after TPD_G;
+               remResetL  <= localBusMaster.writeData(1) after TPD_G;
+            end if;
+            intLocalBusSlave.readData(0)            <= pcieEnable            after TPD_G;
+            intLocalBusSlave.readData(1)            <= remResetL             after TPD_G;
+            intLocalBusSlave.readData(3  downto  2) <= (others=>'0')         after TPD_G;
+            intLocalBusSlave.readData(4)            <= intResetL             after TPD_G;
+            intLocalBusSlave.readData(31 downto  5) <= (others=>'0')         after TPD_G;
          end if;
       end if;  
    end process;         
@@ -464,8 +487,20 @@ begin
          cfg_vc_tcvc_map                            => open,
          PIPE_MMCM_RST_N                            => '1',
          sys_clk                                    => pciRefClk,
-         sys_rst_n                                  => ponResetL
+         sys_rst_n                                  => intResetL
       );
+
+
+   --------------------------------------------
+   -- Debug Counter
+   --------------------------------------------
+   process ( pciClk, intResetL ) begin
+      if intResetL = '0' then
+         debugCount <= (others=>'0') after TPD_G;
+      elsif rising_edge(pciClk) then
+         debugCount <= debugCount + 1 after TPD_G;
+      end if;
+   end process;
 
 end architecture structure;
 

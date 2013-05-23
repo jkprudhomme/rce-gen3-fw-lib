@@ -307,19 +307,22 @@ begin
    -- Debug
    --------------------------------------------
 
-   U_icon: zynq_icon
-      port map ( 
-         CONTROL0 => control0
-      );
+   U_Debug : if false generate
 
-   U_ila: zynq_ila
-      port map (
-         CONTROL => control0,
-         CLK     => iaxiClk,
-         TRIG0   => trig0
-      );
+      U_icon: zynq_icon
+         port map ( 
+            CONTROL0 => control0
+         );
 
-   trig0 <= fifoDebug;
+      U_ila: zynq_ila
+         port map (
+            CONTROL => control0,
+            CLK     => iaxiClk,
+            TRIG0   => trig0
+         );
+
+      trig0 <= fifoDebug;
+   end generate;
 
 end architecture structure;
 
