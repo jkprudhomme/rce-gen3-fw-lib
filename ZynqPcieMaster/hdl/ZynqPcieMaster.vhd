@@ -181,13 +181,13 @@ begin
             end if;
 
          -- Write FIFO QWord1, - 0xBC001004
-         elsif localBusMaster.addr(23 downto 4) = x"001004" then
+         elsif localBusMaster.addr(23 downto 0) = x"001004" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(63 downto 32)   <= localBusMaster.writeData after TPD_G;
             end if;
 
          -- Write FIFO QWord2, - 0xBC001008
-         elsif localBusMaster.addr(23 downto 4) = x"001008" then
+         elsif localBusMaster.addr(23 downto 0) = x"001008" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(94 downto 64)   <= localBusMaster.writeData(30 downto 0) after TPD_G;
                wrFifoWrEn                <= '1'                                   after TPD_G;
