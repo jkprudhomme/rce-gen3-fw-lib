@@ -2353,17 +2353,17 @@ wire [35:0] control0;
 wire [127:0] trig0;
 
 
-   zynq_icon zynq_icon
-      ( 
-         .CONTROL0(control0)
-      );
-
-   zynq_ila zynq_ila
-      (
-         .CONTROL(control0),
-         .CLK(GT_RXUSRCLK2),
-         .TRIG0(trig0)
-      );
+   //zynq_icon zynq_icon
+      //( 
+         //.CONTROL0(control0)
+      //);
+//
+   //zynq_ila zynq_ila
+      //(
+         //.CONTROL(control0),
+         //.CLK(GT_RXUSRCLK2),
+         //.TRIG0(trig0)
+      //);
 
    assign trig0[127:76] = 0;
    assign trig0[75:44]  = GT_TXDATA;

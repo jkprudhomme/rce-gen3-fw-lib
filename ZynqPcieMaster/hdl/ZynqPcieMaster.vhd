@@ -49,6 +49,20 @@ end ZynqPcieMaster;
 
 architecture structure of ZynqPcieMaster is
 
+   component zynq_icon
+      PORT (
+         CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0)
+      );
+   end component;
+
+   component zynq_ila_256
+      PORT (
+         CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+         CLK     : IN    STD_LOGIC;
+         TRIG0   : IN    STD_LOGIC_VECTOR(255 DOWNTO 0)
+      );
+   end component;
+
    COMPONENT PcieFifo
       PORT (
          rst    : IN  STD_LOGIC;
@@ -115,6 +129,8 @@ architecture structure of ZynqPcieMaster is
    signal remResetL              : std_logic;
    signal pcieEnable             : std_logic;
    signal debugCount             : std_logic_vector(15 downto 0);
+   signal control0               : std_logic_vector(35 DOWNTO 0);
+   signal trig0                  : std_logic_vector(255 DOWNTO 0);
 
 begin
 
@@ -287,20 +303,16 @@ begin
          valid  => wrFifoValid
       );
 
-   --wrFifoRdEn <= txReady and txValid;
-   --txValid    <= wrFifoValid when txBufAv > 1 else '0';
-   wrFifoRdEn <= wrFifoValid; -- Loopback test
-   txValid    <= '0';         -- Loopback test
+   wrFifoRdEn <= txReady and txValid;
+   txValid    <= wrFifoValid when txBufAv > 1 else '0';
 
    U_ReadFifo : PcieFifo
       PORT map (
          rst    => axiClkRst,
          wr_clk => pciClk,
          rd_clk => axiClk,
-         --din    => rdFifoDin,
-         --wr_en  => rdFifoWrEn,
-         din    => wrFifoDout,  -- Loopback test
-         wr_en  => wrFifovalid, -- Loopback test
+         din    => rdFifoDin,
+         wr_en  => rdFifoWrEn,
          rd_en  => rdFifoRdEn,
          dout   => rdFifoDout,
          full   => rdFifoFull,
@@ -308,8 +320,7 @@ begin
          valid  => rdFifoValid
       );
 
-   rxReady    <= '0'; -- Loopback test
-   --rxReady    <= not rdFifoFull;
+   rxReady    <= not rdFifoFull;
    rdFifoWrEn <= rxReady and rxValid;
 
    -----------------------------------------
@@ -506,6 +517,45 @@ begin
          debugCount <= debugCount + 1 after TPD_G;
       end if;
    end process;
+
+   --------------------------------------------
+   -- Debug
+   --------------------------------------------
+
+   U_Debug : if false generate
+
+      U_icon: zynq_icon
+         port map ( 
+            CONTROL0 => control0
+         );
+
+      U_ila: zynq_ila_256
+         port map (
+            CONTROL => control0,
+            CLK     => pciClk,
+            TRIG0   => trig0
+         );
+
+   end generate;
+
+   trig0(255 downto 210)  <= (others=>'0');
+   trig0(209)             <= wrFifoRdEn;
+   trig0(208)             <= wrFifoValid;
+   trig0(207)             <= rdFifoWrEn;
+   trig0(206)             <= rdFifoFull;
+   trig0(205)             <= pciClkRst;
+   trig0(204)             <= txReady;
+   trig0(203)             <= txValid;
+   trig0(202)             <= rxReady;
+   trig0(201)             <= rxValid;
+   trig0(200)             <= linkUp;
+   trig0(199)             <= phyLinkUp;
+   trig0(198)             <= intResetL;
+   trig0(197)             <= remResetL;
+   trig0(196)             <= pcieEnable;
+   trig0(195 downto 190)  <= txBufAv;
+   trig0(189 downto  95)  <= wrFifoDout;
+   trig0(94  downto   0)  <= rdFifoDin;
 
 end architecture structure;
 
