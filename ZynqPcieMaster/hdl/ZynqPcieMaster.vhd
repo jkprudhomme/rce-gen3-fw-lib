@@ -522,7 +522,7 @@ begin
    -- Debug
    --------------------------------------------
 
-   U_Debug : if false generate
+   U_Debug : if true generate
 
       U_icon: zynq_icon
          port map ( 
