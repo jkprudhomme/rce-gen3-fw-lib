@@ -287,16 +287,20 @@ begin
          valid  => wrFifoValid
       );
 
-   wrFifoRdEn <= txReady and txValid;
-   txValid    <= wrFifoValid when txBufAv > 1 else '0';
+   --wrFifoRdEn <= txReady and txValid;
+   --txValid    <= wrFifoValid when txBufAv > 1 else '0';
+   wrFifoRdEn <= wrFifoValid; -- Loopback test
+   txValid    <= '0';         -- Loopback test
 
    U_ReadFifo : PcieFifo
       PORT map (
          rst    => axiClkRst,
          wr_clk => pciClk,
          rd_clk => axiClk,
-         din    => rdFifoDin,
-         wr_en  => rdFifoWrEn,
+         --din    => rdFifoDin,
+         --wr_en  => rdFifoWrEn,
+         din    => wrFifoDout,  -- Loopback test
+         wr_en  => wrFifovalid, -- Loopback test
          rd_en  => rdFifoRdEn,
          dout   => rdFifoDout,
          full   => rdFifoFull,
@@ -304,7 +308,8 @@ begin
          valid  => rdFifoValid
       );
 
-   rxReady    <= not rdFifoFull;
+   rxReady    <= '0'; -- Loopback test
+   --rxReady    <= not rdFifoFull;
    rdFifoWrEn <= rxReady and rxValid;
 
    -----------------------------------------
