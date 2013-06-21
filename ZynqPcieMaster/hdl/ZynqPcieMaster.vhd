@@ -49,6 +49,20 @@ end ZynqPcieMaster;
 
 architecture structure of ZynqPcieMaster is
 
+   component zynq_icon
+      PORT (
+         CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0)
+      );
+   end component;
+
+   component zynq_ila_256
+      PORT (
+         CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+         CLK     : IN    STD_LOGIC;
+         TRIG0   : IN    STD_LOGIC_VECTOR(255 DOWNTO 0)
+      );
+   end component;
+
    COMPONENT PcieFifo
       PORT (
          rst    : IN  STD_LOGIC;
@@ -85,12 +99,27 @@ architecture structure of ZynqPcieMaster is
    signal rxReady                : std_logic;
    signal rxValid                : std_logic;
    signal linkUp                 : std_logic;
+   signal cfgRead                : std_logic;
+   signal cfgWrite               : std_logic;
+   signal cfgDone                : std_logic;
+   signal cfgReadData            : std_logic_vector(31 downto 0);
    signal cfgDout                : std_logic_vector(31 downto 0);
+   signal cfgDoutReg             : std_logic_vector(31 downto 0);
+   signal cfgDinReg              : std_logic_vector(31 downto 0);
    signal cfgDin                 : std_logic_vector(31 downto 0);
+   signal cfgAddrReg             : std_logic_vector(9  downto 0);
    signal cfgAddr                : std_logic_vector(9  downto 0);
    signal cfgWrEn                : std_logic;
+   signal cfgWrEnRegA            : std_logic;
+   signal cfgWrEnRegB            : std_logic;
+   signal cfgWrEnRegC            : std_logic;
    signal cfgRdEn                : std_logic;
+   signal cfgRdEnRegA            : std_logic;
+   signal cfgRdEnRegB            : std_logic;
+   signal cfgRdEnRegC            : std_logic;
    signal cfgRdWrDone            : std_logic;
+   signal cfgRdWrDoneReg         : std_logic;
+   signal cfgRdWrDoneDly         : std_logic;
    signal cfgStatus              : std_logic_vector(15 downto 0);
    signal cfgCommand             : std_logic_vector(15 downto 0);
    signal cfgDStatus             : std_logic_vector(15 downto 0);
@@ -115,6 +144,11 @@ architecture structure of ZynqPcieMaster is
    signal remResetL              : std_logic;
    signal pcieEnable             : std_logic;
    signal debugCount             : std_logic_vector(15 downto 0);
+   signal cfgMsgRx               : std_logic;
+   signal cfgMsgData             : std_logic_vector(30 downto 0);
+   signal cfgMsgDataReg          : std_logic_vector(30 downto 0);
+   signal control0               : std_logic_vector(35 DOWNTO 0);
+   signal trig0                  : std_logic_vector(255 DOWNTO 0);
 
 begin
 
@@ -133,10 +167,8 @@ begin
          wrFifoDin         <= (others=>'0')          after TPD_G;
          wrFifoWrEn        <= '0'                    after TPD_G;
          rdFifoRdEn        <= '0'                    after TPD_G;
-         cfgDin            <= (others=>'0')          after TPD_G;
-         cfgAddr           <= (others=>'0')          after TPD_G;
-         cfgWrEn           <= '0'                    after TPD_G;
-         cfgRdEn           <= '0'                    after TPD_G;
+         cfgRead           <= '0'                    after TPD_G;
+         cfgWrite          <= '0'                    after TPD_G;
          cfgBusNumber      <= (others=>'0')          after TPD_G;
          cfgDeviceNumber   <= (others=>'0')          after TPD_G;
          cfgFunctionNumber <= (others=>'0')          after TPD_G;
@@ -148,31 +180,28 @@ begin
          wrFifoWrEn                 <= '0'                       after TPD_G;
          rdFifoRdEn                 <= '0'                       after TPD_G;
 
-         -- Config read or write is done
-         if cfgRdWrDone = '1' then
-            cfgWrEn <= '0' after TPD_G;
-            cfgRdEn <= '0' after TPD_G;
+         -- Config done
+         if cfgDone = '1' then
+            cfgWrite <= '0' after TPD_G;
+            cfgRead  <= '0' after TPD_G;
          end if;
 
          -- PCIE Configuration Port, 0xBC000000 - 0xBC000FFF
          if localBusMaster.addr(23 downto 12) = x"000" then
 
-            -- Write cycle
+            -- Write start
             if localBusMaster.writeEnable = '1' then
-               cfgAddr <= localBusMaster.addr(11 downto 2) after TPD_G;
-               cfgDin  <= localBusMaster.writeData         after TPD_G;
-               cfgWrEn <= '1'                              after TPD_G;
+               cfgWrite <= '1' after TPD_G;
             end if;
 
-            -- Read cycle
+            -- Read start
             if localBusMaster.readEnable = '1' then
-               cfgAddr <= localBusMaster.addr(11 downto 2) after TPD_G;
-               cfgRdEn <= '1'                              after TPD_G;
+               cfgRead <= '1' after TPD_G;
             end if;
 
-            -- Wait for read to complete
-            intLocalBusSlave.readValid <= cfgRdWrDone after TPD_G;
-            intLocalBusSlave.readData  <= cfgDout     after TPD_G;
+            -- Read
+            intLocalBusSlave.readValid <= cfgDone and cfgRead after TPD_G;
+            intLocalBusSlave.readData  <= cfgReadData         after TPD_G;
 
          -- Write FIFO QWord0, - 0xBC001000
          elsif localBusMaster.addr(23 downto 0) = x"001000" then
@@ -181,13 +210,13 @@ begin
             end if;
 
          -- Write FIFO QWord1, - 0xBC001004
-         elsif localBusMaster.addr(23 downto 4) = x"001004" then
+         elsif localBusMaster.addr(23 downto 0) = x"001004" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(63 downto 32)   <= localBusMaster.writeData after TPD_G;
             end if;
 
          -- Write FIFO QWord2, - 0xBC001008
-         elsif localBusMaster.addr(23 downto 4) = x"001008" then
+         elsif localBusMaster.addr(23 downto 0) = x"001008" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(94 downto 64)   <= localBusMaster.writeData(30 downto 0) after TPD_G;
                wrFifoWrEn                <= '1'                                   after TPD_G;
@@ -281,7 +310,12 @@ begin
             intLocalBusSlave.readData(3  downto  2) <= (others=>'0')         after TPD_G;
             intLocalBusSlave.readData(4)            <= intResetL             after TPD_G;
             intLocalBusSlave.readData(31 downto  5) <= (others=>'0')         after TPD_G;
+
+         -- Config status Register - 0xBC001048
+         elsif localBusMaster.addr(23 downto 0) = x"001048" then
+            intLocalBusSlave.readData <= '0' & cfgMsgDataReg after TPD_G;
          end if;
+
       end if;  
    end process;         
 
@@ -322,6 +356,88 @@ begin
 
    rxReady    <= not rdFifoFull;
    rdFifoWrEn <= rxReady and rxValid;
+
+   -----------------------------------------
+   -- Configuration Sync
+   -----------------------------------------
+
+   -- Generate control signals
+   process ( pciClk, pciClkRst ) begin
+      if pciClkRst = '1' then
+         cfgDinReg      <= (others=>'0') after TPD_G;
+         cfgDin         <= (others=>'0') after TPD_G;
+         cfgAddrReg     <= (others=>'0') after TPD_G;
+         cfgAddr        <= (others=>'0') after TPD_G;
+         cfgWrEnRegA    <= '0'           after TPD_G;
+         cfgWrEnRegB    <= '0'           after TPD_G;
+         cfgWrEnRegC    <= '0'           after TPD_G;
+         cfgWrEn        <= '0'           after TPD_G;
+         cfgRdEnRegA    <= '0'           after TPD_G;
+         cfgRdEnRegB    <= '0'           after TPD_G;
+         cfgRdEnRegC    <= '0'           after TPD_G;
+         cfgRdEn        <= '0'           after TPD_G;
+         cfgDoutReg     <= (others=>'0') after TPD_G;
+         cfgRdWrDoneReg <= '0'           after TPD_G;
+         cfgMsgDataReg  <= (others=>'0') after TPD_G;
+      elsif rising_edge(pciClk) then
+
+         -- Sample
+         cfgDinReg    <= localBusMaster.writeData         after TPD_G;
+         cfgDin       <= cfgDinReg                        after TPD_G;
+         cfgAddr      <= localBusMaster.addr(11 downto 2) after TPD_G;
+         cfgAddrReg   <= cfgAddr                          after TPD_G;
+         cfgWrEnRegA  <= cfgWrite                         after TPD_G;
+         cfgWrEnRegB  <= cfgWrEnRegA                      after TPD_G;
+         cfgWrEnRegC  <= cfgWrEnRegB                      after TPD_G;
+         cfgRdEnRegA  <= cfgRead                          after TPD_G;
+         cfgRdEnRegB  <= cfgRdEnRegA                      after TPD_G;
+         cfgRdEnRegC  <= cfgRdEnRegB                      after TPD_G;
+
+         -- Done
+         if cfgRdWrDone = '1' then
+            cfgWrEn <= '0' after TPD_G;
+            cfgRdEn <= '0' after TPD_G;
+
+         -- Read start
+         elsif cfgWrEnRegC = '0' and cfgWrEnRegB = '1' then
+            cfgWrEn <= '1' after TPD_G;
+
+         -- Write start
+         elsif cfgRdEnRegC = '0' and cfgRdEnRegB = '1' then
+            cfgRdEn <= '1' after TPD_G;
+         end if;
+
+         -- Store read data
+         if cfgRdWrDone = '1' then
+            cfgDoutReg <= cfgDout after TPD_G;
+         end if;
+
+         -- Extend done pulse
+         if cfgRdWrDone = '1' then
+            cfgRdWrDoneReg <= '1' after TPD_G;
+         elsif cfgRdEnRegB = '0' and cfgWrEnRegB = '0' then
+            cfgRdWrDoneReg <= '0' after TPD_G;
+         end if;
+
+         -- Register last config rx
+         if cfgMsgRx = '1' then
+            cfgMsgDataReg <= cfgMsgData after TPD_G;
+         end if;
+
+      end if;
+   end process;
+
+   -- Return path
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
+         cfgRdWrDoneDly  <= '0' after TPD_G;
+         cfgDone         <= '0' after TPD_G;
+      elsif rising_edge(axiClk) then
+         cfgRdWrDoneDly  <= cfgRdWrDoneReg after TPD_G;
+         cfgDone         <= cfgRdWrDoneDly after TPD_G;
+      end if;
+   end process;
+
 
    -----------------------------------------
    -- PCI Express Core
@@ -446,8 +562,8 @@ begin
          cfg_ds_device_number                       => cfgDeviceNumber,
          cfg_ds_function_number                     => cfgFunctionNumber,
          cfg_mgmt_wr_rw1c_as_rw                     => '0',
-         cfg_msg_received                           => open,
-         cfg_msg_data                               => open,
+         cfg_msg_received                           => cfgMsgRx,
+         cfg_msg_data                               => cfgMsgData(15 downto 0),
          cfg_bridge_serr_en                         => open,
          cfg_slot_control_electromech_il_ctl_pulse  => open,
          cfg_root_control_syserr_corr_err_en        => open,
@@ -460,21 +576,21 @@ begin
          cfg_aer_rooterr_corr_err_received          => open,
          cfg_aer_rooterr_non_fatal_err_received     => open,
          cfg_aer_rooterr_fatal_err_received         => open,
-         cfg_msg_received_err_cor                   => open,
-         cfg_msg_received_err_non_fatal             => open,
-         cfg_msg_received_err_fatal                 => open,
-         cfg_msg_received_pm_as_nak                 => open,
-         cfg_msg_received_pm_pme                    => open,
-         cfg_msg_received_pme_to_ack                => open,
-         cfg_msg_received_assert_int_a              => open,
-         cfg_msg_received_assert_int_b              => open,
-         cfg_msg_received_assert_int_c              => open,
-         cfg_msg_received_assert_int_d              => open,
-         cfg_msg_received_deassert_int_a            => open,
-         cfg_msg_received_deassert_int_b            => open,
-         cfg_msg_received_deassert_int_c            => open,
-         cfg_msg_received_deassert_int_d            => open,
-         cfg_msg_received_setslotpowerlimit         => open,
+         cfg_msg_received_err_cor                   => cfgMsgData(16),
+         cfg_msg_received_err_non_fatal             => cfgMsgData(17),
+         cfg_msg_received_err_fatal                 => cfgMsgData(18),
+         cfg_msg_received_pm_as_nak                 => cfgMsgData(19),
+         cfg_msg_received_pm_pme                    => cfgMsgData(20),
+         cfg_msg_received_pme_to_ack                => cfgMsgData(21),
+         cfg_msg_received_assert_int_a              => cfgMsgData(22),
+         cfg_msg_received_assert_int_b              => cfgMsgData(23),
+         cfg_msg_received_assert_int_c              => cfgMsgData(24),
+         cfg_msg_received_assert_int_d              => cfgMsgData(25),
+         cfg_msg_received_deassert_int_a            => cfgMsgData(26),
+         cfg_msg_received_deassert_int_b            => cfgMsgData(27),
+         cfg_msg_received_deassert_int_c            => cfgMsgData(28),
+         cfg_msg_received_deassert_int_d            => cfgMsgData(29),
+         cfg_msg_received_setslotpowerlimit         => cfgMsgData(30),
          pl_directed_link_change                    => "00",
          pl_directed_link_width                     => "00",
          pl_directed_link_speed                     => '0',
@@ -517,6 +633,45 @@ begin
          debugCount <= debugCount + 1 after TPD_G;
       end if;
    end process;
+
+   --------------------------------------------
+   -- Debug
+   --------------------------------------------
+
+   U_Debug : if true generate
+
+      U_icon: zynq_icon
+         port map ( 
+            CONTROL0 => control0
+         );
+
+      U_ila: zynq_ila_256
+         port map (
+            CONTROL => control0,
+            CLK     => pciClk,
+            TRIG0   => trig0
+         );
+
+   end generate;
+
+   trig0(255 downto 210)  <= (others=>'0');
+   trig0(209)             <= wrFifoRdEn;
+   trig0(208)             <= wrFifoValid;
+   trig0(207)             <= rdFifoWrEn;
+   trig0(206)             <= rdFifoFull;
+   trig0(205)             <= pciClkRst;
+   trig0(204)             <= txReady;
+   trig0(203)             <= txValid;
+   trig0(202)             <= rxReady;
+   trig0(201)             <= rxValid;
+   trig0(200)             <= linkUp;
+   trig0(199)             <= phyLinkUp;
+   trig0(198)             <= intResetL;
+   trig0(197)             <= remResetL;
+   trig0(196)             <= pcieEnable;
+   trig0(195 downto 190)  <= txBufAv;
+   trig0(189 downto  95)  <= wrFifoDout;
+   trig0(94  downto   0)  <= rdFifoDin;
 
 end architecture structure;
 
