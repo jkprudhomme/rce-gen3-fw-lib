@@ -49,20 +49,6 @@ end ZynqPcieMaster;
 
 architecture structure of ZynqPcieMaster is
 
-   component zynq_icon
-      PORT (
-         CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0)
-      );
-   end component;
-
-   component zynq_ila_256
-      PORT (
-         CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-         CLK     : IN    STD_LOGIC;
-         TRIG0   : IN    STD_LOGIC_VECTOR(255 DOWNTO 0)
-      );
-   end component;
-
    COMPONENT PcieFifo
       PORT (
          rst    : IN  STD_LOGIC;
@@ -104,7 +90,7 @@ architecture structure of ZynqPcieMaster is
    signal cfgAddr                : std_logic_vector(9  downto 0);
    signal cfgWrEn                : std_logic;
    signal cfgRdEn                : std_logic;
-   signal cfgRdValid             : std_logic;
+   signal cfgRdWrDone            : std_logic;
    signal cfgStatus              : std_logic_vector(15 downto 0);
    signal cfgCommand             : std_logic_vector(15 downto 0);
    signal cfgDStatus             : std_logic_vector(15 downto 0);
@@ -129,8 +115,6 @@ architecture structure of ZynqPcieMaster is
    signal remResetL              : std_logic;
    signal pcieEnable             : std_logic;
    signal debugCount             : std_logic_vector(15 downto 0);
-   signal control0               : std_logic_vector(35 DOWNTO 0);
-   signal trig0                  : std_logic_vector(255 DOWNTO 0);
 
 begin
 
@@ -163,16 +147,32 @@ begin
          intLocalBusSlave.readData  <= x"deadbeef"               after TPD_G;
          wrFifoWrEn                 <= '0'                       after TPD_G;
          rdFifoRdEn                 <= '0'                       after TPD_G;
-         cfgWrEn                    <= '0'                       after TPD_G;
-         cfgRdEn                    <= '0'                       after TPD_G;
+
+         -- Config read or write is done
+         if cfgRdWrDone = '1' then
+            cfgWrEn <= '0' after TPD_G;
+            cfgRdEn <= '0' after TPD_G;
+         end if;
 
          -- PCIE Configuration Port, 0xBC000000 - 0xBC000FFF
          if localBusMaster.addr(23 downto 12) = x"000" then
-            cfgDin                     <= localBusMaster.writeData   after TPD_G;
-            cfgWrEn                    <= localBusMaster.writeEnable after TPD_G;
-            cfgRdEn                    <= localBusMaster.readEnable  after TPD_G;
-            intLocalBusSlave.readValid <= cfgRdValid                 after TPD_G;
-            intLocalBusSlave.readData  <= cfgDout                    after TPD_G;
+
+            -- Write cycle
+            if localBusMaster.writeEnable = '1' then
+               cfgAddr <= localBusMaster.addr(11 downto 2) after TPD_G;
+               cfgDin  <= localBusMaster.writeData         after TPD_G;
+               cfgWrEn <= '1'                              after TPD_G;
+            end if;
+
+            -- Read cycle
+            if localBusMaster.readEnable = '1' then
+               cfgAddr <= localBusMaster.addr(11 downto 2) after TPD_G;
+               cfgRdEn <= '1'                              after TPD_G;
+            end if;
+
+            -- Wait for read to complete
+            intLocalBusSlave.readValid <= cfgRdWrDone after TPD_G;
+            intLocalBusSlave.readData  <= cfgDout     after TPD_G;
 
          -- Write FIFO QWord0, - 0xBC001000
          elsif localBusMaster.addr(23 downto 0) = x"001000" then
@@ -181,13 +181,13 @@ begin
             end if;
 
          -- Write FIFO QWord1, - 0xBC001004
-         elsif localBusMaster.addr(23 downto 0) = x"001004" then
+         elsif localBusMaster.addr(23 downto 4) = x"001004" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(63 downto 32)   <= localBusMaster.writeData after TPD_G;
             end if;
 
          -- Write FIFO QWord2, - 0xBC001008
-         elsif localBusMaster.addr(23 downto 0) = x"001008" then
+         elsif localBusMaster.addr(23 downto 4) = x"001008" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(94 downto 64)   <= localBusMaster.writeData(30 downto 0) after TPD_G;
                wrFifoWrEn                <= '1'                                   after TPD_G;
@@ -381,7 +381,7 @@ begin
          fc_ph                                      => open,
          fc_sel                                     => "000",
          cfg_mgmt_do                                => cfgDout,
-         cfg_mgmt_rd_wr_done                        => cfgRdValid,
+         cfg_mgmt_rd_wr_done                        => cfgRdWrDone,
          cfg_status                                 => cfgStatus,
          cfg_command                                => cfgCommand,
          cfg_dstatus                                => cfgDstatus,
@@ -517,45 +517,6 @@ begin
          debugCount <= debugCount + 1 after TPD_G;
       end if;
    end process;
-
-   --------------------------------------------
-   -- Debug
-   --------------------------------------------
-
-   U_Debug : if true generate
-
-      U_icon: zynq_icon
-         port map ( 
-            CONTROL0 => control0
-         );
-
-      U_ila: zynq_ila_256
-         port map (
-            CONTROL => control0,
-            CLK     => pciClk,
-            TRIG0   => trig0
-         );
-
-   end generate;
-
-   trig0(255 downto 210)  <= (others=>'0');
-   trig0(209)             <= wrFifoRdEn;
-   trig0(208)             <= wrFifoValid;
-   trig0(207)             <= rdFifoWrEn;
-   trig0(206)             <= rdFifoFull;
-   trig0(205)             <= pciClkRst;
-   trig0(204)             <= txReady;
-   trig0(203)             <= txValid;
-   trig0(202)             <= rxReady;
-   trig0(201)             <= rxValid;
-   trig0(200)             <= linkUp;
-   trig0(199)             <= phyLinkUp;
-   trig0(198)             <= intResetL;
-   trig0(197)             <= remResetL;
-   trig0(196)             <= pcieEnable;
-   trig0(195 downto 190)  <= txBufAv;
-   trig0(189 downto  95)  <= wrFifoDout;
-   trig0(94  downto   0)  <= rdFifoDin;
 
 end architecture structure;
 

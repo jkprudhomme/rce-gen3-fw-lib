@@ -1808,8 +1808,8 @@ else
                                                                                 
         //---------- Command Attributes ----------------------------------------                
         .TX_RXDETECT_CFG                (TX_RXDETECT_CFG),                      //
-        //.TX_RXDETECT_REF                (TX_RXDETECT_REF),                      // 
-        .TX_RXDETECT_REF                (3'b010),                      // 
+        .TX_RXDETECT_REF                (TX_RXDETECT_REF),                      // 
+        //.TX_RXDETECT_REF                (3'b010),                      // 
         .RX_CM_SEL                      ( 2'd3),                                // 0 = AVTT, 1 = GND, 2 = Float, 3 = Programmable
         .RX_CM_TRIM	                    ( 3'b010),                              // Select 800mV
         .TX_EIDLE_ASSERT_DELAY          (PCIE_TX_EIDLE_ASSERT_DELAY),           // Optimized for sim (3'd4)
