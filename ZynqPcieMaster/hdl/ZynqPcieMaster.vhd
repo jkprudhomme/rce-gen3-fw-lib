@@ -654,7 +654,13 @@ begin
 
    end generate;
 
-   trig0(255 downto 210)  <= (others=>'0');
+   trig0(255 downto 239)  <= (others=>'0');
+   trig0(238 downto 229)  <= cfgAddr;
+   trig0(228 downto 221)  <= cfgDout(7 downto 0);
+   trig0(220 downto 213)  <= cfgDin(7 downto 0);
+   trig0(212)             <= cfgRdWrDone;
+   trig0(211)             <= cfgRdEn;
+   trig0(210)             <= cfgWrEn;
    trig0(209)             <= wrFifoRdEn;
    trig0(208)             <= wrFifoValid;
    trig0(207)             <= rdFifoWrEn;
