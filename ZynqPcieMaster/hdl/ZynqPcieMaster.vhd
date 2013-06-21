@@ -102,7 +102,6 @@ architecture structure of ZynqPcieMaster is
    signal cfgRead                : std_logic;
    signal cfgWrite               : std_logic;
    signal cfgDone                : std_logic;
-   signal cfgReadData            : std_logic_vector(31 downto 0);
    signal cfgDout                : std_logic_vector(31 downto 0);
    signal cfgDoutReg             : std_logic_vector(31 downto 0);
    signal cfgDinReg              : std_logic_vector(31 downto 0);
@@ -201,7 +200,7 @@ begin
 
             -- Read
             intLocalBusSlave.readValid <= cfgDone and cfgRead after TPD_G;
-            intLocalBusSlave.readData  <= cfgReadData         after TPD_G;
+            intLocalBusSlave.readData  <= cfgDoutReg          after TPD_G;
 
          -- Write FIFO QWord0, - 0xBC001000
          elsif localBusMaster.addr(23 downto 0) = x"001000" then
