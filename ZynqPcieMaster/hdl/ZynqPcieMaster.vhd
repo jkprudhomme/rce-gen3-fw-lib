@@ -154,7 +154,8 @@ begin
    -- Outputs
    localBusSlave <= intLocalBusSlave;
    --pcieResetL    <= '0' when intResetL = '0' else 'Z';
-   pcieResetL    <= intResetL and remResetL;
+   --pcieResetL    <= intResetL and remResetL;
+   pcieResetL    <= remResetL;
    intResetL     <= (not ponReset) and pcieEnable;
 
    --------------------------------------------
