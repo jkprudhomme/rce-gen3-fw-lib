@@ -28,14 +28,26 @@ package ArmRceG3Pkg is
    -- Types
    ----------------------------------
 
+   subtype Word3Type is std_logic_vector(2 downto 0);
+   type Word3Array   is array (integer range<>) of Word3Type;
+
    subtype Word4Type is std_logic_vector(3 downto 0);
    type Word4Array   is array (integer range<>) of Word4Type;
+
+   subtype Word5Type is std_logic_vector(4 downto 0);
+   type Word5Array   is array (integer range<>) of Word5Type;
+
+   subtype Word8Type is std_logic_vector(7 downto 0);
+   type Word8Array   is array (integer range<>) of Word8Type;
 
    subtype Word15Type is std_logic_vector(14 downto 0);
    type Word15Array   is array (integer range<>) of Word15Type;
 
    subtype Word16Type is std_logic_vector(15 downto 0);
    type Word16Array   is array (integer range<>) of Word16Type;
+
+   subtype Word17Type is std_logic_vector(16 downto 0);
+   type Word17Array   is array (integer range<>) of Word17Type;
 
    subtype Word32Type is std_logic_vector(31 downto 0);
    type Word32Array   is array (integer range<>) of Word32Type;
