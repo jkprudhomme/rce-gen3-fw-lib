@@ -58,6 +58,7 @@ architecture structure of ZynqEthernet is
    signal userclk2              : std_logic;                    -- 125MHz clock for core reference clock.
    signal pma_reset_pipe        : std_logic_vector(3 downto 0); -- flip-flop pipeline for reset duration stretch
    signal pma_reset             : std_logic;                    -- Synchronous transcevier PMA reset
+   signal confValid             : std_logic;
 
 begin
 
@@ -237,12 +238,22 @@ begin
          mdio_o                 => ethToArm.enetMdioI,
          mdio_t                 => open,
          phyad                  => (others=>'0'),
-         configuration_vector   => (others=>'0'),
-         configuration_valid    => '0',
+         configuration_vector   => "00000",
+         configuration_valid    => confValid, 
          status_vector          => open,
          reset                  => sysClk200Rst,
          signal_detect          => '1'
       );
+
+   -- Force configuration set
+   process(userclk2, sysClk200Rst)
+   begin
+     if (sysClk200Rst = '1') then
+       confValid <= '0';
+     elsif userclk2'event and userclk2 = '1' then
+       confValid <= not confValid;
+     end if;
+   end process;
 
 end architecture structure;
 
