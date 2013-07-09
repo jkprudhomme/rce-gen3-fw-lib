@@ -19,6 +19,8 @@
 -- 06/14/2013: Modified to use free list and completion list. No longer set dirty
 --             flag or asserts interrupt.
 -------------------------------------------------------------------------------
+-- Lower 18 bits of address is offset
+-- Uper 14 bits from config register
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
@@ -51,6 +53,7 @@ entity ArmRceG3IbBurst is
       donePtrWrite            : out WriteFifoToFifoType;
 
       -- Configuration
+      dmaBaseAddress          : in  std_logic_vector(31 downto 18);
       fifoEnable              : in  std_logic;
       writeDmaId              : in  std_logic_vector(2 downto 0);
       writeDmaCache           : in  std_logic_vector(3 downto 0);
@@ -83,11 +86,10 @@ architecture structure of ArmRceG3IbBurst is
       );
    END COMPONENT;
 
-   COMPONENT ArmAFifo36x512
+   COMPONENT ArmFifo36x512
       PORT (
-         rst           : IN  STD_LOGIC;
-         wr_clk        : IN  STD_LOGIC;
-         rd_clk        : IN  STD_LOGIC;
+         srst          : IN  STD_LOGIC;
+         clk           : IN  STD_LOGIC;
          din           : IN  STD_LOGIC_VECTOR(35 DOWNTO 0);
          wr_en         : IN  STD_LOGIC;
          rd_en         : IN  STD_LOGIC;
@@ -147,11 +149,10 @@ begin
    -----------------------------------------
    -- Free list FIFO
    -----------------------------------------
-   U_PtrFifo: ArmAFifo36x512
+   U_PtrFifo: ArmFifo36x512
       port map (
-         rst           => axiClkRst,
-         wr_clk        => axiClk,
-         rd_clk        => axiClk,
+         srst          => axiClkRst,
+         clk           => axiClk,
          din           => memPtrWrite.data(35 downto 0),
          wr_en         => memPtrWrite.write,
          rd_en         => burstDone,
@@ -275,7 +276,7 @@ begin
 
          -- Write address tracking
          if curInFrame = '0' then
-            writeAddr <=  memPtrRdData(31 downto 0) after TPD_G;
+            writeAddr <=  dmaBaseAddress(31 downto 18) & memPtrRdData(17 downto 0) after TPD_G;
          elsif writeCountEn = '1' then
             writeAddr <= writeAddr + 32 after TPD_G;
          end if;
@@ -475,11 +476,7 @@ begin
    debug(39)             <= axiAcpSlaveWriteFromArm.wready;
    debug(38)             <= axiacpslavewritefromarm.bvalid;
    debug(37)             <= fifoGnt;
-   debug(36  downto  21) <= (others=>'0');
-   debug(20)             <= writeFifoToFifo.write;
-   debug(19  downto   5) <= (others=>'0');
-   debug(4)              <= fifoEnable;
-   debug(3)              <= '0';
+   debug(36  downto   3) <= (others=>'0');
    debug(2   downto   0) <= curState;
 
 end architecture structure;

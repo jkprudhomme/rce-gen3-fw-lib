@@ -27,6 +27,8 @@ use unisim.vcomponents.all;
 use work.ArmRceG3Pkg.all;
 
 entity ArmRceG3IbSingle is
+   generic
+      UseAsyncFifo : boolean := true
    port (
 
       -- Clock & reset
@@ -74,6 +76,21 @@ architecture structure of ArmRceG3IbSingle is
          rst           : IN  STD_LOGIC;
          wr_clk        : IN  STD_LOGIC;
          rd_clk        : IN  STD_LOGIC;
+         din           : IN  STD_LOGIC_VECTOR(35 DOWNTO 0);
+         wr_en         : IN  STD_LOGIC;
+         rd_en         : IN  STD_LOGIC;
+         dout          : OUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+         full          : OUT STD_LOGIC;
+         empty         : OUT STD_LOGIC;
+         valid         : OUT STD_LOGIC;
+         wr_data_count : OUT STD_LOGIC_VECTOR(9 downto 0)
+      );
+   END COMPONENT;
+
+   COMPONENT ArmFifo36x512
+      PORT (
+         srst          : IN  STD_LOGIC;
+         clk           : IN  STD_LOGIC;
          din           : IN  STD_LOGIC_VECTOR(35 DOWNTO 0);
          wr_en         : IN  STD_LOGIC;
          rd_en         : IN  STD_LOGIC;
@@ -172,21 +189,41 @@ begin
    -----------------------------------------
    -- FIFO
    -----------------------------------------
+   U_FifoGen: if UseAsyncFifo = true generate
 
-   U_Fifo: ArmAFifo36x512
-      port map (
-         rst           => axiClkRst,
-         wr_clk        => writeFifoClk,
-         rd_clk        => axiClk,
-         din           => writeFifoToFifo.data(35 downto 0),
-         wr_en         => writeFifoToFifo.write,
-         rd_en         => fifoShift(1),
-         dout          => fifoDout(1),
-         full          => iWriteFifoFromFifo.full,
-         empty         => open,
-         valid         => fifoValid(1),
-         wr_data_count => fifoCount
-      );
+      U_AsyncFifo: ArmAFifo36x512
+         port map (
+            rst           => axiClkRst,
+            wr_clk        => writeFifoClk,
+            rd_clk        => axiClk,
+            din           => writeFifoToFifo.data(35 downto 0),
+            wr_en         => writeFifoToFifo.write,
+            rd_en         => fifoShift(1),
+            dout          => fifoDout(1),
+            full          => iWriteFifoFromFifo.full,
+            empty         => open,
+            valid         => fifoValid(1),
+            wr_data_count => fifoCount
+         );
+
+   else generate
+
+      U_SyncFifo: ArmFifo36x512
+         port map (
+            srst          => axiClkRst,
+            clk           => axiClk,
+            din           => writeFifoToFifo.data(35 downto 0),
+            wr_en         => writeFifoToFifo.write,
+            rd_en         => fifoShift(1),
+            dout          => fifoDout(1),
+            full          => iWriteFifoFromFifo.full,
+            empty         => open,
+            valid         => fifoValid(1),
+            wr_data_count => fifoCount
+         );
+
+   end generate;
+
 
    -- FIFO almost full
    process ( writeFifoClk, axiClkRst ) begin
@@ -359,11 +396,8 @@ begin
    debug(39)             <= axiAcpSlaveWriteFromArm.wready;
    debug(38)             <= axiAcpSlaveWriteFromArm.bvalid;
    debug(37)             <= fifoGnt;
-   debug(36  downto  21) <= memDirty(15 downto 0);
-   debug(20)             <= '0';
-   debug(19  downto   5) <= iMemDirtySet(14 downto 0);
-   debug(4)              <= fifoEnable;
-   debug(3)              <= memToggleEn;
+   debug(36  downto  20) <= memDirty;
+   debug(19  downto   3) <= iMemDirtySet;
    debug(2)              <= '0';
    debug(1   downto   0) <= curState;
 

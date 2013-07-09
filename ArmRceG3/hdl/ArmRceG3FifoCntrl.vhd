@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
 -- Title         : ARM Based RCE Generation 3, Inbound FIFOs
--- File          : ArmRceG3IbCntrl.vhd
+-- File          : ArmRceG3FifoCntrl.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 04/02/2013
 -------------------------------------------------------------------------------
 -- Description:
--- Inbound FIFOs for PPI DMA Engines
+-- FIFO controller for inbound and outbound headers & descritor FIFOs
 -------------------------------------------------------------------------------
 -- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 
-entity ArmRceG3IbCntrl is
+entity ArmRceG3FifoCntrl is
    port (
 
       -- Clock
@@ -41,7 +41,7 @@ entity ArmRceG3IbCntrl is
       localBusMaster          : in  LocalBusMasterType;
       localBusSlave           : out LocalBusSlaveType;
 
-      -- FIFO Interface
+      -- External FIFO Interfaces
       writeFifoClk            : in  std_logic_vector(16 downto 0);
       writeFifoToFifo         : in  WriteFifoToFifoVector(16 downto 0);
       writeFifoFromFifo       : out WriteFifoFromFifoVector(16 downto 0);
@@ -49,9 +49,9 @@ entity ArmRceG3IbCntrl is
       -- Debug
       debug                   : out std_logic_vector(127 downto 0)
    );
-end ArmRceG3IbCntrl;
+end ArmRceG3FifoCntrl;
 
-architecture structure of ArmRceG3IbCntrl is
+architecture structure of ArmRceG3FifoCntrl is
 
    -- Local signals
    signal axiAcpSlaveWriteToArmFifo : AxiWriteMasterVector(20 downto 0);
@@ -80,8 +80,9 @@ architecture structure of ArmRceG3IbCntrl is
    signal arbSelect                 : std_logic_vector(4  downto 0);
    signal arbValid                  : std_logic;
    signal writeDmaBusyOut           : Word8Array(16 downto 0);
-   signal writeDmaBusyIn            : std_logic_vector(7 downto 0);
-   signal memBaseAddress            : std_logic_vector(31 downto 8);
+   signal writeDmaBusyIn            : std_logic_vector(7 downto   0);
+   signal memBaseAddress            : std_logic_vector(31 downto  8);
+   signal dmaBaseAddress            : std_logic_vector(31 downto 18);
 
 begin
 
@@ -107,6 +108,7 @@ begin
          intEnable        <= (others=>'0')           after TPD_G;
          dbgSelect        <= (others=>'0')           after TPD_G;
          memBaseAddress   <= (others=>'0')           after TPD_G;
+         dmaBaseAddress   <= (others=>'0')           after TPD_G;
       elsif rising_edge(axiClk) then
          intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
 
@@ -197,6 +199,13 @@ begin
             end if;
             intLocalBusSlave.readData <= memBaseAddress & x"00" after TPD_G;
 
+         -- DMA base address 0x8803001C
+         elsif localBusMaster.addr(23 downto 0) = x"03001C" then
+            if localBusMaster.writeEnable = '1' then
+               dmaBaseAddress <= localBusMaster.writeData(31 downto 18) after TPD_G;
+            end if;
+            intLocalBusSlave.readData <= dmaBaseAddress & "00" & x"0000" after TPD_G;
+
          -- Unsupported
          else
             fifoWrEn                   <= '0'         after TPD_G;
@@ -217,7 +226,7 @@ begin
                 or dirtyFlagFifoSet(12) or dirtyFlagFifoSet(13) or dirtyFlagFifoSet(14) or dirtyFlagFifoSet(15)
                 or dirtyFlagFifoSet(16);
 
-   U_DirtyGen: for i in 0 to 14 generate
+   U_DirtyGen: for i in 0 to 16 generate
       process ( axiClk, axiClkRst ) begin
          if axiClkRst = '1' then
             dirtyFlag(i) <= '0' after TPD_G;
@@ -310,6 +319,7 @@ begin
             fifoGnt                 => fifoGnt(i),
             memPtrWrite             => memPtrWrite(i),
             donePtrWrite            => donePtrWrite(i),
+            dmaBaseAddress          => dmaBaseAddress,
             fifoEnable              => fifoEnable(i),
             writeDmaId              => writeDmaId(i),
             writeDmaCache           => writeDmaCache,
@@ -332,6 +342,9 @@ begin
 
       -- Header completion FIFOs
       U_SingleFifo: entity work.ArmRceG3IbSingle
+         generic map (
+            UseAsyncFifo => false
+         );
          port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRst,
@@ -349,7 +362,7 @@ begin
             memToggleEn             => memToggleEnable(i),
             memConfig               => memConfig(i*2+1 downto i*2),
             memBaseAddress          => memBaseAddress,
-            writeFifoClk            => axiClk,
+            writeFifoClk            => '0',
             writeFifoToFifo         => donePtrWrite(i),
             writeFifoFromFifo       => open,
             debug                   => fifoDebug(4+i)
