@@ -50,7 +50,8 @@ ENTITY ArmFifo36x512 IS
     dout : OUT STD_LOGIC_VECTOR(35 DOWNTO 0);
     full : OUT STD_LOGIC;
     empty : OUT STD_LOGIC;
-    valid : OUT STD_LOGIC
+    valid : OUT STD_LOGIC;
+    data_count : OUT STD_LOGIC_VECTOR(9 DOWNTO 0)
   );
 END ArmFifo36x512;
 
@@ -66,7 +67,8 @@ COMPONENT wrapped_ArmFifo36x512
     dout : OUT STD_LOGIC_VECTOR(35 DOWNTO 0);
     full : OUT STD_LOGIC;
     empty : OUT STD_LOGIC;
-    valid : OUT STD_LOGIC
+    valid : OUT STD_LOGIC;
+    data_count : OUT STD_LOGIC_VECTOR(9 DOWNTO 0)
   );
 END COMPONENT;
 
@@ -138,7 +140,7 @@ END COMPONENT;
       c_has_axis_tstrb => 0,
       c_has_axis_tuser => 0,
       c_has_backup => 0,
-      c_has_data_count => 0,
+      c_has_data_count => 1,
       c_has_data_counts_axis => 0,
       c_has_data_counts_rach => 0,
       c_has_data_counts_rdch => 0,
@@ -276,7 +278,8 @@ U0 : wrapped_ArmFifo36x512
     dout => dout,
     full => full,
     empty => empty,
-    valid => valid
+    valid => valid,
+    data_count => data_count
   );
 -- synthesis translate_on
 

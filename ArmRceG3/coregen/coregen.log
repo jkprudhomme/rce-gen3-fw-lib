@@ -2,8 +2,8 @@ Welcome to Xilinx CORE Generator.
 Help system initialized.
 The IP Catalog has been reloaded.
 Opening project file
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ArmRceG3/cor
-egen/coregen.cgp.
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/co
+regen/coregen.cgp.
 WARNING:sim:991 - The project IP instance 'zynq_icon' for IP 'ICON (ChipScope
    Pro - Integrated Controller) v1.06.a' was generated with a different version
    of the IP than is currently in the IP Catalog. It was originally generated
@@ -21,64 +21,66 @@ WARNING:sim:991 - The project IP instance 'zynq_ila' for IP 'ILA (ChipScope Pro
    affect some functionality of the IP, if there are differences between these
    two versions of the IP.
 Recustomize and Generate (Under Original Project Settings)INFO:sim:172 - Generating IP...
-WARNING:sim:100 - The Simulation File Type <Behavioral> is not valid for this
-   core. Overriding with File Type <structural>.
-Customizing IP...
-Release 14.5 - Xilinx CORE Generator IP GUI Launcher P.58f (lin64)
-Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
-Finished Customizing.
-Generating IP...
-Configuring files for zynq_ila_256 root...
-Gathering HDL files for zynq_ila_256 root...
-Creating XST project for zynq_ila_256...
-Creating XST script file for zynq_ila_256...
-Creating XST instantiation file for zynq_ila_256...
-Running XST for zynq_ila_256...
-XST: HDL Parsing
-XST: HDL Elaboration
-XST: HDL Synthesis
-XST: Advanced HDL Synthesis
-XST: Low Level Synthesis
-XST: Design Summary
-Generating VHDL wrapper
-Not generating Verilog wrapper
-Creating ISE instantiation template for zynq_ila_256...
-Skipping Verilog instantiation template for zynq_ila_256...
-Finished Generation.
-Generating IP instantiation template...
+WARNING:sim - A core named 'ArmFifo36x512' already exists in the project. Output
+   products for this core may be overwritten.
+Resolving generics for 'ArmFifo36x512'...
+WARNING:sim - A core named 'ArmFifo36x512' already exists in the project. Output
+   products for this core may be overwritten.
+Applying external generics to 'ArmFifo36x512'...
+Delivering associated files for 'ArmFifo36x512'...
+Delivering EJava files for 'ArmFifo36x512'...
+Generating implementation netlist for 'ArmFifo36x512'...
+INFO:sim - Pre-processing HDL files for 'ArmFifo36x512'...
+WARNING:sim - BlackBox generator run option '-ifmt' found multiple times. Only
+   the first occurence is considered.
+Running synthesis for 'ArmFifo36x512'
+Running ngcbuild...
+Writing VHO instantiation template for 'ArmFifo36x512'...
+Writing VHDL behavioral simulation model for 'ArmFifo36x512'...
+WARNING:sim - Overwriting existing file
+   /afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3
+   /coregen/tmp/_cg/ArmFifo36x512/doc/fifo_generator_v9_3_vinfo.html with file
+   from view xilinx_documentation
+Delivered 3 files into directory
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/co
+regen/tmp/_cg/ArmFifo36x512
+Delivered 1 file into directory
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/co
+regen/tmp/_cg/ArmFifo36x512
 Generating ASY schematic symbol...
 INFO:sim:949 - Finished generation of ASY schematic symbol.
 Generating metadata file...
+Regenerating ISE project file for 'ArmFifo36x512'...
 Generating ISE project...
-XCO file found: zynq_ila_256.xco
-XMDF file found: zynq_ila_256_xmdf.tcl
+XCO file found: ArmFifo36x512.xco
+XMDF file found: ArmFifo36x512_xmdf.tcl
 Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ArmRceG3/cor
-egen/tmp/_cg/zynq_ila_256.asy -view all -origin_type imported
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/co
+regen/tmp/_cg/ArmFifo36x512.asy -view all -origin_type imported
 Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ArmRceG3/cor
-egen/tmp/_cg/zynq_ila_256.ngc -view all -origin_type created
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/co
+regen/tmp/_cg/ArmFifo36x512.ngc -view all -origin_type created
 Checking file
-"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ArmRceG3/co
-regen/tmp/_cg/zynq_ila_256.ngc" for project device match ...
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/c
+oregen/tmp/_cg/ArmFifo36x512.ngc" for project device match ...
 File
-"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ArmRceG3/co
-regen/tmp/_cg/zynq_ila_256.ngc" device information matches project device.
+"/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/c
+oregen/tmp/_cg/ArmFifo36x512.ngc" device information matches project device.
 Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ArmRceG3/cor
-egen/tmp/_cg/zynq_ila_256.vhd -view all -origin_type created
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/co
+regen/tmp/_cg/ArmFifo36x512.vhd -view all -origin_type created
 INFO:HDLCompiler:1061 - Parsing VHDL file
-   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ArmRceG3
-   /coregen/tmp/_cg/zynq_ila_256.vhd" into library work
+   "/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG
+   3/coregen/tmp/_cg/ArmFifo36x512.vhd" into library work
 INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
 Adding
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ArmRceG3/cor
-egen/tmp/_cg/zynq_ila_256.vho -view all -origin_type imported
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ArmRceG3/co
+regen/tmp/_cg/ArmFifo36x512.vho -view all -origin_type imported
 INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
    Please set the new top explicitly by running the "project set top" command.
    To re-calculate the new top automatically, set the "Auto Implementation Top"
    property to true.
-Top level has been set to "/zynq_ila_256"
+Top level has been set to "/ArmFifo36x512"
 Generating README file...
 Generating FLIST file...
 INFO:sim:948 - Finished FLIST file generation.

@@ -1,23 +1,16 @@
 -------------------------------------------------------------------------------
--- Title         : ARM Based RCE Generation 3, Inbound Header FIFOs
+-- Title         : ARM Based RCE Generation 3, Outbound Header FIFOs
 -- File          : ArmRceG3IbHeaderFifo.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 04/02/2013
+-- Created       : 07/09/2013
 -------------------------------------------------------------------------------
 -- Description:
--- Inbound header FIFO for PPI DMA Engines. This FIFO handles an inbound header
--- block, writing it to a defined destination address in cache line burst size
--- transactions. Bit 70 and 71 of the FIFO is used to mark the first and last 
--- entries which are to be written. After the entry is written the FIFO stalls 
--- and marks the entry as dirty. If enabled to the FIFO will then toggle to an 
--- alternate destination for the next incoming entry.
+-- Outbound header FIFO for PPI DMA Engines.
 -------------------------------------------------------------------------------
 -- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
 -- Modification history:
--- 04/02/2013: created.
--- 06/14/2013: Modified to use free list and completion list. No longer set dirty
---             flag or asserts interrupt.
+-- 07/09/2013: created.
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
@@ -37,24 +30,24 @@ entity ArmRceG3IbHeaderFifo is
 
       -- AXI ACP Master
       axiClkRst               : in  std_logic;
-      axiAcpSlaveWriteFromArm : in  AxiWriteSlaveType;
-      axiAcpSlaveWriteToArm   : out AxiWriteMasterType;
+      axiAcpSlaveReadFromArm  : in  AxiReadSlaveType;
+      axiAcpSlaveReadToArm    : out AxiReadMasterType;
 
       -- Arbiter interface
       fifoReq                 : out std_logic;
       fifoGnt                 : in  std_logic;
 
-      -- Memory pointer free list
-      memPtrWrite             : in  WriteFifoToFifoType;
+      -- Descriptor write
+      descPtrWrite            : in  WriteFifoToFifoType;
 
-      -- Done FIFO
-      donePtrWrite            : out WriteFifoToFifoType;
+      -- Free list FIFO (finished descriptors)
+      freePtrWrite            : out WriteFifoToFifoType;
 
       -- Configuration
       dmaBaseAddress          : in  std_logic_vector(31 downto 18);
       fifoEnable              : in  std_logic;
-      writeDmaId              : in  std_logic_vector(2 downto 0);
-      writeDmaCache           : in  std_logic_vector(3 downto 0);
+      readDmaId               : in  std_logic_vector(2 downto 0);
+      readDmaCache            : in  std_logic_vector(3 downto 0);
 
       -- FIFO Interface
       writeFifoClk            : in  std_logic;

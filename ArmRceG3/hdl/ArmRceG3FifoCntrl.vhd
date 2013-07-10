@@ -124,7 +124,7 @@ begin
                <= x"000000" & "000" & memConfig(conv_integer(localBusMaster.addr(6 downto 2))) after TPD_G;
 
          -- FIFO test writes, 21 FIFOs, 16 locations each - 0x88010000 - 0x8801053F
-         -- Burst and single entry FIFOs
+         -- Header and descriptor FIFOs
          -- First four entries (0 - 3) are for header free list FIFOs
          -- Next  four entries (4 - 7) are for header data test writes
          -- Entries 8 - 20 are for test writes to single entry FIFOs 4 - 16
@@ -183,7 +183,7 @@ begin
             intLocalBusSlave.readData <= x"0000" & "0" & intEnable after TPD_G;
 
          -- Debug select 0x88030014
-         -- Burst and single entry FIFOs
+         -- Header and descriptor FIFOs
          -- First four entries (0 - 3) are for header burst FIFOs
          -- Entries 4 - 20 are for single entry FIFOs
          elsif localBusMaster.addr(23 downto 0) = x"030014" then
@@ -309,7 +309,7 @@ begin
    U_GenPif: for i in 0 to 3 generate
 
       -- Header burst FIFO
-      U_BurstFifo: entity work.ArmRceG3IbBurst 
+      U_HeaderFifo: entity work.ArmRceG3IbHeaderFifo
          port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRst,
@@ -341,7 +341,7 @@ begin
       iwriteFifoToFifo(i).write <= '1' when fifoWrSel = (4+i) and fifoWrEn = '1' else '0';
 
       -- Header completion FIFOs
-      U_SingleFifo: entity work.ArmRceG3IbSingle
+      U_DescFifo: entity work.ArmRceG3IbDescFifo
          generic map (
             UseAsyncFifo => false
          );
@@ -376,7 +376,7 @@ begin
    U_GenTcom: for i in 4 to 14 generate
 
       -- Transaction completion FIFOs
-      U_SingleFifo: entity work.ArmRceG3IbSingle
+      U_DescFifo: entity work.ArmRceG3IbDescFifo
          port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRst,
@@ -415,7 +415,7 @@ begin
    U_GenFlist: for i in 15 to 16 generate
 
       -- Egress free list FIFOs
-      U_SingleFifo: entity work.ArmRceG3IbSingle
+      U_DescFifo: entity work.ArmRceG3IbDescFifo
          port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRst,

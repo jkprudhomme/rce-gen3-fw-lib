@@ -65,7 +65,8 @@ COMPONENT ArmFifo36x512
     dout : OUT STD_LOGIC_VECTOR(35 DOWNTO 0);
     full : OUT STD_LOGIC;
     empty : OUT STD_LOGIC;
-    valid : OUT STD_LOGIC
+    valid : OUT STD_LOGIC;
+    data_count : OUT STD_LOGIC_VECTOR(9 DOWNTO 0)
   );
 END COMPONENT;
 -- COMP_TAG_END ------ End COMPONENT Declaration ------------
@@ -84,7 +85,8 @@ your_instance_name : ArmFifo36x512
     dout => dout,
     full => full,
     empty => empty,
-    valid => valid
+    valid => valid,
+    data_count => data_count
   );
 -- INST_TAG_END ------ End INSTANTIATION Template ------------
 

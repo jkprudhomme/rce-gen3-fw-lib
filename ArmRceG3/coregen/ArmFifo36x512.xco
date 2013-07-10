@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.5
-# Date: Tue Apr 30 19:01:25 2013
+# Date: Wed Jul  3 19:26:28 2013
 #
 ##############################################################
 #
@@ -52,7 +52,7 @@ CSET buser_width=1
 CSET clock_enable_type=Slave_Interface_Clock_Enable
 CSET clock_type_axi=Common_Clock
 CSET component_name=ArmFifo36x512
-CSET data_count=false
+CSET data_count=true
 CSET data_count_width=10
 CSET disable_timing_violations=false
 CSET disable_timing_violations_axi=false
@@ -210,4 +210,4 @@ CSET wuser_width=1
 MISC pkg_timestamp=2012-11-19T12:39:56Z
 # END Extra information
 GENERATE
-# CRC: 167243dd
+# CRC:  acedf11

@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
 -- Title         : ARM Based RCE Generation 3, Inbound Single Entry FIFO
--- File          : ArmRceG3IbSingle.vhd
+-- File          : ArmRceG3IbDescFifo.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 04/02/2013
 -------------------------------------------------------------------------------
 -- Description:
--- Inbound single entry FIFO for PPI DMA Engines. 
+-- Inbound descriptor FIFO for PPI DMA Engines. 
 -- After the entry is written the FIFO stalls and marks the entry as dirty. 
 -- If enabled to the FIFO will then toggle to an alternate destination for 
 -- the next incoming entry.
@@ -26,7 +26,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 
-entity ArmRceG3IbSingle is
+entity ArmRceG3IbDescFifo is
    generic
       UseAsyncFifo : boolean := true
    port (
@@ -67,9 +67,9 @@ entity ArmRceG3IbSingle is
       -- Debug
       debug                   : out std_logic_vector(127 downto 0)
    );
-end ArmRceG3IbSingle;
+end ArmRceG3IbDescFifo;
 
-architecture structure of ArmRceG3IbSingle is
+architecture structure of ArmRceG3IbDescFifo is
 
    COMPONENT ArmAFifo36x512
       PORT (
