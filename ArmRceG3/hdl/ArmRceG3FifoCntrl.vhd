@@ -33,6 +33,8 @@ entity ArmRceG3FifoCntrl is
       axiClkRst               : in  std_logic;
       axiAcpSlaveWriteFromArm : in  AxiWriteSlaveType;
       axiAcpSlaveWriteToArm   : out AxiWriteMasterType;
+      axiAcpSlaveReadFromArm  : in  AxiReadSlaveType;
+      axiAcpSlaveReadToArm    : out AxiReadMasterType;
 
       -- Interrupts
       interrupt               : out std_logic_vector(14 downto 0);
@@ -41,10 +43,20 @@ entity ArmRceG3FifoCntrl is
       localBusMaster          : in  LocalBusMasterType;
       localBusSlave           : out LocalBusSlaveType;
 
-      -- External FIFO Interfaces
-      writeFifoClk            : in  std_logic_vector(16 downto 0);
-      writeFifoToFifo         : in  WriteFifoToFifoVector(16 downto 0);
-      writeFifoFromFifo       : out WriteFifoFromFifoVector(16 downto 0);
+      -- Transaction Completion FIFOs
+      tranFifoClk             : in  std_logic_vector(10 downto 0);
+      tranFifoToFifo          : in  WriteFifoToFifoVector(10 downto 0);
+      tranFifoFromFifo        : out WriteFifoFromFifoVector(10 downto 0);
+
+      -- Inbound Header FIFOs
+      headerIbFifoClk         : in  std_logic_vector(3 downto 0);
+      headerIbFifoToFifo      : in  WriteFifoToFifoVector(3 downto 0);
+      headerIbFifoFromFifo    : out WriteFifoFromFifoVector(3 downto 0);
+
+      -- Outbound Header FIFOs
+      headerObFifoClk         : in  std_logic_vector(3 downto 0);
+      headerObFifoToFifo      : in  ReadFifoToFifoVector(3 downto 0);
+      headerObFifoFromFifo    : out ReadFifoFromFifoVector(3 downto 0);
 
       -- Debug
       debug                   : out std_logic_vector(127 downto 0)
@@ -55,30 +67,34 @@ architecture structure of ArmRceG3FifoCntrl is
 
    -- Local signals
    signal axiAcpSlaveWriteToArmFifo : AxiWriteMasterVector(20 downto 0);
+   signal axiAcpSlaveReadToArmFifo  : AxiReadMasterVector(20 downto 0);
    signal intLocalBusSlave          : LocalBusSlaveType;
    signal memConfig                 : Word5Array(31 downto 0);
-   signal fifoDin                   : std_logic_vector(35 downto 0);
-   signal fifoWrEn                  : std_logic;
-   signal fifoWrSel                 : std_logic_vector(4  downto 0);
    signal dirtyClearEn              : std_logic;
    signal dirtyClearSel             : std_logic_vector(4  downto 0);
    signal writeDmaCache             : std_logic_vector(3  downto 0);
-   signal fifoEnable                : std_logic_vector(20 downto 0);
+   signal fifoEnable                : std_logic_vector(26 downto 0);
    signal writeDmaId                : Word3Array(20 downto 0);
+   signal readDmaId                 : Word3Array(3  downto 0);
    signal memToggleEnable           : std_logic_vector(14 downto 0);
    signal intEnable                 : std_logic_vector(14 downto 0);
-   signal dirtyFlag                 : std_logic_vector(16 downto 0);
-   signal dirtyFlagSet              : std_logic_vector(16 downto 0);
-   signal dirtyFlagFifoSet          : Word17Array(16 downto 0);
-   signal iwriteFifoToFifo          : WriteFifoToFifoVector(20 downto 0);
-   signal memPtrWrite               : WriteFifoToFifoVector(3 downto 0);
+   signal dirtyFlag                 : std_logic_vector(31 downto 0);
+   signal dirtyFlagSet              : std_logic_vector(31 downto 0);
+   signal dirtyFlagFifoSet          : Word17Array(18 downto 0);
+   signal testFifoWrite             : WriteFifoToFifoVector(10 downto 0);
+   signal readPtrWrite              : WriteFifoToFifoVector(3 downto 0);
+   signal freePtrWrite              : WriteFifoToFifoVector(3 downto 0);
    signal donePtrWrite              : WriteFifoToFifoVector(3 downto 0);
-   signal fifoDebug                 : Word128Array(20 downto 0);
-   signal fifoReq                   : std_logic_vector(31 downto 0);
-   signal fifoGnt                   : std_logic_vector(31 downto 0);
+   signal fifoDebug                 : Word128Array(26 downto 0);
+   signal fifoWriteReq              : std_logic_vector(31 downto 0);
+   signal fifoWriteGnt              : std_logic_vector(31 downto 0);
+   signal fifoReadReq               : std_logic_vector(3  downto 0);
+   signal fifoReadGnt               : std_logic_vector(3  downto 0);
    signal dbgSelect                 : std_logic_vector(4  downto 0);
-   signal arbSelect                 : std_logic_vector(4  downto 0);
-   signal arbValid                  : std_logic;
+   signal arbWriteSelect            : std_logic_vector(4  downto 0);
+   signal arbWriteValid             : std_logic;
+   signal arbReadSelect             : std_logic_vector(1  downto 0);
+   signal arbReadValid              : std_logic;
    signal writeDmaBusyOut           : Word8Array(16 downto 0);
    signal writeDmaBusyIn            : std_logic_vector(7 downto   0);
    signal memBaseAddress            : std_logic_vector(31 downto  8);
@@ -93,72 +109,95 @@ begin
    --------------------------------------------
    -- Registers: 0x8800_0000 - 0x8BFF_FFFF
    --------------------------------------------
-   process ( axiClk, axiClkRst ) begin
+   process ( axiClk, axiClkRst ) 
+      x : variable;
+   begin
       if axiClkRst = '1' then
-         intLocalBusSlave <= LocalBusSlaveInit       after TPD_G;
-         memConfig        <= (others=>(others=>'0')) after TPD_G;
-         fifoWrEn         <= '0'                     after TPD_G;
-         fifoWrSel        <= (others=>'0')           after TPD_G;
-         fifoDin          <= (others=>'0')           after TPD_G;
-         dirtyClearEn     <= '0'                     after TPD_G;
-         dirtyClearSel    <= (others=>'0')           after TPD_G;
-         writeDmaCache    <= (others=>'0')           after TPD_G;
-         fifoEnable       <= (others=>'0')           after TPD_G;
-         memToggleEnable  <= (others=>'0')           after TPD_G;
-         intEnable        <= (others=>'0')           after TPD_G;
-         dbgSelect        <= (others=>'0')           after TPD_G;
-         memBaseAddress   <= (others=>'0')           after TPD_G;
-         dmaBaseAddress   <= (others=>'0')           after TPD_G;
+         intLocalBusSlave <= LocalBusSlaveInit             after TPD_G;
+         memConfig        <= (others=>(others=>'0'))       after TPD_G;
+         fifoWrEn         <= '0'                           after TPD_G;
+         fifoWrSel        <= (others=>'0')                 after TPD_G;
+         fifoDin          <= (others=>'0')                 after TPD_G;
+         dirtyClearEn     <= '0'                           after TPD_G;
+         dirtyClearSel    <= (others=>'0')                 after TPD_G;
+         writeDmaCache    <= (others=>'0')                 after TPD_G;
+         fifoEnable       <= (others=>'0')                 after TPD_G;
+         memToggleEnable  <= (others=>'0')                 after TPD_G;
+         intEnable        <= (others=>'0')                 after TPD_G;
+         dbgSelect        <= (others=>'0')                 after TPD_G;
+         memBaseAddress   <= (others=>'0')                 after TPD_G;
+         dmaBaseAddress   <= (others=>'0')                 after TPD_G;
+         freePtrWrite     <= (others=>WriteFifoToFifoInit) after TPD_G;
+         readPtrWrite     <= (others=>WriteFifoToFifoInit) after TPD_G;
+         testFifoWrite    <= (others=>WriteFifoToFifoInit) after TPD_G;
+
       elsif rising_edge(axiClk) then
          intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
+         intLocalBusSlave.readData  <= (others=>'0')             after TPD_G;
+         dirtyClearEn               <= '0'                       after TPD_G;
+
+         -- Init FIFO write control
+         for x in 0 to 3 loop
+            freePtrWrite.data(i)(71 downto 36) <= localBusMaster.addr(5 donwto 2) after TPD_G;
+            freePtrWrite.data(i)(35 downto 32) <= localBusMaster.addr(5 donwto 2) after TPD_G;
+            freePtrWrite.data(i)(31 downto  0) <= localBusMaster.writeData        after TPD_G;
+            freePtrWrite.write(i)              <= '0'                             after TPD_G;
+
+            readPtrWrite.data(i)(71 downto 36) <= localBusMaster.addr(5 donwto 2) after TPD_G;
+            readPtrWrite.data(i)(35 downto 32) <= localBusMaster.addr(5 donwto 2) after TPD_G;
+            readPtrWrite.data(i)(31 downto  0) <= localBusMaster.writeData        after TPD_G;
+            readPtrWrite.write(i)              <= '0'                             after TPD_G;
+
+            testPtrWrite.data(i)(71 downto 36) <= localBusMaster.addr(5 donwto 2) after TPD_G;
+            testPtrWrite.data(i)(35 downto 32) <= localBusMaster.addr(5 donwto 2) after TPD_G;
+            testPtrWrite.data(i)(31 downto  0) <= localBusMaster.writeData        after TPD_G;
+            testPtrWrite.write(i)              <= '0'                             after TPD_G;
+         end loop
 
          -- FIFO Memory Configuration, 32 total (15 * 2 + 2) - 0x88000000 - 0x8800007F
          -- Single entry FIFOs only
-         -- 2 locations for first 15, 1 locations for upper 2
-         if localBusMaster.addr(23 downto 8) = x"0000" and localBusMaster.addr(7) = '0' then
+         -- 2 locations for first 15, 1 locations for upper 4
+         if localBusMaster.addr(23 downto 7) = (x"0000" & '0') then
             if localBusMaster.writeEnable = '1' then
-               memConfig(conv_integer(localBusMaster.addr(6 downto 2))) 
-                  <= localBusMaster.writeData(4 downto 0) after TPD_G;
+               memConfig(conv_integer(localBusMaster.addr(6 downto 2))) <= localBusMaster.writeData(4 downto 0) after TPD_G;
             end if;
-            intLocalBusSlave.readData 
-               <= x"000000" & "000" & memConfig(conv_integer(localBusMaster.addr(6 downto 2))) after TPD_G;
+            intLocalBusSlave.readData(4 downto 0) <= memConfig(conv_integer(localBusMaster.addr(6 downto 2))) after TPD_G;
 
-         -- FIFO test writes, 21 FIFOs, 16 locations each - 0x88010000 - 0x8801053F
-         -- Header and descriptor FIFOs
-         -- First four entries (0 - 3) are for header free list FIFOs
-         -- Next  four entries (4 - 7) are for header data test writes
-         -- Entries 8 - 20 are for test writes to single entry FIFOs 4 - 16
-         elsif localBusMaster.addr(23 downto 16) = x"01" and localBusMaster.addr(15 downto 11) = "00000" and 
-               localBusMaster.addr(10 downto 6) < 21 then
-            fifoWrEn                  <= localBusMaster.writeEnable       after TPD_G;
-            fifoWrSel                 <= localBusMaster.addr(10 downto 6) after TPD_G;
-            fifoDin(35 downto 32)     <= localBusMaster.addr(5  downto 2) after TPD_G;
-            fifoDin(31 downto  0)     <= localBusMaster.writeData         after TPD_G;
-            intLocalBusSlave.readData <= x"deadbeef"                      after TPD_G;
+         -- Inbound header free list entries, 16 locations for each of 4 engines - 0x88010000 - 0x880100FF
+         elsif localBusMaster.addr(23 downto 8) = x"0100" then
+            freePtrWrite(conv_integer(localBusMaster.addr(7 downto 6)) <= localBusMaster.writeEnable after TPD_G;
 
-         -- Channel Dirty flags clear, 17 - 0x88020000 - 0x88020043
+         -- Outbound header read address, 16 locations for each of 4 engines - 0x88010100 - 0x880101FF
+         elsif localBusMaster.addr(23 downto 8) = x"0101" then
+            readPtrWrite(conv_integer(localBusMaster.addr(7 downto 6)) <= localBusMaster.writeEnable after TPD_G;
+
+         -- Test entry write for transaction completion FIFOS 16 locations for each of 11 FIFOs - 0x88010200 - 0x8801033F
+         elsif localBusMaster.addr(23 downto 9) = (x"010" & "001") and localBusMaster.addr(8 downto 6) < 11 then
+            testPtrWrite(conv_integer(localBusMaster.addr(8 downto 6)) <= localBusMaster.writeEnable after TPD_G;
+
+         -- Channel Dirty flags clear, 19 - 0x88020000 - 0x88020043
          -- One per DMA channel
          -- Channels 0 - 14 are associated with interrupts
-         elsif localBusMaster.addr(23 downto 8) = x"0200" and localBusMaster.addr(7 downto 2) < 17 then
+         elsif localBusMaster.addr(23 downto 8) = x"0200" and localBusMaster.addr(7 downto 2) < 19 then
             dirtyClearEn              <= localBusMaster.writeEnable      after TPD_G;
             dirtyClearSel             <= localBusMaster.addr(6 downto 2) after TPD_G;
-            intLocalBusSlave.readData <= x"deadbeef"                     after TPD_G;
 
          -- AXI Write DMA Cache Config, single location, 0x88030000
          elsif localBusMaster.addr(23 downto 0) = x"030000" then
             if localBusMaster.writeEnable = '1' then
                writeDmaCache <= localBusMaster.writeData(3 downto 0) after TPD_G;
             end if;
-            intLocalBusSlave.readData <= x"0000000" & writeDmaCache after TPD_G;
+            intLocalBusSlave.readData(3 downto 0) <= writeDmaCache after TPD_G;
 
-         -- FIFO Enable, 21 bits - 0x88030004
-         -- Lower 4 bits are for burst FIFOs
-         -- Bits 4 - 20 are for single entry FIFOs
+         -- FIFO Enable, 27 bits - 0x88030004
+         -- Bits 3:0   = inbound header FIFOs
+         -- Bits 22:4  = transaction completion FIFOs
+         -- Bits 26:23 = outbound header FIFOs
          elsif localBusMaster.addr(23 downto 0) = x"030004" then
             if localBusMaster.writeEnable = '1' then
-               fifoEnable <= localBusMaster.writeData(20 downto 0) after TPD_G;
+               fifoEnable <= localBusMaster.writeData(26 downto 0) after TPD_G;
             end if;
-            intLocalBusSlave.readData <= x"00" & "000" & fifoEnable after TPD_G;
+            intLocalBusSlave.readData(26 downto 0) <= fifoEnable after TPD_G;
 
          -- FIFO Toggle Enable, 15 bits, 0x88030008
          -- One per single entry FIFOs 0 - 14
@@ -168,7 +207,7 @@ begin
             end if;
             intLocalBusSlave.readData <= x"0000" & "0" & memToggleEnable after TPD_G;
 
-         -- Dirty status, 17 bits 0x8803000C
+         -- Dirty status, 19 bits 0x8803000C
          -- One per memory channel
          -- Channels 0 - 14 are associated with interrupts
          elsif localBusMaster.addr(23 downto 0) = x"03000C" then
@@ -216,7 +255,7 @@ begin
    end process;         
 
    -----------------------------------------
-   -- Dirty flags
+   -- Write Dirty flags
    -----------------------------------------
 
    -- Combine sets from FPGAs
@@ -241,9 +280,9 @@ begin
    end generate;
 
    -----------------------------------------
-   -- Arbitration 
+   -- Write Arbitration 
    -----------------------------------------
-   U_Arbiter : entity work.Arbiter 
+   U_WriteArbiter : entity work.Arbiter 
       generic map (
          TPD_G      => 1 ns,
          USE_SRST_G => true,
@@ -253,20 +292,20 @@ begin
          clk      => axiClk,
          aRst     => '0',
          sRst     => axiClkRst,
-         req      => fifoReq,
-         selected => arbSelect,
-         valid    => arbValid,
-         ack      => fifoGnt
+         req      => fifoWriteReq,
+         selected => arbWriteSelect,
+         valid    => arbWriteValid,
+         ack      => fifoWriteGnt
       );
 
    -- Channels 21 to 31 are not used
-   fifoReq(31 downto 21) <= (others=>'0');
+   fifoWriteReq(31 downto 21) <= (others=>'0');
  
    -- Mux ACP bus mastership
-   axiAcpSlaveWriteToArm <= axiAcpSlaveWriteToArmFifo(conv_integer(arbSelect));
+   axiAcpSlaveWriteToArm <= axiAcpSlaveWriteToArmFifo(conv_integer(arbWriteSelect));
 
    -----------------------------------------
-   -- Configure DMA IDs
+   -- Write Configure DMA IDs
    -----------------------------------------
 
    -- Header FIFOs get dedicated IDs
@@ -308,37 +347,31 @@ begin
    ------------------------------------------------------
    U_GenPif: for i in 0 to 3 generate
 
-      -- Header burst FIFO
-      U_HeaderFifo: entity work.ArmRceG3IbHeaderFifo
+      -- IbHeader burst FIFO
+      U_IbHeaderFifo: entity work.ArmRceG3IbHeaderFifo
          port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRst,
             axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
             axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArmFifo(i),
-            fifoReq                 => fifoReq(i),
-            fifoGnt                 => fifoGnt(i),
-            memPtrWrite             => memPtrWrite(i),
+            fifoReq                 => fifoWriteReq(i),
+            fifoGnt                 => fifoWriteGnt(i),
+            freePtrWrite            => freePtrWrite(i),
             donePtrWrite            => donePtrWrite(i),
             dmaBaseAddress          => dmaBaseAddress,
             fifoEnable              => fifoEnable(i),
             writeDmaId              => writeDmaId(i),
             writeDmaCache           => writeDmaCache,
-            --writeFifoClk            => writeFifoClk(i),
-            --writeFifoToFifo         => writeFifoToFifo(i),
-            writeFifoClk            => axiClk,              -- Test Mode
-            writeFifoToFifo         => iwriteFifoToFifo(i), -- Test Mode
-            writeFifoFromFifo       => writeFifoFromFifo(i),
+            writeFifoClk            => headerIbFifoClk(i),
+            writeFifoToFifo         => headerIbFifoToFifo(i),
+            writeFifoFromFifo       => headerIbFifoFromFifo(i),
             debug                   => fifoDebug(i)
          );
 
       -- Free list writes
-      memPtrWrite(i).data(71 downto 36) <= (others=>'0');
-      memPtrWrite(i).data(35 downto  0) <= fifoDin;
-      memPtrWrite(i).write              <= fifoWrEn when fifoWrSel = i else '0';
-
-      -- Header test data writes 
-      iwriteFifoToFifo(i).data  <= fifoDin(35 downto 32) & "0000" & fifoDin(31 downto 0) & fifoDin(31 downto 0);
-      iwriteFifoToFifo(i).write <= '1' when fifoWrSel = (4+i) and fifoWrEn = '1' else '0';
+      freePtrWrite(i).data(71 downto 36) <= (others=>'0');
+      freePtrWrite(i).data(35 downto  0) <= fifoDin;
+      freePtrWrite(i).write              <= fifoWrEn when fifoWrSel = i else '0';
 
       -- Header completion FIFOs
       U_DescFifo: entity work.ArmRceG3IbDescFifo
@@ -350,8 +383,8 @@ begin
             axiClkRst               => axiClkRst,
             axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
             axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArmFifo(4+i),
-            fifoReq                 => fifoReq(4+i),
-            fifoGnt                 => fifoGnt(4+i),
+            fifoReq                 => fifoWriteReq(4+i),
+            fifoGnt                 => fifoWriteGnt(4+i),
             memDirty                => dirtyFlag,
             memDirtySet             => dirtyFlagFifoSet(i),
             writeDmaBusyOut         => writeDmaBusyOut(i),
@@ -373,7 +406,7 @@ begin
    -----------------------------------------
    -- Transaction Completion FIFOs, 4 - 14
    -----------------------------------------
-   U_GenTcom: for i in 4 to 14 generate
+   U_GenTcom: for i in 0 to 10 generate
 
       -- Transaction completion FIFOs
       U_DescFifo: entity work.ArmRceG3IbDescFifo
@@ -382,37 +415,87 @@ begin
             axiClkRst               => axiClkRst,
             axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
             axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArmFifo(4+i),
-            fifoReq                 => fifoReq(4+i),
-            fifoGnt                 => fifoGnt(4+i),
+            fifoReq                 => fifoWriteReq(8+i),
+            fifoGnt                 => fifoWriteGnt(8+i),
             memDirty                => dirtyFlag,
-            memDirtySet             => dirtyFlagFifoSet(i),
-            writeDmaBusyOut         => writeDmaBusyOut(i),
+            memDirtySet             => dirtyFlagFifoSet(4+i),
+            writeDmaBusyOut         => writeDmaBusyOut(4+i),
             writeDmaBusyIn          => writeDmaBusyIn,
-            fifoEnable              => fifoEnable(4+i),
-            writeDmaId              => writeDmaId(4+i),
+            fifoEnable              => fifoEnable(8+i),
+            writeDmaId              => writeDmaId(8+i),
             writeDmaCache           => writeDmaCache,
-            memToggleEn             => memToggleEnable(i),
-            memConfig               => memConfig(i*2+1 downto i*2),
+            memToggleEn             => memToggleEnable(4+i),
+            memConfig               => memConfig(i*8+1 downto i*8),
             memBaseAddress          => memBaseAddress,
+            --writeFifoClk            => writeFifoClk(4+i),
+            --writeFifoToFifo         => writeFifoToFifo(4+i),
+            writeFifoClk            => axiClk,              -- Test Mode
+            writeFifoToFifo         => iwriteFifoToFifo(4+i), -- Test Mode
+            writeFifoFromFifo       => writeFifoFromFifo(4+i),
+            debug                   => fifoDebug(8+i)
+         );
+
+      -- Test data writes 
+      iwriteFifoToFifo(i+4).data(71 downto 36) <= (others=>'0');
+      iwriteFifoToFifo(i+4).data(35 downto  0) <= fifoDin;
+      iwriteFifoToFifo(i+4).write              <= fifoWrEn when fifoWrSel = (i+8) else '0';
+
+   end generate;
+
+   -----------------------------------------
+   -- Egress header and Free List FIFOs, 15 - 18
+   -----------------------------------------
+   U_GenFlist: for i in 0 to 4 generate
+
+      -- ObHeader burst FIFO
+      U_ObHeaderFifo: entity work.ArmRceG3ObHeaderFifo
+         port map (
+            axiClk                  => axiClk,
+            axiClkRst               => axiClkRst,
+            axiAcpSlaveReadFromArm  => axiAcpSlaveReadFromArm,
+            axiAcpSlaveReadToArm    => axiAcpSlaveReadToArmFifo(i),
+            fifoReq                 => fifoReadReq(i),
+            fifoGnt                 => fifoReadGnt(i),
+            descPtrWrite            => memPtrWrite(i),
+            freePtrWrite            => donePtrWrite(i),
+            dmaBaseAddress          => dmaBaseAddress,
+            fifoEnable              => fifoEnable(i+21),
+            readDmaId               => readDmaId(i),
+            readDmaCache            => readDmaCache,
+            readFifoClk             => 
+            readFifoToFifo          =>
+            readFifoFromFifo        =>
+            debug                   
+
+
             --writeFifoClk            => writeFifoClk(i),
             --writeFifoToFifo         => writeFifoToFifo(i),
             writeFifoClk            => axiClk,              -- Test Mode
             writeFifoToFifo         => iwriteFifoToFifo(i), -- Test Mode
             writeFifoFromFifo       => writeFifoFromFifo(i),
-            debug                   => fifoDebug(4+i)
+            debug                   => fifoDebug(i)
          );
 
-      -- Test data writes 
-      iwriteFifoToFifo(i).data(71 downto 36) <= (others=>'0');
-      iwriteFifoToFifo(i).data(35 downto  0) <= fifoDin;
-      iwriteFifoToFifo(i).write              <= fifoWrEn when fifoWrSel = (i+4) else '0';
+            descPtrWrite            => memPtrWrite(i),
+            freePtrWrite            => donePtrWrite(i),
+            readDmaId               => readDmaId(i),
+            readDmaCache            => readDmaCache,
 
-   end generate;
 
-   -----------------------------------------
-   -- Egress Free List FIFOs, 15 - 16
-   -----------------------------------------
-   U_GenFlist: for i in 15 to 16 generate
+      -- Free list writes
+      memPtrWrite(i).data(71 downto 36) <= (others=>'0');
+      memPtrWrite(i).data(35 downto  0) <= fifoDin;
+      memPtrWrite(i).write              <= fifoWrEn when fifoWrSel = i else '0';
+
+
+
+
+
+
+
+
+
+
 
       -- Egress free list FIFOs
       U_DescFifo: entity work.ArmRceG3IbDescFifo
@@ -421,8 +504,8 @@ begin
             axiClkRst               => axiClkRst,
             axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
             axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArmFifo(4+i),
-            fifoReq                 => fifoReq(4+i),
-            fifoGnt                 => fifoGnt(4+i),
+            fifoReq                 => fifoWriteReq(4+i),
+            fifoGnt                 => fifoWriteGnt(4+i),
             memDirty                => dirtyFlag,
             memDirtySet             => dirtyFlagFifoSet(i),
             writeDmaBusyOut         => writeDmaBusyOut(i),
@@ -449,11 +532,47 @@ begin
 
    end generate;
 
+   -----------------------------------------
+   -- Read Arbitration 
+   -----------------------------------------
+   U_ReadArbiter : entity work.Arbiter 
+      generic map (
+         TPD_G      => 1 ns,
+         USE_SRST_G => true,
+         USE_ARST_G => false,
+         REQ_SIZE_G => 4
+      ) port map (
+         clk      => axiClk,
+         aRst     => '0',
+         sRst     => axiClkRst,
+         req      => fifoReadReq,
+         selected => arbReadSelect,
+         valid    => arbReadValid,
+         ack      => fifoReadGnt
+      );
+
+   -- Mux ACP bus mastership
+   axiAcpSlaveReadToArm <= axiAcpSlaveReadToArmFifo(conv_integer(arbReadSelect));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
    ---------------------------
    -- Debug
    ---------------------------
-   debug(127)            <= arbValid;
-   debug(126 downto 122) <= arbSelect;
+   debug(127)            <= arbWriteValid;
+   debug(126 downto 122) <= arbWriteSelect;
    debug(121 downto   0) <= fifoDebug(conv_integer(dbgSelect))(121 downto 0);
 
 end architecture structure;

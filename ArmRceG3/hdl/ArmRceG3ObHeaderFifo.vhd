@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title         : ARM Based RCE Generation 3, Outbound Header FIFOs
--- File          : ArmRceG3IbHeaderFifo.vhd
+-- File          : ArmRceG3ObHeaderFifo.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 07/09/2013
 -------------------------------------------------------------------------------
@@ -22,7 +22,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 
-entity ArmRceG3IbHeaderFifo is
+entity ArmRceG3ObHeaderFifo is
    port (
 
       -- Clock & reset
@@ -37,7 +37,7 @@ entity ArmRceG3IbHeaderFifo is
       fifoReq                 : out std_logic;
       fifoGnt                 : in  std_logic;
 
-      -- Descriptor write
+      -- Transmit Descriptor write
       descPtrWrite            : in  WriteFifoToFifoType;
 
       -- Free list FIFO (finished descriptors)
@@ -50,16 +50,16 @@ entity ArmRceG3IbHeaderFifo is
       readDmaCache            : in  std_logic_vector(3 downto 0);
 
       -- FIFO Interface
-      writeFifoClk            : in  std_logic;
-      writeFifoToFifo         : in  WriteFifoToFifoType;
-      writeFifoFromFifo       : out WriteFifoFromFifoType;
+      readFifoClk             : in  std_logic;
+      readFifoToFifo          : in  ReadFifoToFifoType;
+      readFifoFromFifo        : out ReadFifoFromFifoType;
 
       -- Debug
       debug                   : out std_logic_vector(127 downto 0)
    );
-end ArmRceG3IbHeaderFifo;
+end ArmRceG3ObHeaderFifo;
 
-architecture structure of ArmRceG3IbHeaderFifo is
+architecture structure of ArmRceG3ObHeaderFifo is
 
    COMPONENT ArmAFifo72x512
       PORT (
@@ -93,132 +93,65 @@ architecture structure of ArmRceG3IbHeaderFifo is
    END COMPONENT;
 
    -- Local signals
-   signal memPtrRdData             : std_logic_vector(35 downto 0);
-   signal memPtrValid              : std_logic;
-   signal iAxiAcpSlaveWriteToArm   : AxiWriteMasterType;
-   signal iWriteFifoFromFifo       : WriteFifoFromFifoType;
+   signal descPtrRdData            : std_logic_vector(35 downto 0);
+   signal descPtrValid             : std_logic;
+   signal iAxiAcpSlaveReadToArm    : AxiReadMasterType;
+   signal iReadFifoFromFifo        : ReadFifoFromFifoType;
    signal iFifoReq                 : std_logic;
    signal burstDone                : std_logic;
    signal fifoCount                : std_logic_vector(9 downto 0);
-   signal fifoValid                : std_logic_vector(4 downto 0);
-   signal fifoShift                : std_logic_vector(4 downto 0);
-   signal pipeShift                : std_logic;
-   signal fifoRd                   : std_logic;
-   signal fifoRdFirst              : std_logic;
-   signal fifoDout                 : Word72Array(4 downto 0);
-   signal fifoReady                : std_logic;
-   signal curInFrame               : std_logic;
-   signal nxtInFrame               : std_logic;
-   signal writeAddr                : std_logic_vector(31 downto 0);
-   signal wvalid                   : std_logic;
-   signal wlast                    : std_logic;
-   signal awvalid                  : std_logic;
-   signal curDone                  : std_logic;
-   signal nxtDone                  : std_logic;
-   signal ackCount                 : std_logic_vector(15 downto 0);
-   signal writeCount               : std_logic_vector(15 downto 0);
-   signal writeCountEn             : std_logic;
+   signal fifoFull                 : std_logic;
+   signal fifoWrEn                 : std_logic;
+   signal fifoDin                  : std_logic_vector(71 downto 0);
+   --signal curInFrame               : std_logic;
+   --signal nxtInFrame               : std_logic;
+   signal readAddr                 : std_logic_vector(31 downto 0);
+   --signal wvalid                   : std_logic;
+   --signal wlast                    : std_logic;
+   --signal awvalid                  : std_logic;
+   --signal curDone                  : std_logic;
+   --signal nxtDone                  : std_logic;
+   --signal ackCount                 : std_logic_vector(15 downto 0);
+   --signal writeCount               : std_logic_vector(15 downto 0);
+   --signal writeCountEn             : std_logic;
 
    -- States
-   signal   curState   : std_logic_vector(2 downto 0);
-   signal   nxtState   : std_logic_vector(2 downto 0);
-   constant ST_IDLE    : std_logic_vector(2 downto 0) := "000";
-   constant ST_WRITE0  : std_logic_vector(2 downto 0) := "001";
-   constant ST_WRITE1  : std_logic_vector(2 downto 0) := "010";
-   constant ST_WRITE2  : std_logic_vector(2 downto 0) := "011";
-   constant ST_WRITE3  : std_logic_vector(2 downto 0) := "100";
-   constant ST_CHECK   : std_logic_vector(2 downto 0) := "101";
-   constant ST_WAIT    : std_logic_vector(2 downto 0) := "110";
+   --signal   curState   : std_logic_vector(2 downto 0);
+   --signal   nxtState   : std_logic_vector(2 downto 0);
+   --constant ST_IDLE    : std_logic_vector(2 downto 0) := "000";
+   --constant ST_WRITE0  : std_logic_vector(2 downto 0) := "001";
+   --constant ST_WRITE1  : std_logic_vector(2 downto 0) := "010";
+   --constant ST_WRITE2  : std_logic_vector(2 downto 0) := "011";
+   --constant ST_WRITE3  : std_logic_vector(2 downto 0) := "100";
+   --constant ST_CHECK   : std_logic_vector(2 downto 0) := "101";
+   --constant ST_WAIT    : std_logic_vector(2 downto 0) := "110";
 
 begin
 
    -- Outputs
-   axiAcpSlaveWriteToArm <= iAxiAcpSlaveWriteToArm;
-   fifoReq               <= iFifoReq;
-   writeFifoFromFifo     <= iWriteFifoFromFifo;
+   axiAcpSlaveReadToArm <= iAxiAcpSlaveReadToArm;
+   fifoReq              <= iFifoReq;
+   readFifoFromFifo     <= iReadFifoFromFifo;
 
    -----------------------------------------
-   -- Free list FIFO
+   -- Transmit descriptor FIFO
    -----------------------------------------
+
    U_PtrFifo: ArmFifo36x512
       port map (
          srst          => axiClkRst,
          clk           => axiClk,
-         din           => memPtrWrite.data(35 downto 0),
-         wr_en         => memPtrWrite.write,
+         din           => descPtrWrite.data(35 downto 0),
+         wr_en         => descPtrWrite.write,
          rd_en         => burstDone,
-         dout          => memPtrRdData,
+         dout          => descPtrRdData,
          full          => open,
          empty         => open,
-         valid         => memPtrValid,
+         valid         => descPtrValid,
          wr_data_count => open
       );
 
 
-   -----------------------------------------
-   -- Header FIFO
-   -----------------------------------------
-
-   U_Fifo: ArmAFifo72x512
-      port map (
-         rst           => axiClkRst,
-         wr_clk        => writeFifoClk,
-         rd_clk        => axiClk,
-         din           => writeFifoToFifo.data,
-         wr_en         => writeFifoToFifo.write,
-         rd_en         => fifoShift(4),
-         dout          => fifoDout(4),
-         full          => iWriteFifoFromFifo.full,
-         empty         => open,
-         valid         => fifoValid(4),
-         wr_data_count => fifoCount
-      );
-
-   -- FIFO almost full
-   process ( writeFifoClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         iWriteFifoFromFifo.almostFull <= '1' after TPD_G;
-      elsif rising_edge(writeFifoClk) then
-         if fifoCount > 500 or iWriteFifoFromFifo.full = '1' then
-            iWriteFifoFromFifo.almostFull <= '1' after TPD_G;
-         else
-            iWriteFifoFromFifo.almostFull <= '0' after TPD_G;
-         end if;
-      end if;
-   end process;
-
-   -- Output pipeline, 4 extra registers after FIFO.
-   -- Allows a cache line to be pulled from the FIFO and examined
-   -- before the write access is started
-   U_FifoPipeGen : for i in 0 to 3 generate
-      process ( axiClk, axiClkRst ) begin
-         if axiClkRst = '1' then
-            fifoValid(i) <= '0' after TPD_G;
-         elsif rising_edge(axiClk) then
-            if fifoShift(i) = '1' then
-               fifoValid(i) <= fifoValid(i+1) after TPD_G;
-               fifoDout(i)  <= fifoDout(i+1)  after TPD_G;
-            end if;
-         end if;
-      end process;
-
-   end generate;
-
-   -- Pipeline shift control
-   fifoShift(4) <= fifoShift(3);
-   fifoShift(3) <= fifoShift(2) or (fifoValid(4) and (not fifoValid(3)));
-   fifoShift(2) <= fifoShift(1) or (fifoValid(3) and (not fifoValid(2)));
-   fifoShift(1) <= fifoShift(0) or (fifoValid(2) and (not fifoValid(1)));
-   fifoShift(0) <= pipeShift    or (fifoValid(1) and (not fifoValid(0)));
- 
-   -- Top level shift control. Don't shift if first flag is set and not the first read.
-   pipeShift <= fifoRd and fifoValid(0) and (fifoRdFirst or (not fifoDout(0)(70)));
-
-   -- FIFO is ready for read. Ready when 4 entries are valid or the last flag is set in one of the entries.
-   fifoReady <= (fifoEnable and memPtrValid) when fifoValid(3 downto 0) = "1111" or
-                                                  (fifoValid(2 downto 0) = "111" and fifoDout(2)(71) = '1') or
-                                                  (fifoValid(1 downto 0) = "11"  and fifoDout(1)(71) = '1') or
-                                                  (fifoValid(0)          = '1'   and fifoDout(0)(71) = '1') else '0';
 
    -----------------------------------------
    -- State machine
@@ -436,6 +369,39 @@ begin
          when others =>
             nxtState <= ST_IDLE;
       end case;
+   end process;
+
+
+   -----------------------------------------
+   -- Header FIFO
+   -----------------------------------------
+
+   U_Fifo: ArmAFifo72x512
+      port map (
+         rst           => axiClkRst,
+         wr_clk        => axiClk,
+         rd_clk        => readFifoClk,
+         din           => fifoDin,
+         wr_en         => fifoWrEn,
+         rd_en         => readFifoToFifo.read,
+         dout          => readFifoFromFifo.data,
+         full          => fifoFull,
+         empty         => open,
+         valid         => readFifoFromFifo.valid,
+         wr_data_count => fifoCount
+      );
+
+   -- FIFO almost full
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
+         fifoAFull <= '1' after TPD_G;
+      elsif rising_edge(axiClk) then
+         if fifoCount > 500 or fifoFull = '1' then
+            fifoAFull <= '1' after TPD_G;
+         else
+            fifoAFull <= '0' after TPD_G;
+         end if;
+      end if;
    end process;
 
    ---------------------------
