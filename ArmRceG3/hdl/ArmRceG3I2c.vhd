@@ -51,7 +51,11 @@ entity ArmRceG3I2c is
       -- Local bus interface
       localBusMaster : in  LocalBusMasterType;
       localBusSlave  : out LocalBusSlaveType;
-      interrupt      : out std_logic;
+
+      -- FIFO Interface
+      writeFifoClk            : out std_logic;
+      writeFifoToFifo         : out WriteFifoToFifoType;
+      writeFifoFromFifo       : in  WriteFifoFromFifoType;
 
       -- IIC Interface
       i2cSda         : inout std_logic;
@@ -65,6 +69,7 @@ architecture IMP of ArmRceG3I2c is
    signal i2cBramWr   : std_logic;
    signal i2cBramAddr : std_logic_vector(15 downto 0);
    signal i2cBramDout : std_logic_vector( 7 downto 0);
+   signal locBramDout : std_logic_vector( 7 downto 0);
    signal i2cBramDin  : std_logic_vector( 7 downto 0);
    signal cpuBramWr   : std_logic;
    signal cpuBramAddr : std_logic_vector(8  downto 0);
@@ -225,7 +230,7 @@ begin
          ENB   => '1',
          SSRB  => '0',
          WEB   => cpuBramWr,
-         DOA   => i2cBramDout,
+         DOA   => locBramDout,
          DOPA  => open,
          ADDRA => sysR.addr(10 downto 0),
          CLKA  => axiClk,
@@ -233,8 +238,42 @@ begin
          DIPA  => "0",
          ENA   => '1',
          SSRA  => '0',
-         WEA   => sysR.wrEn 
+         WEA   => sysR.wrEn
       );
+
+      -- Mux high order address, output almost full state at address 2048
+      i2cBramDout <= "0000000" & writeFifoFromFifo.almostFull when sysR.addr = x"0800" else locBramDout;
+
+   -------------------------
+   -- Connect to CPU FIFO
+   -------------------------
+   writeFifoClk <= axiClk;
+
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
+         writeFifoToFifo <= WriteFifoToFifoInit after TPD_G;
+      elsif rising_edge(axiClk) then
+
+         if i2cBramWr = '1' then
+            if i2cBramAddr(1 downto 0) = 0 then
+               writeFifoToFifo.data(7  downto  0) <= i2cBramDin after TPD_G;
+               writeFifoToFifo.write              <= '0'        after TPD_G;
+            elsif i2cBramAddr(1 downto 0) = 1 then
+               writeFifoToFifo.data(15 downto 8)  <= i2cBramDin after TPD_G;
+               writeFifoToFifo.write              <= '0'        after TPD_G;
+            elsif i2cBramAddr(1 downto 0) = 2 then
+               writeFifoToFifo.data(23 downto 16) <= i2cBramDin after TPD_G;
+               writeFifoToFifo.write              <= '0'        after TPD_G;
+            elsif i2cBramAddr(1 downto 0) = 3 then
+               writeFifoToFifo.data(47 downto 32) <= i2cBramAddr after TPD_G;
+               writeFifoToFifo.data(31 downto 24) <= i2cBramDin  after TPD_G;
+               writeFifoToFifo.write              <= '1'         after TPD_G;
+            end if;
+         else
+            writeFifoToFifo.write <= '0' after TPD_G;
+         end if;
+      end if;
+   end process;
 
    -------------------------
    -- CPU Interface
@@ -243,7 +282,6 @@ begin
    cpuBramAddr            <= localBusMaster.addr(10 downto 2);
    cpuBramDin             <= localBusMaster.writeData;
    localBusSlave.readData <= cpuBramDout;
-   interrupt              <= sysR.interrupt(0);
 
    -- One clock delay for read data valid
    process ( axiClk, axiClkRst ) begin

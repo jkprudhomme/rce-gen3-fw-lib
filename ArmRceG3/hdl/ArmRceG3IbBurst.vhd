@@ -16,7 +16,11 @@
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 04/02/2013: created.
+-- 06/14/2013: Modified to use free list and completion list. No longer set dirty
+--             flag or asserts interrupt.
 -------------------------------------------------------------------------------
+-- Lower 18 bits of address is offset
+-- Uper 14 bits from config register
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
@@ -42,15 +46,16 @@ entity ArmRceG3IbBurst is
       fifoReq                 : out std_logic;
       fifoGnt                 : in  std_logic;
 
-      -- Memory Dirty Flags
-      memDirty                : in  std_logic_vector(14 downto 0);
-      memDirtySet             : out std_logic_vector(14 downto 0);
+      -- Memory pointer free list
+      memPtrWrite             : in  WriteFifoToFifoType;
+
+      -- Done FIFO
+      donePtrWrite            : out WriteFifoToFifoType;
 
       -- Configuration
-      fifoId                  : in  std_logic_vector(3 downto 0);
+      dmaBaseAddress          : in  std_logic_vector(31 downto 18);
       fifoEnable              : in  std_logic;
-      memToggleEn             : in  std_logic;
-      memConfig               : in  Word32Array(1 downto 0);
+      writeDmaId              : in  std_logic_vector(2 downto 0);
       writeDmaCache           : in  std_logic_vector(3 downto 0);
 
       -- FIFO Interface
@@ -81,17 +86,28 @@ architecture structure of ArmRceG3IbBurst is
       );
    END COMPONENT;
 
+   COMPONENT ArmFifo36x512
+      PORT (
+         srst          : IN  STD_LOGIC;
+         clk           : IN  STD_LOGIC;
+         din           : IN  STD_LOGIC_VECTOR(35 DOWNTO 0);
+         wr_en         : IN  STD_LOGIC;
+         rd_en         : IN  STD_LOGIC;
+         dout          : OUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+         full          : OUT STD_LOGIC;
+         empty         : OUT STD_LOGIC;
+         valid         : OUT STD_LOGIC;
+         data_count    : OUT STD_LOGIC_VECTOR(9 downto 0)
+      );
+   END COMPONENT;
+
    -- Local signals
+   signal memPtrRdData             : std_logic_vector(35 downto 0);
+   signal memPtrValid              : std_logic;
    signal iAxiAcpSlaveWriteToArm   : AxiWriteMasterType;
    signal iWriteFifoFromFifo       : WriteFifoFromFifoType;
-   signal iMemDirtySet             : std_logic_vector(14 downto 0);
    signal iFifoReq                 : std_logic;
-   signal memSelect                : std_logic;
    signal burstDone                : std_logic;
-   signal memAddress               : std_logic_vector(31 downto 0);
-   signal memIndex                 : std_logic_vector(3  downto 0);
-   signal memValid                 : std_logic;
-   signal memReady                 : std_logic;
    signal fifoCount                : std_logic_vector(9 downto 0);
    signal fifoValid                : std_logic_vector(4 downto 0);
    signal fifoShift                : std_logic_vector(4 downto 0);
@@ -129,52 +145,27 @@ begin
    axiAcpSlaveWriteToArm <= iAxiAcpSlaveWriteToArm;
    fifoReq               <= iFifoReq;
    writeFifoFromFifo     <= iWriteFifoFromFifo;
-   memDirtySet           <= iMemDirtySet;
 
    -----------------------------------------
-   -- Memory Toggle tracking
+   -- Free list FIFO
    -----------------------------------------
-   
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         memSelect  <= '0'           after TPD_G;
-         memValid   <= '0'           after TPD_G;
-         memAddress <= (others=>'0') after TPD_G;
-         memIndex   <= (others=>'0') after TPD_G;
-         memValid   <= '0'           after TPD_G;
-         memReady   <= '1'           after TPD_G;
-      elsif rising_edge(axiClk) then
+   U_PtrFifo: ArmFifo36x512
+      port map (
+         srst          => axiClkRst,
+         clk           => axiClk,
+         din           => memPtrWrite.data(35 downto 0),
+         wr_en         => memPtrWrite.write,
+         rd_en         => burstDone,
+         dout          => memPtrRdData,
+         full          => open,
+         empty         => open,
+         valid         => memPtrValid,
+         data_count    => open
+      );
 
-         -- Toggle memory, clear valid and ready flags, force to mem 0 if toggle not enabled
-         if burstDone = '1' then
-            memValid  <= '0' after TPD_G;
-            memReady  <= '0' after TPD_G;
-
-            memSelect <= memToggleEn and (not memSelect) after TPD_G;
-
-         else
-
-            -- One clock delay for address and index to be valid
-            memValid <= fifoEnable after TPD_G;
-
-            -- Select memory and index location
-            if memSelect = '0' then
-               memAddress <= memConfig(0)(31 downto 4) & "0000" after TPD_G;
-               memIndex   <= memConfig(0)(3  downto 0)          after TPD_G;
-            else
-               memAddress <= memConfig(1)(31 downto 4) & "0000" after TPD_G;
-               memIndex   <= memConfig(1)(3  downto 0)          after TPD_G;
-            end if;
-
-            -- Memory ready is 2 clocks delayed
-            memReady <= memValid and (not memDirty(conv_integer(memIndex))) after TPD_G;
-
-         end if;
-      end if;
-   end process;
 
    -----------------------------------------
-   -- FIFO
+   -- Header FIFO
    -----------------------------------------
 
    U_Fifo: ArmAFifo72x512
@@ -233,10 +224,10 @@ begin
    pipeShift <= fifoRd and fifoValid(0) and (fifoRdFirst or (not fifoDout(0)(70)));
 
    -- FIFO is ready for read. Ready when 4 entries are valid or the last flag is set in one of the entries.
-   fifoReady <= memReady when fifoValid(3 downto 0) = "1111" or
-                              (fifoValid(2 downto 0) = "111" and fifoDout(2)(71) = '1') or
-                              (fifoValid(1 downto 0) = "11"  and fifoDout(1)(71) = '1') or
-                              (fifoValid(0)          = '1'   and fifoDout(0)(71) = '1') else '0';
+   fifoReady <= (fifoEnable and memPtrValid) when fifoValid(3 downto 0) = "1111" or
+                                                  (fifoValid(2 downto 0) = "111" and fifoDout(2)(71) = '1') or
+                                                  (fifoValid(1 downto 0) = "11"  and fifoDout(1)(71) = '1') or
+                                                  (fifoValid(0)          = '1'   and fifoDout(0)(71) = '1') else '0';
 
    -----------------------------------------
    -- State machine
@@ -244,14 +235,14 @@ begin
 
    -- AXI write channel outputs
    iAxiAcpSlaveWriteToArm.awaddr         <= writeAddr;
-   iAxiAcpSlaveWriteToArm.awid           <= x"00" & fifoId;
+   iAxiAcpSlaveWriteToArm.awid           <= x"00" & '0' & writeDmaId;
    iAxiAcpSlaveWriteToArm.awlen          <= "0011";
    iAxiAcpSlaveWriteToArm.awsize         <= "011";
    iAxiAcpSlaveWriteToArm.awburst        <= "10";
    iAxiAcpSlaveWriteToArm.awcache        <= writeDmaCache;
    iAxiAcpSlaveWriteToArm.awuser         <= "00001";
    iAxiAcpSlaveWriteToArm.wdata          <= fifoDout(0)(63 downto 0);
-   iAxiAcpSlaveWriteToArm.wid            <= x"00" & fifoId;
+   iAxiAcpSlaveWriteToArm.wid            <= x"00" & '0' & writeDmaId;
    iAxiAcpSlaveWriteToArm.wstrb          <= "11111111";
    iAxiAcpSlaveWriteToArm.bready         <= '1';
    iAxiAcpSlaveWriteToArm.awlock         <= "00";
@@ -262,7 +253,6 @@ begin
    -- Sync states
    process ( axiClk, axiClkRst ) begin
       if axiClkRst = '1' then
-         iMemDirtySet                   <= (others=>'0') after TPD_G;
          curInFrame                     <= '0'           after TPD_G;
          curState                       <= ST_IDLE       after TPD_G;
          curDone                        <= '0'           after TPD_G;
@@ -272,23 +262,21 @@ begin
          writeAddr                      <= (others=>'0') after TPD_G;
          writeCount                     <= (others=>'0') after TPD_G;
          ackCount                       <= (others=>'0') after TPD_G;
+         donePtrWrite.write             <= '0'           after TPD_G;
+         donePtrWrite.data              <= (others=>'0') after TPD_G;
       elsif rising_edge(axiClk) then
-         curInFrame                     <= nxtInFrame after TPD_G;
-         curState                       <= nxtState   after TPD_G;
-         curDone                        <= nxtDone    after TPD_G;
-         iAxiAcpSlaveWriteToArm.wvalid  <= wvalid     after TPD_G;
-         iAxiAcpSlaveWriteToArm.wlast   <= wlast      after TPD_G;
-         iAxiAcpSlaveWriteToArm.awvalid <= awvalid    after TPD_G;
-
-         -- Dirt flage set
-         iMemDirtySet <= (others=>'0') after TPD_G;
-         if burstDone = '1' then
-            iMemDirtySet(conv_integer(memIndex)) <= '1' after TPD_G;
-         end if;
+         curInFrame                     <= nxtInFrame   after TPD_G;
+         curState                       <= nxtState     after TPD_G;
+         curDone                        <= nxtDone      after TPD_G;
+         iAxiAcpSlaveWriteToArm.wvalid  <= wvalid       after TPD_G;
+         iAxiAcpSlaveWriteToArm.wlast   <= wlast        after TPD_G;
+         iAxiAcpSlaveWriteToArm.awvalid <= awvalid      after TPD_G;
+         donePtrWrite.write             <= burstDone    after TPD_G;
+         donePtrWrite.data(35 downto 0) <= memPtrRdData after TPD_G;
 
          -- Write address tracking
          if curInFrame = '0' then
-            writeAddr <= memAddress    after TPD_G;
+            writeAddr <=  dmaBaseAddress(31 downto 18) & memPtrRdData(17 downto 0) after TPD_G;
          elsif writeCountEn = '1' then
             writeAddr <= writeAddr + 32 after TPD_G;
          end if;
@@ -303,7 +291,7 @@ begin
          -- Ack counter
          if curInFrame = '0' then
             ackCount <= (others=>'0') after TPD_G;
-         elsif axiAcpSlaveWriteFromArm.bvalid = '1' and axiAcpSlaveWriteFromArm.bid = fifoId then
+         elsif axiAcpSlaveWriteFromArm.bvalid = '1' and axiAcpSlaveWriteFromArm.bid(2 downto 0) = writeDmaId then
             ackCount <= ackCount + 1 after TPD_G;
          end if;
 
@@ -467,11 +455,10 @@ begin
    debug(120 downto 117) <= axiacpslavewritefromarm.bid(3 downto 0);
    debug(116 downto  85) <= writeAddr;
    debug(84)             <= iFifoReq;
-   debug(83)             <= memSelect;
+   debug(83)             <= memPtrValid;
    debug(82)             <= burstDone;
-   debug(81  downto  78) <= memIndex;
-   debug(77)             <= memValid;
-   debug(76)             <= memReady;
+   debug(81  downto  77) <= (others=>'0');
+   debug(76)             <= pipeShift;
    debug(75  downto  71) <= fifoValid;
    debug(70  downto  66) <= fifoShift;
    debug(65)             <= fifoRd;
@@ -489,12 +476,7 @@ begin
    debug(39)             <= axiAcpSlaveWriteFromArm.wready;
    debug(38)             <= axiacpslavewritefromarm.bvalid;
    debug(37)             <= fifoGnt;
-   debug(36)             <= '0';
-   debug(35  downto  21) <= memDirty;
-   debug(20)             <= writeFifoToFifo.write;
-   debug(19  downto   5) <= iMemDirtySet;
-   debug(4)              <= fifoEnable;
-   debug(3)              <= memToggleEn;
+   debug(36  downto   3) <= (others=>'0');
    debug(2   downto   0) <= curState;
 
 end architecture structure;

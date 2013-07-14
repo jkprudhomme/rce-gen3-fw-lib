@@ -25,6 +25,9 @@ use work.ArmRceG3Pkg.all;
 use work.Version.all;
 
 entity ArmRceG3Top is
+   generic (
+      DebugEn : Boolean := false
+   );
    port (
 
       -- LEDs
@@ -112,6 +115,9 @@ architecture structure of ArmRceG3Top is
    signal isysClk125Rst            : std_logic;
    signal isysClk200               : std_logic;
    signal isysClk200Rst            : std_logic;
+   signal writeFifoClk             : std_logic_vector(16 downto 0);
+   signal writeFifoToFifo          : WriteFifoToFifoVector(16 downto 0);
+   signal writeFifoFromFifo        : WriteFifoFromFifoVector(16 downto 0);
 
 begin
 
@@ -273,14 +279,16 @@ begin
    -- 0x8400_0000 - 0x87FF_FFFF
    U_ArmRceG3I2c : entity work.ArmRceG3I2c
       port map (
-         ponRst         => axiGpMasterReset(1),
-         axiClk         => iaxiClk,
-         axiClkRst      => iaxiClkRst,
-         localBusMaster => intLocalBusMaster(1),
-         localBusSlave  => intLocalBusSlave(1),
-         interrupt      => open,
-         i2cSda         => i2cSda,
-         i2cScl         => i2cScl
+         ponRst            => axiGpMasterReset(1),
+         axiClk            => iaxiClk,
+         axiClkRst         => iaxiClkRst,
+         localBusMaster    => intLocalBusMaster(1),
+         localBusSlave     => intLocalBusSlave(1),
+         writefifoclk      => writefifoclk(4),
+         writefifotofifo   => writefifotofifo(4),
+         writefifofromfifo => writefifofromfifo(4),
+         i2cSda            => i2cSda,
+         i2cScl            => i2cScl
       );
 
    --------------------------------------------
@@ -297,17 +305,23 @@ begin
          interrupt               => armInt(14 downto 0),
          localBusMaster          => intLocalBusMaster(2),
          localBusSlave           => intLocalBusSlave(2),
-         writeFifoClk            => (others=>'0'),
-         writeFifoToFifo         => (others=>WriteFifoToFifoInit),
-         writeFifoFromFifo       => open,
+         writefifoclk            => writefifoclk,
+         writefifotofifo         => writefifotofifo,
+         writefifofromfifo       => writefifofromfifo,
          debug                   => fifoDebug
       );
+
+      -- Unused FIFOs
+      writeFifoClk(3  downto  0)   <= (others=>'0');
+      writeFifoClk(16 downto  5)   <= (others=>'0');
+      writeFifoToFifo(3  downto 0) <= (others=>WriteFifoToFifoInit);
+      writeFifoToFifo(16 downto 5) <= (others=>WriteFifoToFifoInit);
 
    --------------------------------------------
    -- Debug
    --------------------------------------------
 
-   U_Debug : if true generate
+   U_Debug : if DebugEn = true generate
 
       U_icon: zynq_icon
          port map ( 

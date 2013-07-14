@@ -14,6 +14,7 @@
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 04/02/2013: created.
+-- 06/14/2013: 
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
@@ -26,6 +27,9 @@ use unisim.vcomponents.all;
 use work.ArmRceG3Pkg.all;
 
 entity ArmRceG3IbSingle is
+   generic (
+      UseAsyncFifo : Boolean := true
+   ); 
    port (
 
       -- Clock & reset
@@ -41,15 +45,20 @@ entity ArmRceG3IbSingle is
       fifoGnt                 : in  std_logic;
 
       -- Memory Dirty Flags
-      memDirty                : in  std_logic_vector(14 downto 0);
-      memDirtySet             : out std_logic_vector(14 downto 0);
+      memDirty                : in  std_logic_vector(16 downto 0);
+      memDirtySet             : out std_logic_vector(16 downto 0);
+
+      -- DMA ID Busy Bus
+      writeDmaBusyOut         : out std_logic_vector(7 downto 0);
+      writeDmaBusyIn          : in  std_logic_vector(7 downto 0);
 
       -- Configuration
-      fifoId                  : in  std_logic_vector(3 downto 0);
       fifoEnable              : in  std_logic;
-      memToggleEn             : in  std_logic;
-      memConfig               : in  Word32Array(1 downto 0);
+      writeDmaId              : in  std_logic_vector(2 downto 0);
       writeDmaCache           : in  std_logic_vector(3 downto 0);
+      memToggleEn             : in  std_logic;
+      memConfig               : in  Word5Array(1 downto 0);
+      memBaseAddress          : in  std_logic_vector(31 downto 8);
 
       -- FIFO Interface
       writeFifoClk            : in  std_logic;
@@ -63,15 +72,15 @@ end ArmRceG3IbSingle;
 
 architecture structure of ArmRceG3IbSingle is
 
-   COMPONENT ArmAFifo36x512
+   COMPONENT ArmAFifo72x512
       PORT (
          rst           : IN  STD_LOGIC;
          wr_clk        : IN  STD_LOGIC;
          rd_clk        : IN  STD_LOGIC;
-         din           : IN  STD_LOGIC_VECTOR(35 DOWNTO 0);
+         din           : IN  STD_LOGIC_VECTOR(71 DOWNTO 0);
          wr_en         : IN  STD_LOGIC;
          rd_en         : IN  STD_LOGIC;
-         dout          : OUT STD_LOGIC_VECTOR(35 DOWNTO 0);
+         dout          : OUT STD_LOGIC_VECTOR(71 DOWNTO 0);
          full          : OUT STD_LOGIC;
          empty         : OUT STD_LOGIC;
          valid         : OUT STD_LOGIC;
@@ -79,15 +88,30 @@ architecture structure of ArmRceG3IbSingle is
       );
    END COMPONENT;
 
+   COMPONENT ArmFifo72x512
+      PORT (
+         srst          : IN  STD_LOGIC;
+         clk           : IN  STD_LOGIC;
+         din           : IN  STD_LOGIC_VECTOR(71 DOWNTO 0);
+         wr_en         : IN  STD_LOGIC;
+         rd_en         : IN  STD_LOGIC;
+         dout          : OUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+         full          : OUT STD_LOGIC;
+         empty         : OUT STD_LOGIC;
+         valid         : OUT STD_LOGIC;
+         data_count    : OUT STD_LOGIC_VECTOR(9 downto 0)
+      );
+   END COMPONENT;
+
    -- Local signals
    signal iAxiAcpSlaveWriteToArm   : AxiWriteMasterType;
    signal iWriteFifoFromFifo       : WriteFifoFromFifoType;
-   signal iMemDirtySet             : std_logic_vector(14 downto 0);
+   signal iMemDirtySet             : std_logic_vector(16 downto 0);
    signal iFifoReq                 : std_logic;
    signal memSelect                : std_logic;
    signal burstDone                : std_logic;
    signal memAddress               : std_logic_vector(31 downto 0);
-   signal memIndex                 : std_logic_vector(3  downto 0);
+   signal memIndex                 : std_logic_vector(4  downto 0);
    signal memValid                 : std_logic;
    signal memReady                 : std_logic;
    signal fifoCount                : std_logic_vector(9 downto 0);
@@ -96,12 +120,14 @@ architecture structure of ArmRceG3IbSingle is
    signal pipeShift                : std_logic;
    signal fifoRd                   : std_logic;
    signal fifoRdFirst              : std_logic;
-   signal fifoDout                 : Word36Array(1 downto 0);
+   signal fifoDout                 : Word72Array(1 downto 0);
    signal fifoReady                : std_logic;
    signal wvalid                   : std_logic;
    signal awvalid                  : std_logic;
    signal curDone                  : std_logic;
    signal nxtDone                  : std_logic;
+   signal iwriteDmaBusyOut         : std_logic_vector(7 downto 0);
+   signal nwriteDmaBusyOut         : std_logic_vector(7 downto 0);
 
    -- States
    signal   curState   : std_logic_vector(1 downto 0);
@@ -117,6 +143,7 @@ begin
    fifoReq               <= iFifoReq;
    writeFifoFromFifo     <= iWriteFifoFromFifo;
    memDirtySet           <= iMemDirtySet;
+   writeDmaBusyOut       <= iwriteDmaBusyOut;
 
    -----------------------------------------
    -- Memory Toggle tracking
@@ -146,11 +173,11 @@ begin
 
             -- Select memory and index location
             if memSelect = '0' then
-               memAddress <= memConfig(0)(31 downto 4) & "0000" after TPD_G;
-               memIndex   <= memConfig(0)(3  downto 0)          after TPD_G;
+               memAddress <= memBaseAddress & memConfig(0) & "000" after TPD_G;
+               memIndex   <= memConfig(0)                          after TPD_G;
             else
-               memAddress <= memConfig(1)(31 downto 4) & "0000" after TPD_G;
-               memIndex   <= memConfig(1)(3  downto 0)          after TPD_G;
+               memAddress <= memBaseAddress & memConfig(1) & "000" after TPD_G;
+               memIndex   <= memConfig(0)                          after TPD_G;
             end if;
 
             -- Memory ready is 2 clocks delayed
@@ -163,28 +190,49 @@ begin
    -----------------------------------------
    -- FIFO
    -----------------------------------------
+   U_AsyncFifoGen: if UseAsyncFifo = true generate
 
-   U_Fifo: ArmAFifo36x512
-      port map (
-         rst           => axiClkRst,
-         wr_clk        => writeFifoClk,
-         rd_clk        => axiClk,
-         din           => writeFifoToFifo.data(35 downto 0),
-         wr_en         => writeFifoToFifo.write,
-         rd_en         => fifoShift(1),
-         dout          => fifoDout(1),
-         full          => iWriteFifoFromFifo.full,
-         empty         => open,
-         valid         => fifoValid(1),
-         wr_data_count => fifoCount
-      );
+      U_AsyncFifo: ArmAFifo72x512
+         port map (
+            rst           => axiClkRst,
+            wr_clk        => writeFifoClk,
+            rd_clk        => axiClk,
+            din           => writeFifoToFifo.data,
+            wr_en         => writeFifoToFifo.write,
+            rd_en         => fifoShift(1),
+            dout          => fifoDout(1),
+            full          => iWriteFifoFromFifo.full,
+            empty         => open,
+            valid         => fifoValid(1),
+            wr_data_count => fifoCount
+         );
+   end generate;
+
+   U_SyncFifoGen: if UseAsyncFifo = false generate
+
+      U_SyncFifo: ArmFifo72x512
+         port map (
+            srst          => axiClkRst,
+            clk           => axiClk,
+            din           => writeFifoToFifo.data,
+            wr_en         => writeFifoToFifo.write,
+            rd_en         => fifoShift(1),
+            dout          => fifoDout(1),
+            full          => iWriteFifoFromFifo.full,
+            empty         => open,
+            valid         => fifoValid(1),
+            data_count    => fifoCount
+         );
+
+   end generate;
+
 
    -- FIFO almost full
    process ( writeFifoClk, axiClkRst ) begin
       if axiClkRst = '1' then
          iWriteFifoFromFifo.almostFull <= '1' after TPD_G;
       elsif rising_edge(writeFifoClk) then
-         if fifoCount > 500 or iWriteFifoFromFifo.full = '1' then
+         if fifoCount > 479 or iWriteFifoFromFifo.full = '1' then
             iWriteFifoFromFifo.almostFull <= '1' after TPD_G;
          else
             iWriteFifoFromFifo.almostFull <= '0' after TPD_G;
@@ -211,8 +259,8 @@ begin
    -- Top level shift control.
    pipeShift <= fifoRd and fifoValid(0);
  
-   -- FIFO is ready for read.
-   fifoReady <= memReady and fifoValid(0);
+   -- FIFO is ready for read, write channel is not busy
+   fifoReady <= memReady and (not writeDmaBusyIn(conv_integer(writeDmaId))) and fifoValid(0);
 
    -----------------------------------------
    -- State machine
@@ -220,15 +268,15 @@ begin
 
    -- AXI write channel outputs
    iAxiAcpSlaveWriteToArm.awaddr         <= memAddress;
-   iAxiAcpSlaveWriteToArm.awid           <= x"00" & fifoId;
+   iAxiAcpSlaveWriteToArm.awid           <= x"00" & '0' & writeDmaId;
    iAxiAcpSlaveWriteToArm.awlen          <= "0000";
    iAxiAcpSlaveWriteToArm.awsize         <= "011";
    iAxiAcpSlaveWriteToArm.wlast          <= '1';
    iAxiAcpSlaveWriteToArm.awburst        <= "10";
    iAxiAcpSlaveWriteToArm.awcache        <= writeDmaCache;
    iAxiAcpSlaveWriteToArm.awuser         <= "00001";
-   iAxiAcpSlaveWriteToArm.wdata          <= x"0000000" & fifoDout(0);
-   iAxiAcpSlaveWriteToArm.wid            <= x"00" & fifoId;
+   iAxiAcpSlaveWriteToArm.wdata          <= "0" & fifoDout(0)(62 downto 0);
+   iAxiAcpSlaveWriteToArm.wid            <= x"00" & '0' & writeDmaId;
    iAxiAcpSlaveWriteToArm.wstrb          <= "11111111";
    iAxiAcpSlaveWriteToArm.bready         <= '1';
    iAxiAcpSlaveWriteToArm.awlock         <= "00";
@@ -243,10 +291,12 @@ begin
          curState                       <= ST_IDLE       after TPD_G;
          iAxiAcpSlaveWriteToArm.wvalid  <= '0'           after TPD_G;
          iAxiAcpSlaveWriteToArm.awvalid <= '0'           after TPD_G;
+         iwriteDmaBusyOut               <= (others=>'0') after TPD_G;
       elsif rising_edge(axiClk) then
-         curState                       <= nxtState after TPD_G;
-         iAxiAcpSlaveWriteToArm.wvalid  <= wvalid   after TPD_G;
-         iAxiAcpSlaveWriteToArm.awvalid <= awvalid  after TPD_G;
+         curState                       <= nxtState         after TPD_G;
+         iAxiAcpSlaveWriteToArm.wvalid  <= wvalid           after TPD_G;
+         iAxiAcpSlaveWriteToArm.awvalid <= awvalid          after TPD_G;
+         iwriteDmaBusyOut               <= nwriteDmaBusyOut after TPD_G;
 
          -- Dirt flage set
          iMemDirtySet <= (others=>'0') after TPD_G;
@@ -258,16 +308,17 @@ begin
    end process;
 
    -- ASync states
-   process ( curState, fifoReady, fifoGnt, fifoReady, fifoId,
+   process ( curState, fifoReady, fifoGnt, fifoReady, writeDmaId, nwriteDmaBusyOut,
              axiAcpSlaveWriteFromArm, iAxiAcpSlaveWriteToArm ) begin
 
       -- Init signals
-      nxtState      <= curState;
-      ififoReq      <= fifoReady;
-      fifoRd        <= '0';
-      burstDone     <= '0';
-      wvalid        <= '0';
-      awvalid       <= iAxiAcpSlaveWriteToArm.awvalid;
+      nxtState         <= curState;
+      ififoReq         <= fifoReady;
+      fifoRd           <= '0';
+      burstDone        <= '0';
+      wvalid           <= '0';
+      awvalid          <= iAxiAcpSlaveWriteToArm.awvalid;
+      nwriteDmaBusyOut <= (others=>'0');
 
       -- State machine
       case curState is 
@@ -284,8 +335,9 @@ begin
 
          -- Write word 0
          when ST_WRITE =>
-            ififoReq <= '1';
-            wvalid   <= '1';
+            ififoReq                                   <= '1';
+            wvalid                                     <= '1';
+            nwriteDmaBusyOut(conv_integer(writeDmaId)) <= '1';
 
             -- Clear address valid if not clear already
             if axiAcpSlaveWriteFromArm.awready = '1' then
@@ -304,9 +356,11 @@ begin
             ififoReq <= '0';
 
             -- Writes have completed
-            if axiAcpSlaveWriteFromArm.bvalid = '1' and axiAcpSlaveWriteFromArm.bid = fifoId then
-               burstDone  <= '1';
-               nxtState   <= ST_IDLE;
+            if axiAcpSlaveWriteFromArm.bvalid = '1' and axiAcpSlaveWriteFromArm.bid(2 downto 0) = writeDmaId then
+               burstDone <= '1';
+               nxtState  <= ST_IDLE;
+            else
+               nwriteDmaBusyOut(conv_integer(writeDmaId)) <= '1';
             end if;
 
          when others =>
@@ -324,7 +378,7 @@ begin
    debug(84)             <= iFifoReq;
    debug(83)             <= memSelect;
    debug(82)             <= burstDone;
-   debug(81  downto  78) <= memIndex;
+   debug(81  downto  78) <= memIndex(3 downto 0);
    debug(77)             <= memValid;
    debug(76)             <= memReady;
    debug(75  downto  73) <= (others=>'0');
@@ -334,7 +388,9 @@ begin
    debug(65)             <= fifoRd;
    debug(64)             <= '0';
    debug(63)             <= fifoReady;
-   debug(62  downto  44) <= (others=>'0');
+   debug(62  downto  55) <= (others=>'0');
+   debug(54  downto  52) <= writeDmaId;
+   debug(51  downto  44) <= writeDmaBusyIn;
    debug(43)             <= iAxiAcpSlaveWriteToArm.wvalid;
    debug(42)             <= iAxiAcpSlaveWriteToArm.wlast;
    debug(41)             <= iAxiAcpSlaveWriteToArm.awvalid;
@@ -342,12 +398,8 @@ begin
    debug(39)             <= axiAcpSlaveWriteFromArm.wready;
    debug(38)             <= axiAcpSlaveWriteFromArm.bvalid;
    debug(37)             <= fifoGnt;
-   debug(36)             <= '0';
-   debug(35  downto  21) <= memDirty;
-   debug(20)             <= '0';
-   debug(19  downto   5) <= iMemDirtySet;
-   debug(4)              <= fifoEnable;
-   debug(3)              <= memToggleEn;
+   debug(36  downto  20) <= memDirty;
+   debug(19  downto   3) <= iMemDirtySet;
    debug(2)              <= '0';
    debug(1   downto   0) <= curState;
 
