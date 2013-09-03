@@ -1,19 +1,19 @@
 -------------------------------------------------------------------------------
--- Title         : Zynq 1Gige Ethernet Core
--- File          : ZynqEthernet.vhd
+-- Title         : Zynq 10 Gige Ethernet Core
+-- File          : ZynqEthernet10G.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 04/02/2013
+-- Created       : 09/03/2013
 -------------------------------------------------------------------------------
 -- Description:
--- Wrapper file for Zynq ethernet core.
+-- Wrapper file for Zynq ethernet 10G core.
 -------------------------------------------------------------------------------
 -- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
 -- Modification history:
--- 04/02/2013: created.
+-- 09/03/2013: created.
 -------------------------------------------------------------------------------
 library ieee;
-use ieee.std_logic_1164.all;
+use ieee.sl_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.numeric_std.all;
@@ -22,237 +22,209 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.StdRtlPkg.all;
 
-entity ZynqEthernet is
+entity ZynqEthernet10G is
+   generic (
+      TPD_G : time := 1 ns
+   );
    port (
 
       -- Clocks
-      sysClk125               : in  std_logic;
-      sysClk200               : in  std_logic;
-      sysClk200Rst            : in  std_logic;
+      ponReset                : in  sl;
+      ethRefClk               : in  sl;
 
-      -- ARM Interface
-      ethFromArm              : in  EthFromArmType;
-      ethToArm                : out EthToArmType;
+      -- Local Bus
+      axiClk                  : in  sl;
+      axiClkRst               : in  sl;
+      localBusMaster          : in  LocalBusMasterType;
+      localBusSlave           : out LocalBusSlaveType;
 
       -- Ethernet Lines
-      ethRxP                  : in  std_logic;
-      ethRxM                  : in  std_logic;
-      ethTxP                  : out std_logic;
-      ethTxM                  : out std_logic
+      ethRxP                  : in  slv(3 downto 0);
+      ethRxM                  : in  slv(3 downto 0);
+      ethTxP                  : out slv(3 downto 0);
+      ethTxM                  : out slv(3 downto 0)
    );
-end ZynqEthernet;
+end ZynqEthernet10G;
 
-architecture structure of ZynqEthernet is
+architecture structure of ZynqEthernet10G is
 
    -- Local signals
-   signal txoutclk              : std_logic;                    -- txoutclk from GT transceiver
-   signal txoutclk_bufg         : std_logic;                    -- txoutclk from GT transceiver routed onto global routing.
-   signal resetdone             : std_logic;                    -- To indicate that the GT transceiver has completed its reset cycle
-   signal mmcm_locked           : std_logic;                    -- MMCM locked signal.
-   signal mmcm_reset            : std_logic;                    -- MMCM reset signal.
-   signal clkfbout              : std_logic;                    -- MMCM feedback clock
-   signal clkout0               : std_logic;                    -- MMCM clock0 output (62.5MHz).
-   signal clkout1               : std_logic;                    -- MMCM clock1 output (125MHz).
-   signal userclk               : std_logic;                    -- 62.5MHz clock for GT transceiver Tx/Rx user clocks
-   signal userclk2              : std_logic;                    -- 125MHz clock for core reference clock.
-   signal pma_reset_pipe        : std_logic_vector(3 downto 0); -- flip-flop pipeline for reset duration stretch
-   signal pma_reset             : std_logic;                    -- Synchronous transcevier PMA reset
-   signal confValid             : std_logic;
+   signal ethEnable              : sl;
+   signal ethReset               : sl;
+   signal clk156RstR1            : sl;
+   signal clk156RstR2            : sl;
+   signal clk156Rst              : sl;
+   signal clk156                 : sl;
+   signal txoutclk               : sl;
+   signal xauiTxd                : slv(63 downto 0);
+   signal xauiTxc                : slv(7  downto 0);
+   signal xauiRxd                : slv(63 downto 0);
+   signal xauiRxc                : slv(7  downto 0);
+   signal txlock                 : sl;
+   signal signal_detect          : slv(3  downto 0);
+   signal align_status           : sl;
+   signal sync_status            : slv(3  downto 0);
+   signal mgt_tx_ready           : sl;
+   signal configuration_vector   : slv(6  downto 0);
+   signal status_vector          : slv(7  downto 0);
 
 begin
 
-   -- Outputs
-   ethToArm.enetGmiiRxClk <= userclk2;
-   ethToArm.enetGmiiTxClk <= userclk2;
+   --------------------------------------------
+   -- Registers: 0xB800_0000 - 0xBBFF_FFFF
+   --------------------------------------------
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
+         localBusSlave        <= LocalBusSlaveInit      after TPD_G;
+         ethEnable            <= '0'                    after TPD_G;
+         xauiTxd              <= (others=>'0')          after TPD_G;
+         xauiTxc              <= (others=>'0')          after TPD_G;
+         configuration_vector <= (others=>'0')          after TPD_G;
+      elsif rising_edge(axiClk) then
+         localBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
+         localBusSlave.readData  <= (others=>'0')             after TPD_G;
+         wrFifoWrEn              <= '0'                       after TPD_G;
+         rdFifoRdEn              <= '0'                       after TPD_G;
 
-   -- Unused inputs
-   --ethFromArm.enetMdioT           : std_logic;
-   --ethFromArm.enetPtpDelayReqRx   : std_logic;
-   --ethFromArm.enetPtpDelayReqTx   : std_logic;
-   --ethFromArm.enetPtpPDelayReqRx  : std_logic;
-   --ethFromArm.enetPtpPDelayReqTx  : std_logic;
-   --ethFromArm.enetPtpPDelayRespRx : std_logic;
-   --ethFromArm.enetPtpPDelayRespTx : std_logic;
-   --ethFromArm.enetPtpSyncFrameRx  : std_logic;
-   --ethFromArm.enetPtpSyncFrameTx  : std_logic;
-   --ethFromArm.enetSofRx           : std_logic;
-   --ethFromArm.enetSofTx           : std_logic;
+         -- Write Low Data - 0xB800_1000
+         if localBusMaster.addr(23 downto 0) = x"001000" then
+            if localBusMaster.writeEnable = '1' then
+               xauiTxd(31 downto 0) <= localBusMaster.writeData after TPD_G;
+            end if;
+            localBusSlave.readData  <= xauiTxd(31 downto 0)     after TPD_G;
 
-   -- Unused outputs
-   ethToArm.enetGmiiCol  <= '0';
-   ethToArm.enetGmiiCrs  <= '0';
-   ethToArm.enetExtInitN <= '0';
+         -- Write High Data - 0xB800_1004
+         elsif localBusMaster.addr(23 downto 0) = x"001004" then
+            if localBusMaster.writeEnable = '1' then
+               xauiTxd(63 downto 32) <= localBusMaster.writeData after TPD_G;
+            end if;
+            localBusSlave.readData  <= xauiTxd(63 downto 32)     after TPD_G;
 
-   -----------------------------------------------------------------------------
-   -- The following code is based on the zynq_gige_example_design.vhd
-   -- file in the coregen/zynq_gige/example_design directory.
-   -----------------------------------------------------------------------------
+         -- Write Control - 0xB800_1008
+         elsif localBusMaster.addr(23 downto 0) = x"001008" then
+            if localBusMaster.writeEnable = '1' then
+               xauiTxc <= localBusMaster.writeData(7 downto 0) after TPD_G;
+            end if;
+            localBusSlave.readData(7 downto 0) <= xauiTxc after TPD_G;
 
-   -----------------------------------------------------------------------------
-   -- Transceiver Clock Management
-   -----------------------------------------------------------------------------
+         -- Read Low Data - 0xB800_100C
+         elsif localBusMaster.addr(23 downto 0) = x"00100C" then
+            localBusSlave.readData  <= xauiRxd(31 downto 0)     after TPD_G;
 
-   -- Route txoutclk input through a BUFG
-   bufg_txoutclk : BUFG
-      port map (
-         I         => txoutclk,
-         O         => txoutclk_bufg
-      );
+         -- Read High Data - 0xB800_1010
+         elsif localBusMaster.addr(23 downto 0) = x"001010" then
+            localBusSlave.readData  <= xauiRxd(63 downto 32)     after TPD_G;
 
-   -- The GT transceiver provides a 62.5MHz clock to the FPGA fabrix.  This is 
-   -- routed to an MMCM module where it is used to create phase and frequency
-   -- related 62.5MHz and 125MHz clock sources
-   mmcm_adv_inst : MMCME2_ADV
+         -- Read Control - 0xB800_1014
+         elsif localBusMaster.addr(23 downto 0) = x"001014" then
+            localBusSlave.readData(7 downto 0) <= xauiRxc after TPD_G;
+
+         -- Config Vector - 0xB800_1018
+         elsif localBusMaster.addr(23 downto 0) = x"001018" then
+            if localBusMaster.writeEnable = '1' then
+               configuration_vector <= localBusMaster.writeData(6 downto 0) after TPD_G;
+            end if;
+            intLocalBusSlave.readData(6 downto 0) <= configuration_vector after TPD_G;
+
+         -- Status Vector - 0xB800_101C
+         elsif localBusMaster.addr(23 downto 0) = x"00101C" then
+            intLocalBusSlave.readData(7 downto 0) <= status_vector after TPD_G;
+
+         -- Others status - 0xB800_1020
+         elsif localBusMaster.addr(23 downto 0) = x"001020" then
+            intLocalBusSlave.readData(3 downto 0) <= signal_detect after TPD_G;
+            intLocalBusSlave.readData(7 downto 4) <= sync_status   after TPD_G;
+            intLocalBusSlave.readData(8)          <= align_status  after TPD_G;
+            intLocalBusSlave.readData(9)          <= mgt_tx_ready  after TPD_G;
+            intLocalBusSlave.readData(10)         <= txlock        after TPD_G;
+
+         -- Enable Register - 0xB800_1024
+         elsif localBusMaster.addr(23 downto 0) = x"001024" then
+            if localBusMaster.writeEnable = '1' then
+               ethEnable <= localBusMaster.writeData(0) after TPD_G;
+            end if;
+            intLocalBusSlave.readData(0) <= ethEnable after TPD_G;
+
+         end if;
+      end if;  
+   end process;         
+
+
+   -----------------------------------------
+   -- XAUI Interface
+   -----------------------------------------
+
+   -- Reset
+   ethReset = ponReset or not ethEnable;
+
+   -- Core, copied from example design
+   -- Modified reset timing for 200mhz dclk
+   U_ZynqXaui : entity work.zynq_xaui_block
       generic map (
-         BANDWIDTH            => "OPTIMIZED",
-         CLKOUT4_CASCADE      => FALSE,
-         COMPENSATION         => "ZHOLD",
-         STARTUP_WAIT         => FALSE,
-         DIVCLK_DIVIDE        => 1,
-         CLKFBOUT_MULT_F      => 16.000,
-         CLKFBOUT_PHASE       => 0.000,
-         CLKFBOUT_USE_FINE_PS => FALSE,
-         CLKOUT0_DIVIDE_F     => 8.000,
-         CLKOUT0_PHASE        => 0.000,
-         CLKOUT0_DUTY_CYCLE   => 0.5,
-         CLKOUT0_USE_FINE_PS  => FALSE,
-         CLKOUT1_DIVIDE       => 16,
-         CLKOUT1_PHASE        => 0.000,
-         CLKOUT1_DUTY_CYCLE   => 0.5,
-         CLKOUT1_USE_FINE_PS  => FALSE,
-         CLKIN1_PERIOD        => 16.0,
-         REF_JITTER1          => 0.010
-      )
-      port map (
-         CLKFBOUT             => clkfbout,
-         CLKFBOUTB            => open,
-         CLKOUT0              => clkout0,
-         CLKOUT0B             => open,
-         CLKOUT1              => clkout1,
-         CLKOUT1B             => open,
-         CLKOUT2              => open,
-         CLKOUT2B             => open,
-         CLKOUT3              => open,
-         CLKOUT3B             => open,
-         CLKOUT4              => open,
-         CLKOUT5              => open,
-         CLKOUT6              => open,
-         -- Input clock control
-         CLKFBIN              => clkfbout,
-         CLKIN1               => txoutclk_bufg,
-         CLKIN2               => '0',
-         -- Tied to always select the primary input clock
-         CLKINSEL             => '1',
-         -- Ports for dynamic reconfiguration
-         DADDR                => (others => '0'),
-         DCLK                 => '0',
-         DEN                  => '0',
-         DI                   => (others => '0'),
-         DO                   => open,
-         DRDY                 => open,
-         DWE                  => '0',
-         -- Ports for dynamic phase shift
-         PSCLK                => '0',
-         PSEN                 => '0',
-         PSINCDEC             => '0',
-         PSDONE               => open,
-         -- Other control and status signals
-         LOCKED               => mmcm_locked,
-         CLKINSTOPPED         => open,
-         CLKFBSTOPPED         => open,
-         PWRDWN               => '0',
-         RST                  => mmcm_reset
+         WRAPPER_SIM_GTRESET_SPEEDUP => "TRUE" --Does not affect hardware
+      ) port map (
+         reset156              => clk156Rst,
+         reset                 => ethReset,
+         dclk                  => axiClk,
+         clk156                => clk156,
+         refclk                => ethRefClk,
+         txoutclk              => txoutclk,
+         xgmii_txd             => xauiTxd,
+         xgmii_txc             => xauiTxc,
+         xgmii_rxd             => xauiRxd,
+         xgmii_rxc             => xauiRxc,
+         xaui_tx_l0_p          => ethTxP(0),
+         xaui_tx_l0_n          => ethTxM(0),
+         xaui_tx_l1_p          => ethTxP(1),
+         xaui_tx_l1_n          => ethTxM(1),
+         xaui_tx_l2_p          => ethTxP(2),
+         xaui_tx_l2_n          => ethTxM(2),
+         xaui_tx_l3_p          => ethTxP(3),
+         xaui_tx_l3_n          => ethTxM(3),
+         xaui_rx_l0_p          => ethRxP(0),
+         xaui_rx_l0_n          => ethRxM(0),
+         xaui_rx_l1_p          => ethRxP(1),
+         xaui_rx_l1_n          => ethRxM(1),
+         xaui_rx_l2_p          => ethRxP(2),
+         xaui_rx_l2_n          => ethRxM(2),
+         xaui_rx_l3_p          => ethRxP(3),
+         xaui_rx_l3_n          => ethRxM(3),
+         txlock                => txlock,
+         mmcm_lock             => txlock,
+         signal_detect         => signal_detect,
+         align_status          => align_status,
+         sync_status           => sync_status,
+         drp_addr              => (others=>'0'),
+         drp_en                => (others=>'0'),
+         drp_i                 => (others=>'0'),
+         drp_o                 => open,
+         drp_rdy               => open,
+         drp_we                => (others=>'0'),
+         mgt_tx_ready          => mgt_tx_ready,
+         configuration_vector  => configuration_vector,
+         status_vector         => status_vector
       );
 
-   mmcm_reset <= sysClk200Rst or (not resetdone);
-
-   -- This 62.5MHz clock is placed onto global clock routing and is then used
-   -- for tranceiver TXUSRCLK/RXUSRCLK.
-   bufg_userclk: BUFG
-   port map (
-      I     => clkout1,
-      O     => userclk
-   );    
-
-   -- This 125MHz clock is placed onto global clock routing and is then used
-   -- to clock all Ethernet core logic.
-   bufg_userclk2: BUFG
-   port map (
-      I     => clkout0,
-      O     => userclk2
-   );    
-
-   -----------------------------------------------------------------------------
-   -- Transceiver PMA reset circuitry
-   -----------------------------------------------------------------------------
-
-   -- Create a reset pulse of a decent length
-   process(sysClk200Rst, sysClk200)
-   begin
-     if (sysClk200Rst = '1') then
-       pma_reset_pipe <= "1111";
-     elsif sysClk200'event and sysClk200 = '1' then
-       pma_reset_pipe <= pma_reset_pipe(2 downto 0) & sysClk200Rst;
-     end if;
-   end process;
-
-   pma_reset <= pma_reset_pipe(3);
-
-   ------------------------------------------------------------------------------
-   -- Instantiate the Core Block (core wrapper).
-   ------------------------------------------------------------------------------
-   core_wrapper : entity work.zynq_gige_block
-      generic map (
-         EXAMPLE_SIMULATION   =>  0 
-      )
-      port map (
-         drpaddr_in             => (others => '0') , 
-         drpclk_in              => userclk2, 
-         drpdi_in               => (others => '0') , 
-         drpdo_out              => open , 
-         drpen_in               => '0', 
-         drprdy_out             => open, 
-         drpwe_in               => '0', 
-         gtrefclk               => sysClk125,
-         txp                    => ethTxP,
-         txn                    => ethTxM,
-         rxp                    => ethRxP,
-         rxn                    => ethRxM,
-         txoutclk               => txoutclk,
-         resetdone              => resetdone,
-         mmcm_locked            => mmcm_locked,
-         userclk                => userclk,
-         userclk2               => userclk2,
-         independent_clock_bufg => sysClk200,
-         pma_reset              => pma_reset,
-         gmii_txd               => ethFromArm.enetGmiiTxD,
-         gmii_tx_en             => ethFromArm.enetGmiiTxEn,
-         gmii_tx_er             => ethFromArm.enetGmiiTxEr,
-         gmii_rxd               => ethToArm.enetGmiiRxd,
-         gmii_rx_dv             => ethToArm.enetGmiiRxDv,
-         gmii_rx_er             => ethToArm.enetGmiiRxEr,
-         gmii_isolate           => open,
-         mdc                    => ethFromArm.enetMdioMdc,
-         mdio_i                 => ethFromArm.enetMdioO,
-         mdio_o                 => ethToArm.enetMdioI,
-         mdio_t                 => open,
-         phyad                  => (others=>'0'),
-         configuration_vector   => "00000",
-         configuration_valid    => confValid, 
-         status_vector          => open,
-         reset                  => sysClk200Rst,
-         signal_detect          => '1'
+   -- Clock buffer
+   clk156_bufg : BUFG
+      port map ( 
+         O => clk156,
+         I => txoutclk
       );
 
-   -- Force configuration set
-   process(userclk2, sysClk200Rst)
-   begin
-     if (sysClk200Rst = '1') then
-       confValid <= '0';
-     elsif userclk2'event and userclk2 = '1' then
-       confValid <= not confValid;
-     end if;
+   -- Generate reset
+   p_reset : process (clk156, txlock) begin
+      if txlock = '0' then
+         clk156RstR1  <= '1' after TPD_G;
+         clk156RstR2  <= '1' after TPD_G;
+         clk156Rst    <= '1' after TPD_G;
+      elsif rising_edge(clk156) then
+         clk156RstR1  <= '0'         after TPD_G;
+         clk156RstR2  <= clk156RstR1 after TPD_G;
+         clk156Rst    <= clk156RstR2 after TPD_G;
+      end if;
    end process;
 
 end architecture structure;

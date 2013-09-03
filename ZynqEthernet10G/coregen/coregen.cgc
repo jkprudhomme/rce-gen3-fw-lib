@@ -6,37 +6,21 @@
    <spirit:version>1.0</spirit:version>
    <spirit:componentInstances>
       <spirit:componentInstance>
-         <spirit:instanceName>zynq_gige</spirit:instanceName>
-         <spirit:componentRef spirit:vendor="xilinx.com" spirit:library="ip" spirit:name="gig_eth_pcs_pma" spirit:version="11.5" />
+         <spirit:instanceName>zynq_xaui</spirit:instanceName>
+         <spirit:componentRef spirit:vendor="xilinx.com" spirit:library="ip" spirit:name="xaui" spirit:version="10.4" />
          <spirit:configurableElementValues>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COMPONENT_NAME">zynq_gige</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.STANDARD">1000BASEX</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PHYSICAL_INTERFACE">Transceiver</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.MANAGEMENT_INTERFACE">true</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.AUTO_NEGOTIATION">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.TRANSCEIVER_TILE">A</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.SGMII_MODE">10_100_1000</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.SGMII_PHY_MODE">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.TIMING_SIM">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.ENABLE_1588">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_ELABORATION_TRANSIENT_DIR">/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqEthernet/coregen/tmp/_cg/_dbg/</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_COMPONENT_NAME">zynq_gige</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.COMPONENT_NAME">zynq_xaui</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.802_3AE_STATE_MACHINES">true</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.MDIO_MANAGEMENT">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.DATA_RATE">TenGbps</spirit:configurableElementValue>
             <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_FAMILY">zynq</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_IS_SGMII">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_USE_TRANSCEIVER">true</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_USE_TBI">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_USE_LVDS">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_HAS_AN">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_HAS_MDIO">true</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_SGMII_PHY_MODE">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_DYNAMIC_SWITCHING">false</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_TRANSCEIVER_MODE">A</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_SGMII_FABRIC_BUFFER">true</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_1588">0</spirit:configurableElementValue>
-            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.gt_rx_byte_width">1</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_COMPONENT_NAME">zynq_xaui</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_HAS_MDIO">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_USE_MGT_STATE">false</spirit:configurableElementValue>
+            <spirit:configurableElementValue spirit:referenceId="MODELPARAM_VALUE.C_IS_DXAUI">false</spirit:configurableElementValue>
          </spirit:configurableElementValues>
          <spirit:vendorExtensions>
-            <xilinx:instanceProperties xmlns:xilinx="http://www.xilinx.com">
+            <xilinx:instanceProperties>
                <xilinx:projectOptions>
                   <xilinx:projectName>coregen</xilinx:projectName>
                   <xilinx:outputDirectory>./</xilinx:outputDirectory>
@@ -61,15 +45,21 @@
                   <xilinx:formalVerification>false</xilinx:formalVerification>
                </xilinx:flowOptions>
                <xilinx:simulationOptions>
-                  <xilinx:simulationModel>Structural</xilinx:simulationModel>
+                  <xilinx:simulationModel>Behavioral</xilinx:simulationModel>
                   <xilinx:simulationLanguage>VHDL</xilinx:simulationLanguage>
                   <xilinx:foundationSym>false</xilinx:foundationSym>
                </xilinx:simulationOptions>
                <xilinx:packageInfo>
-                  <xilinx:sourceCoreCreationDate>2012-07-11+07:25</xilinx:sourceCoreCreationDate>
+                  <xilinx:sourceCoreCreationDate>2012-06-20+13:20</xilinx:sourceCoreCreationDate>
                </xilinx:packageInfo>
             </xilinx:instanceProperties>
             <xilinx:generationHistory>
+               <xilinx:fileSet>
+                  <xilinx:name>view_product_webpage_generator</xilinx:name>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>apply_current_project_options_generator</xilinx:name>
+               </xilinx:fileSet>
                <xilinx:fileSet>
                   <xilinx:name>customization_generator</xilinx:name>
                </xilinx:fileSet>
@@ -79,235 +69,179 @@
                <xilinx:fileSet>
                   <xilinx:name>ip_xco_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige.xco</xilinx:name>
+                     <xilinx:name>./zynq_xaui.xco</xilinx:name>
                      <xilinx:userFileType>xco</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:06 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x8FF072EA</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:27 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x6F00A0CC</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
                   <xilinx:name>associated_files_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/doc/pg047-gig-eth-pcs-pma.pdf</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>pdf</xilinx:userFileType>
-                     <xilinx:timeStamp>Wed Mar 27 03:39:52 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x7AE76C68</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/gig_eth_pcs_pma_readme.txt</xilinx:name>
+                     <xilinx:name>./zynq_xaui/xaui_readme.txt</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>txt</xilinx:userFileType>
-                     <xilinx:timeStamp>Wed Mar 27 03:39:52 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x3DE95369</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Wed Mar 27 03:34:58 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x7653E5BC</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
                   <xilinx:name>ejava_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/transceiver/zynq_gige_gtwizard.vhd</xilinx:name>
+                     <xilinx:name>./zynq_xaui/example_design/zynq_xaui_block.vhd</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:09 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x57AA9BF6</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x9659362E</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/transceiver/zynq_gige_gtwizard.xco</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>xco</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:09 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xEBF98768</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/transceiver/zynq_gige_gtwizard_gt.vhd</xilinx:name>
+                     <xilinx:name>./zynq_xaui/example_design/zynq_xaui_chanbond_monitor.vhd</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:09 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x8FD8B3BD</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:27 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x02D16784</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/transceiver/zynq_gige_gtwizard_init.vhd</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:10 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xF2E4EAFD</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/transceiver/zynq_gige_rx_startup_fsm.vhd</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:10 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xF4B339DC</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/transceiver/zynq_gige_transceiver.vhd</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:13 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x797A1BBC</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/transceiver/zynq_gige_tx_startup_fsm.vhd</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:10 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xE37201FB</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/zynq_gige_block.vhd</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:11 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xB2E1E1E0</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/zynq_gige_example_design.ucf</xilinx:name>
+                     <xilinx:name>./zynq_xaui/example_design/zynq_xaui_example_design.ucf</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>ucf</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:11 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x742C43D2</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x424CA4A1</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/zynq_gige_example_design.vhd</xilinx:name>
+                     <xilinx:name>./zynq_xaui/example_design/zynq_xaui_example_design.vhd</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:11 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xCACBB7C0</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x13875907</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/zynq_gige_reset_sync.vhd</xilinx:name>
+                     <xilinx:name>./zynq_xaui/example_design/zynq_xaui_example_design.xdc</xilinx:name>
+                     <xilinx:userFileType>ignore</xilinx:userFileType>
+                     <xilinx:userFileType>xdc</xilinx:userFileType>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x798E13CE</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./zynq_xaui/example_design/zynq_xaui_gt_wrapper.vhd</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:07 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x4B616619</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x7214A454</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/zynq_gige_sync_block.vhd</xilinx:name>
+                     <xilinx:name>./zynq_xaui/example_design/zynq_xaui_gt_wrapper_gt.vhd</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:07 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xBED2A7F7</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xD334A525</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/example_design/zynq_gige_tx_elastic_buffer.vhd</xilinx:name>
+                     <xilinx:name>./zynq_xaui/example_design/zynq_xaui_gt_wrapper_tx_sync_manual.vhd</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:09 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xDE1F735F</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xF8FFF68C</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/implement/example_design_xst.xcf</xilinx:name>
+                     <xilinx:name>./zynq_xaui/implement/implement.bat</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:12 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x3A19BE12</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x8FD442DD</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/implement/implement.bat</xilinx:name>
+                     <xilinx:name>./zynq_xaui/implement/implement.sh</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:12 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x9275FEA6</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x04F4BC37</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/implement/implement.sh</xilinx:name>
+                     <xilinx:name>./zynq_xaui/implement/xst.prj</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:13 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x524F32CB</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x8099E38F</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/implement/xst.prj</xilinx:name>
+                     <xilinx:name>./zynq_xaui/implement/xst.scr</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:07 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xD8C1A4BD</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xAB109A19</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/implement/xst.scr</xilinx:name>
+                     <xilinx:name>./zynq_xaui/implement/xst.xcf</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:08 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x44D30616</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:28 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xEB638294</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/simulation/demo_tb.vhd</xilinx:name>
+                     <xilinx:name>./zynq_xaui/simulation/demo_tb.vhd</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:07 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x3BF7281F</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:27 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x37E7E0AD</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/simulation/functional/simulate_mti.do</xilinx:name>
+                     <xilinx:name>./zynq_xaui/simulation/functional/simulate_mti.do</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:07 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xB7B7D740</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:27 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xD25C3513</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/simulation/functional/simulate_ncsim.sh</xilinx:name>
+                     <xilinx:name>./zynq_xaui/simulation/functional/simulate_ncsim.sh</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:07 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x15976D04</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:27 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xA4A3BCAC</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/simulation/functional/wave_mti.do</xilinx:name>
+                     <xilinx:name>./zynq_xaui/simulation/functional/wave_mti.do</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:07 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x8E725540</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:27 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xB052E9ED</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige/simulation/functional/wave_ncsim.sv</xilinx:name>
+                     <xilinx:name>./zynq_xaui/simulation/functional/wave_ncsim.sv</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:07 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xC8AB15E1</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/simulation/stimulus_tb.vhd</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:06 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xCF125082</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:32:27 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xFD326671</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
                   <xilinx:name>ngc_netlist_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige.ngc</xilinx:name>
+                     <xilinx:name>./zynq_xaui.ngc</xilinx:name>
                      <xilinx:userFileType>ngc</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:56 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x7B850D79</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:12 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xB850BD11</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
@@ -319,80 +253,108 @@
                <xilinx:fileSet>
                   <xilinx:name>instantiation_template_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige.vho</xilinx:name>
+                     <xilinx:name>./zynq_xaui.vho</xilinx:name>
                      <xilinx:userFileType>vho</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:10:57 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x8ED15ED0</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:12 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xA3D7647D</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>rtl_simulation_model_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./zynq_xaui.vhd</xilinx:name>
+                     <xilinx:userFileType>vhdl</xilinx:userFileType>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:14 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xBDB88CC9</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>synthesis_instantiation_wrapper_generator</xilinx:name>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>behavioral_source_generator</xilinx:name>
                </xilinx:fileSet>
                <xilinx:fileSet>
                   <xilinx:name>structural_simulation_model_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige.vhd</xilinx:name>
+                     <xilinx:name>./zynq_xaui.vhd</xilinx:name>
                      <xilinx:userFileType>vhdl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:11:00 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x72921162</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:16 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xC6D5F066</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
+                  <xilinx:name>behavioral_instantiation_wrapper_generator</xilinx:name>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>testbench_generator</xilinx:name>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>examples_generator</xilinx:name>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
                   <xilinx:name>all_documents_generator</xilinx:name>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/doc/gig_eth_pcs_pma_v11_5_vinfo.html</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>unknown</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:11:00 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x307D84DA</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
-                  <xilinx:file>
-                     <xilinx:name>./zynq_gige/doc/pg047-gig-eth-pcs-pma.pdf</xilinx:name>
-                     <xilinx:userFileType>ignore</xilinx:userFileType>
-                     <xilinx:userFileType>pdf</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:11:00 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x7AE76C68</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
-                  </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
                   <xilinx:name>asy_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige.asy</xilinx:name>
+                     <xilinx:name>./zynq_xaui.asy</xilinx:name>
                      <xilinx:userFileType>asy</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:11:00 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x1DB2B984</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:17 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x2011C9F2</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
                   <xilinx:name>xmdf_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige_xmdf.tcl</xilinx:name>
+                     <xilinx:name>./zynq_xaui_xmdf.tcl</xilinx:name>
                      <xilinx:userFileType>tclXmdf</xilinx:userFileType>
                      <xilinx:userFileType>tcl</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:11:00 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x4CE5ABD0</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:17 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x047FA055</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
+                  </xilinx:file>
+               </xilinx:fileSet>
+               <xilinx:fileSet>
+                  <xilinx:name>synthesis_ise_generator</xilinx:name>
+                  <xilinx:file>
+                     <xilinx:name>./zynq_xaui.gise</xilinx:name>
+                     <xilinx:userFileType>ignore</xilinx:userFileType>
+                     <xilinx:userFileType>gise</xilinx:userFileType>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:22 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x948571A4</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
+                  </xilinx:file>
+                  <xilinx:file>
+                     <xilinx:name>./zynq_xaui.xise</xilinx:name>
+                     <xilinx:userFileType>ignore</xilinx:userFileType>
+                     <xilinx:userFileType>xise</xilinx:userFileType>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:22 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x38E28CD5</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
                   <xilinx:name>ise_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige.gise</xilinx:name>
+                     <xilinx:name>./zynq_xaui.gise</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>gise</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:11:04 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0xD305BCF3</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:26 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x5A1E1C56</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige.xise</xilinx:name>
+                     <xilinx:name>./zynq_xaui.xise</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>xise</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:11:04 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x221E60DB</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:26 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0x93F6BDD3</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
@@ -401,13 +363,13 @@
                <xilinx:fileSet>
                   <xilinx:name>flist_generator</xilinx:name>
                   <xilinx:file>
-                     <xilinx:name>./zynq_gige_flist.txt</xilinx:name>
+                     <xilinx:name>./zynq_xaui_flist.txt</xilinx:name>
                      <xilinx:userFileType>ignore</xilinx:userFileType>
                      <xilinx:userFileType>txtFlist</xilinx:userFileType>
                      <xilinx:userFileType>txt</xilinx:userFileType>
-                     <xilinx:timeStamp>Mon Jul 08 21:11:04 GMT 2013</xilinx:timeStamp>
-                     <xilinx:checkSum>0x5A3CECB8</xilinx:checkSum>
-                     <xilinx:generationId>generationID_1879581046</xilinx:generationId>
+                     <xilinx:timeStamp>Tue Sep 03 19:33:26 GMT 2013</xilinx:timeStamp>
+                     <xilinx:checkSum>0xF4489710</xilinx:checkSum>
+                     <xilinx:generationId>generationID_1505857813</xilinx:generationId>
                   </xilinx:file>
                </xilinx:fileSet>
                <xilinx:fileSet>
