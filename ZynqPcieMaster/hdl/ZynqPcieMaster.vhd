@@ -22,28 +22,29 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.StdRtlPkg.all;
 
 entity ZynqPcieMaster is
    port (
 
       -- Local Bus
-      axiClk                  : in  std_logic;
-      axiClkRst               : in  std_logic;
+      axiClk                  : in  sl;
+      axiClkRst               : in  sl;
       localBusMaster          : in  LocalBusMasterType;
       localBusSlave           : out LocalBusSlaveType;
 
       -- Master clock and reset
-      pciRefClk               : in  std_logic;
-      ponReset                : in  std_logic;
+      pciRefClk               : in  sl;
+      ponReset                : in  sl;
 
       -- Reset output
-      pcieResetL              : out std_logic;
+      pcieResetL              : out sl;
 
       -- PCIE Lines
-      pcieRxP                 : in  std_logic;
-      pcieRxM                 : in  std_logic;
-      pcieTxP                 : out std_logic;
-      pcieTxM                 : out std_logic
+      pcieRxP                 : in  sl;
+      pcieRxM                 : in  sl;
+      pcieTxP                 : out sl;
+      pcieTxM                 : out sl
    );
 end ZynqPcieMaster;
 
@@ -80,74 +81,74 @@ architecture structure of ZynqPcieMaster is
 
    -- Local signals
    signal intLocalBusSlave       : LocalBusSlaveType;
-   signal wrFifoDin              : std_logic_vector(94 downto 0);
-   signal wrFifoDout             : std_logic_vector(94 downto 0);
-   signal wrFifoWrEn             : std_logic;
-   signal wrFifoRdEn             : std_logic;
-   signal wrFifoValid            : std_logic;
-   signal rdFifoDin              : std_logic_vector(94 downto 0);
-   signal rdFifoDout             : std_logic_vector(94 downto 0);
-   signal rdFifoWrEn             : std_logic;
-   signal rdFifoRdEn             : std_logic;
-   signal rdFifoFull             : std_logic;
-   signal rdFifoValid            : std_logic;
-   signal pciClk                 : std_logic;
-   signal pciClkRst              : std_logic;
-   signal txBufAv                : std_logic_vector(5 downto 0);
-   signal txReady                : std_logic;
-   signal txValid                : std_logic;
-   signal rxReady                : std_logic;
-   signal rxValid                : std_logic;
-   signal linkUp                 : std_logic;
-   signal cfgRead                : std_logic;
-   signal cfgWrite               : std_logic;
-   signal cfgDone                : std_logic;
-   signal cfgDout                : std_logic_vector(31 downto 0);
-   signal cfgDoutReg             : std_logic_vector(31 downto 0);
-   signal cfgDinReg              : std_logic_vector(31 downto 0);
-   signal cfgDin                 : std_logic_vector(31 downto 0);
-   signal cfgAddrReg             : std_logic_vector(9  downto 0);
-   signal cfgAddr                : std_logic_vector(9  downto 0);
-   signal cfgWrEn                : std_logic;
-   signal cfgWrEnRegA            : std_logic;
-   signal cfgWrEnRegB            : std_logic;
-   signal cfgWrEnRegC            : std_logic;
-   signal cfgRdEn                : std_logic;
-   signal cfgRdEnRegA            : std_logic;
-   signal cfgRdEnRegB            : std_logic;
-   signal cfgRdEnRegC            : std_logic;
-   signal cfgRdWrDone            : std_logic;
-   signal cfgRdWrDoneReg         : std_logic;
-   signal cfgRdWrDoneDly         : std_logic;
-   signal cfgStatus              : std_logic_vector(15 downto 0);
-   signal cfgCommand             : std_logic_vector(15 downto 0);
-   signal cfgDStatus             : std_logic_vector(15 downto 0);
-   signal cfgDCommand            : std_logic_vector(15 downto 0);
-   signal cfgDCommand2           : std_logic_vector(15 downto 0);
-   signal cfgLStatus             : std_logic_vector(15 downto 0);
-   signal cfgLCommand            : std_logic_vector(15 downto 0);
-   signal cfgPcieLinkState       : std_logic_vector(2  downto 0);
-   signal cfgPmcsrPmeEn          : std_logic;
-   signal cfgPmcsrPowerstate     : std_logic_vector(1  downto 0);
-   signal cfgPmcsrPmeStatus      : std_logic;
-   signal cfgReceivedFuncLvlRst  : std_logic;
-   signal cfgBusNumber           : std_logic_vector(7  downto 0);
-   signal cfgDeviceNumber        : std_logic_vector(4  downto 0);
-   signal cfgFunctionNumber      : std_logic_vector(2  downto 0);
-   signal phyLinkUp              : std_logic;
-   signal pciExpTxP              : std_logic_vector(0  downto 0);
-   signal pciExpTxN              : std_logic_vector(0  downto 0);
-   signal pciExpRxP              : std_logic_vector(0  downto 0);
-   signal pciExpRxN              : std_logic_vector(0  downto 0);
-   signal intResetL              : std_logic;
-   signal remResetL              : std_logic;
-   signal pcieEnable             : std_logic;
-   signal debugCount             : std_logic_vector(15 downto 0);
-   signal cfgMsgRx               : std_logic;
-   signal cfgMsgData             : std_logic_vector(30 downto 0);
-   signal cfgMsgDataReg          : std_logic_vector(30 downto 0);
-   signal control0               : std_logic_vector(35 DOWNTO 0);
-   signal trig0                  : std_logic_vector(255 DOWNTO 0);
+   signal wrFifoDin              : slv(94 downto 0);
+   signal wrFifoDout             : slv(94 downto 0);
+   signal wrFifoWrEn             : sl;
+   signal wrFifoRdEn             : sl;
+   signal wrFifoValid            : sl;
+   signal rdFifoDin              : slv(94 downto 0);
+   signal rdFifoDout             : slv(94 downto 0);
+   signal rdFifoWrEn             : sl;
+   signal rdFifoRdEn             : sl;
+   signal rdFifoFull             : sl;
+   signal rdFifoValid            : sl;
+   signal pciClk                 : sl;
+   signal pciClkRst              : sl;
+   signal txBufAv                : slv(5 downto 0);
+   signal txReady                : sl;
+   signal txValid                : sl;
+   signal rxReady                : sl;
+   signal rxValid                : sl;
+   signal linkUp                 : sl;
+   signal cfgRead                : sl;
+   signal cfgWrite               : sl;
+   signal cfgDone                : sl;
+   signal cfgDout                : slv(31 downto 0);
+   signal cfgDoutReg             : slv(31 downto 0);
+   signal cfgDinReg              : slv(31 downto 0);
+   signal cfgDin                 : slv(31 downto 0);
+   signal cfgAddrReg             : slv(9  downto 0);
+   signal cfgAddr                : slv(9  downto 0);
+   signal cfgWrEn                : sl;
+   signal cfgWrEnRegA            : sl;
+   signal cfgWrEnRegB            : sl;
+   signal cfgWrEnRegC            : sl;
+   signal cfgRdEn                : sl;
+   signal cfgRdEnRegA            : sl;
+   signal cfgRdEnRegB            : sl;
+   signal cfgRdEnRegC            : sl;
+   signal cfgRdWrDone            : sl;
+   signal cfgRdWrDoneReg         : sl;
+   signal cfgRdWrDoneDly         : sl;
+   signal cfgStatus              : slv(15 downto 0);
+   signal cfgCommand             : slv(15 downto 0);
+   signal cfgDStatus             : slv(15 downto 0);
+   signal cfgDCommand            : slv(15 downto 0);
+   signal cfgDCommand2           : slv(15 downto 0);
+   signal cfgLStatus             : slv(15 downto 0);
+   signal cfgLCommand            : slv(15 downto 0);
+   signal cfgPcieLinkState       : slv(2  downto 0);
+   signal cfgPmcsrPmeEn          : sl;
+   signal cfgPmcsrPowerstate     : slv(1  downto 0);
+   signal cfgPmcsrPmeStatus      : sl;
+   signal cfgReceivedFuncLvlRst  : sl;
+   signal cfgBusNumber           : slv(7  downto 0);
+   signal cfgDeviceNumber        : slv(4  downto 0);
+   signal cfgFunctionNumber      : slv(2  downto 0);
+   signal phyLinkUp              : sl;
+   signal pciExpTxP              : slv(0  downto 0);
+   signal pciExpTxN              : slv(0  downto 0);
+   signal pciExpRxP              : slv(0  downto 0);
+   signal pciExpRxN              : slv(0  downto 0);
+   signal intResetL              : sl;
+   signal remResetL              : sl;
+   signal pcieEnable             : sl;
+   signal debugCount             : slv(15 downto 0);
+   signal cfgMsgRx               : sl;
+   signal cfgMsgData             : slv(30 downto 0);
+   signal cfgMsgDataReg          : slv(30 downto 0);
+   signal control0               : slv(35 DOWNTO 0);
+   signal trig0                  : slv(255 DOWNTO 0);
 
 begin
 
@@ -638,7 +639,7 @@ begin
    -- Debug
    --------------------------------------------
 
-   U_Debug : if true generate
+   U_Debug : if false generate
 
       U_icon: zynq_icon
          port map ( 

@@ -13,7 +13,7 @@
 -- 09/03/2013: created.
 -------------------------------------------------------------------------------
 library ieee;
-use ieee.sl_1164.all;
+use ieee.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.numeric_std.all;
@@ -85,8 +85,6 @@ begin
       elsif rising_edge(axiClk) then
          localBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
          localBusSlave.readData  <= (others=>'0')             after TPD_G;
-         wrFifoWrEn              <= '0'                       after TPD_G;
-         rdFifoRdEn              <= '0'                       after TPD_G;
 
          -- Write Low Data - 0xB800_1000
          if localBusMaster.addr(23 downto 0) = x"001000" then
@@ -126,26 +124,26 @@ begin
             if localBusMaster.writeEnable = '1' then
                configuration_vector <= localBusMaster.writeData(6 downto 0) after TPD_G;
             end if;
-            intLocalBusSlave.readData(6 downto 0) <= configuration_vector after TPD_G;
+            localBusSlave.readData(6 downto 0) <= configuration_vector after TPD_G;
 
          -- Status Vector - 0xB800_101C
          elsif localBusMaster.addr(23 downto 0) = x"00101C" then
-            intLocalBusSlave.readData(7 downto 0) <= status_vector after TPD_G;
+            localBusSlave.readData(7 downto 0) <= status_vector after TPD_G;
 
          -- Others status - 0xB800_1020
          elsif localBusMaster.addr(23 downto 0) = x"001020" then
-            intLocalBusSlave.readData(3 downto 0) <= signal_detect after TPD_G;
-            intLocalBusSlave.readData(7 downto 4) <= sync_status   after TPD_G;
-            intLocalBusSlave.readData(8)          <= align_status  after TPD_G;
-            intLocalBusSlave.readData(9)          <= mgt_tx_ready  after TPD_G;
-            intLocalBusSlave.readData(10)         <= txlock        after TPD_G;
+            localBusSlave.readData(3 downto 0) <= signal_detect after TPD_G;
+            localBusSlave.readData(7 downto 4) <= sync_status   after TPD_G;
+            localBusSlave.readData(8)          <= align_status  after TPD_G;
+            localBusSlave.readData(9)          <= mgt_tx_ready  after TPD_G;
+            localBusSlave.readData(10)         <= txlock        after TPD_G;
 
          -- Enable Register - 0xB800_1024
          elsif localBusMaster.addr(23 downto 0) = x"001024" then
             if localBusMaster.writeEnable = '1' then
                ethEnable <= localBusMaster.writeData(0) after TPD_G;
             end if;
-            intLocalBusSlave.readData(0) <= ethEnable after TPD_G;
+            localBusSlave.readData(0) <= ethEnable after TPD_G;
 
          end if;
       end if;  
@@ -157,7 +155,7 @@ begin
    -----------------------------------------
 
    -- Reset
-   ethReset = ponReset or not ethEnable;
+   ethReset <= ponReset or not ethEnable;
 
    -- Core, copied from example design
    -- Modified reset timing for 200mhz dclk

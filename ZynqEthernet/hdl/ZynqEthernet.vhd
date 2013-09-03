@@ -22,43 +22,44 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.StdRtlPkg.all;
 
 entity ZynqEthernet is
    port (
 
       -- Clocks
-      sysClk125               : in  std_logic;
-      sysClk200               : in  std_logic;
-      sysClk200Rst            : in  std_logic;
+      sysClk125               : in  sl;
+      sysClk200               : in  sl;
+      sysClk200Rst            : in  sl;
 
       -- ARM Interface
       ethFromArm              : in  EthFromArmType;
       ethToArm                : out EthToArmType;
 
       -- Ethernet Lines
-      ethRxP                  : in  std_logic;
-      ethRxM                  : in  std_logic;
-      ethTxP                  : out std_logic;
-      ethTxM                  : out std_logic
+      ethRxP                  : in  sl;
+      ethRxM                  : in  sl;
+      ethTxP                  : out sl;
+      ethTxM                  : out sl
    );
 end ZynqEthernet;
 
 architecture structure of ZynqEthernet is
 
    -- Local signals
-   signal txoutclk              : std_logic;                    -- txoutclk from GT transceiver
-   signal txoutclk_bufg         : std_logic;                    -- txoutclk from GT transceiver routed onto global routing.
-   signal resetdone             : std_logic;                    -- To indicate that the GT transceiver has completed its reset cycle
-   signal mmcm_locked           : std_logic;                    -- MMCM locked signal.
-   signal mmcm_reset            : std_logic;                    -- MMCM reset signal.
-   signal clkfbout              : std_logic;                    -- MMCM feedback clock
-   signal clkout0               : std_logic;                    -- MMCM clock0 output (62.5MHz).
-   signal clkout1               : std_logic;                    -- MMCM clock1 output (125MHz).
-   signal userclk               : std_logic;                    -- 62.5MHz clock for GT transceiver Tx/Rx user clocks
-   signal userclk2              : std_logic;                    -- 125MHz clock for core reference clock.
-   signal pma_reset_pipe        : std_logic_vector(3 downto 0); -- flip-flop pipeline for reset duration stretch
-   signal pma_reset             : std_logic;                    -- Synchronous transcevier PMA reset
-   signal confValid             : std_logic;
+   signal txoutclk              : sl;                    -- txoutclk from GT transceiver
+   signal txoutclk_bufg         : sl;                    -- txoutclk from GT transceiver routed onto global routing.
+   signal resetdone             : sl;                    -- To indicate that the GT transceiver has completed its reset cycle
+   signal mmcm_locked           : sl;                    -- MMCM locked signal.
+   signal mmcm_reset            : sl;                    -- MMCM reset signal.
+   signal clkfbout              : sl;                    -- MMCM feedback clock
+   signal clkout0               : sl;                    -- MMCM clock0 output (62.5MHz).
+   signal clkout1               : sl;                    -- MMCM clock1 output (125MHz).
+   signal userclk               : sl;                    -- 62.5MHz clock for GT transceiver Tx/Rx user clocks
+   signal userclk2              : sl;                    -- 125MHz clock for core reference clock.
+   signal pma_reset_pipe        : slv(3 downto 0); -- flip-flop pipeline for reset duration stretch
+   signal pma_reset             : sl;                    -- Synchronous transcevier PMA reset
+   signal confValid             : sl;
 
 begin
 
@@ -67,17 +68,17 @@ begin
    ethToArm.enetGmiiTxClk <= userclk2;
 
    -- Unused inputs
-   --ethFromArm.enetMdioT           : std_logic;
-   --ethFromArm.enetPtpDelayReqRx   : std_logic;
-   --ethFromArm.enetPtpDelayReqTx   : std_logic;
-   --ethFromArm.enetPtpPDelayReqRx  : std_logic;
-   --ethFromArm.enetPtpPDelayReqTx  : std_logic;
-   --ethFromArm.enetPtpPDelayRespRx : std_logic;
-   --ethFromArm.enetPtpPDelayRespTx : std_logic;
-   --ethFromArm.enetPtpSyncFrameRx  : std_logic;
-   --ethFromArm.enetPtpSyncFrameTx  : std_logic;
-   --ethFromArm.enetSofRx           : std_logic;
-   --ethFromArm.enetSofTx           : std_logic;
+   --ethFromArm.enetMdioT           : sl;
+   --ethFromArm.enetPtpDelayReqRx   : sl;
+   --ethFromArm.enetPtpDelayReqTx   : sl;
+   --ethFromArm.enetPtpPDelayReqRx  : sl;
+   --ethFromArm.enetPtpPDelayReqTx  : sl;
+   --ethFromArm.enetPtpPDelayRespRx : sl;
+   --ethFromArm.enetPtpPDelayRespTx : sl;
+   --ethFromArm.enetPtpSyncFrameRx  : sl;
+   --ethFromArm.enetPtpSyncFrameTx  : sl;
+   --ethFromArm.enetSofRx           : sl;
+   --ethFromArm.enetSofTx           : sl;
 
    -- Unused outputs
    ethToArm.enetGmiiCol  <= '0';
