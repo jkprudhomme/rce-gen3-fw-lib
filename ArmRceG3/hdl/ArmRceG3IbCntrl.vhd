@@ -245,14 +245,13 @@ begin
    -----------------------------------------
    U_Arbiter : entity work.Arbiter 
       generic map (
-         TPD_G      => 1 ns,
-         USE_SRST_G => true,
-         USE_ARST_G => false,
-         REQ_SIZE_G => 32
+         TPD_G          => 1 ns,
+         RST_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         REQ_SIZE_G     => 32
       ) port map (
          clk      => axiClk,
-         aRst     => '0',
-         sRst     => axiClkRst,
+         rst      => axiClkRst,
          req      => fifoReq,
          selected => arbSelect,
          valid    => arbValid,
