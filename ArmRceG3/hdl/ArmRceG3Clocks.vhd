@@ -22,57 +22,62 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.StdRtlPkg.all;
 
 entity ArmRceG3Clocks is
+   generic (
+      AXI_CLKDIV_G : real  := 4.5;
+      TPD_G        : time  := 1 ns
+   );
    port (
 
       -- Core clock and reset inputs
-      fclkClk3                : in     std_logic;
-      fclkClk2                : in     std_logic;
-      fclkClk1                : in     std_logic;
-      fclkClk0                : in     std_logic; -- 100Mhz
-      fclkRst3                : in     std_logic;
-      fclkRst2                : in     std_logic;
-      fclkRst1                : in     std_logic;
-      fclkRst0                : in     std_logic;
+      fclkClk3                : in     sl;
+      fclkClk2                : in     sl;
+      fclkClk1                : in     sl;
+      fclkClk0                : in     sl; -- 100Mhz
+      fclkRst3                : in     sl;
+      fclkRst2                : in     sl;
+      fclkRst1                : in     sl;
+      fclkRst0                : in     sl;
 
       -- AXI bus clock inputs
-      axiGpMasterReset        : in     std_logic_vector(1 downto 0);
-      axiGpSlaveReset         : in     std_logic_vector(1 downto 0);
-      axiAcpSlaveReset        : in     std_logic;
-      axiHpSlaveReset         : in     std_logic_vector(3 downto 0);
+      axiGpMasterReset        : in     slv(1 downto 0);
+      axiGpSlaveReset         : in     slv(1 downto 0);
+      axiAcpSlaveReset        : in     sl;
+      axiHpSlaveReset         : in     slv(3 downto 0);
 
       -- AXI clock and reset
-      axiClk                  : out    std_logic;
-      axiClkRst               : out    std_logic;
+      axiClk                  : out    sl;
+      axiClkRst               : out    sl;
 
       -- Other system clocks
-      sysClk125               : out    std_logic;
-      sysClk125Rst            : out    std_logic;
-      sysClk200               : out    std_logic;
-      sysClk200Rst            : out    std_logic
+      sysClk125               : out    sl;
+      sysClk125Rst            : out    sl;
+      sysClk200               : out    sl;
+      sysClk200Rst            : out    sl
    );
 end ArmRceG3Clocks;
 
 architecture structure of ArmRceG3Clocks is
 
    -- Local signals
-   signal axiCombinedRst     : std_logic;
-   signal daxiClk            : std_logic;
-   signal iaxiClk            : std_logic;
-   signal iaxiClkRst         : std_logic;
-   signal dsysClk125         : std_logic;
-   signal isysClk125         : std_logic;
-   signal isysClk125Rst      : std_logic;
-   signal dsysClk200         : std_logic;
-   signal isysClk200         : std_logic;
-   signal isysClk200Rst      : std_logic;
-   signal clkFbOut           : std_logic;
-   signal mmcmLocked         : std_logic;
-   signal ponCount           : std_logic_vector(7 downto 0);
-   signal ponResetL          : std_logic;
-   signal ponReset           : std_logic;
-   signal lockedReset        : std_logic;
+   signal axiCombinedRst     : sl;
+   signal daxiClk            : sl;
+   signal iaxiClk            : sl;
+   signal iaxiClkRst         : sl;
+   signal dsysClk125         : sl;
+   signal isysClk125         : sl;
+   signal isysClk125Rst      : sl;
+   signal dsysClk200         : sl;
+   signal isysClk200         : sl;
+   signal isysClk200Rst      : sl;
+   signal clkFbOut           : sl;
+   signal mmcmLocked         : sl;
+   signal ponCount           : slv(7 downto 0);
+   signal ponResetL          : sl;
+   signal ponReset           : sl;
+   signal lockedReset        : sl;
 
 begin
 
@@ -111,10 +116,10 @@ begin
          COMPENSATION         => "ZHOLD",
          STARTUP_WAIT         => FALSE,
          DIVCLK_DIVIDE        => 1,
-         CLKFBOUT_MULT_F      => 10.000,
+         CLKFBOUT_MULT_F      => 10.000, -- 1000 base clock
          CLKFBOUT_PHASE       => 0.000,
          CLKFBOUT_USE_FINE_PS => FALSE,
-         CLKOUT0_DIVIDE_F     => 10.000,
+         CLKOUT0_DIVIDE_F     => AXI_CLKDIV_G,
          CLKOUT0_PHASE        => 0.000,
          CLKOUT0_DUTY_CYCLE   => 0.5,
          CLKOUT0_USE_FINE_PS  => FALSE,
@@ -132,11 +137,11 @@ begin
       port map (
          CLKFBOUT             => clkFbOut,
          CLKFBOUTB            => open,
-         CLKOUT0              => daxiClk, -- 100Mhz
+         CLKOUT0              => daxiClk, 
          CLKOUT0B             => open,
-         CLKOUT1              => dsysClk200, -- 200Mhz
+         CLKOUT1              => dsysClk200,
          CLKOUT1B             => open,
-         CLKOUT2              => dsysClk125, -- 125Mhz
+         CLKOUT2              => dsysClk125,
          CLKOUT2B             => open,
          CLKOUT3              => open,
          CLKOUT3B             => open,
@@ -234,4 +239,3 @@ begin
       );
 
 end architecture structure;
-

@@ -2,10 +2,6 @@ Welcome to Xilinx CORE Generator.
 Help system initialized.
 The IP Catalog has been reloaded.
 Opening project file
-/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_stable/modules/ZynqPcieMast
-er/coregen/coregen.cgp.
+/afs/slac.stanford.edu/u/ey/rherbst/projects/rce/dpm_working/modules/ZynqPcieMas
+ter/coregen/coregen.cgp.
 Recustomize and Generate (Under Original Project Settings)INFO:sim:172 - Generating IP...
-Cancelled executing Tcl generator.
-Recustomize and Generate (Under Original Project Settings)INFO:sim:172 - Generating IP...
-Cancelled executing Tcl generator.
-Closed project file.

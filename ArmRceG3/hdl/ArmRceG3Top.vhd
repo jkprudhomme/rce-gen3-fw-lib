@@ -16,117 +16,100 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.numeric_std.all;
 
 library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.StdRtlPkg.all;
 use work.Version.all;
+use work.ArmRceG3Version.all;
 
 entity ArmRceG3Top is
    generic (
-      DebugEn : Boolean := false
+      TPD_G        : time    := 1 ns;
+      AXI_CLKDIV_G : real    := 4.7
    );
    port (
 
-      -- LEDs
-      led                      : out   std_logic_vector(1 downto 0);
-
       -- I2C
-      i2cSda                   : inout std_logic;
-      i2cScl                   : inout std_logic;
+      i2cSda                   : inout sl;
+      i2cScl                   : inout sl;
 
       -- Clocks
-      axiClk                   : out   std_logic;
-      axiClkRst                : out   std_logic;
-      sysClk125                : out   std_logic;
-      sysClk125Rst             : out   std_logic;
-      sysClk200                : out   std_logic;
-      sysClk200Rst             : out   std_logic;
+      axiClk                   : out   sl;
+      axiClkRst                : out   sl;
+      sysClk125                : out   sl;
+      sysClk125Rst             : out   sl;
+      sysClk200                : out   sl;
+      sysClk200Rst             : out   sl;
 
       -- External Local Bus
-      localBusMaster           : out   LocalBusMasterVector(15 downto 15);
-      localBusSlave            : in    LocalBusSlaveVector(15 downto 15);
+      localBusMaster           : out   LocalBusMasterVector(15 downto 8);
+      localBusSlave            : in    LocalBusSlaveVector(15 downto 8);
 
       -- Ethernet
-      ethFromArm               : out   EthFromArmType;
-      ethToArm                 : in    EthToArmType
+      ethFromArm               : out   EthFromArmVector(1 downto 0);
+      ethToArm                 : in    EthToArmVector(1 downto 0)
 
    );
 end ArmRceG3Top;
 
 architecture structure of ArmRceG3Top is
 
-   component zynq_icon
-      PORT (
-         CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0)
-      );
-   end component;
-
-   component zynq_ila
-      PORT (
-         CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-         CLK     : IN    STD_LOGIC;
-         TRIG0   : IN    STD_LOGIC_VECTOR(127 DOWNTO 0)
-      );
-   end component;
-
    -- Local signals
-   signal fclkClk3                 : std_logic;
-   signal fclkClk2                 : std_logic;
-   signal fclkClk1                 : std_logic;
-   signal fclkClk0                 : std_logic;
-   signal fclkRst3                 : std_logic;
-   signal fclkRst2                 : std_logic;
-   signal fclkRst1                 : std_logic;
-   signal fclkRst0                 : std_logic;
-   signal axiGpMasterReset         : std_logic_vector(1 downto 0);
+   signal fclkClk3                 : sl;
+   signal fclkClk2                 : sl;
+   signal fclkClk1                 : sl;
+   signal fclkClk0                 : sl;
+   signal fclkRst3                 : sl;
+   signal fclkRst2                 : sl;
+   signal fclkRst1                 : sl;
+   signal fclkRst0                 : sl;
+   signal axiGpMasterReset         : slv(1 downto 0);
    signal axiGpMasterWriteFromArm  : AxiWriteMasterVector(1 downto 0);
    signal axiGpMasterWriteToArm    : AxiWriteSlaveVector(1 downto 0);
    signal axiGpMasterReadFromArm   : AxiReadMasterVector(1 downto 0);
    signal axiGpMasterReadToArm     : AxiReadSlaveVector(1 downto 0);
-   signal axiGpSlaveReset          : std_logic_vector(1 downto 0);
+   signal axiGpSlaveReset          : slv(1 downto 0);
    signal axiGpSlaveWriteFromArm   : AxiWriteSlaveVector(1 downto 0);
    signal axiGpSlaveWriteToArm     : AxiWriteMasterVector(1 downto 0);
    signal axiGpSlaveReadFromArm    : AxiReadSlaveVector(1 downto 0);
    signal axiGpSlaveReadToArm      : AxiReadMasterVector(1 downto 0);
-   signal axiAcpSlaveReset         : std_logic;
+   signal axiAcpSlaveReset         : sl;
    signal axiAcpSlaveWriteFromArm  : AxiWriteSlaveType;
    signal axiAcpSlaveWriteToArm    : AxiWriteMasterType;
    signal axiAcpSlaveReadFromArm   : AxiReadSlaveType;
    signal axiAcpSlaveReadToArm     : AxiReadMasterType;
-   signal axiHpSlaveReset          : std_logic_vector(3 downto 0);
+   signal axiHpSlaveReset          : slv(3 downto 0);
    signal axiHpSlaveWriteFromArm   : AxiWriteSlaveVector(3 downto 0);
    signal axiHpSlaveWriteToArm     : AxiWriteMasterVector(3 downto 0);
    signal axiHpSlaveReadFromArm    : AxiReadSlaveVector(3 downto 0);
    signal axiHpSlaveReadToArm      : AxiReadMasterVector(3 downto 0);
-   signal armInt                   : std_logic_vector(15 downto 0);
-   signal control0                 : std_logic_vector(35 DOWNTO 0);
-   signal trig0                    : std_logic_vector(127 DOWNTO 0);
+   signal armInt                   : slv(15 downto 0);
    signal intLocalBusMaster        : LocalBusMasterVector(15 downto 0);
    signal intLocalBusSlave         : LocalBusSlaveVector(15 downto 0);
-   signal intLocalBusReset         : std_logic;
-   signal scratchPad               : std_logic_vector(31 downto 0);
-   signal fifoDebug                : std_logic_vector(127 DOWNTO 0);
-   signal iaxiClk                  : std_logic;
-   signal iaxiClkRst               : std_logic;
-   signal isysClk125               : std_logic;
-   signal isysClk125Rst            : std_logic;
-   signal isysClk200               : std_logic;
-   signal isysClk200Rst            : std_logic;
-   signal writeFifoClk             : std_logic_vector(16 downto 0);
-   signal writeFifoToFifo          : WriteFifoToFifoVector(16 downto 0);
-   signal writeFifoFromFifo        : WriteFifoFromFifoVector(16 downto 0);
+   signal scratchPad               : slv(31 downto 0);
+   signal iaxiClk                  : sl;
+   signal iaxiClkRst               : sl;
+   signal isysClk125               : sl;
+   signal isysClk125Rst            : sl;
+   signal isysClk200               : sl;
+   signal isysClk200Rst            : sl;
+   signal bsiToFifo                : QWordToFifoType;
+   signal bsiFromFifo              : QWordFromFifoType;
 
 begin
 
    --------------------------------------------
    -- Processor Core
    --------------------------------------------
-
    U_ArmRceG3Cpu : entity work.ArmRceG3Cpu 
-      port map (
+      generic map (
+         TPD_G => TPD_G
+      ) port map (
          fclkClk3                 => fclkClk3,
          fclkClk2                 => fclkClk2,
          fclkClk1                 => fclkClk1,
@@ -171,20 +154,14 @@ begin
    axiGpSlaveWriteToArm       <= (others=>AxiWriteMasterInit);
    axiGpSlaveReadToArm        <= (others=>AxiReadMasterInit);
 
-   axiAcpSlaveReadToArm       <= AxiReadMasterInit;
-
-   --axiHpSlaveWriteFromArm
-   --axiHpSlaveReadFromArm
-   axiHpSlaveWriteToArm       <= (others=>AxiWriteMasterInit);
-   axiHpSlaveReadToArm        <= (others=>AxiReadMasterInit);
-
-   armInt(15)                 <= '0';
-
    --------------------------------------------
    -- Clock Generation
    --------------------------------------------
    U_ArmRceG3Clocks: entity work.ArmRceG3Clocks
-      port map (
+      generic map (
+         TPD_G        => TPD_G,
+         AXI_CLKDIV_G => AXI_CLKDIV_G
+      ) port map (
          fclkClk3                 => fclkClk3,
          fclkClk2                 => fclkClk2,
          fclkClk1                 => fclkClk1,
@@ -219,7 +196,9 @@ begin
    
    -- GP1: 8000_0000 to BFFF_FFFF
    U_ArmRceG3LocalBus: entity work.ArmRceG3LocalBus 
-      port map (
+      generic map (
+         TPD_G => TPD_G
+      ) port map (
          axiClk                  => iaxiClk,
          axiClkRst               => iaxiClkRst,
          axiMasterReadFromArm    => axiGpMasterReadFromArm(1),
@@ -231,46 +210,55 @@ begin
       );
 
    -- External Local Bus
-   localBusMaster                 <= intLocalBusMaster(15 downto 15);
-   intLocalBusSlave(15 downto 15) <= localBusSlave;
+   localBusMaster                 <= intLocalBusMaster(15 downto 8);
+   intLocalBusSlave(15 downto 8)  <= localBusSlave;
 
    -- Unused
-   intLocalBusSlave(14 downto 3) <= (others=>LocalBusSlaveInit);
+   intLocalBusSlave(7  downto 3) <= (others=>LocalBusSlaveInit);
 
    --------------------------------------------
    -- Local Registers
    --------------------------------------------
 
-   process ( iaxiClk, iaxiClkRst ) begin
+   process ( iaxiClk, iaxiClkRst ) 
+      variable c : character;
+   begin
       if iaxiClkRst = '1' then
          scratchPad          <= (others=>'0')     after TPD_G;
          intLocalBusSlave(0) <= LocalBusSlaveInit after TPD_G;
       elsif rising_edge(iaxiClk) then
+         intLocalBusSlave(0).readValid <= intLocalBusMaster(0).readEnable after TPD_G;
+         intLocalBusSlave(0).readData  <= x"deadbeef"                     after TPD_G;
 
          -- 0x80000000
-         if intLocalBusMaster(0).addr(25 downto 2) = x"000000" then
-            intLocalBusSlave(0).readData  <= FpgaVersion                  after TPD_G;
-            intLocalBusSlave(0).readValid <= intLocalBusMaster(0).readEnable after TPD_G;
+         if intLocalBusMaster(0).addr(23 downto 0) = x"000000" then
+            intLocalBusSlave(0).readData <= FPGA_VERSION_C after TPD_G;
 
          -- 0x80000004
-         elsif intLocalBusMaster(0).addr(25 downto 2) = x"000001" then
+         elsif intLocalBusMaster(0).addr(23 downto 2) = x"000004" then
             if intLocalBusMaster(0).writeEnable = '1' then
                scratchPad <= intLocalBusMaster(0).writeData after TPD_G;   
             end if;
-            intLocalBusSlave(0).readData  <= scratchPad                   after TPD_G;
-            intLocalBusSlave(0).readValid <= intLocalBusMaster(0).readEnable after TPD_G;
+            intLocalBusSlave(0).readData <= scratchPad after TPD_G;
 
-         -- Unsupported
-         else
-            intLocalBusSlave(0).readData  <= x"deadbeef"                  after TPD_G;
-            intLocalBusSlave(0).readValid <= intLocalBusMaster(0).readEnable after TPD_G;
+         -- 0x80000008
+         elsif intLocalBusMaster(0).addr(23 downto 0) = x"000008" then
+            intLocalBusSlave(0).readData <= ArmRceG3Version after TPD_G;
+
+         -- 0x80001000
+         elsif intLocalBusMaster(0).addr(23 downto 8) = x"0010" then
+            intLocalBusSlave(0).readData <= (others=>'0') after TPD_G;
+
+            for x in 0 to 3 loop
+               if (conv_integer(intLocalBusMaster(0).addr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
+                  c := BUILD_STAMP_C(conv_integer(intLocalBusMaster(0).addr(7 downto 0))+x+1);
+                  intLocalBusSlave(0).readData(x*8+7 downto x*8) <= conv_std_logic_vector(character'pos(c),8) after TPD_G;
+               end if;
+            end loop;
          end if;
       end if;  
-   end process;         
+   end process;
 
-   -- LED Debug
-   led(0) <= scratchPad(0);
-   led(1) <= scratchPad(1);
 
    --------------------------------------------
    -- I2C Controller
@@ -278,65 +266,44 @@ begin
 
    -- 0x8400_0000 - 0x87FF_FFFF
    U_ArmRceG3I2c : entity work.ArmRceG3I2c
-      port map (
-         ponRst            => axiGpMasterReset(1),
+      generic map (
+         TPD_G => TPD_G
+      ) port map (
          axiClk            => iaxiClk,
          axiClkRst         => iaxiClkRst,
          localBusMaster    => intLocalBusMaster(1),
          localBusSlave     => intLocalBusSlave(1),
-         writefifoclk      => writefifoclk(4),
-         writefifotofifo   => writefifotofifo(4),
-         writefifofromfifo => writefifofromfifo(4),
+         bsiToFifo         => bsiToFifo,
+         bsiFromFifo       => bsiFromFifo,
          i2cSda            => i2cSda,
          i2cScl            => i2cScl
       );
 
    --------------------------------------------
-   -- FIFO Test Interface
+   -- DMA Controller
    --------------------------------------------
 
    -- 0x8800_0000 - 0x8BFF_FFFF
-   U_ArmRceG3IbCntrl: entity work.ArmRceG3IbCntrl 
-      port map (
-         axiClk                  => iaxiClk,
-         axiClkRst               => iaxiClkRst,
-         axiAcpSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
-         axiAcpSlaveWriteToArm   => axiAcpSlaveWriteToArm,
-         interrupt               => armInt(14 downto 0),
-         localBusMaster          => intLocalBusMaster(2),
-         localBusSlave           => intLocalBusSlave(2),
-         writefifoclk            => writefifoclk,
-         writefifotofifo         => writefifotofifo,
-         writefifofromfifo       => writefifofromfifo,
-         debug                   => fifoDebug
+   U_ArmRceG3DmaCntrl : entity work.ArmRceG3DmaCntrl 
+      generic map (
+         TPD_G => TPD_G
+      ) port map (
+         axiClk                   => iaxiClk,
+         axiClkRst                => iaxiClkRst,
+         axiAcpSlaveWriteFromArm  => axiAcpSlaveWriteFromArm,
+         axiAcpSlaveWriteToArm    => axiAcpSlaveWriteToArm,
+         axiAcpSlaveReadFromArm   => axiAcpSlaveReadFromArm,
+         axiAcpSlaveReadToArm     => axiAcpSlaveReadToArm,
+         axiHpSlaveWriteFromArm   => axiHpSlaveWriteFromArm,
+         axiHpSlaveWriteToArm     => axiHpSlaveWriteToArm,
+         axiHpSlaveReadFromArm    => axiHpSlaveReadFromArm,
+         axiHpSlaveReadToArm      => axiHpSlaveReadToArm,
+         interrupt                => armInt,
+         localBusMaster           => intLocalBusMaster(2),
+         localBusSlave            => intLocalBusSlave(2),
+         bsiToFifo                => bsiToFifo,
+         bsiFromFifo              => bsiFromFifo
       );
-
-      -- Unused FIFOs
-      writeFifoClk(3  downto  0)   <= (others=>'0');
-      writeFifoClk(16 downto  5)   <= (others=>'0');
-      writeFifoToFifo(3  downto 0) <= (others=>WriteFifoToFifoInit);
-      writeFifoToFifo(16 downto 5) <= (others=>WriteFifoToFifoInit);
-
-   --------------------------------------------
-   -- Debug
-   --------------------------------------------
-
-   U_Debug : if DebugEn = true generate
-
-      U_icon: zynq_icon
-         port map ( 
-            CONTROL0 => control0
-         );
-
-      U_ila: zynq_ila
-         port map (
-            CONTROL => control0,
-            CLK     => iaxiClk,
-            TRIG0   => trig0
-         );
-
-      trig0 <= fifoDebug;
-   end generate;
 
 end architecture structure;
 

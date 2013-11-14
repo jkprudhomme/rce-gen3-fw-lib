@@ -6,22 +6,6 @@
 -------------------------------------------------------------------------------
 -- Description:
 -- I2C Slave block for IPMI operations:
--- 
---   BRAM registers 0-511
---     register 0   : "RST" - reset, not used in Zynq
---     register 510 : "IOW" - interrupt on write address
---     register 511 : "RSP" - response register
---
---   I2C write to BRAM RST register initiates reset (Not used in Zynq)
---     Reset is asserted when I2C transaction is complete
---     Reset is held for 8 DCR clock cycles (8 is arbitrary)
---   I2C write to BRAM register 1-511 initiates interrupt
---     When I2C transaction is complete:
---       Register address (1B view) is recorded in BRAM IOW
---       BRAM RSP register is set
---       Interrupt is asserted
---     Interrupt is held until DCR access writes to BRAM RSP register
---
 -------------------------------------------------------------------------------
 -- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -41,65 +25,46 @@ use work.i2cPkg.all;
 use work.StdRtlPkg.all;
 
 entity ArmRceG3I2c is
+   generic (
+      TPD_G : time := 1 ns
+   );
    port (
-      ponRst         : in  std_logic;
 
       -- Clock and reset
-      axiClk         : in  std_logic;
-      axiClkRst      : in  std_logic;
+      axiClk         : in  sl;
+      axiClkRst      : in  sl;
 
       -- Local bus interface
       localBusMaster : in  LocalBusMasterType;
       localBusSlave  : out LocalBusSlaveType;
 
       -- FIFO Interface
-      writeFifoClk            : out std_logic;
-      writeFifoToFifo         : out WriteFifoToFifoType;
-      writeFifoFromFifo       : in  WriteFifoFromFifoType;
+      bsiToFifo      : out QWordToFifoType;
+      bsiFromFifo    : in  QWordFromFifoType;
 
       -- IIC Interface
-      i2cSda         : inout std_logic;
-      i2cScl         : inout std_logic
+      i2cSda         : inout sl;
+      i2cScl         : inout sl
    );
 end ArmRceG3I2c;
 
 architecture IMP of ArmRceG3I2c is
 
-   signal i2cBramRd   : std_logic;
-   signal i2cBramWr   : std_logic;
-   signal i2cBramAddr : std_logic_vector(15 downto 0);
-   signal i2cBramDout : std_logic_vector( 7 downto 0);
-   signal locBramDout : std_logic_vector( 7 downto 0);
-   signal i2cBramDin  : std_logic_vector( 7 downto 0);
-   signal cpuBramWr   : std_logic;
-   signal cpuBramAddr : std_logic_vector(8  downto 0);
-   signal cpuBramDout : std_logic_vector(31 downto 0);
-   signal cpuBramDin  : std_logic_vector(31 downto 0);
+   signal i2cBramRd   : sl;
+   signal i2cBramWr   : sl;
+   signal i2cBramAddr : slv(15 downto 0);
+   signal i2cBramDout : slv( 7 downto 0);
+   signal locBramDout : slv( 7 downto 0);
+   signal i2cBramDin  : slv( 7 downto 0);
+   signal cpuBramWr   : sl;
+   signal cpuBramAddr : slv(8  downto 0);
+   signal cpuBramDout : slv(31 downto 0);
+   signal cpuBramDin  : slv(31 downto 0);
    signal i2cIn       : i2c_in_type;
    signal i2cOut      : i2c_out_type;
+   signal readEnDly   : slv(1 downto 0);
+   signal aFullData   : slv(7 downto 0);
 
-   type StateType is (WAIT_WR_S, WR_DATA_S, WR_ADDR_L, WR_ADDR_H, WR_FF_S);
-   type SysRegType is record
-      startup   : sl;
-      interrupt : slv(3 downto 0);
-      cpuReset  : slv(7 downto 0);
-      state     : StateType;
-      addr      : slv(15 downto 0);
-      wrEn      : sl;
-      wrData    : slv(7 downto 0);
-   end record SysRegType;
-
-   signal sysR, sysRin : SysRegType;
- 
-   type ApuRegType is record
-      interrupt : slv(1 downto 0);
-      empty     : sl;
-   end record ApuRegType;
-
-   signal apuR, apuRin : ApuRegType;
-   
-   constant TPD_G : time := 1 ns;
- 
 begin
 
    -------------------------
@@ -117,7 +82,7 @@ begin
          ENDIANNESS_G         => 0  -- 0=LE, 1=BE
       ) port map (
          sRst   => '0',
-         aRst   => ponRst,
+         aRst   => axiClkRst,
          clk    => axiClk,
          addr   => i2cBramAddr,
          wrEn   => i2cBramWr,
@@ -138,84 +103,6 @@ begin
                                O  => i2cIn.sda,
                                T  => i2cOut.sdaoen);
 
-   --------------------------------------------------------------------------------------------------
-   -- iicSysClk Logic - Glue between i2cRegSlave and block RAM.
-   -- Assert cpuReset upon startup and hold until address 0x8000 is written to over i2c.
-   -- A write to 0x8000 causes cpuReset to be held high for 8 cycles and then dropped.
-   -- A write over i2c to 0b1xxxxxxxxxxxxxxx (where x != 0) causes an interrupt.
-   -- sysR.interrupt is held for 4 cycles so that it can be picked up an synchronized to the apuClk.
-   --
-   -- On an i2c write, in addition to the data be written at the specified address, the lower byte
-   -- of the address is written to address 0x07F8 and 0xFF is written to address 0x7FC.
-   --------------------------------------------------------------------------------------------------
-   iicSysClkComb : process (sysR, i2cBramDin, i2cBramWr, i2cBramAddr) is
-      variable v : SysRegType;
-   begin
-      v := sysR;
-
-      -- Interrupt and cpuReset
-      v.interrupt := '0' & sysR.interrupt(3 downto 1);
-      v.cpuReset  := sysR.startup & sysR.cpuReset(7 downto 1);
-      if (i2cBramWr = '1' and i2cBramAddr(15) = '1') then
-         if (i2cBramAddr(14 downto 0) = "000000000000000") then
-            v.cpuReset := (others => '1');
-            v.startup  := '0';
-         else
-            v.interrupt := (others => '1');
-         end if;
-      end if;
-  
-      -- Control writes to bram
-      v.wrData := i2cBramDin;
-      v.wrEn   := '0';
-      v.addr   := i2cBramAddr;
-      case sysR.state is
-         when WAIT_WR_S =>
-            -- Upon I2C Write, first put wrData into bram at i2cBramAddr
-            if (i2cBramWr = '1') then
-               v.wrData := i2cBramDin;
-               v.wrEn   := '1';
-               v.addr   := i2cBramAddr;
-               v.state  := WR_ADDR_L;
-            end if;
-         when WR_ADDR_L =>
-            -- Then write lower byte of address into bram at 0x07F8
-            v.wrData := i2cBramAddr(7 downto 0);
-            v.wrEn   := '1';
-            v.addr   := X"07F8";
-            v.state  := WR_ADDR_H;
-         when WR_ADDR_H =>
-            -- Then write upper byte of address into bram at 0x07F9
-            v.wrData := i2cBramAddr(15 downto 8);
-            v.wrEn   := '1';
-            v.addr   := X"07F9";
-            v.state  := WR_FF_S;
-         when WR_FF_S =>
-            -- Then write 0xFF to bram at 0x07FC
-            v.wrData := X"FF";
-            v.wrEn   := '1';
-            v.addr   := X"07FC";
-            v.state  := WAIT_WR_S;
-         when others => null;
-      end case;
-
-      sysRin <= v;
-
-   end process iicSysClkComb;
-
-   iicSysClkSeq : process (axiClk, axiClkRst) is
-   begin
-      if (axiClkRst = '1') then
-         sysR.startup   <= '1'             after TPD_G;
-         sysR.interrupt <= (others => '0') after TPD_G;
-         sysR.cpuReset  <= (others => '1') after TPD_G;
-         sysR.wrEn      <= '0'             after TPD_G;
-      -- Other bram signals don't need reset
-      elsif (rising_edge(axiClk)) then
-         sysR <= sysRin after TPD_G;
-      end if;
-   end process;
-
    -------------------------
    -- Dual port ram
    -------------------------
@@ -232,45 +119,52 @@ begin
          WEB   => cpuBramWr,
          DOA   => locBramDout,
          DOPA  => open,
-         ADDRA => sysR.addr(10 downto 0),
+         ADDRA => i2cBramAddr(10 downto 0),
          CLKA  => axiClk,
-         DIA   => sysR.wrData,
+         DIA   => i2cBramDin,
          DIPA  => "0",
          ENA   => '1',
          SSRA  => '0',
-         WEA   => sysR.wrEn
+         WEA   => i2cBramWr
       );
 
-      -- Mux high order address, output almost full state at address 2048
-      i2cBramDout <= "0000000" & writeFifoFromFifo.almostFull when sysR.addr = x"0800" else locBramDout;
+   -- Mux high order address, output almost full state at address 2048 (0x0800)
+   i2cBramDout <= aFullData when i2cBramAddr(11) = '1' else locBramDout;
+
+   -- Register almost full data
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
+         aFullData <= (others=>'0') after TPD_G;
+      elsif rising_edge(axiClk) then
+         aFullData(0) <= bsiFromFifo.almostFull after TPD_G;
+      end if;
+   end process;
 
    -------------------------
    -- Connect to CPU FIFO
    -------------------------
-   writeFifoClk <= axiClk;
-
    process ( axiClk, axiClkRst ) begin
       if axiClkRst = '1' then
-         writeFifoToFifo <= WriteFifoToFifoInit after TPD_G;
+         bsiToFifo <= QWordToFifoInit after TPD_G;
       elsif rising_edge(axiClk) then
 
          if i2cBramWr = '1' then
             if i2cBramAddr(1 downto 0) = 0 then
-               writeFifoToFifo.data(7  downto  0) <= i2cBramDin after TPD_G;
-               writeFifoToFifo.write              <= '0'        after TPD_G;
+               bsiToFifo.data(7  downto  0) <= i2cBramDin after TPD_G;
+               bsiToFifo.valid              <= '0'        after TPD_G;
             elsif i2cBramAddr(1 downto 0) = 1 then
-               writeFifoToFifo.data(15 downto 8)  <= i2cBramDin after TPD_G;
-               writeFifoToFifo.write              <= '0'        after TPD_G;
+               bsiToFifo.data(15 downto 8)  <= i2cBramDin after TPD_G;
+               bsiToFifo.valid              <= '0'        after TPD_G;
             elsif i2cBramAddr(1 downto 0) = 2 then
-               writeFifoToFifo.data(23 downto 16) <= i2cBramDin after TPD_G;
-               writeFifoToFifo.write              <= '0'        after TPD_G;
+               bsiToFifo.data(23 downto 16) <= i2cBramDin after TPD_G;
+               bsiToFifo.valid              <= '0'        after TPD_G;
             elsif i2cBramAddr(1 downto 0) = 3 then
-               writeFifoToFifo.data(47 downto 32) <= i2cBramAddr after TPD_G;
-               writeFifoToFifo.data(31 downto 24) <= i2cBramDin  after TPD_G;
-               writeFifoToFifo.write              <= '1'         after TPD_G;
+               bsiToFifo.data(47 downto 32) <= i2cBramAddr after TPD_G;
+               bsiToFifo.data(31 downto 24) <= i2cBramDin  after TPD_G;
+               bsiToFifo.valid              <= '1'         after TPD_G;
             end if;
          else
-            writeFifoToFifo.write <= '0' after TPD_G;
+            bsiToFifo.valid <= '0' after TPD_G;
          end if;
       end if;
    end process;
@@ -278,19 +172,31 @@ begin
    -------------------------
    -- CPU Interface
    -------------------------
-   cpuBramWr              <= localBusMaster.writeEnable;
-   cpuBramAddr            <= localBusMaster.addr(10 downto 2);
-   cpuBramDin             <= localBusMaster.writeData;
-   localBusSlave.readData <= cpuBramDout;
-
-   -- One clock delay for read data valid
    process ( axiClk, axiClkRst ) begin
       if axiClkRst = '1' then
-         localBusSlave.readValid <= '0' after TPD_G;
+         cpuBramWr   <= '0'           after TPD_G;
+         cpuBramAddr <= (others=>'0') after TPD_G;
+         cpuBramDin  <= (others=>'0') after TPD_G;
       elsif rising_edge(axiClk) then
-         localBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
+         cpuBramWr   <= localBusMaster.writeEnable       after TPD_G;
+         cpuBramAddr <= localBusMaster.addr(10 downto 2) after TPD_G;
+         cpuBramDin  <= localBusMaster.writeData         after TPD_G;
       end if;
    end process;
 
-end;
+   -- Clock delay for read data valid
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
+         localBusSlave.readValid <= '0'           after TPD_G;
+         localBusSlave.readData  <= (others=>'0') after TPD_G;
+         readEnDly               <= (others=>'0') after TPD_G;
+      elsif rising_edge(axiClk) then
+         localBusSlave.readData  <= cpuBramDout               after TPD_G;
+         readEnDly(1)            <= localBusMaster.readEnable after TPD_G;
+         readEnDly(0)            <= readEnDly(1)              after TPD_G;
+         localBusSlave.readValid <= readEnDly(0)              after TPD_G;
+      end if;
+   end process;
+
+end architecture IMP;
 

@@ -25,6 +25,9 @@ use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 
 entity ZynqPcieMaster is
+   generic (
+      TPD_G : time := 1 ns
+   );
    port (
 
       -- Local Bus
@@ -35,7 +38,6 @@ entity ZynqPcieMaster is
 
       -- Master clock and reset
       pciRefClk               : in  sl;
-      ponReset                : in  sl;
 
       -- Reset output
       pcieResetL              : out sl;
@@ -157,7 +159,7 @@ begin
    --pcieResetL    <= '0' when intResetL = '0' else 'Z';
    --pcieResetL    <= intResetL and remResetL;
    pcieResetL    <= remResetL;
-   intResetL     <= (not ponReset) and pcieEnable;
+   intResetL     <= pcieEnable;
 
    --------------------------------------------
    -- Registers: 0xBC00_0000 - 0xBFFF_FFFF
@@ -188,7 +190,7 @@ begin
          end if;
 
          -- PCIE Configuration Port, 0xBC000000 - 0xBC000FFF
-         if localBusMaster.addr(23 downto 12) = x"000" then
+         if localBusMaster.addr(15 downto 12) = x"0" then
 
             -- Write start
             if localBusMaster.writeEnable = '1' then
@@ -205,89 +207,89 @@ begin
             intLocalBusSlave.readData  <= cfgDoutReg          after TPD_G;
 
          -- Write FIFO QWord0, - 0xBC001000
-         elsif localBusMaster.addr(23 downto 0) = x"001000" then
+         elsif localBusMaster.addr(15 downto 0) = x"1000" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(31 downto  0)   <= localBusMaster.writeData after TPD_G;
             end if;
 
          -- Write FIFO QWord1, - 0xBC001004
-         elsif localBusMaster.addr(23 downto 0) = x"001004" then
+         elsif localBusMaster.addr(15 downto 0) = x"1004" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(63 downto 32)   <= localBusMaster.writeData after TPD_G;
             end if;
 
          -- Write FIFO QWord2, - 0xBC001008
-         elsif localBusMaster.addr(23 downto 0) = x"001008" then
+         elsif localBusMaster.addr(15 downto 0) = x"1008" then
             if localBusMaster.writeEnable = '1' then
                wrFifoDin(94 downto 64)   <= localBusMaster.writeData(30 downto 0) after TPD_G;
                wrFifoWrEn                <= '1'                                   after TPD_G;
             end if;
 
          -- Read FIFO QWord0, - 0xBC00100C
-         elsif localBusMaster.addr(23 downto 0) = x"00100C" then
+         elsif localBusMaster.addr(15 downto 0) = x"100C" then
             intLocalBusSlave.readData <= rdFifoDout(31 downto 0)   after TPD_G;
             rdFifoRdEn                <= localBusMaster.readEnable after TPD_G;
 
          -- Read FIFO QWord1, - 0xBC001010
-         elsif localBusMaster.addr(23 downto 0) = x"001010" then
+         elsif localBusMaster.addr(15 downto 0) = x"1010" then
             intLocalBusSlave.readData <= rdFifoDout(63 downto 32) after TPD_G;
 
          -- Read FIFO QWord2, - 0xBC001014
-         elsif localBusMaster.addr(23 downto 0) = x"001014" then
+         elsif localBusMaster.addr(15 downto 0) = x"1014" then
             intLocalBusSlave.readData(31)          <= rdFifoValid              after TPD_G;
             intLocalBusSlave.readData(30 downto 0) <= rdFifoDout(94 downto 64) after TPD_G;
 
          -- Config Bus Number, - 0xBC001018
-         elsif localBusMaster.addr(23 downto 0) = x"001018" then
+         elsif localBusMaster.addr(15 downto 0) = x"1018" then
             if localBusMaster.writeEnable = '1' then
                cfgBusNumber <= localBusMaster.writeData(7 downto 0) after TPD_G;
             end if;
             intLocalBusSlave.readData <= x"000000" & cfgBusNumber after TPD_G;
 
          -- Config Device Number, - 0xBC00101C
-         elsif localBusMaster.addr(23 downto 0) = x"00101C" then
+         elsif localBusMaster.addr(15 downto 0) = x"101C" then
             if localBusMaster.writeEnable = '1' then
                cfgDeviceNumber <= localBusMaster.writeData(4 downto 0) after TPD_G;
             end if;
             intLocalBusSlave.readData <= x"000000" & "000" & cfgDeviceNumber after TPD_G;
 
          -- Config Function Number, - 0xBC001020
-         elsif localBusMaster.addr(23 downto 0) = x"001020" then
+         elsif localBusMaster.addr(15 downto 0) = x"1020" then
             if localBusMaster.writeEnable = '1' then
                cfgFunctionNumber <= localBusMaster.writeData(2 downto 0) after TPD_G;
             end if;
             intLocalBusSlave.readData <= x"0000000" & "0" & cfgFunctionNumber after TPD_G;
 
          -- Config Status, - 0xBC001024
-         elsif localBusMaster.addr(23 downto 0) = x"001024" then
+         elsif localBusMaster.addr(15 downto 0) = x"1024" then
             intLocalBusSlave.readData <= x"0000" & cfgStatus after TPD_G;
 
          -- Config Status, - 0xBC001028
-         elsif localBusMaster.addr(23 downto 0) = x"001028" then
+         elsif localBusMaster.addr(15 downto 0) = x"1028" then
             intLocalBusSlave.readData <= x"0000" & cfgCommand after TPD_G;
 
          -- Config DStatus, - 0xBC00102C
-         elsif localBusMaster.addr(23 downto 0) = x"00102C" then
+         elsif localBusMaster.addr(15 downto 0) = x"102C" then
             intLocalBusSlave.readData <= x"0000" & cfgDStatus after TPD_G;
 
          -- Config DStatus, - 0xBC001030
-         elsif localBusMaster.addr(23 downto 0) = x"001030" then
+         elsif localBusMaster.addr(15 downto 0) = x"1030" then
             intLocalBusSlave.readData <= x"0000" & cfgDCommand after TPD_G;
 
          -- Config DStatus2, - 0xBC001034
-         elsif localBusMaster.addr(23 downto 0) = x"001034" then
+         elsif localBusMaster.addr(15 downto 0) = x"1034" then
             intLocalBusSlave.readData <= x"0000" & cfgDCommand2 after TPD_G;
 
          -- Config LStatus, - 0xBC001038
-         elsif localBusMaster.addr(23 downto 0) = x"001038" then
+         elsif localBusMaster.addr(15 downto 0) = x"1038" then
             intLocalBusSlave.readData <= x"0000" & cfgLStatus after TPD_G;
 
          -- Config LStatus, - 0xBC00103C
-         elsif localBusMaster.addr(23 downto 0) = x"00103C" then
+         elsif localBusMaster.addr(15 downto 0) = x"103C" then
             intLocalBusSlave.readData <= x"0000" & cfgLCommand after TPD_G;
 
          -- Other Status, - 0xBC001040
-         elsif localBusMaster.addr(23 downto 0) = x"001040" then
+         elsif localBusMaster.addr(15 downto 0) = x"1040" then
             intLocalBusSlave.readData(2 downto 0)   <= cfgPcieLinkState      after TPD_G;
             intLocalBusSlave.readData(3)            <= linkUp                after TPD_G;
             intLocalBusSlave.readData(4)            <= phyLinkUp             after TPD_G;
@@ -301,7 +303,7 @@ begin
             intLocalBusSlave.readData(31 downto 16) <= debugCount            after TPD_G;
 
          -- Enable Register - 0xBC001044
-         elsif localBusMaster.addr(23 downto 0) = x"001044" then
+         elsif localBusMaster.addr(15 downto 0) = x"1044" then
             if localBusMaster.writeEnable = '1' then
                pcieEnable <= localBusMaster.writeData(0) after TPD_G;
                remResetL  <= localBusMaster.writeData(1) after TPD_G;
@@ -313,7 +315,7 @@ begin
             intLocalBusSlave.readData(31 downto  5) <= (others=>'0')         after TPD_G;
 
          -- Config status Register - 0xBC001048
-         elsif localBusMaster.addr(23 downto 0) = x"001048" then
+         elsif localBusMaster.addr(15 downto 0) = x"1048" then
             intLocalBusSlave.readData <= '0' & cfgMsgDataReg after TPD_G;
          end if;
 
@@ -321,38 +323,85 @@ begin
    end process;         
 
    -----------------------------------------
-   -- FIFOs
+   -- FIFOs, Dist Ram
    -----------------------------------------
-
-   U_WriteFifo : PcieFifo
-      PORT map (
-         rst    => axiClkRst,
-         wr_clk => axiClk,
-         rd_clk => pciClk,
-         din    => wrFifoDin,
-         wr_en  => wrFifoWrEn,
-         rd_en  => wrFifoRdEn,
-         dout   => wrFifoDout,
-         full   => open,
-         empty  => open,
-         valid  => wrFifoValid
+   U_WriteFifo : entity work.FifoASync
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         BRAM_EN_G      => false,  -- Use Dist Ram
+         FWFT_EN_G      => true,
+         USE_DSP48_G    => "no",
+         ALTERA_SYN_G   => false,
+         ALTERA_RAM_G   => "M512",
+         SYNC_STAGES_G  => 2,
+         DATA_WIDTH_G   => 95,
+         ADDR_WIDTH_G   => 4,
+         INIT_G         => "0",
+         FULL_THRES_G   => 15,
+         EMPTY_THRES_G  => 1
+      ) port map (
+         rst                => axiClkRst,
+         wr_clk             => axiClk,
+         wr_en              => wrFifoWrEn,
+         din                => wrFifoDin,
+         wr_data_count      => open,
+         wr_ack             => open,
+         overflow           => open,
+         prog_full          => open,
+         almost_full        => open,
+         full               => open,
+         not_full           => open,
+         rd_clk             => pciClk,
+         rd_en              => wrFifoRdEn,
+         rd_data_count      => open,
+         dout               => wrFifoDout,
+         valid              => wrFifoValid,
+         underflow          => open,
+         prog_empty         => open,
+         almost_empty       => open,
+         empty              => open
       );
 
    wrFifoRdEn <= txReady and txValid;
    txValid    <= wrFifoValid when txBufAv > 1 else '0';
 
-   U_ReadFifo : PcieFifo
-      PORT map (
-         rst    => axiClkRst,
-         wr_clk => pciClk,
-         rd_clk => axiClk,
-         din    => rdFifoDin,
-         wr_en  => rdFifoWrEn,
-         rd_en  => rdFifoRdEn,
-         dout   => rdFifoDout,
-         full   => rdFifoFull,
-         empty  => open,
-         valid  => rdFifoValid
+   U_ReadFifo : entity work.FifoASync
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         BRAM_EN_G      => false,  -- Use Dist Ram
+         FWFT_EN_G      => true,
+         USE_DSP48_G    => "no",
+         ALTERA_SYN_G   => false,
+         ALTERA_RAM_G   => "M512",
+         SYNC_STAGES_G  => 2,
+         DATA_WIDTH_G   => 95,
+         ADDR_WIDTH_G   => 4,
+         INIT_G         => "0",
+         FULL_THRES_G   => 15,
+         EMPTY_THRES_G  => 1
+      ) port map (
+         rst                => axiClkRst,
+         wr_clk             => pciClk,
+         wr_en              => rdFifoWrEn,
+         din                => rdFifoDin,
+         wr_data_count      => open,
+         wr_ack             => open,
+         overflow           => open,
+         prog_full          => open,
+         almost_full        => open,
+         full               => rdFifoFull,
+         not_full           => open,
+         rd_clk             => axiClk,
+         rd_en              => rdFifoRdEn,
+         rd_data_count      => open,
+         dout               => rdFifoDout,
+         valid              => rdFifoValid,
+         underflow          => open,
+         prog_empty         => open,
+         almost_empty       => open,
+         empty              => open
       );
 
    rxReady    <= not rdFifoFull;

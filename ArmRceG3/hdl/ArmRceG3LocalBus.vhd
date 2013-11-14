@@ -43,13 +43,17 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.StdRtlPkg.all;
 
 entity ArmRceG3LocalBus is
+   generic (
+      TPD_G : time := 1 ns
+   );
    port (
 
       -- Clocks & Reset
-      axiClk                  : in     std_logic;
-      axiClkRst               : in     std_logic;
+      axiClk                  : in     sl;
+      axiClkRst               : in     sl;
 
       -- AXI Master
       axiMasterReadFromArm    : in     AxiReadMasterType;
@@ -75,21 +79,21 @@ architecture structure of ArmRceG3LocalBus is
    signal nxtLocalBusMaster    : LocalBusMasterType;
    signal curLocalBusMaster    : LocalBusMasterType;
    signal curLocalBusSlave     : LocalBusSlaveType;
-   signal timeoutCnt           : std_logic_vector(7 downto 0);
-   signal timeout              : std_logic;
-   signal nxtSlave             : std_logic_vector(3 downto 0);
-   signal curSlave             : std_logic_vector(3 downto 0);
+   signal timeoutCnt           : slv(7 downto 0);
+   signal timeout              : sl;
+   signal nxtSlave             : slv(3 downto 0);
+   signal curSlave             : slv(3 downto 0);
 
    -- States
-   signal   curState   : std_logic_vector(2 downto 0);
-   signal   nxtState   : std_logic_vector(2 downto 0);
-   constant ST_IDLE    : std_logic_vector(2 downto 0) := "001";
-   constant ST_WRADDR  : std_logic_vector(2 downto 0) := "010";
-   constant ST_WRITE   : std_logic_vector(2 downto 0) := "011";
-   constant ST_ACK     : std_logic_vector(2 downto 0) := "100";
-   constant ST_RDADDR  : std_logic_vector(2 downto 0) := "101";
-   constant ST_READ    : std_logic_vector(2 downto 0) := "110";
-   constant ST_READY   : std_logic_vector(2 downto 0) := "111";
+   signal   curState   : slv(2 downto 0);
+   signal   nxtState   : slv(2 downto 0);
+   constant ST_IDLE    : slv(2 downto 0) := "001";
+   constant ST_WRADDR  : slv(2 downto 0) := "010";
+   constant ST_WRITE   : slv(2 downto 0) := "011";
+   constant ST_ACK     : slv(2 downto 0) := "100";
+   constant ST_RDADDR  : slv(2 downto 0) := "101";
+   constant ST_READ    : slv(2 downto 0) := "110";
+   constant ST_READY   : slv(2 downto 0) := "111";
 
 begin
 
@@ -129,13 +133,12 @@ begin
    end process;
 
    -- Determine current master channel
-   curLocalBusSlave  <= localBusSLave(conv_integer(curSlave));
+   curLocalBusSlave  <= localBusSlave(conv_integer(curSlave));
    curLocalBusMaster <= intLocalBusMaster(conv_integer(curSlave));
    
    -- Generate state of master channel, allow for register duplication
    U_GenDecode: for i in 0 to 15 generate
       genLocalBusMaster(i).addr        <= nxtLocalBusMaster.addr;
-      genLocalBusMaster(i).addrValid   <= nxtLocalBusMaster.addrValid   when curSlave = i else '0';
       genLocalBusMaster(i).readEnable  <= nxtLocalBusMaster.readEnable  when curSlave = i else '0';
       genLocalBusMaster(i).writeEnable <= nxtLocalBusMaster.writeEnable when curSlave = i else '0';
       genLocalBusMaster(i).writeData   <= nxtLocalBusMaster.writeData;
@@ -143,7 +146,7 @@ begin
 
    -- ASync states
    process ( curState, axiMasterReadFromArm, axiMasterWriteFromArm, intMasterReadToArm, 
-             intMasterWriteToArm, curLocalBusMaster, curlocalBusSlave, timeout, curSlave ) begin
+             intMasterWriteToArm, curLocalBusMaster, curLocalBusSlave, timeout, curSlave ) begin
 
       -- Init signals
       nxtMasterReadToArm            <= intMasterReadToArm;
@@ -154,7 +157,6 @@ begin
       nxtMasterWriteToArm           <= intMasterWriteToArm;
       nxtMasterWriteToArm.awready   <= '0';
       nxtLocalBusMaster             <= curLocalBusMaster;
-      nxtLocalBusMaster.addrValid   <= '0';
       nxtLocalBusMaster.readEnable  <= '0';
       nxtLocalBusMaster.writeEnable <= '0';
       nxtState                      <= curState;
@@ -183,12 +185,11 @@ begin
             nxtMasterWriteToArm.bid     <= axiMasterWriteFromArm.awid;
             nxtMasterWriteToArm.wready  <= '1';
             nxtLocalBusMaster.addr      <= axiMasterWriteFromArm.awaddr;
-            nxtLocalBusMaster.addrValid <= '1';
             nxtState                    <= ST_WRITE;
 
          -- Write Data
          when ST_WRITE =>
-            if axiMasterWriteFromArm.wlast = '1' then
+            if axiMasterWriteFromArm.wlast = '1' and axiMasterWriteFromArm.wvalid = '1' then
                nxtMasterWriteToArm.wready    <= '0';
                nxtLocalBusMaster.writeEnable <= '1';
                nxtLocalBusMaster.writeData   <= axiMasterWriteFromArm.wdata(31 downto 0);
@@ -207,7 +208,6 @@ begin
          when ST_RDADDR =>
             nxtMasterReadToArm.rid       <= axiMasterReadFromArm.arid;
             nxtLocalBusMaster.addr       <= axiMasterReadFromArm.araddr;
-            nxtLocalBusMaster.addrValid  <= '1';
             nxtLocalBusMaster.readEnable <= '1';
             nxtState                     <= ST_READ;
 

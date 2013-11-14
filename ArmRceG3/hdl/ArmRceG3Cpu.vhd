@@ -22,58 +22,62 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.StdRtlPkg.all;
 use work.processing_system7_pkg.all;
 
 entity ArmRceG3Cpu is
+   generic (
+      TPD_G : time := 1 ns
+   );
    port (
 
       -- Clocks
-      fclkClk3                 : out    std_logic;
-      fclkClk2                 : out    std_logic;
-      fclkClk1                 : out    std_logic;
-      fclkClk0                 : out    std_logic;
-      fclkRst3                 : out    std_logic;
-      fclkRst2                 : out    std_logic;
-      fclkRst1                 : out    std_logic;
-      fclkRst0                 : out    std_logic;
+      fclkClk3                 : out    sl;
+      fclkClk2                 : out    sl;
+      fclkClk1                 : out    sl;
+      fclkClk0                 : out    sl;
+      fclkRst3                 : out    sl;
+      fclkRst2                 : out    sl;
+      fclkRst1                 : out    sl;
+      fclkRst0                 : out    sl;
 
       -- Common AXI Clock
-      axiClk                   : in     std_logic;
+      axiClk                   : in     sl;
 
       -- Interrupts
-      armInt                   : in     std_logic_vector(15 downto 0);
+      armInt                   : in     slv(15 downto 0);
 
       -- AXI GP Master
-      axiGpMasterReset         : out    std_logic_vector(1 downto 0);
+      axiGpMasterReset         : out    slv(1 downto 0);
       axiGpMasterWriteFromArm  : out    AxiWriteMasterVector(1 downto 0);
       axiGpMasterWriteToArm    : in     AxiWriteSlaveVector(1 downto 0);
       axiGpMasterReadFromArm   : out    AxiReadMasterVector(1 downto 0);
       axiGpMasterReadToArm     : in     AxiReadSlaveVector(1 downto 0);
 
       -- AXI GP Slave
-      axiGpSlaveReset          : out    std_logic_vector(1 downto 0);
+      axiGpSlaveReset          : out    slv(1 downto 0);
       axiGpSlaveWriteFromArm   : out    AxiWriteSlaveVector(1 downto 0);
       axiGpSlaveWriteToArm     : in     AxiWriteMasterVector(1 downto 0);
       axiGpSlaveReadFromArm    : out    AxiReadSlaveVector(1 downto 0);
       axiGpSlaveReadToArm      : in     AxiReadMasterVector(1 downto 0);
 
       -- AXI ACP Slave
-      axiAcpSlaveReset         : out    std_logic;
+      axiAcpSlaveReset         : out    sl;
       axiAcpSlaveWriteFromArm  : out    AxiWriteSlaveType;
       axiAcpSlaveWriteToArm    : in     AxiWriteMasterType;
       axiAcpSlaveReadFromArm   : out    AxiReadSlaveType;
       axiAcpSlaveReadToArm     : in     AxiReadMasterType;
 
       -- AXI HP Slave
-      axiHpSlaveReset          : out    std_logic_vector(3 downto 0);
+      axiHpSlaveReset          : out    slv(3 downto 0);
       axiHpSlaveWriteFromArm   : out    AxiWriteSlaveVector(3 downto 0);
       axiHpSlaveWriteToArm     : in     AxiWriteMasterVector(3 downto 0);
       axiHpSlaveReadFromArm    : out    AxiReadSlaveVector(3 downto 0);
       axiHpSlaveReadToArm      : in     AxiReadMasterVector(3 downto 0);
 
       -- Ethernet
-      ethFromArm               : out    EthFromArmType;
-      ethToArm                 : in     EthToArmType
+      ethFromArm               : out    EthFromArmVector(1 downto 0);
+      ethToArm                 : in     EthToArmVector(1 downto 0)
 
    );
 end ArmRceG3Cpu;
@@ -81,14 +85,14 @@ end ArmRceG3Cpu;
 architecture structure of ArmRceG3Cpu is
 
    -- Local signals
-   signal axiGpMasterResetN : std_logic_vector(1 downto 0);
-   signal axiGpSlaveResetN  : std_logic_vector(1 downto 0);
-   signal axiAcpSlaveResetN : std_logic;
-   signal axiHpSlaveResetN  : std_logic_vector(3 downto 0);
-   signal fclkRst3N         : std_logic;
-   signal fclkRst2N         : std_logic;
-   signal fclkRst1N         : std_logic;
-   signal fclkRst0N         : std_logic;
+   signal axiGpMasterResetN : slv(1 downto 0);
+   signal axiGpSlaveResetN  : slv(1 downto 0);
+   signal axiAcpSlaveResetN : sl;
+   signal axiHpSlaveResetN  : slv(3 downto 0);
+   signal fclkRst3N         : sl;
+   signal fclkRst2N         : sl;
+   signal fclkRst1N         : sl;
+   signal fclkRst0N         : sl;
 
 begin
 
@@ -159,58 +163,58 @@ begin
          CAN1_PHY_RX                      => '0',
      
          -- FMIO ENET0
-         ENET0_GMII_TX_EN                 => ethFromArm.enetGmiiTxEn,
-         ENET0_GMII_TX_ER                 => ethFromArm.enetGmiiTxEr,
-         ENET0_MDIO_MDC                   => ethFromArm.enetMdioMdc,
-         ENET0_MDIO_O                     => ethFromArm.enetMdioO,
-         ENET0_MDIO_T                     => ethFromArm.enetMdioT,
-         ENET0_PTP_DELAY_REQ_RX           => ethFromArm.enetPtpDelayReqRx,
-         ENET0_PTP_DELAY_REQ_TX           => ethFromArm.enetPtpDelayReqTx,
-         ENET0_PTP_PDELAY_REQ_RX          => ethFromArm.enetPtpPDelayReqRx,
-         ENET0_PTP_PDELAY_REQ_TX          => ethFromArm.enetPtpPDelayReqTx,
-         ENET0_PTP_PDELAY_RESP_RX         => ethFromArm.enetPtpPDelayRespRx,
-         ENET0_PTP_PDELAY_RESP_TX         => ethFromArm.enetPtpPDelayRespTx,
-         ENET0_PTP_SYNC_FRAME_RX          => ethFromArm.enetPtpSyncFrameRx,
-         ENET0_PTP_SYNC_FRAME_TX          => ethFromArm.enetPtpSyncFrameTx,
-         ENET0_SOF_RX                     => ethFromArm.enetSofRx,
-         ENET0_SOF_TX                     => ethFromArm.enetSofTx,
-         ENET0_GMII_TXD                   => ethFromArm.enetGmiiTxD,
-         ENET0_GMII_COL                   => ethToArm.enetGmiiCol,
-         ENET0_GMII_CRS                   => ethToArm.enetGmiiCrs,
-         ENET0_GMII_RX_CLK                => ethToArm.enetGmiiRxClk,
-         ENET0_GMII_RX_DV                 => ethToArm.enetGmiiRxDv,
-         ENET0_GMII_RX_ER                 => ethToArm.enetGmiiRxEr,
-         ENET0_GMII_TX_CLK                => ethToArm.enetGmiiTxClk,
-         ENET0_MDIO_I                     => ethToArm.enetMdioI,
-         ENET0_EXT_INTIN                  => ethToArm.enetExtInitN,
-         ENET0_GMII_RXD                   => ethToArm.enetGmiiRxd,
+         ENET0_GMII_TX_EN                 => ethFromArm(0).enetGmiiTxEn,
+         ENET0_GMII_TX_ER                 => ethFromArm(0).enetGmiiTxEr,
+         ENET0_MDIO_MDC                   => ethFromArm(0).enetMdioMdc,
+         ENET0_MDIO_O                     => ethFromArm(0).enetMdioO,
+         ENET0_MDIO_T                     => ethFromArm(0).enetMdioT,
+         ENET0_PTP_DELAY_REQ_RX           => ethFromArm(0).enetPtpDelayReqRx,
+         ENET0_PTP_DELAY_REQ_TX           => ethFromArm(0).enetPtpDelayReqTx,
+         ENET0_PTP_PDELAY_REQ_RX          => ethFromArm(0).enetPtpPDelayReqRx,
+         ENET0_PTP_PDELAY_REQ_TX          => ethFromArm(0).enetPtpPDelayReqTx,
+         ENET0_PTP_PDELAY_RESP_RX         => ethFromArm(0).enetPtpPDelayRespRx,
+         ENET0_PTP_PDELAY_RESP_TX         => ethFromArm(0).enetPtpPDelayRespTx,
+         ENET0_PTP_SYNC_FRAME_RX          => ethFromArm(0).enetPtpSyncFrameRx,
+         ENET0_PTP_SYNC_FRAME_TX          => ethFromArm(0).enetPtpSyncFrameTx,
+         ENET0_SOF_RX                     => ethFromArm(0).enetSofRx,
+         ENET0_SOF_TX                     => ethFromArm(0).enetSofTx,
+         ENET0_GMII_TXD                   => ethFromArm(0).enetGmiiTxD,
+         ENET0_GMII_COL                   => ethToArm(0).enetGmiiCol,
+         ENET0_GMII_CRS                   => ethToArm(0).enetGmiiCrs,
+         ENET0_GMII_RX_CLK                => ethToArm(0).enetGmiiRxClk,
+         ENET0_GMII_RX_DV                 => ethToArm(0).enetGmiiRxDv,
+         ENET0_GMII_RX_ER                 => ethToArm(0).enetGmiiRxEr,
+         ENET0_GMII_TX_CLK                => ethToArm(0).enetGmiiTxClk,
+         ENET0_MDIO_I                     => ethToArm(0).enetMdioI,
+         ENET0_EXT_INTIN                  => ethToArm(0).enetExtInitN,
+         ENET0_GMII_RXD                   => ethToArm(0).enetGmiiRxd,
 
-         -- FMIO ENET1
-         ENET1_GMII_TX_EN                 => open,
-         ENET1_GMII_TX_ER                 => open,
-         ENET1_MDIO_MDC                   => open,
-         ENET1_MDIO_O                     => open,
-         ENET1_MDIO_T                     => open,
-         ENET1_PTP_DELAY_REQ_RX           => open,
-         ENET1_PTP_DELAY_REQ_TX           => open,
-         ENET1_PTP_PDELAY_REQ_RX          => open,
-         ENET1_PTP_PDELAY_REQ_TX          => open,
-         ENET1_PTP_PDELAY_RESP_RX         => open,
-         ENET1_PTP_PDELAY_RESP_TX         => open,
-         ENET1_PTP_SYNC_FRAME_RX          => open,
-         ENET1_PTP_SYNC_FRAME_TX          => open,
-         ENET1_SOF_RX                     => open,
-         ENET1_SOF_TX                     => open,
-         ENET1_GMII_TXD                   => open,
-         ENET1_GMII_COL                   => '0',
-         ENET1_GMII_CRS                   => '0',
-         ENET1_GMII_RX_CLK                => '0',
-         ENET1_GMII_RX_DV                 => '0',
-         ENET1_GMII_RX_ER                 => '0',
-         ENET1_GMII_TX_CLK                => '0',
-         ENET1_MDIO_I                     => '0',
-         ENET1_EXT_INTIN                  => '0',
-         ENET1_GMII_RXD                   => "00000000",
+         -- FMI1 ENET1
+         ENET1_GMII_TX_EN                 => ethFromArm(1).enetGmiiTxEn,
+         ENET1_GMII_TX_ER                 => ethFromArm(1).enetGmiiTxEr,
+         ENET1_MDIO_MDC                   => ethFromArm(1).enetMdioMdc,
+         ENET1_MDIO_O                     => ethFromArm(1).enetMdioO,
+         ENET1_MDIO_T                     => ethFromArm(1).enetMdioT,
+         ENET1_PTP_DELAY_REQ_RX           => ethFromArm(1).enetPtpDelayReqRx,
+         ENET1_PTP_DELAY_REQ_TX           => ethFromArm(1).enetPtpDelayReqTx,
+         ENET1_PTP_PDELAY_REQ_RX          => ethFromArm(1).enetPtpPDelayReqRx,
+         ENET1_PTP_PDELAY_REQ_TX          => ethFromArm(1).enetPtpPDelayReqTx,
+         ENET1_PTP_PDELAY_RESP_RX         => ethFromArm(1).enetPtpPDelayRespRx,
+         ENET1_PTP_PDELAY_RESP_TX         => ethFromArm(1).enetPtpPDelayRespTx,
+         ENET1_PTP_SYNC_FRAME_RX          => ethFromArm(1).enetPtpSyncFrameRx,
+         ENET1_PTP_SYNC_FRAME_TX          => ethFromArm(1).enetPtpSyncFrameTx,
+         ENET1_SOF_RX                     => ethFromArm(1).enetSofRx,
+         ENET1_SOF_TX                     => ethFromArm(1).enetSofTx,
+         ENET1_GMII_TXD                   => ethFromArm(1).enetGmiiTxD,
+         ENET1_GMII_COL                   => ethToArm(1).enetGmiiCol,
+         ENET1_GMII_CRS                   => ethToArm(1).enetGmiiCrs,
+         ENET1_GMII_RX_CLK                => ethToArm(1).enetGmiiRxClk,
+         ENET1_GMII_RX_DV                 => ethToArm(1).enetGmiiRxDv,
+         ENET1_GMII_RX_ER                 => ethToArm(1).enetGmiiRxEr,
+         ENET1_GMII_TX_CLK                => ethToArm(1).enetGmiiTxClk,
+         ENET1_MDIO_I                     => ethToArm(1).enetMdioI,
+         ENET1_EXT_INTIN                  => ethToArm(1).enetExtInitN,
+         ENET1_GMII_RXD                   => ethToArm(1).enetGmiiRxd,
 
          -- FMIO GPIO
          GPIO_I                           => x"0000000000000000",

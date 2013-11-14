@@ -16,53 +16,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.numeric_std.all;
+use work.StdRtlPkg.all;
 
 package ArmRceG3Pkg is
-
-   ----------------------------------
-   -- Constants
-   ----------------------------------
-   constant TPD_G : time := 0.1 ns;
-
-   ----------------------------------
-   -- Types
-   ----------------------------------
-
-   subtype Word3Type is std_logic_vector(2 downto 0);
-   type Word3Array   is array (integer range<>) of Word3Type;
-
-   subtype Word4Type is std_logic_vector(3 downto 0);
-   type Word4Array   is array (integer range<>) of Word4Type;
-
-   subtype Word5Type is std_logic_vector(4 downto 0);
-   type Word5Array   is array (integer range<>) of Word5Type;
-
-   subtype Word8Type is std_logic_vector(7 downto 0);
-   type Word8Array   is array (integer range<>) of Word8Type;
-
-   subtype Word15Type is std_logic_vector(14 downto 0);
-   type Word15Array   is array (integer range<>) of Word15Type;
-
-   subtype Word16Type is std_logic_vector(15 downto 0);
-   type Word16Array   is array (integer range<>) of Word16Type;
-
-   subtype Word17Type is std_logic_vector(16 downto 0);
-   type Word17Array   is array (integer range<>) of Word17Type;
-
-   subtype Word32Type is std_logic_vector(31 downto 0);
-   type Word32Array   is array (integer range<>) of Word32Type;
-
-   subtype Word36Type is std_logic_vector(35 downto 0);
-   type Word36Array   is array (integer range<>) of Word36Type;
-
-   subtype Word64Type is std_logic_vector(63 downto 0);
-   type Word64Array   is array (integer range<>) of Word64Type;
-
-   subtype Word72Type is std_logic_vector(71 downto 0);
-   type Word72Array   is array (integer range<>) of Word72Type;
-
-   subtype Word128Type is std_logic_vector(127 downto 0);
-   type Word128Array   is array (integer range<>) of Word128Type;
 
    --------------------------------------------------------
    -- AXI bus, read master signal record
@@ -72,45 +28,62 @@ package ArmRceG3Pkg is
    type AxiReadMasterType is record
 
       -- Read Address channel
-      arvalid               : std_logic;
-      araddr                : std_logic_vector(31 downto 0);
-      arid                  : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
-      arlen                 : std_logic_vector(3  downto 0);
-      arsize                : std_logic_vector(2  downto 0);
-      arburst               : std_logic_vector(1  downto 0);
-      arlock                : std_logic_vector(1  downto 0);
-      arprot                : std_logic_vector(2  downto 0);
-      arcache               : std_logic_vector(3  downto 0);
-      arqos                 : std_logic_vector(3  downto 0);
-      aruser                : std_logic_vector(4  downto 0); -- ACP
+      arvalid        : sl;               -- Address valid
+      araddr         : slv(31 downto 0); -- Address
+      arid           : slv(11 downto 0); -- Channel ID
+                                         -- 12 bits for master GP
+                                         -- 6  bits for slave GP
+                                         -- 3  bits for ACP
+                                         -- 6  bits for HP
+      arlen          : slv(3  downto 0); -- Transfer count, 0x0=1, 0xF=16
+      arsize         : slv(2  downto 0); -- Bytes per transfer, 0x0=1, 0x7=8
+      arburst        : slv(1  downto 0); -- Burst Type
+                                         -- 0x0 = Fixed address
+                                         -- 0x1 = Incrementing address
+                                         -- 0x2 = Wrap at cache boundary
+      arlock         : slv(1  downto 0); -- Lock control
+                                         -- 0x0 = Normal access
+                                         -- 0x1 = Exclusive access
+                                         -- 0x2 = Locked access
+      arprot         : slv(2  downto 0); -- Protection control
+                                         -- Bit 0 : 0 = Normal, 1 = Priveleged
+                                         -- Bit 1 : 0 = Secure, 1 = Non-secure
+                                         -- Bit 2 : 0 = Data access, 1 = Instruction
+      arcache        : slv(3  downto 0); -- Cache control
+                                         -- Bit 0 : Bufferable
+                                         -- Bit 1 : Cachable  
+                                         -- Bit 2 : Read allocate enable
+                                         -- Bit 3 : Write allocate enable
+      arqos          : slv(3  downto 0); -- Xilinx specific, see UG585
+      aruser         : slv(4  downto 0); -- ACP only, Xilinx specific, see UG585
 
       -- Read data channel
-      rready                : std_logic;
+      rready         : sl;               -- Master is ready for data
 
       -- Control 
-      rdissuecap1_en        : std_logic;                     -- HP0-3
+      rdissuecap1_en : sl;               -- HP only, Xilinx specific, see UG585  
 
    end record;
 
    -- Initialization constants
    constant AxiReadMasterInit : AxiReadMasterType := ( 
-      arvalid               => '0',
-      araddr                => x"00000000",
-      arid                  => x"000",
-      arlen                 => "0000",
-      arsize                => "000",
-      arburst               => "00",
-      arlock                => "00",
-      arprot                => "000",
-      arcache               => "0000",
-      arqos                 => "0000",
-      aruser                => "00000",
-      rready                => '0',
-      rdissuecap1_en        => '0'
+      arvalid        => '0',
+      araddr         => x"00000000",
+      arid           => x"000",
+      arlen          => "0000",
+      arsize         => "000",
+      arburst        => "00",
+      arlock         => "00",
+      arprot         => "000",
+      arcache        => "0000",
+      arqos          => "0000",
+      aruser         => "00000",
+      rready         => '0',
+      rdissuecap1_en => '0'
    );
 
    -- Vector
-   type AxiReadMasterVector is array (integer range<>) of AxiReadMasterType;
+   type AxiReadMasterVector is array (natural range<>) of AxiReadMasterType;
 
 
    --------------------------------------------------------
@@ -121,35 +94,45 @@ package ArmRceG3Pkg is
    type AxiReadSlaveType is record
 
       -- Read Address channel
-      arready               : std_logic;
+      arready : sl;               -- Slave is ready for address
 
       -- Read data channel
-      rdata                 : std_logic_vector(63 downto 0); -- 32 bits for GP0/GP1 
-      rlast                 : std_logic;
-      rvalid                : std_logic;
-      rid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
-      rresp                 : std_logic_vector(1  downto 0);
+      rdata   : slv(63 downto 0); -- Read data from slave
+                                  -- 32 bits for GP ports
+                                  -- 64 bits for other ports
+      rlast   : sl;               -- Read data last strobe
+      rvalid  : sl;               -- Read data is valid
+      rid     : slv(11 downto 0); -- Read data ID
+                                  -- 12 for master GP 
+                                  -- 6 for slave GP 
+                                  -- 3 for ACP 
+                                  -- 6 for HP
+      rresp   : slv(1  downto 0); -- Read data result
+                                  -- 0x0 = Okay
+                                  -- 0x1 = Exclusive access okay
+                                  -- 0x2 = Slave indicated error 
+                                  -- 0x3 = Decode error
 
       -- Status
-      racount               : std_logic_vector(2  downto 0); -- HP0-3
-      rcount                : std_logic_vector(7  downto 0); -- HP0-3
+      racount : slv(2  downto 0); -- HP only, Xilinx specific, see UG585
+      rcount  : slv(7  downto 0); -- HP only, Xilinx specific, see UG585
 
    end record;
 
    -- Initialization constants
    constant AxiReadSlaveInit : AxiReadSlaveType := ( 
-      arready               => '0',
-      rdata                 => x"0000000000000000",
-      rlast                 => '0',
-      rvalid                => '0',
-      rid                   => x"000",
-      rresp                 => "00",
-      racount               => "000",
-      rcount                => x"00"
+      arready => '0',
+      rdata   => x"0000000000000000",
+      rlast   => '0',
+      rvalid  => '0',
+      rid     => x"000",
+      rresp   => "00",
+      racount => "000",
+      rcount  => x"00"
    );
 
    -- Vector
-   type AxiReadSlaveVector is array (integer range<>) of AxiReadSlaveType;
+   type AxiReadSlaveVector is array (natural range<>) of AxiReadSlaveType;
 
 
    --------------------------------------------------------
@@ -160,57 +143,82 @@ package ArmRceG3Pkg is
    type AxiWriteMasterType is record
 
       -- Write address channel
-      awvalid               : std_logic;
-      awaddr                : std_logic_vector(31 downto 0);
-      awid                  : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
-      awlen                 : std_logic_vector(3  downto 0);
-      awsize                : std_logic_vector(2  downto 0);
-      awburst               : std_logic_vector(1  downto 0);
-      awlock                : std_logic_vector(1  downto 0);
-      awcache               : std_logic_vector(3  downto 0);
-      awprot                : std_logic_vector(2  downto 0);
-      awqos                 : std_logic_vector(3  downto 0);
-      awuser                : std_logic_vector(4  downto 0); -- ACP
+      awvalid        : sl;               -- Write address is valid
+      awaddr         : slv(31 downto 0); -- Write address
+      awid           : slv(11 downto 0); -- Channel ID
+                                         -- 12 bits for master GP
+                                         -- 6  bits for slave GP
+                                         -- 3  bits for ACP
+                                         -- 6  bits for HP
+      awlen          : slv(3  downto 0); -- Transfer count, 0x0=1, 0xF=16
+      awsize         : slv(2  downto 0); -- Bytes per transfer, 0x0=1, 0x7=8
+      awburst        : slv(1  downto 0); -- Burst Type
+                                         -- 0x0 = Fixed address
+                                         -- 0x1 = Incrementing address
+                                         -- 0x2 = Wrap at cache boundary
+      awlock         : slv(1  downto 0); -- Lock control
+                                         -- 0x0 = Normal access
+                                         -- 0x1 = Exclusive access
+                                         -- 0x2 = Locked access
+      awprot         : slv(2  downto 0); -- Protection control
+                                         -- Bit 0 : 0 = Normal, 1 = Priveleged
+                                         -- Bit 1 : 0 = Secure, 1 = Non-secure
+                                         -- Bit 2 : 0 = Data access, 1 = Instruction
+      awcache        : slv(3  downto 0); -- Cache control
+                                         -- Bit 0 : Bufferable
+                                         -- Bit 1 : Cachable  
+                                         -- Bit 2 : Read allocate enable
+                                         -- Bit 3 : Write allocate enable
+      awqos          : slv(3  downto 0); -- Xilinx specific, see UG585
+      awuser         : slv(4  downto 0); -- ACP only, Xilinx specific, see UG585
 
       -- Write data channel
-      wdata                 : std_logic_vector(63 downto 0); -- 32 bits for GP0/GP1
-      wlast                 : std_logic;
-      wvalid                : std_logic;
-      wid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
-      wstrb                 : std_logic_vector(7  downto 0); -- 4 for GPs
+      wdata          : slv(63 downto 0); -- Write data
+                                         -- 32-bits for master and slave GP
+                                         -- 64-bit for others
+      wlast          : sl;               -- Write data is last
+      wvalid         : sl;               -- Write data is valid
+      wstrb          : slv(7  downto 0); -- Write enable strobes, 1 per byte
+                                         -- 4-bits for master and slave GP
+                                         -- 8-bits for others
+      wid            : slv(11 downto 0); -- Channel ID
+                                         -- 12 bits for master GP
+                                         -- 6  bits for slave GP
+                                         -- 3  bits for ACP
+                                         -- 6  bits for HP
 
       -- Write ack channel
-      bready                : std_logic;
+      bready         : sl;               -- Write master is ready for status
 
       -- Control
-      wrissuecap1_en        : std_logic;                     -- HP0-3
+      wrissuecap1_en : sl;               -- HP only, Xilinx specific, see UG585  
 
    end record;
 
    -- Initialization constants
    constant AxiWriteMasterInit : AxiWriteMasterType := ( 
-      awvalid               => '0',
-      awaddr                => x"00000000",
-      awid                  => x"000",
-      awlen                 => "0000",
-      awsize                => "000",
-      awburst               => "00",
-      awlock                => "00",
-      awcache               => "0000",
-      awprot                => "000",
-      awqos                 => "0000",
-      awuser                => "00000",
-      wdata                 => x"0000000000000000",
-      wlast                 => '0',
-      wvalid                => '0',
-      wid                   => x"000",
-      wstrb                 => "00000000",
-      bready                => '0',
-      wrissuecap1_en        => '0'
+      awvalid        => '0',
+      awaddr         => x"00000000",
+      awid           => x"000",
+      awlen          => "0000",
+      awsize         => "000",
+      awburst        => "00",
+      awlock         => "00",
+      awcache        => "0000",
+      awprot         => "000",
+      awqos          => "0000",
+      awuser         => "00000",
+      wdata          => x"0000000000000000",
+      wlast          => '0',
+      wvalid         => '0',
+      wid            => x"000",
+      wstrb          => "00000000",
+      bready         => '0',
+      wrissuecap1_en => '0'
    );
 
    -- Vector
-   type AxiWriteMasterVector is array (integer range<>) of AxiWriteMasterType;
+   type AxiWriteMasterVector is array (natural range<>) of AxiWriteMasterType;
 
 
    --------------------------------------------------------
@@ -221,35 +229,43 @@ package ArmRceG3Pkg is
    type AxiWriteSlaveType is record
 
       -- Write address channel
-      awready               : std_logic;
+      awready : sl;               -- Write slave is ready for address
 
       -- Write data channel
-      wready                : std_logic;
+      wready  : sl;               -- Write slave is ready for data
 
       -- Write ack channel
-      bresp                 : std_logic_vector(1  downto 0);
-      bvalid                : std_logic;
-      bid                   : std_logic_vector(11 downto 0); -- 12 for master GP, 6 for slave GP, 3 for ACP, 6 for HP
+      bresp   : slv(1  downto 0); -- Write acess status
+                                  -- 0x0 = Okay
+                                  -- 0x1 = Exclusive access okay
+                                  -- 0x2 = Slave indicated error 
+                                  -- 0x3 = Decode error
+      bvalid  : sl;               -- Write status valid
+      bid     : slv(11 downto 0); -- Channel ID
+                                  -- 12 bits for master GP
+                                  -- 6  bits for slave GP
+                                  -- 3  bits for ACP
+                                  -- 6  bits for HP
 
       -- Status
-      wacount               : std_logic_vector(5  downto 0); -- HP0-3
-      wcount                : std_logic_vector(7  downto 0); -- HP0-3
+      wacount : slv(5  downto 0); -- HP only, Xilinx specific, see UG585
+      wcount  : slv(7  downto 0); -- HP only, Xilinx specific, see UG585
 
    end record;
 
    -- Initialization constants
    constant AxiWriteSlaveInit : AxiWriteSlaveType := ( 
-      awready               => '0',
-      wready                => '0',
-      bresp                 => "00",
-      bvalid                => '0',
-      bid                   => x"000",
-      wacount               => "000000",
-      wcount                => x"00"
+      awready => '0',
+      wready  => '0',
+      bresp   => "00",
+      bvalid  => '0',
+      bid     => x"000",
+      wacount => "000000",
+      wcount  => x"00"
    );
 
    -- Vector
-   type AxiWriteSlaveVector is array (integer range<>) of AxiWriteSlaveType;
+   type AxiWriteSlaveVector is array (natural range<>) of AxiWriteSlaveType;
 
    --------------------------------------------------------
    -- Local Bus Master
@@ -257,24 +273,22 @@ package ArmRceG3Pkg is
 
    -- Base Record
    type LocalBusMasterType is record
-      addr                    : std_logic_vector(31 downto 0); -- Held during enire cycle
-      addrValid               : std_logic; -- Pulsed for one cycle
-      readEnable              : std_logic; -- Pulsed for one cycle
-      writeEnable             : std_logic; -- Pulsed for one cycle
-      writeData               : std_logic_vector(31 downto 0);
+      addr        : slv(31 downto 0); -- read/write address
+      readEnable  : sl;               -- Read enable pulse
+      writeEnable : sl;               -- Write enable pulse
+      writeData   : slv(31 downto 0); -- Write data
    end record;
 
    -- Initialization constants
    constant LocalBusMasterInit : LocalBusMasterType := ( 
-      addr                  => x"00000000",
-      addrValid             => '0',
-      readEnable            => '0',
-      writeEnable           => '0',
-      writeData             => x"00000000"
+      addr        => x"00000000",
+      readEnable  => '0',
+      writeEnable => '0',
+      writeData   => x"00000000"
    );
 
    -- Vector
-   type LocalBusMasterVector is array (integer range<>) of LocalBusMasterType;
+   type LocalBusMasterVector is array (natural range<>) of LocalBusMasterType;
 
    --------------------------------------------------------
    -- Local Bus Slave
@@ -282,92 +296,420 @@ package ArmRceG3Pkg is
 
    -- Base Record
    type LocalBusSlaveType is record
-      readValid               : std_logic;
-      readData                : std_logic_vector(31 downto 0);
+      readValid : sl;               -- Read data valid pulse
+      readData  : slv(31 downto 0); -- Read data
    end record;
 
    -- Initialization constants
    constant LocalBusSlaveInit : LocalBusSlaveType := ( 
-      readValid             => '0',
-      readData              => x"00000000"
+      readValid => '0',
+      readData  => x"00000000"
    );
 
    -- Vector
-   type LocalBusSlaveVector is array (integer range<>) of LocalBusSlaveType;
+   type LocalBusSlaveVector is array (natural range<>) of LocalBusSlaveType;
 
    --------------------------------------------------------
-   -- Write FIFO, To Fifo Record
+   -- AXI Write To Controller Record
    --------------------------------------------------------
 
    -- Base Record
-   type WriteFifoToFifoType is record
-      data   : std_logic_vector(71 downto 0);
-      write  : std_logic;
+   type AxiWriteToCntrlType is record
+      req       : sl;                 -- Write controller request
+      address   : slv(31 downto 3);   -- Upper bits of write address
+      avalid    : sl;                 -- Write address is valid
+      id        : slv(2  downto 0);   -- Write ID
+      length    : slv(3  downto 0);   -- Transfer count, 0x0=1, 0xF=16
+      data      : slv(63 downto 0);   -- Write data
+      dvalid    : sl;                 -- Write data valid
+      dstrobe   : slv(7  downto 0);   -- Write enable strobes, 1 per byte
+      last      : sl;                 -- Write data is last
    end record;
 
    -- Initialization constants
-   constant WriteFifoToFifoInit : WriteFifoToFifoType := ( 
-      data     => x"000000000000000000",
-      write    => '0'
+   constant AxiWriteToCntrlInit : AxiWriteToCntrlType := ( 
+      req       => '0',
+      address   => x"0000000" & '0',
+      avalid    => '0',
+      id        => "000",
+      length    => "0000",
+      data      => x"0000000000000000",
+      dvalid    => '0',
+      dstrobe   => x"00",
+      last      => '0'
    );
 
    -- Vector
-   type WriteFifoToFifoVector is array (integer range<>) of WriteFifoToFifoType;
+   type AxiWriteToCntrlVector is array (natural range<>) of AxiWriteToCntrlType;
 
    --------------------------------------------------------
-   -- Write FIFO, From Fifo Record
+   -- AXI Write From Controller Record
    --------------------------------------------------------
 
    -- Base Record
-   type WriteFifoFromFifoType is record
-      full       : std_logic;
-      almostFull : std_logic;
+   type AxiWriteFromCntrlType is record
+      gnt     : sl;               -- Write controller grant
+      afull   : sl;               -- Write controller almost full
+      bresp   : slv(1 downto 0);  -- Write response data
+                                  -- 0x0 = Okay
+                                  -- 0x1 = Exclusive access okay
+                                  -- 0x2 = Slave indicated error 
+                                  -- 0x3 = Decode error
+      bvalid  : sl;               -- Write response valid
    end record;
 
    -- Initialization constants
-   constant WriteFifoFromFifoInit : WriteFifoFromFifoType := ( 
+   constant AxiWriteFromCntrlInit : AxiWriteFromCntrlType := ( 
+      gnt     => '0',
+      afull   => '0',
+      bresp   => "00",
+      bvalid  => '0'
+   );
+
+   -- Vector
+   type AxiWriteFromCntrlVector is array (natural range<>) of AxiWriteFromCntrlType;
+
+   --------------------------------------------------------
+   -- AXI Read To Controller Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type AxiReadToCntrlType is record
+      req       : sl;               -- Read controller request
+      address   : slv(31 downto 3); -- Upper bits of read address
+      avalid    : sl;               -- Read address is valid
+      id        : slv(2  downto 0); -- Read ID
+      length    : slv(3  downto 0); -- Transfer count, 0x0=1, 0xF=16
+      afull     : sl;               -- Read requester is almost full
+   end record;
+
+   -- Initialization constants
+   constant AxiReadToCntrlInit : AxiReadToCntrlType := ( 
+      req       => '0',
+      address   => x"0000000" & '0',
+      avalid    => '0',
+      id        => "000",
+      length    => "0000",
+      afull     => '0'
+   );
+
+   -- Vector
+   type AxiReadToCntrlVector is array (natural range<>) of AxiReadToCntrlType;
+
+   --------------------------------------------------------
+   -- AXI Read From Controller Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type AxiReadFromCntrlType is record
+      gnt     : sl;               -- Read controller grant
+      afull   : sl;               -- Read controller is almost full
+      rdata   : slv(63 downto 0); -- Read data
+      rlast   : sl;               -- Read data last
+      rvalid  : sl;               -- Read data valid
+      rresp   : slv(1  downto 0); -- Read data result
+                                  -- 0x0 = Okay
+                                  -- 0x1 = Exclusive access okay
+                                  -- 0x2 = Slave indicated error 
+                                  -- 0x3 = Decode error
+   end record;
+
+   -- Initialization constants
+   constant AxiReadFromCntrlInit : AxiReadFromCntrlType := ( 
+      gnt     => '0',
+      afull   => '0',
+      rdata   => x"0000000000000000",
+      rlast   => '0',
+      rvalid  => '0',
+      rresp   => "00"
+   );
+
+   -- Vector
+   type AxiReadFromCntrlVector is array (natural range<>) of AxiReadFromCntrlType;
+
+   --------------------------------------------------------
+   -- Inbound Header To FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type IbHeaderToFifoType is record
+      data  : slv(63 downto 0); -- Header data
+      err   : sl;               -- Error, asserted with EOH
+      eoh   : sl;               -- End of header
+      htype : slv(2 downto 0);  -- Header type field
+      mgmt  : sl;               -- Header is management
+      valid : sl;               -- Header data valid
+   end record;
+
+   -- Initialization constants
+   constant IbHeaderToFifoInit : IbHeaderToFifoType := ( 
+      data  => x"0000000000000000",
+      err   => '0',
+      eoh   => '0',
+      htype => "000",
+      mgmt  => '0',
+      valid => '0'
+   );
+
+   -- Vector
+   type IbHeaderToFifoVector is array (natural range<>) of IbHeaderToFifoType;
+
+   --------------------------------------------------------
+   -- Inbound Header From FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type IbHeaderFromFifoType is record
+      full       : sl; -- Header FIFO is full
+      progFull   : sl; -- Header FIFO is half full
+      almostFull : sl; -- Header FIFO has one entry left
+   end record;
+
+   -- Initialization constants
+   constant IbHeaderFromFifoInit : IbHeaderFromFifoType := ( 
       full       => '0',
-      almostFull => '0' 
+      progFull   => '0',
+      almostFull => '0'
    );
 
    -- Vector
-   type WriteFifoFromFifoVector is array (integer range<>) of WriteFifoFromFifoType;
+   type IbHeaderFromFifoVector is array (natural range<>) of IbHeaderFromFifoType;
 
    --------------------------------------------------------
-   -- Read FIFO, To Fifo Record
+   -- Outbound Header To FIFO Record
    --------------------------------------------------------
 
    -- Base Record
-   type ReadFifoToFifoType is record
-      read : std_logic;
+   type ObHeaderToFifoType is record
+      read  : sl;  -- Read signal to header
    end record;
 
    -- Initialization constants
-   constant ReadFifoToFifoInit : ReadFifoToFifoType := ( 
+   constant ObHeaderToFifoInit : ObHeaderToFifoType := ( 
       read  => '0'
    );
 
    -- Vector
-   type ReadFifoToFifoVector is array (integer range<>) of ReadFifoToFifoType;
+   type ObHeaderToFifoVector is array (natural range<>) of ObHeaderToFifoType;
 
    --------------------------------------------------------
-   -- Read FIFO, From Fifo Record
+   -- Outbound Header From FIFO Record
    --------------------------------------------------------
 
    -- Base Record
-   type ReadFifoFromFifoType is record
-      valid  : std_logic;
-      data   : std_logic_vector(71 downto 0);
+   type ObHeaderFromFifoType is record
+      data  : slv(63 downto 0); -- Header data
+      eoh   : sl;               -- End of header indication
+      htype : slv(2 downto 0);  -- Header type
+      mgmt  : sl;               -- Header is managment
+      valid : sl;               -- Header data is valid
    end record;
 
    -- Initialization constants
-   constant ReadFifoFromFifoInit : ReadFifoFromFifoType := ( 
-      valid      => '0',
-      data       => x"000000000000000000"
+   constant ObHeaderFromFifoInit : ObHeaderFromFifoType := ( 
+      data  => x"0000000000000000",
+      eoh   => '0',
+      htype => "000",
+      mgmt  => '0',
+      valid => '0'
    );
 
    -- Vector
-   type ReadFifoFromFifoVector is array (integer range<>) of ReadFifoFromFifoType;
+   type ObHeaderFromFifoVector is array (natural range<>) of ObHeaderFromFifoType;
+
+   --------------------------------------------------------
+   -- Outbound PPI To FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type ObPpiToFifoType is record
+      read    : sl;               -- Read from PPI FIFO
+      id      : slv(31 downto 0); -- Outbound PPI ID
+      version : slv(31 downto 0); -- Outbound PPI Version
+      configA : slv(31 downto 0); -- Outbound PPI Config Word A
+      configB : slv(31 downto 0); -- Outbound PPI Config Word B
+   end record;
+
+   -- Initialization constants
+   constant ObPpiToFifoInit : ObPpiToFifoType := ( 
+      read    => '0',
+      id      => x"00000000",
+      version => x"00000000",
+      configA => x"00000000",
+      configB => x"00000000"
+   );
+
+   -- Vector
+   type ObPpiToFifoVector is array (natural range<>) of ObPpiToFifoType;
+
+   --------------------------------------------------------
+   -- Outbound PPI From FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type ObPpiFromFifoType is record
+      data   : slv(63 downto 0); -- PPI Data
+      size   : slv(2  downto 0); -- Bytes in transfer when EOF, 0x0=1, 0x7=8
+      eof    : sl;               -- End of frame indication
+      eoh    : sl;               -- End of header
+      ftype  : slv(2 downto 0);  -- Frame type
+      mgmt   : sl;               -- Frame is management
+      valid  : sl;               -- Frame data is valid
+      online : sl;               -- PPI online indication
+   end record;
+
+   -- Initialization constants
+   constant ObPpiFromFifoInit : ObPpiFromFifoType := ( 
+      data   => x"0000000000000000",
+      size   => "000",
+      eof    => '0',
+      eoh    => '0',
+      ftype  => "000",
+      mgmt   => '0',
+      valid  => '0',
+      online => '0'
+   );
+
+   -- Vector
+   type ObPpiFromFifoVector is array (natural range<>) of ObPpiFromFifoType;
+
+
+   --------------------------------------------------------
+   -- Inbound PPI To FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type IbPpiToFifoType is record
+      data    : slv(63 downto 0); -- PPI Data
+      size    : slv(2  downto 0); -- Bytes in transfer when EOF, 0x0=1, 0x7=8
+      eof     : sl;               -- End of frame indication
+      eoh     : sl;               -- End of header
+      err     : sl;               -- Frame is in error
+      ftype   : slv(2 downto 0);  -- Frame type
+      mgmt    : sl;               -- Frame is management
+      valid   : sl;               -- Frame data is valid
+      id      : slv(31 downto 0); -- Inbound PPI ID
+      version : slv(31 downto 0); -- Inbound PPI Version
+      configA : slv(31 downto 0); -- Inbound PPI Config Word A
+      configB : slv(31 downto 0); -- Inbound PPI Config Word B
+   end record;
+
+   -- Initialization constants
+   constant IbPpiToFifoInit : IbPpiToFifoType := ( 
+      data    => x"0000000000000000",
+      size    => "000",
+      eof     => '0',
+      eoh     => '0',
+      err     => '0',
+      ftype   => "000",
+      mgmt    => '0',
+      valid   => '0',
+      id      => x"00000000",
+      version => x"00000000",
+      configA => x"00000000",
+      configB => x"00000000"
+   );
+
+   -- Vector
+   type IbPpiToFifoVector is array (natural range<>) of IbPpiToFifoType;
+
+   --------------------------------------------------------
+   -- Inbound PPI From FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type IbPpiFromFifoType is record
+      pause  : sl;  -- PPI can not accept another frame
+      online : sl;  -- PPI online indication
+   end record;
+
+   -- Initialization constants
+   constant IbPpiFromFifoInit : IbPpiFromFifoType := ( 
+      pause  => '0',
+      online => '0'
+   );
+
+   -- Vector
+   type IbPpiFromFifoVector is array (natural range<>) of IbPpiFromFifoType;
+
+   --------------------------------------------------------
+   -- Completion To FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type CompToFifoType is record
+      read : sl;  -- Read from completion FIFO
+   end record;
+
+   -- Initialization constants
+   constant CompToFifoInit : CompToFifoType := ( 
+      read => '0'
+   );
+
+   -- Vector
+   type CompToFifoVector is array (natural range<>) of CompToFifoType;
+
+   --------------------------------------------------------
+   -- Completion From FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type CompFromFifoType is record
+      id       : slv(31 downto 0); -- Completion ID
+      index    : slv(3  downto 0); -- Destination FIFO index
+      valid    : sl;               -- Completion is valid
+   end record;
+
+   -- Initialization constants
+   constant CompFromFifoInit : CompFromFifoType := ( 
+      id       => x"00000000",
+      index    => "0000",
+      valid    => '0'
+   );
+
+   -- Vector
+   type CompFromFifoVector is array (natural range<>) of CompFromFifoType;
+
+
+   --------------------------------------------------------
+   -- Quad Word To FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type QWordToFifoType is record
+      data  : slv(63 downto 0);   -- Quad word FIFO data
+      valid : sl;                 -- Quad word FIFO valid
+   end record;
+
+   -- Initialization constants
+   constant QWordToFifoInit : QWordToFifoType := ( 
+      data  => x"0000000000000000",
+      valid => '0'
+   );
+
+   -- Vector
+   type QWordToFifoVector is array (natural range<>) of QWordToFifoType;
+
+   --------------------------------------------------------
+   -- Quad Word From FIFO Record
+   --------------------------------------------------------
+
+   -- Base Record
+   type QWordFromFifoType is record
+      full       : sl;  -- Quad word FIFO is full
+      progFull   : sl;  -- Quad word FIFO is half full
+      almostFull : sl;  -- Quad word FIFO has one entry left
+   end record;
+
+   -- Initialization constants
+   constant QWordFromFifoInit : QWordFromFifoType := ( 
+      full       => '0',
+      progFull   => '0',
+      almostFull => '0'
+   );
+
+   -- Vector
+   type QWordFromFifoVector is array (natural range<>) of QWordFromFifoType;
 
    --------------------------------------------------------
    -- Ethernet From ARM
@@ -375,22 +717,22 @@ package ArmRceG3Pkg is
 
    -- Base Record
    type EthFromArmType is record
-      enetGmiiTxEn        : std_logic;
-      enetGmiiTxEr        : std_logic;
-      enetMdioMdc         : std_logic;
-      enetMdioO           : std_logic;
-      enetMdioT           : std_logic;
-      enetPtpDelayReqRx   : std_logic;
-      enetPtpDelayReqTx   : std_logic;
-      enetPtpPDelayReqRx  : std_logic;
-      enetPtpPDelayReqTx  : std_logic;
-      enetPtpPDelayRespRx : std_logic;
-      enetPtpPDelayRespTx : std_logic;
-      enetPtpSyncFrameRx  : std_logic;
-      enetPtpSyncFrameTx  : std_logic;
-      enetSofRx           : std_logic;
-      enetSofTx           : std_logic;
-      enetGmiiTxD         : std_logic_vector(7 downto 0);  
+      enetGmiiTxEn        : sl;
+      enetGmiiTxEr        : sl;
+      enetMdioMdc         : sl;
+      enetMdioO           : sl;
+      enetMdioT           : sl;
+      enetPtpDelayReqRx   : sl;
+      enetPtpDelayReqTx   : sl;
+      enetPtpPDelayReqRx  : sl;
+      enetPtpPDelayReqTx  : sl;
+      enetPtpPDelayRespRx : sl;
+      enetPtpPDelayRespTx : sl;
+      enetPtpSyncFrameRx  : sl;
+      enetPtpSyncFrameTx  : sl;
+      enetSofRx           : sl;
+      enetSofTx           : sl;
+      enetGmiiTxD         : slv(7 downto 0);  
    end record;
 
    -- Initialization constants
@@ -414,7 +756,7 @@ package ArmRceG3Pkg is
    );
 
    -- Vector
-   type EthFromArmVector is array (integer range<>) of EthFromArmType;
+   type EthFromArmVector is array (natural range<>) of EthFromArmType;
 
    --------------------------------------------------------
    -- Ethernet To ARM
@@ -422,15 +764,15 @@ package ArmRceG3Pkg is
 
    -- Base Record
    type EthToArmType is record
-      enetGmiiCol   : std_logic;
-      enetGmiiCrs   : std_logic;
-      enetGmiiRxClk : std_logic;
-      enetGmiiRxDv  : std_logic;
-      enetGmiiRxEr  : std_logic;
-      enetGmiiTxClk : std_logic;
-      enetMdioI     : std_logic;
-      enetExtInitN  : std_logic;
-      enetGmiiRxd   : std_logic_vector(7 downto 0);  
+      enetGmiiCol   : sl;
+      enetGmiiCrs   : sl;
+      enetGmiiRxClk : sl;
+      enetGmiiRxDv  : sl;
+      enetGmiiRxEr  : sl;
+      enetGmiiTxClk : sl;
+      enetMdioI     : sl;
+      enetExtInitN  : sl;
+      enetGmiiRxd   : slv(7 downto 0);  
    end record;
 
    -- Initialization constants
@@ -447,7 +789,7 @@ package ArmRceG3Pkg is
    );
 
    -- Vector
-   type EthToArmVector is array (integer range<>) of EthToArmType;
+   type EthToArmVector is array (natural range<>) of EthToArmType;
 
 end ArmRceG3Pkg;
 
