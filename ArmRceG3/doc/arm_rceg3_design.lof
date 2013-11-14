@@ -1,0 +1,15 @@
+\contentsline {figure}{\numberline {1}{\ignorespaces Top Level Block Diagram}}{13}{figure.1}
+\contentsline {figure}{\numberline {2}{\ignorespaces Local Bus Write Cycle}}{14}{figure.2}
+\contentsline {figure}{\numberline {3}{\ignorespaces Local Bus Read Cycle}}{15}{figure.3}
+\contentsline {figure}{\numberline {4}{\ignorespaces DMA Controller Block Diagram}}{18}{figure.4}
+\contentsline {figure}{\numberline {5}{\ignorespaces Inbound Controller Block Diagram}}{22}{figure.5}
+\contentsline {figure}{\numberline {6}{\ignorespaces Quad Word FIFO Block Diagram}}{24}{figure.6}
+\contentsline {figure}{\numberline {7}{\ignorespaces Inbound Header FIFO Block Diagram}}{25}{figure.7}
+\contentsline {figure}{\numberline {8}{\ignorespaces Inbound PPI Controller Block Diagram}}{28}{figure.8}
+\contentsline {figure}{\numberline {9}{\ignorespaces Axi Write Controller Block Diagram}}{30}{figure.9}
+\contentsline {figure}{\numberline {10}{\ignorespaces Outbound Controller Block Diagram}}{31}{figure.10}
+\contentsline {figure}{\numberline {11}{\ignorespaces Outbound Header FIFO Block Diagram}}{32}{figure.11}
+\contentsline {figure}{\numberline {12}{\ignorespaces Outbound PPI Block Diagram}}{34}{figure.12}
+\contentsline {figure}{\numberline {13}{\ignorespaces Axi Read Controller Block Diagram}}{36}{figure.13}
+\contentsline {figure}{\numberline {14}{\ignorespaces DMA Completion Block Diagram}}{37}{figure.14}
+\contentsline {figure}{\numberline {15}{\ignorespaces I2C Controller Block Diagram}}{38}{figure.15}
