@@ -1,0 +1,10 @@
+vhdl work hdl/zynq_gige_block.vhd
+vhdl work hdl/zynq_gige_gtwizard.vhd
+vhdl work hdl/zynq_gige_gtwizard_gt.vhd
+vhdl work hdl/zynq_gige_gtwizard_init.vhd
+vhdl work hdl/zynq_gige_reset_sync.vhd
+vhdl work hdl/zynq_gige_rx_startup_fsm.vhd
+vhdl work hdl/zynq_gige_sync_block.vhd
+vhdl work hdl/zynq_gige_transceiver.vhd
+vhdl work hdl/zynq_gige_tx_startup_fsm.vhd
+vhdl work hdl/ZynqEthernet.vhd

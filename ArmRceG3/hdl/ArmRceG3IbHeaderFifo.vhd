@@ -1,0 +1,483 @@
+-------------------------------------------------------------------------------
+-- Title         : ARM Based RCE Generation 3, Inbound Header FIFOs
+-- File          : ArmRceG3IbHeaderFifo.vhd
+-- Author        : Ryan Herbst, rherbst@slac.stanford.edu
+-- Created       : 04/02/2013
+-------------------------------------------------------------------------------
+-- Description:
+-- Inbound header FIFO for PPI DMA Engines. This FIFO handles an inbound header
+-- block, writing it to a defined destination address in cache line burst size
+-- transactions.
+-------------------------------------------------------------------------------
+-- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
+-------------------------------------------------------------------------------
+-- Modification history:
+-- 04/02/2013: created.
+-- 06/14/2013: Modified to use free list and completion list. No longer set dirty
+--             flag or asserts interrupt.
+-------------------------------------------------------------------------------
+library ieee;
+use ieee.std_logic_1164.all;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.numeric_std.all;
+
+library unisim;
+use unisim.vcomponents.all;
+
+use work.ArmRceG3Pkg.all;
+use work.StdRtlPkg.all;
+
+entity ArmRceG3IbHeaderFifo is
+   generic (
+      TPD_G : time := 1 ns
+   );
+   port (
+
+      -- Clock & reset
+      axiClk                  : in  sl;
+      axiClkRst               : in  sl;
+
+      -- AXI Write Interface, two channels, first for header data fifo, second for descriptor FIFO
+      axiWriteToCntrl         : out AxiWriteToCntrlType;
+      axiWriteFromCntrl       : in  AxiWriteFromCntrlType;
+
+      -- Memory pointer free list write
+      headerPtrWrite          : in  sl;
+      headerPtrData           : in  slv(35 downto 0);
+
+      -- Configuration
+      fifoEnable              : in  sl;
+      memBaseAddress          : in  slv(31 downto 18);     -- Lower bits from free list FIFO
+      writeDmaId              : in  slv(2  downto  0);
+
+      -- Completion FIFO Interface
+      qwordToFifo             : out QWordToFifoType;
+      qwordFromFifo           : in  QWordFromFifoType;
+
+      -- Header FIFO Interface
+      ibHeaderClk             : in  sl;
+      ibHeaderToFifo          : in  IbheaderToFifoType;
+      ibHeaderFromFifo        : out IbHeaderFromFifoType
+   );
+end ArmRceG3IbHeaderFifo;
+
+architecture structure of ArmRceG3IbHeaderFifo is
+
+   -- Inbound Descriptor Data
+   type IbDescType is record
+      offset : slv(17 downto 0);
+      length : slv(7  downto 0);
+      err    : sl;
+      htype  : slv(2 downto 0);
+      mgmt   : sl;
+      valid  : sl;
+   end record;
+
+   -- Inbound FIFO Data
+   type IbFifoType is record
+      data   : slv(63 downto 0);
+      err    : sl;
+      eoh    : sl;
+      htype  : slv(2  downto 0);
+      mgmt   : sl;
+   end record;
+
+   -- Inbound FIFO Init
+   constant IbFifoInit : IbFifoType := ( 
+      data   => x"0000000000000000",
+      err    => '0',
+      eoh    => '0',
+      htype  => "000",
+      mgmt   => '0'
+   );
+
+   -- Inbound FIFO Vector
+   type IbFifoVector is array (natural range<>) of IbFifoType;
+   
+   -- Local signals
+   signal headerPtrDout            : slv(35 downto 0);
+   signal headerPtrValid           : sl;
+   signal headerPtrOffset          : slv(17 downto 0);
+   signal ibHeaderDin              : slv(71 downto 0);
+   signal ibHeaderDout             : slv(71 downto 0);
+   signal ibValid                  : slv(4  downto 0);
+   signal ibHeader                 : IbFifoVector(4 downto 0);
+   signal fifoShift                : slv(4 downto 0);
+   signal headerDone               : sl;
+   signal pipeReady                : sl;
+   signal pipeShift                : sl;
+   signal fifoRd                   : sl;
+   signal fifoReady                : sl;
+   signal writeAddr                : slv(31 downto 0);
+   signal countReset               : sl;
+   signal addrValid                : sl;
+   signal dataValid                : sl;
+   signal dataLast                 : sl;
+   signal curDone                  : sl;
+   signal nxtDone                  : sl;
+   signal ackCount                 : slv(7 downto 0);
+   signal burstCount               : slv(7 downto 0);
+   signal burstCountEn             : sl;
+   signal wordCount                : slv(1 downto 0);
+   signal headerLength             : slv(7 downto 0);
+   signal curError                 : sl;
+   signal nxtError                 : sl;
+   signal ibDesc                   : IbDescType;
+   signal fifoReq                  : sl;
+   signal nextReq                  : sl;
+
+   -- States
+   signal   curState   : slv(2 downto 0);
+   signal   nxtState   : slv(2 downto 0);
+   constant ST_IDLE    : slv(2 downto 0) := "000";
+   constant ST_NEXT    : slv(2 downto 0) := "001";
+   constant ST_REQ     : slv(2 downto 0) := "010";
+   constant ST_WRITE   : slv(2 downto 0) := "011";
+   constant ST_CHECK   : slv(2 downto 0) := "100";
+   constant ST_WAIT    : slv(2 downto 0) := "101";
+
+begin
+
+
+   -----------------------------------------
+   -- Free list FIFO
+   -----------------------------------------
+   U_PtrFifo : entity work.FifoSyncBuiltIn 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         FWFT_EN_G      => true,
+         USE_DSP48_G    => "no",
+         XIL_DEVICE_G   => "7SERIES",
+         DATA_WIDTH_G   => 36,
+         ADDR_WIDTH_G   => 9,
+         FULL_THRES_G   => 1,
+         EMPTY_THRES_G  => 1
+      ) port map (
+         rst          => axiClkRst,
+         clk          => axiClk,
+         wr_en        => headerPtrWrite,
+         rd_en        => headerDone,
+         din          => headerPtrData,
+         dout         => headerPtrDout,
+         data_count   => open,
+         wr_ack       => open,
+         valid        => headerPtrValid,
+         overflow     => open,
+         underflow    => open,
+         prog_full    => open,
+         prog_empty   => open,
+         almost_full  => open,
+         almost_empty => open,
+         not_full     => open,
+         full         => open,
+         empty        => open
+      );
+
+   -- Extract data
+   headerPtrOffset <= headerPtrDout(17 downto 0);
+
+   -----------------------------------------
+   -- Header FIFO
+   -----------------------------------------
+   -- Assert progammable full when FIFO is half full
+   U_HdrFifo : entity work.FifoASyncBuiltIn 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         FWFT_EN_G      => true,
+         USE_DSP48_G    => "no",
+         XIL_DEVICE_G   => "7SERIES",
+         SYNC_STAGES_G  => 2,
+         DATA_WIDTH_G   => 72,
+         ADDR_WIDTH_G   => 9,
+         FULL_THRES_G   => 255,
+         EMPTY_THRES_G  => 1
+      ) port map (
+         rst               => axiClkRst,
+         wr_clk            => ibHeaderClk,
+         wr_en             => ibHeaderToFifo.valid,
+         din               => ibHeaderDin,
+         wr_data_count     => open,
+         wr_ack            => open,
+         overflow          => open,
+         prog_full         => ibHeaderFromFifo.progFull,
+         almost_full       => ibHeaderFromFifo.almostFull,
+         full              => ibHeaderFromFifo.full,
+         not_full          => open,
+         rd_clk            => axiClk,
+         rd_en             => fifoShift(4),
+         dout              => ibHeaderDout,
+         rd_data_count     => open,
+         valid             => ibValid(4),
+         underflow         => open,
+         prog_empty        => open,
+         almost_empty      => open,
+         empty             => open
+      );
+
+   -- Inputs
+   ibHeaderDin(71)           <= ibHeaderToFifo.mgmt;
+   ibHeaderDin(70 downto 69) <= "00";
+   ibHeaderDin(68)           <= ibHeaderToFifo.eoh;
+   ibHeaderDin(67)           <= ibHeaderToFifo.err;
+   ibHeaderDin(66 downto 64) <= ibHeaderToFifo.htype;
+   ibHeaderDin(63 downto  0) <= ibHeaderToFifo.data;
+
+   -- Outputs
+   ibHeader(4).mgmt   <= ibHeaderDout(71);
+   ibHeader(4).eoh    <= ibHeaderDout(68);
+   ibHeader(4).err    <= ibHeaderDout(67);
+   ibHeader(4).htype  <= ibHeaderDout(66 downto 64);
+   ibHeader(4).data   <= ibHeaderDout(63 downto  0);
+
+   -- Output pipeline, 4 extra registers after FIFO.
+   -- Allows a cache line to be pulled from the FIFO and examined
+   -- before the write access is started
+   U_FifoPipeGen : for i in 0 to 3 generate
+      process ( axiClk, axiClkRst ) begin
+         if axiClkRst = '1' then
+            ibHeader(i) <= IbFifoInit after TPD_G;
+            ibValid(i)  <= '0'        after TPD_G;
+         elsif rising_edge(axiClk) then
+            if fifoShift(i) = '1' then
+               ibHeader(i) <= ibHeader(i+1) after TPD_G;
+               ibValid(i)  <= ibValid(i+1)  after TPD_G;
+            end if;
+         end if;
+      end process;
+   end generate;
+
+   -- Pipeline shift control
+   fifoShift(4) <= fifoShift(3);
+   fifoShift(3) <= fifoShift(2) or (ibValid(4) and (not ibValid(3)));
+   fifoShift(2) <= fifoShift(1) or (ibValid(3) and (not ibValid(2)));
+   fifoShift(1) <= fifoShift(0) or (ibValid(2) and (not ibValid(1)));
+   fifoShift(0) <= pipeShift    or (ibValid(1) and (not ibValid(0)));
+
+   -- Top level shift control. 
+   pipeShift <= fifoRd and ibValid(0);
+
+   -- Pipeline is full
+   pipeReady <= '1' when ibValid(3 downto 0) = "1111" 
+                     or (ibValid(2 downto 0) = "111" and ibHeader(2).eoh = '1') 
+                     or (ibValid(1 downto 0) = "11"  and ibHeader(1).eoh = '1')
+                     or (ibValid(0)          = '1'   and ibHeader(0).eoh = '1') else '0';
+
+   -- FIFO is ready for read. Ready when 4 entries are valid or the last flag is set in one of the entries.
+   -- Do not assert ready if associated quad word FIFO is full
+   fifoReady <= fifoEnable and headerPtrValid and pipeReady and (not qwordFromFifo.full);
+
+   -----------------------------------------
+   -- State machine
+   -----------------------------------------
+
+   -- AXI write channel outputs
+   axiWriteToCntrl.req       <= fifoReq;
+   axiWriteToCntrl.address   <= writeAddr(31 downto 3);
+   axiWriteToCntrl.avalid    <= addrValid;
+   axiWriteToCntrl.id        <= writeDmaId;
+   axiWriteToCntrl.length    <= "0011";
+   axiWriteToCntrl.data      <= ibHeader(0).data;
+   axiWriteToCntrl.dvalid    <= dataValid;
+   axiWriteToCntrl.dstrobe   <= "11111111";
+   axiWriteToCntrl.last      <= dataLast;
+
+   -- Sync states
+   process ( axiClk, axiClkRst ) begin
+      if axiClkRst = '1' then
+         curState       <= ST_IDLE       after TPD_G;
+         curDone        <= '0'           after TPD_G;
+         curError       <= '0'           after TPD_G;
+         writeAddr      <= (others=>'0') after TPD_G;
+         burstCount     <= (others=>'0') after TPD_G;
+         wordCount      <= (others=>'0') after TPD_G;
+         ackCount       <= (others=>'0') after TPD_G;
+         fifoReq        <= '0'           after TPD_G;
+         headerLength   <= (others=>'0') after TPD_G;
+         ibDesc.mgmt    <= '0'           after TPD_G;
+         ibDesc.htype   <= (others=>'0') after TPD_G;
+         ibDesc.offset  <= (others=>'0') after TPD_G;
+         ibDesc.err     <= '0'           after TPD_G;
+         ibDesc.length  <= (others=>'0') after TPD_G;
+         ibDesc.valid   <= '0'           after TPD_G;
+      elsif rising_edge(axiClk) then
+         curState       <= nxtState        after TPD_G;
+         curDone        <= nxtDone         after TPD_G;
+         curError       <= nxtError        after TPD_G;
+         fifoReq        <= nextReq         after TPD_G;
+
+         -- Write address tracking
+         if countReset = '1' then
+            writeAddr <=  memBaseAddress & headerPtrOffset after TPD_G;
+
+         -- Stop incrementing address after hitting max length
+         elsif burstCountEn = '1' and headerLength /= 32 then
+            writeAddr <= writeAddr + 32 after TPD_G;
+         end if;
+
+         -- Counter to track outstanding writes
+         if countReset = '1' then
+            burstCount <= (others=>'0') after TPD_G;
+         elsif burstCountEn = '1' then
+            burstCount <= burstCount + 1 after TPD_G;
+         end if;
+
+         -- Counter to track acks
+         if countReset = '1' then
+            ackCount <= (others=>'0') after TPD_G;
+         elsif axiWriteFromCntrl.bvalid = '1' then 
+            ackCount <= ackCount + 1 after TPD_G;
+         end if;
+
+         -- Word count tracking
+         if countReset = '1' then
+            wordCount <= "00" after TPD_G;
+         elsif dataValid = '1' then
+            wordCount <= wordCount + 1 after TPD_G;
+         end if;
+
+         -- Header length tracking
+         if countReset = '1' then
+            headerLength <= (others=>'0') after TPD_G;
+         elsif fifoRd = '1' then
+
+            -- Mark frame in error if exceeding max length
+            if headerLength = 32 then
+               curError <= '1' after TPD_G;
+            else
+               headerLength <= headerLength + 1 after TPD_G;
+            end if;
+         end if;
+
+         -- Generate descriptor information
+         -- Mgmt and type fields
+         if fifoRd = '1' and headerLength = 0 then
+            ibDesc.mgmt  <= ibHeader(0).mgmt  after TPD_G;
+            ibDesc.htype <= ibHeader(0).htype after TPD_G;
+         end if;
+
+         -- Rest of incoming descriptor
+         ibDesc.offset <= headerPtrOffset;
+         ibDesc.err    <= curError;
+         ibDesc.length <= headerLength;
+         ibDesc.valid  <= headerDone;
+
+      end if;
+   end process;
+
+
+   -- ASync states
+   process ( curState, fifoReady, axiWriteFromCntrl, curDone, fifoReq,
+             ibHeader, ackCount, wordCount, burstCount, curError ) begin
+
+      -- Init signals
+      nxtState      <= curState;
+      nextReq       <= '0';
+      fifoRd        <= '0';
+      nxtDone       <= curDone;
+      nxtError      <= curError;
+      headerDone    <= '0';
+      burstCountEn  <= '0';
+      countReset    <= '0';
+      addrValid     <= '0';
+      dataValid     <= '0';
+      dataLast      <= '0';
+
+      -- State machine
+      case curState is 
+
+         -- Idle
+         when ST_IDLE =>
+            countReset <= '1';
+
+            if fifoReady = '1' and axiWriteFromCntrl.afull = '0' then
+               nextReq  <= '1';
+               nxtState <= ST_REQ;
+            end if;
+
+         -- Next
+         when ST_NEXT =>
+
+            if fifoReady = '1' and axiWriteFromCntrl.afull = '0' then
+               nextReq  <= '1';
+               nxtState <= ST_REQ;
+            end if;
+
+         -- Request
+         when ST_REQ =>
+            nextReq <= '1';
+
+            -- Wait for ACK
+            if axiWriteFromCntrl.gnt = '1' and fifoReq = '1' then
+               addrValid <= '1';
+               nxtState  <= ST_WRITE;
+            end if;
+
+         -- Write data
+         when ST_WRITE =>
+            nextReq   <= '1';
+            dataValid <= '1';
+            fifoRd    <= not curDone;
+
+            -- Word 3, last
+            if wordCount = 3 then
+               nextReq  <= '0';
+               nextReq  <= '0';
+               dataLast <= '1';
+               nxtState <= ST_CHECK;
+            end if;
+
+            -- ERR is set
+            if ibHeader(0).err = '1' then
+               nxtError <= '1';
+            end if;
+
+            -- EOH is set
+            if ibHeader(0).eoh = '1' then
+               nxtDone <= '1';
+            end if;
+
+         -- Check state, de-assert request
+         when ST_CHECK =>
+            burstCountEn <= '1';
+            nxtDone      <= '0';
+
+            -- Transfer is done
+            if curDone = '1' then
+               nxtState <= ST_WAIT;
+            else
+               nextReq  <= fifoReady and (not axiWriteFromCntrl.afull);
+               nxtState <= ST_NEXT;
+            end if;
+
+         -- Wait for writes to complete
+         when ST_WAIT =>
+
+            -- Writes have completed
+            if burstCount = ackCount then
+               nxtError   <= '0';
+               headerDone <= '1';
+               nxtState   <= ST_IDLE;
+            end if;
+
+         when others =>
+            nxtState <= ST_IDLE;
+      end case;
+   end process;
+
+   ---------------------------
+   -- Descriptor FIFO Output
+   ---------------------------
+   qwordToFifo.data(63 downto 61) <= (others=>'0');
+   qwordToFifo.data(60)           <= ibDesc.err;
+   qwordToFifo.data(59 downto 52) <= (others=>'0');
+   qwordToFifo.data(51)           <= ibDesc.mgmt;
+   qwordToFifo.data(50 downto 48) <= ibDesc.htype;
+   qwordToFifo.data(47 downto 40) <= (others=>'0');
+   qwordToFifo.data(39 downto 32) <= ibDesc.length;
+   qwordToFifo.data(31 downto 18) <= (others=>'0');
+   qwordToFifo.data(17 downto  0) <= ibDesc.offset;
+   qwordToFifo.valid              <= ibDesc.valid;
+
+end architecture structure;
