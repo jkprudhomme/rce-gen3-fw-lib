@@ -62,7 +62,12 @@ entity ArmRceG3Cpu is
 
       -- Ethernet
       ethFromArm               : out    EthFromArmVector(1 downto 0);
-      ethToArm                 : in     EthToArmVector(1 downto 0)
+      ethToArm                 : in     EthToArmVector(1 downto 0);
+
+      -- External Inputs
+      psSrstB                  : in     sl;
+      psClk                    : in     sl;
+      psPorB                   : in     sl
 
    );
 end ArmRceG3Cpu;
