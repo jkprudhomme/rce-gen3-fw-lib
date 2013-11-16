@@ -10,7 +10,7 @@
 \pagestyle{fancy}
 \lhead{ARM RCE Generation 3 Core Module}
 \rhead{Design Document}
-\lfoot{Version 1.0}
+\lfoot{Version 1.1}
 \rfoot{\thepage}
 \cfoot{}
 
@@ -26,6 +26,7 @@
 \centering
    \begin{tabular}{| l | l | l | l | } 
       \hline \textbf{Revision} & \textbf{Effective Date} & \textbf{Description Of Changes} \\
+      \hline 1.1               & November 14, 2013       & Added clock select registers.  \\
       \hline 1.0               & November 8, 2013        & Cleanup.  \\
       \hline 0.3               & November 5, 2013        & Changed location of outbound free list FIFOs.  \\
       \hline 0.2               & October 24, 2013        & Cleaup, additional functional descriptions. IB/OB descriptor updates. \\
@@ -395,6 +396,8 @@ timestamp of when the image was built. This field is automatically updated by th
       \hline 0x80000000       & 31:0          & Read     & Version         & FPGA version value. Set in Version.vhd. \\
       \hline 0x80000004       & 31:0          & R/W      & Scratchpad      & Scratchpad register.                                 \\
       \hline 0x80000008       & 31:0          & Read     & ArmRceG3Version & ARM RCE Gen3 Module Version.                         \\
+      \hline 0x80000010       & 1:0           & R/W      & ClkSel0         & Reference Clock 0 Frequency Select. \\               \\
+      \hline 0x80000014       & 1:0           & R/W      & ClkSel1         & Reference Clock 1 Frequency Select. \\               \\
       \hline 0x80001000 - 0x800010FF & 31:0   & Read     & BuildString     & NULL termination build user and timestamp string.    \\
       \hline
    \end{tabular}

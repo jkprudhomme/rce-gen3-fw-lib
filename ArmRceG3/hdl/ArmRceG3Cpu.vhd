@@ -77,7 +77,12 @@ entity ArmRceG3Cpu is
 
       -- Ethernet
       ethFromArm               : out    EthFromArmVector(1 downto 0);
-      ethToArm                 : in     EthToArmVector(1 downto 0)
+      ethToArm                 : in     EthToArmVector(1 downto 0);
+
+      -- External Inputs
+      psSrstB                  : in     sl;
+      psClk                    : in     sl;
+      psPorB                   : in     sl
 
    );
 end ArmRceG3Cpu;
@@ -93,6 +98,9 @@ architecture structure of ArmRceG3Cpu is
    signal fclkRst2N         : sl;
    signal fclkRst1N         : sl;
    signal fclkRst0N         : sl;
+   signal ipsSrstB          : sl;
+   signal ipsClk            : sl;
+   signal ipsPorB           : sl;
 
 begin
 
@@ -105,6 +113,10 @@ begin
    fclkRst2         <= not fclkRst2N;
    fclkRst1         <= not fclkRst1N;
    fclkRst0         <= not fclkRst0N;
+
+   U_PsSrstB: IBUF port map (I => psSrstB, O => ipsSrstB );
+   U_PsClk:   IBUF port map (I => psClk,   O => ipsClk   );
+   U_PsPorB:  IBUF port map (I => psPorB,  O => ipsPorB  );
 
    -----------------------------------------------------------------------------------
    -- Processor system module
@@ -144,7 +156,7 @@ begin
          USE_TRACE_DATA_EDGE_DETECTOR    =>  0,
          C_PS7_SI_REV                    =>  "PRODUCTION",
          C_EN_EMIO_ENET0                 =>  1,
-         C_EN_EMIO_ENET1                 =>  0,
+         C_EN_EMIO_ENET1                 =>  1,
          C_EN_EMIO_TRACE                 =>  0,
          C_DQ_WIDTH                      =>  32,
          C_DQS_WIDTH                     =>  4,
@@ -909,9 +921,9 @@ begin
          DDR_DQS                          => open,
 
          -- Clock and reset
-         PS_SRSTB                         => '0',
-         PS_CLK                           => '0',
-         PS_PORB                          => '0'
+         PS_SRSTB                         => ipsSrstB,
+         PS_CLK                           => ipsClk,
+         PS_PORB                          => ipsPorB
       );
 
    -- Unused AXI Master GP Signals

@@ -50,10 +50,28 @@ entity ArmRceG3Top is
       localBusMaster           : out   LocalBusMasterVector(15 downto 8);
       localBusSlave            : in    LocalBusSlaveVector(15 downto 8);
 
-      -- Ethernet
-      ethFromArm               : out   EthFromArmVector(1 downto 0);
-      ethToArm                 : in    EthToArmVector(1 downto 0)
+      -- PPI Outbound FIFO Interface
+      obPpiClk                : in     slv(3 downto 0);
+      obPpiToFifo             : in     ObPpiToFifoVector(3 downto 0);
+      obPpiFromFifo           : out    ObPpiFromFifoVector(3 downto 0);
 
+      -- PPI Inbound FIFO Interface
+      ibPpiClk                : in     slv(3 downto 0);
+      ibPpiToFifo             : in     IbPpiToFifoVector(3 downto 0);
+      ibPpiFromFifo           : out    IbPpiFromFifoVector(3 downto 0);
+
+      -- Ethernet
+      ethFromArm              : out    EthFromArmVector(1 downto 0);
+      ethToArm                : in     EthToArmVector(1 downto 0);
+
+      -- Programmable Clock Select
+      clkSelA                 : out   slv(1 downto 0);
+      clkSelB                 : out   slv(1 downto 0);
+
+      -- External Inputs
+      psSrstB                 : in     sl;
+      psClk                   : in     sl;
+      psPorB                  : in     sl
    );
 end ArmRceG3Top;
 
@@ -100,6 +118,8 @@ architecture structure of ArmRceG3Top is
    signal isysClk200Rst            : sl;
    signal bsiToFifo                : QWordToFifoType;
    signal bsiFromFifo              : QWordFromFifoType;
+   signal iclkSelA                 : slv(1 downto 0);
+   signal iclkSelB                 : slv(1 downto 0);
 
 begin
 
@@ -141,7 +161,11 @@ begin
          axiHpSlaveReadFromArm    => axiHpSlaveReadFromArm,
          axiHpSlaveReadToArm      => axiHpSlaveReadToArm,
          ethFromArm               => ethFromArm,
-         ethToArm                 => ethToArm
+         ethToArm                 => ethToArm,
+         psSrstB                  => psSrstB,
+         psClk                    => psClk,
+         psPorB                   => psPorB
+
       );
 
    --axiGpMasterWriteFromArm(0)
@@ -226,6 +250,8 @@ begin
       if iaxiClkRst = '1' then
          scratchPad          <= (others=>'0')     after TPD_G;
          intLocalBusSlave(0) <= LocalBusSlaveInit after TPD_G;
+         iclkSelA            <= (others=>'0')     after TPD_G;
+         iclkSelB            <= (others=>'0')     after TPD_G;
       elsif rising_edge(iaxiClk) then
          intLocalBusSlave(0).readValid <= intLocalBusMaster(0).readEnable after TPD_G;
          intLocalBusSlave(0).readData  <= x"deadbeef"                     after TPD_G;
@@ -245,6 +271,28 @@ begin
          elsif intLocalBusMaster(0).addr(23 downto 0) = x"000008" then
             intLocalBusSlave(0).readData <= ArmRceG3Version after TPD_G;
 
+         -- 0x80000010
+         elsif intLocalBusMaster(0).addr(23 downto 0) = x"000010" then
+            if intLocalBusMaster(0).writeEnable = '1' then
+               iclkSelA(0) <= intLocalBusMaster(0).writeData(0) after TPD_G;   
+               iclkSelB(0) <= intLocalBusMaster(0).writeData(1) after TPD_G;   
+            end if;
+
+            intLocalBusSlave(0).readData(0)           <= iclkSelA(0)   after TPD_G;
+            intLocalBusSlave(0).readData(1)           <= iclkSelB(0)   after TPD_G;
+            intLocalBusSlave(0).readData(31 downto 2) <= (others=>'0') after TPD_G;
+
+         -- 0x80000014
+         elsif intLocalBusMaster(0).addr(23 downto 0) = x"000014" then
+            if intLocalBusMaster(0).writeEnable = '1' then
+               iclkSelA(1) <= intLocalBusMaster(0).writeData(0) after TPD_G;   
+               iclkSelB(1) <= intLocalBusMaster(0).writeData(1) after TPD_G;   
+            end if;
+
+            intLocalBusSlave(0).readData(0)           <= iclkSelA(1)   after TPD_G;
+            intLocalBusSlave(0).readData(1)           <= iclkSelB(1)   after TPD_G;
+            intLocalBusSlave(0).readData(31 downto 2) <= (others=>'0') after TPD_G;
+
          -- 0x80001000
          elsif intLocalBusMaster(0).addr(23 downto 8) = x"0010" then
             intLocalBusSlave(0).readData <= (others=>'0') after TPD_G;
@@ -259,6 +307,8 @@ begin
       end if;  
    end process;
 
+   clkSelA <= iclkSelA;
+   clkSelB <= iclkSelB;
 
    --------------------------------------------
    -- I2C Controller
@@ -301,6 +351,12 @@ begin
          interrupt                => armInt,
          localBusMaster           => intLocalBusMaster(2),
          localBusSlave            => intLocalBusSlave(2),
+         obPpiClk                 => obPpiClk,
+         obPpiToFifo              => obPpiToFifo,
+         obPpiFromFifo            => obPpiFromFifo,
+         ibPpiClk                 => ibPpiClk,
+         ibPpiToFifo              => ibPpiToFifo,
+         ibPpiFromFifo            => ibPpiFromFifo,
          bsiToFifo                => bsiToFifo,
          bsiFromFifo              => bsiFromFifo
       );

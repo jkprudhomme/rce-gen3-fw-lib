@@ -1,0 +1,2 @@
+vhdl work hdl/DpmCore.vhd
+vhdl work hdl/DtmCore.vhd

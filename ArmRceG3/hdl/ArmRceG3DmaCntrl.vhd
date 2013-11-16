@@ -54,14 +54,14 @@ entity ArmRceG3DmaCntrl is
       localBusSlave           : out LocalBusSlaveType;
 
       -- PPI Outbound FIFO Interface
-      --obPpiClk                : in  slv(3 downto 0);
-      --obPpiToFifo             : in  ObPpiToFifoVector(3 downto 0);
-      --obPpiFromFifo           : out ObPpiFromFifoVector(3 downto 0);
+      obPpiClk                : in  slv(3 downto 0);
+      obPpiToFifo             : in  ObPpiToFifoVector(3 downto 0);
+      obPpiFromFifo           : out ObPpiFromFifoVector(3 downto 0);
 
       -- PPI Inbound FIFO Interface
-      --ibPpiClk                : in  slv(3 downto 0);
-      --ibPpiToFifo             : in  IbPpiToFifoVector(3 downto 0);
-      --ibPpiFromFifo           : out IbPpiFromFifoVector(3 downto 0);
+      ibPpiClk                : in  slv(3 downto 0);
+      ibPpiToFifo             : in  IbPpiToFifoVector(3 downto 0);
+      ibPpiFromFifo           : out IbPpiFromFifoVector(3 downto 0);
 
       -- PPI quad word FIFO
       bsiToFifo               : in  QWordToFifoType;
@@ -90,12 +90,6 @@ architecture structure of ArmRceG3DmaCntrl is
    signal intEnable           : slv(15  downto 0);
    signal ppiReadDmaCache     : slv(3 downto 0);
    signal ppiWriteDmaCache    : slv(3 downto 0);
-   signal obPpiClk            : slv(3 downto 0);
-   signal obPpiToFifo         : ObPpiToFifoVector(3 downto 0);
-   signal obPpiFromFifo       : ObPpiFromFifoVector(3 downto 0);
-   signal ibPpiClk            : slv(3 downto 0);
-   signal ibPpiToFifo         : IbPpiToFifoVector(3 downto 0);
-   signal ibPpiFromFifo       : IbPpiFromFifoVector(3 downto 0);
    signal compFromFifo        : CompFromFifoVector(7 downto 0);
    signal compToFifo          : CompToFifoVector(7 downto 0);
    signal compFifoSel         : slv(3  downto 0);
@@ -392,38 +386,6 @@ begin
          compFifoRdValid  => compFifoRdValid,
          compInt          => compInt
       );
-
-   --------------------------------------------------
-   -- Loopback
-   --------------------------------------------------
-
-   --- Temporary PPI loopback
-   U_LoopGen : for i in 0 to 3 generate
-
-      ibPpiClk(i)    <= axiClk;
-      obPpiClk(i)    <= axiClk;
-
-      ibPpiToFifo(i).data    <= obPpiFromFifo(i).data;
-      ibPpiToFifo(i).size    <= obPpiFromFifo(i).size;
-      ibPpiToFifo(i).ftype   <= obPpiFromFifo(i).ftype;
-      ibPpiToFifo(i).mgmt    <= obPpiFromFifo(i).mgmt;
-      ibPpiToFifo(i).eoh     <= obPpiFromFifo(i).eoh;
-      ibPpiToFifo(i).eof     <= obPpiFromFifo(i).eof;
-      ibPpiToFifo(i).err     <= '0';
-      ibPpiToFifo(i).id      <= (others=>'0');
-      ibPpiToFifo(i).version <= (others=>'0');
-      ibPpiToFifo(i).configA <= (others=>'0');
-      ibPpiToFifo(i).configB <= (others=>'0');
-
-      ibPpiToFifo(i).valid   <= obPpiFromFifo(i).valid;
-
-      obPpiToFifo(i).read    <= obPpiFromFifo(i).valid;
-      obPpiToFifo(i).id      <= (others=>'0');
-      obPpiToFifo(i).version <= (others=>'0');
-      obPpiToFifo(i).configA <= (others=>'0');
-      obPpiToFifo(i).configB <= (others=>'0');
-
-   end generate;
 
 end architecture structure;
 
