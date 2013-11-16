@@ -1,0 +1,116 @@
+#-------------------------------------------------------------------------------
+#-- Title         : Common DPM Core Constraints
+#-- File          : DpmCore.ucf
+#-- Author        : Ryan Herbst, rherbst@slac.stanford.edu
+#-- Created       : 11/14/2013
+#-------------------------------------------------------------------------------
+#-- Description:
+#-- Common top level constraints for DPM
+#-------------------------------------------------------------------------------
+#-- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
+#-------------------------------------------------------------------------------
+#-- Modification history:
+#-- 11/14/2013: created.
+#-------------------------------------------------------------------------------
+
+NET led(0)          LOC = "AA28"  | IOSTANDARD="LVCMOS25"; 
+NET led(1)          LOC = "AB26"  | IOSTANDARD="LVCMOS25";
+
+NET i2cScl          LOC = "AC29"  | IOSTANDARD="LVCMOS25"; 
+NET i2cSda          LOC = "AD30"  | IOSTANDARD="LVCMOS25";
+
+NET ethRxP(0)       LOC = "AH10"; 
+NET ethRxM(0)       LOC = "AH9"; 
+NET ethTxP(0)       LOC = "AK10"; 
+NET ethTxM(0)       LOC = "AK9"; 
+#NET ethRxP(1)       LOC = "AJ8";
+#NET ethRxM(1)       LOC = "AJ7";
+#NET ethTxP(1)       LOC = "AK6";
+#NET ethTxM(1)       LOC = "AK5";
+#NET ethRxP(2)       LOC = "AG8";
+#NET ethRxM(2)       LOC = "AG7";
+#NET ethTxP(2)       LOC = "AJ4";
+#NET ethTxM(2)       LOC = "AJ3";
+#NET ethRxP(3)       LOC = "AE8";
+#NET ethRxM(3)       LOC = "AE7";
+#NET ethTxP(3)       LOC = "AK2";
+#NET ethTxM(3)       LOC = "AK1";
+
+NET locRefClkP(0)   LOC = "AA8";
+NET locRefClkM(0)   LOC = "AA7";
+NET locRefClkP(1)   LOC = "U8";
+NET locRefClkM(1)   LOC = "U7";
+NET dtmRefClkP      LOC = "W8";
+NET dtmRefClkM      LOC = "W7";
+
+NET dtmClkP(0)      LOC = "AE28"  | IOSTANDARD="LVDS_25";
+NET dtmClkM(0)      LOC = "AF28"  | IOSTANDARD="LVDS_25";
+NET dtmClkP(1)      LOC = "AC28"  | IOSTANDARD="LVDS_25";
+NET dtmClkM(1)      LOC = "AD28"  | IOSTANDARD="LVDS_25";
+NET dtmFbP          LOC = "AE25"  | IOSTANDARD="LVDS_25";
+NET dtmFbM          LOC = "AF25"  | IOSTANDARD="LVDS_25";
+
+NET clkSelA(0)      LOC = "AK27"  | IOSTANDARD="LVCMOS25";
+NET clkSelA(0)      LOC = "AA25"  | IOSTANDARD="LVCMOS25";
+NET clkSelB(0)      LOC = "AK28"  | IOSTANDARD="LVCMOS25";
+NET clkSelA(1)      LOC = "AH26"  | IOSTANDARD="LVCMOS25";
+NET clkSelB(1)      LOC = "AH27"  | IOSTANDARD="LVCMOS25";
+
+NET psSrstB         LOC = "B19";
+NET psClk           LOC = "A22";
+NET psPorB          LOC = "D21";
+
+NET U_DpmCore/U_ArmRceG3Top/fclkClk0 TNM_NET = "fclkClk0";
+TIMESPEC TS_fclkClk0 = PERIOD fclkClk0 100 Mhz HIGH 50%;
+
+NET U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/ponResetL TIG;
+
+#NET dpmToRtmHsP(0)  LOC = "AH2";
+#NET dpmToRtmHsM(0)  LOC = "AH1";
+#NET rtmToDpmHsP(0)  LOC = "AH6";
+#NET rtmToDpmHsM(0)  LOC = "AH5";
+#NET dpmToRtmHsP(1)  LOC = "AF2";
+#NET dpmToRtmHsM(1)  LOC = "AF1";
+#NET rtmToDpmHsP(1)  LOC = "AG4";
+#NET rtmToDpmHsM(1)  LOC = "AG3";
+#NET dpmToRtmHsP(2)  LOC = "AE4";
+#NET dpmToRtmHsM(2)  LOC = "AE3";
+#NET rtmToDpmHsP(2)  LOC = "AF6";
+#NET rtmToDpmHsM(2)  LOC = "AF5";
+#NET dpmToRtmHsP(3)  LOC = "AD2";
+#NET dpmToRtmHsM(3)  LOC = "AD1";
+#NET rtmToDpmHsP(3)  LOC = "AD6";
+#NET rtmToDpmHsM(3)  LOC = "AD5";
+#NET dpmToRtmHsP(4)  LOC = "AB2";
+#NET dpmToRtmHsM(4)  LOC = "AB1";
+#NET rtmToDpmHsP(4)  LOC = "AC4";
+#NET rtmToDpmHsM(4)  LOC = "AC3";
+#NET dpmToRtmHsP(5)  LOC = "Y2";
+#NET dpmToRtmHsM(5)  LOC = "Y1";
+#NET rtmToDpmHsP(5)  LOC = "AB6";
+#NET rtmToDpmHsM(5)  LOC = "AB5";
+#NET dpmToRtmHsP(6)  LOC = "W4";
+#NET dpmToRtmHsM(6)  LOC = "W3";
+#NET rtmToDpmHsP(6)  LOC = "Y6";
+#NET rtmToDpmHsM(6)  LOC = "Y5";
+#NET dpmToRtmHsP(7)  LOC = "V2";
+#NET dpmToRtmHsM(7)  LOC = "V1";
+#NET rtmToDpmHsP(7)  LOC = "AA4";
+#NET rtmToDpmHsM(7)  LOC = "AA3";
+#NET dpmToRtmHsP(8)  LOC = "T2";
+#NET dpmToRtmHsM(8)  LOC = "T1";
+#NET rtmToDpmHsP(8)  LOC = "V6";
+#NET rtmToDpmHsM(8)  LOC = "V5";
+#NET dpmToRtmHsP(9)  LOC = "R4";
+#NET dpmToRtmHsM(9)  LOC = "R3";
+#NET rtmToDpmHsP(9)  LOC = "U4";
+#NET rtmToDpmHsM(9)  LOC = "U3";
+#NET dpmToRtmHsP(10) LOC = "P2";
+#NET dpmToRtmHsM(10) LOC = "P1";
+#NET rtmToDpmHsP(10) LOC = "T6";
+#NET rtmToDpmHsM(10) LOC = "T5";
+#NET dpmToRtmHsP(11) LOC = "N4";
+#NET dpmToRtmHsM(11) LOC = "N3";
+#NET rtmToDpmHsP(11) LOC = "P6";
+#NET rtmToDpmHsM(11) LOC = "P5";
+
