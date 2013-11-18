@@ -1,0 +1,2 @@
+coregen/zynq_ila.ngc
+coregen/zynq_icon.ngc

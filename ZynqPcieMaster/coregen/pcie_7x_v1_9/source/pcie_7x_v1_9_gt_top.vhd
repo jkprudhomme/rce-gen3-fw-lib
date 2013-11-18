@@ -422,7 +422,7 @@ architecture pcie_7x of pcie_7x_v1_9_gt_top is
     PIPE_DEBUG_7                  : out std_logic_vector((LINK_CAP_MAX_LINK_WIDTH_int-1) downto 0);
     PIPE_DEBUG_8                  : out std_logic_vector((LINK_CAP_MAX_LINK_WIDTH_int-1) downto 0);
     PIPE_DEBUG_9                  : out std_logic_vector((LINK_CAP_MAX_LINK_WIDTH_int-1) downto 0);
-    PIPE_DEBUG                    : out std_logic_vector((LINK_CAP_MAX_LINK_WIDTH_int-1) downto 0);
+    PIPE_DEBUG                    : out std_logic_vector(31 downto 0);
 
     PIPE_DMONITOROUT              : out std_logic_vector((15*LINK_CAP_MAX_LINK_WIDTH_int-1) downto 0)
 

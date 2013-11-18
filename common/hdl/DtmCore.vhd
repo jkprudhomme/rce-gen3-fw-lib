@@ -107,12 +107,7 @@ entity DtmCore is
       -- PPI Inbound FIFO Interface
       ibPpiClk                : in     slv(3 downto 0);
       ibPpiToFifo             : in     IbPpiToFifoVector(3 downto 0);
-      ibPpiFromFifo           : out    IbPpiFromFifoVector(3 downto 0);
-
-      -- External Inputs
-      psSrstB                 : in     sl;
-      psClk                   : in     sl;
-      psPorB                  : in     sl
+      ibPpiFromFifo           : out    IbPpiFromFifoVector(3 downto 0)
    );
 end DtmCore;
 
@@ -234,10 +229,7 @@ begin
          ethFromArm         => iethFromArm,
          ethToArm           => iethToArm,
          clkSelA            => iclkSelA,
-         clkSelB            => iclkSelB,
-         psSrstB            => psSrstB,
-         psClk              => psClk,
-         psPorB             => psPorB
+         clkSelB            => iclkSelB
       );
 
    --------------------------------------------------

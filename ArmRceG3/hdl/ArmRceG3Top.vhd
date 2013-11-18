@@ -66,12 +66,7 @@ entity ArmRceG3Top is
 
       -- Programmable Clock Select
       clkSelA                 : out   slv(1 downto 0);
-      clkSelB                 : out   slv(1 downto 0);
-
-      -- External Inputs
-      psSrstB                 : in     sl;
-      psClk                   : in     sl;
-      psPorB                  : in     sl
+      clkSelB                 : out   slv(1 downto 0)
    );
 end ArmRceG3Top;
 
@@ -161,11 +156,7 @@ begin
          axiHpSlaveReadFromArm    => axiHpSlaveReadFromArm,
          axiHpSlaveReadToArm      => axiHpSlaveReadToArm,
          ethFromArm               => ethFromArm,
-         ethToArm                 => ethToArm,
-         psSrstB                  => psSrstB,
-         psClk                    => psClk,
-         psPorB                   => psPorB
-
+         ethToArm                 => ethToArm
       );
 
    --axiGpMasterWriteFromArm(0)

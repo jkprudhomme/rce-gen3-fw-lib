@@ -45,12 +45,7 @@ entity EvalCore is
       -- PPI Inbound FIFO Interface
       ibPpiClk                : in     slv(3 downto 0);
       ibPpiToFifo             : in     IbPpiToFifoVector(3 downto 0);
-      ibPpiFromFifo           : out    IbPpiFromFifoVector(3 downto 0);
-
-      -- External Inputs
-      psSrstB                 : in     sl;
-      psClk                   : in     sl;
-      psPorB                  : in     sl
+      ibPpiFromFifo           : out    IbPpiFromFifoVector(3 downto 0)
    );
 end EvalCore;
 
@@ -84,10 +79,7 @@ begin
          ethFromArm         => open,
          ethToArm           => (others=>EthToArmInit),
          clkSelA            => open,
-         clkSelB            => open,
-         psSrstB            => psSrstB,
-         psClk              => psClk,
-         psPorB             => psPorB
+         clkSelB            => open
       );
 
 end architecture STRUCTURE;
