@@ -56,10 +56,6 @@ NET clkSelB(0)      LOC = "AK28"  | IOSTANDARD="LVCMOS25";
 NET clkSelA(1)      LOC = "AH26"  | IOSTANDARD="LVCMOS25";
 NET clkSelB(1)      LOC = "AH27"  | IOSTANDARD="LVCMOS25";
 
-NET psSrstB         LOC = "B19";
-NET psClk           LOC = "A22";
-NET psPorB          LOC = "D21";
-
 NET U_DpmCore/U_ArmRceG3Top/fclkClk0 TNM_NET = "fclkClk0";
 TIMESPEC TS_fclkClk0 = PERIOD fclkClk0 100 Mhz HIGH 50%;
 

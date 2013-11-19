@@ -14,7 +14,8 @@
 #-------------------------------------------------------------------------------
 
 # Clocks
-create_clock -name fclkClk0 -period 10 [get_nets U_EvalCore/U_ArmRceG3Top/fclkClk0]
+create_clock -name fclkClk0 -period 10 \
+   [get_pins U_EvalCore/U_ArmRceG3Top/U_ArmRceG3Cpu/U_PS7/PS7_i/FCLKCLK[0]]
 
 # Locations
 set_property PACKAGE_PIN Y11  [get_ports i2cScl]

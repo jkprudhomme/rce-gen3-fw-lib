@@ -73,12 +73,7 @@ entity DpmCore is
 
       -- Clock Select
       clkSelA                 : out    slv(1 downto 0);
-      clkSelB                 : out    slv(1 downto 0);
-
-      -- External Inputs
-      psSrstB                 : in     sl;
-      psClk                   : in     sl;
-      psPorB                  : in     sl
+      clkSelB                 : out    slv(1 downto 0)
    );
 end DpmCore;
 
@@ -204,10 +199,7 @@ begin
          ethFromArm         => iethFromArm,
          ethToArm           => iethToArm,
          clkSelA            => clkSelA,
-         clkSelB            => clkSelB,
-         psSrstB            => psSrstB,
-         psClk              => psClk,
-         psPorB             => psPorB
+         clkSelB            => clkSelB
       );
 
    --------------------------------------------------

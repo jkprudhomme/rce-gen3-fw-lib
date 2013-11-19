@@ -15,9 +15,6 @@
 
 NET i2cScl   LOC = "Y11"  | IOSTANDARD="LVCMOS25"; 
 NET i2cSda   LOC = "AA11" | IOSTANDARD="LVCMOS25";
-NET psSrstB  LOC = "C9";
-NET psClk    LOC = "F7";
-NET psPorB   LOC = "B5";
 
 NET U_EvalCore/U_ArmRceG3Top/fclkClk0 TNM_NET = "fclkClk0";
 TIMESPEC TS_fclkClk0 = PERIOD fclkClk0 100 Mhz HIGH 50%;
