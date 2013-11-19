@@ -2761,9 +2761,12 @@ if (C_PACKAGE_NAME == "clg225" ) begin
 	  .DDRVRP          (DDR_VRP),
 	  .DDRWEB          (DDR_WEB),
 	  .MIO			   ({MIO[31:30],dummy[21:20],MIO[29:28],dummy[19:12],MIO[27:16],dummy[11:0],MIO[15:0]}),
-	  .PSCLK		   (PS_CLK),  
-	  .PSPORB		   (PS_PORB),  
-	  .PSSRSTB		   (PS_SRSTB)  
+	  .PSCLK		   (),  
+	  .PSPORB		   (),  
+	  .PSSRSTB		   ()
+	  //.PSCLK		   (PS_CLK),  
+	  //.PSPORB		   (PS_PORB),  
+	  //.PSSRSTB		   (PS_SRSTB)  
   
 
 );
@@ -3387,9 +3390,12 @@ if (C_PACKAGE_NAME == "clg225" ) begin
 	  .DDRVRP                  (DDR_VRP),
 	  .DDRWEB                  (DDR_WEB),
 	  .MIO			   (MIO),
-	  .PSCLK		   (PS_CLK),  
-	  .PSPORB		   (PS_PORB),  
-	  .PSSRSTB		   (PS_SRSTB)  
+	  .PSCLK		   (),  
+	  .PSPORB		   (),  
+	  .PSSRSTB		   ()  
+	  //.PSCLK		   (PS_CLK),  
+	  //.PSPORB		   (PS_PORB),  
+	  //.PSSRSTB		   (PS_SRSTB)  
 	  
 
 	);
