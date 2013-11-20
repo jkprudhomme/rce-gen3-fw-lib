@@ -77,6 +77,7 @@ architecture structure of ArmRceG3IbQWordFifo is
    signal nextBusy                 : sl;
 
    -- States
+   signal   dbgState   : slv(2 downto 0);
    signal   curState   : slv(2 downto 0);
    signal   nxtState   : slv(2 downto 0);
    constant ST_IDLE    : slv(2 downto 0) := "000";
@@ -85,7 +86,22 @@ architecture structure of ArmRceG3IbQWordFifo is
    constant ST_WAIT    : slv(2 downto 0) := "011";
    constant ST_PAUSE   : slv(2 downto 0) := "100";
 
+   -- Attribute
+   attribute mark_debug : string;
+   attribute mark_debug of dbgState  : signal is "true";
+   attribute mark_debug of fifoDout  : signal is "true";
+   attribute mark_debug of fifoRd    : signal is "true";
+   attribute mark_debug of fifoReady : signal is "true";
+   attribute mark_debug of fifoValid : signal is "true";
+
 begin
+
+   -- State Debug
+   dbgState <= "000" when curState = ST_IDLE  else
+               "001" when curState = ST_REQ   else
+               "010" when curState = ST_WRITE else
+               "011" when curState = ST_WAIT  else
+               "100" when curState = ST_PAUSE else "000";
 
    -----------------------------------------
    -- Memory Address
