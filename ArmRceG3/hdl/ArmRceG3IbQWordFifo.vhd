@@ -64,6 +64,9 @@ end ArmRceG3IbQWordFifo;
 
 architecture structure of ArmRceG3IbQWordFifo is
 
+   -- State types
+   type States is (ST_IDLE, ST_REQ, ST_WRITE, ST_WAIT, ST_PAUSE);
+
    -- Local signals
    signal burstDone                : sl;
    signal memAddress               : slv(31 downto 3);
@@ -75,33 +78,41 @@ architecture structure of ArmRceG3IbQWordFifo is
    signal nextReq                  : sl;
    signal fifoReq                  : sl;
    signal nextBusy                 : sl;
+   signal dbgState                 : slv(2 downto 0);
+   signal curState                 : States;
+   signal nxtState                 : States;
 
-   -- States
-   signal   dbgState   : slv(2 downto 0);
-   signal   curState   : slv(2 downto 0);
-   signal   nxtState   : slv(2 downto 0);
-   constant ST_IDLE    : slv(2 downto 0) := "000";
-   constant ST_REQ     : slv(2 downto 0) := "001";
-   constant ST_WRITE   : slv(2 downto 0) := "010";
-   constant ST_WAIT    : slv(2 downto 0) := "011";
-   constant ST_PAUSE   : slv(2 downto 0) := "100";
-
-   -- Attribute
-   attribute mark_debug : string;
-   attribute mark_debug of dbgState  : signal is "true";
-   attribute mark_debug of fifoDout  : signal is "true";
-   attribute mark_debug of fifoRd    : signal is "true";
-   attribute mark_debug of fifoReady : signal is "true";
-   attribute mark_debug of fifoValid : signal is "true";
+   -- Mark For Debug
+   --attribute mark_debug                            : string;
+   --attribute mark_debug of axiClk                  : signal is "true";
+   --attribute mark_debug of axiClkRst               : signal is "true";
+   --attribute mark_debug of axiWriteToCntrl         : signal is "true";
+   --attribute mark_debug of axiWriteFromCntrl       : signal is "true";
+   --attribute mark_debug of memDirty                : signal is "true";
+   --attribute mark_debug of memDirtySet             : signal is "true";
+   --attribute mark_debug of writeDmaBusyOut         : signal is "true";
+   --attribute mark_debug of writeDmaBusyIn          : signal is "true";
+   --attribute mark_debug of fifoEnable              : signal is "true";
+   --attribute mark_debug of writeDmaId              : signal is "true";
+   --attribute mark_debug of memBaseAddress          : signal is "true";
+   --attribute mark_debug of qwordToFifo             : signal is "true";
+   --attribute mark_debug of qwordFromFifo           : signal is "true";
+   --attribute mark_debug of burstDone               : signal is "true";
+   --attribute mark_debug of memAddress              : signal is "true";
+   --attribute mark_debug of memReady                : signal is "true";
+   --attribute mark_debug of fifoValid               : signal is "true";
+   --attribute mark_debug of fifoRd                  : signal is "true";
+   --attribute mark_debug of fifoDout                : signal is "true";
+   --attribute mark_debug of fifoReady               : signal is "true";
+   --attribute mark_debug of nextReq                 : signal is "true";
+   --attribute mark_debug of fifoReq                 : signal is "true";
+   --attribute mark_debug of nextBusy                : signal is "true";
+   --attribute mark_debug of dbgState                : signal is "true";
 
 begin
 
    -- State Debug
-   dbgState <= "000" when curState = ST_IDLE  else
-               "001" when curState = ST_REQ   else
-               "010" when curState = ST_WRITE else
-               "011" when curState = ST_WAIT  else
-               "100" when curState = ST_PAUSE else "000";
+   dbgState <= conv_std_logic_vector(States'POS(curState), 3);
 
    -----------------------------------------
    -- Memory Address

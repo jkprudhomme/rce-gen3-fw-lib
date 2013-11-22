@@ -17,6 +17,7 @@
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.numeric_std.all;
 
@@ -77,6 +78,33 @@ architecture structure of AxiRceG3AxiWriteCntrl is
    signal dValid                   : slv(7 downto 0);
    signal bresp                    : slv(1 downto 0);
    signal bvalid                   : slv(CHAN_CNT_G-1 downto 0);
+
+   -- Mark For Debug
+   attribute mark_debug                             : string;
+   attribute mark_debug of arbReq                   : signal is "true";
+   attribute mark_debug of arbGnt                   : signal is "true";
+   attribute mark_debug of preGnt                   : signal is "true";
+   attribute mark_debug of preSelect                : signal is "true";
+   attribute mark_debug of arbValid                 : signal is "true";
+   attribute mark_debug of arbSelect                : signal is "true";
+   attribute mark_debug of arbSelectFilt            : signal is "true";
+   attribute mark_debug of regWriteToCntrl          : signal is "true";
+   attribute mark_debug of aFifoWr                  : signal is "true";
+   attribute mark_debug of aFifoRd                  : signal is "true";
+   attribute mark_debug of aFifoDin                 : signal is "true";
+   attribute mark_debug of aFifoDout                : signal is "true";
+   attribute mark_debug of aFifoValid               : signal is "true";
+   attribute mark_debug of aFifoPFull               : signal is "true";
+   attribute mark_debug of dFifoWr                  : signal is "true";
+   attribute mark_debug of dFifoRd                  : signal is "true";
+   attribute mark_debug of dFifoDin                 : signal is "true";
+   attribute mark_debug of dFifoDout                : signal is "true";
+   attribute mark_debug of dFifoValid               : signal is "true";
+   attribute mark_debug of dFifoPFull               : signal is "true";
+   attribute mark_debug of dSize                    : signal is "true";
+   attribute mark_debug of dValid                   : signal is "true";
+   attribute mark_debug of bresp                    : signal is "true";
+   attribute mark_debug of bvalid                   : signal is "true";
 
 begin
 

@@ -18,6 +18,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use ieee.std_logic_arith.all;
 use IEEE.numeric_std.all;
 
 library unisim;
@@ -71,6 +72,9 @@ architecture structure of ArmRceG3ObHeaderFifo is
       valid    : sl;
    end record;
 
+   -- States
+   type States is ( ST_IDLE, ST_REQ, ST_READ, ST_CHECK, ST_WAIT, ST_FREE );
+
    -- Local signals
    signal obDesc                   : ObDescType;
    signal headerPtrDout            : slv(35 downto 0);
@@ -89,18 +93,32 @@ architecture structure of ArmRceG3ObHeaderFifo is
    signal readPending              : slv(7  downto 0);
    signal nextReq                  : sl;
    signal fifoReq                  : sl;
+   signal curState                 : States;
+   signal nxtState                 : States;
+   signal dbgState                 : slv(2 downto 0);
 
-   -- States
-   signal   curState   : slv(2 downto 0);
-   signal   nxtState   : slv(2 downto 0);
-   constant ST_IDLE    : slv(2 downto 0) := "000";
-   constant ST_REQ     : slv(2 downto 0) := "001";
-   constant ST_READ    : slv(2 downto 0) := "010";
-   constant ST_CHECK   : slv(2 downto 0) := "011";
-   constant ST_WAIT    : slv(2 downto 0) := "100";
-   constant ST_FREE    : slv(2 downto 0) := "101";
+   -- Mark For Debug
+   --attribute mark_debug                             : string;
+   --attribute mark_debug of obDesc                   : signal is "true";
+   --attribute mark_debug of nextFreeWrite            : signal is "true";
+   --attribute mark_debug of header                   : signal is "true";
+   --attribute mark_debug of rxLengthCnt              : signal is "true";
+   --attribute mark_debug of rxDone                   : signal is "true";
+   --attribute mark_debug of rxLast                   : signal is "true";
+   --attribute mark_debug of rxInit                   : signal is "true";
+   --attribute mark_debug of obHeaderAFull            : signal is "true";
+   --attribute mark_debug of obHeaderPFull            : signal is "true";
+   --attribute mark_debug of addrValid                : signal is "true";
+   --attribute mark_debug of readAddr                 : signal is "true";
+   --attribute mark_debug of readPending              : signal is "true";
+   --attribute mark_debug of nextReq                  : signal is "true";
+   --attribute mark_debug of fifoReq                  : signal is "true";
+   --attribute mark_debug of dbgState                 : signal is "true";
 
 begin
+
+   -- State Debug
+   dbgState <= conv_std_logic_vector(States'POS(curState), 3);
 
    -----------------------------------------
    -- Transmit FIFO

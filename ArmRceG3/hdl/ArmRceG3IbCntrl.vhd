@@ -81,6 +81,16 @@ architecture structure of ArmRceG3IbCntrl is
    signal iqwordToFifo              : QWordToFifoVector(4 downto 0);
    signal iqwordFromFifo            : QWordFromFifoVector(4 downto 0);
 
+   -- Mark For Debug
+   attribute mark_debug                              : string;
+   --attribute mark_debug of idirtyFlag                : signal is "true";
+   --attribute mark_debug of dirtyFlagSet              : signal is "true";
+   --attribute mark_debug of writeDmaBusyIn            : signal is "true";
+   attribute mark_debug of axiWriteToCntrl           : signal is "true";
+   attribute mark_debug of axiWriteFromCntrl         : signal is "true";
+   --attribute mark_debug of iqwordToFifo              : signal is "true";
+   --attribute mark_debug of iqwordFromFifo            : signal is "true";
+
 begin
 
    -----------------------------------------

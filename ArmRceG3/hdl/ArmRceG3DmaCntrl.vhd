@@ -98,11 +98,34 @@ architecture structure of ArmRceG3DmaCntrl is
    signal compFifoData        : slv(31 downto 0);
    signal compFifoRdValid     : sl;
    signal ppiOnline           : slv(7 downto 0);
-   signal ppiData             : Slv32Array(31 downto 0);
    signal freePtrSel          : slv(1  downto 0);
    signal freePtrRd           : sl;
    signal freePtrData         : slv(31 downto 0);
    signal freePtrRdValid      : sl;
+
+   -- Mark For Debug
+   --attribute mark_debug                        : string;
+   --attribute mark_debug of obFifoToFifo        : signal is "true";
+   --attribute mark_debug of obFifoFromFifo      : signal is "true";
+   --attribute mark_debug of ibFifoToFifo        : signal is "true";
+   --attribute mark_debug of ibFifoFromFifo      : signal is "true";
+   --attribute mark_debug of dirtyFlag           : signal is "true";
+   --attribute mark_debug of dirtyFlagClrEn      : signal is "true";
+   --attribute mark_debug of dirtyFlagClrSel     : signal is "true";
+   --attribute mark_debug of fifoEnable          : signal is "true";
+   --attribute mark_debug of intEnable           : signal is "true";
+   --attribute mark_debug of compFromFifo        : signal is "true";
+   --attribute mark_debug of compToFifo          : signal is "true";
+   --attribute mark_debug of compFifoSel         : signal is "true";
+   --attribute mark_debug of compFifoRd          : signal is "true";
+   --attribute mark_debug of compInt             : signal is "true";
+   --attribute mark_debug of compFifoData        : signal is "true";
+   --attribute mark_debug of compFifoRdValid     : signal is "true";
+   --attribute mark_debug of ppiOnline           : signal is "true";
+   --attribute mark_debug of freePtrSel          : signal is "true";
+   --attribute mark_debug of freePtrRd           : signal is "true";
+   --attribute mark_debug of freePtrData         : signal is "true";
+   --attribute mark_debug of freePtrRdValid      : signal is "true";
 
 begin
 
@@ -241,17 +264,12 @@ begin
             if localBusMaster.writeEnable = '1' then
                ppiOnline <= localBusMaster.writeData(7 downto 0) after TPD_G;
             end if;
-            localBusSlave.readData <= ppiData(conv_integer(localBusMaster.addr(6 downto 2))) after TPD_G;
+            localBusSlave.readData(7 downto 0) <= ppiOnline after TPD_G;
 
          -- Inbound ppi pointer entries, 64 total (4 * 16) - 0x88000500 - 0x880005FF
          -- Write only
          elsif localBusMaster.addr(23 downto 8) = x"0005" then
             ibPpiPtrWrite(conv_integer(localBusMaster.addr(7 downto 6))) <= localBusMaster.writeEnable after TPD_G;
-
-         -- PPI data read, 32 total - 0x88000600 - 0x8800067F
-         -- Write only
-         elsif localBusMaster.addr(23 downto 8) = x"0006" then 
-            localBusSlave.readData <= ppiData(conv_integer(localBusMaster.addr(6 downto 2))) after TPD_G;
 
          -- Unsupported
          else 
@@ -332,7 +350,6 @@ begin
             ppiPtrData               => genPtrData,
             writeDmaCache            => ppiWriteDmaCache,
             ppiOnline                => ppiOnline(i),
-            ppiData                  => ppiData(i*4+3 downto i*4),
             compFromFifo             => compFromFifo(i),
             compToFifo               => compToFifo(i),
             ibPpiClk                 => ibPpiClk(i),
@@ -359,7 +376,6 @@ begin
             obHeaderFromFifo        => obFifoFromFifo(i),
             readDmaCache            => ppiReadDmaCache,
             ppiOnline               => ppiOnline(i+4),
-            ppiData                 => ppiData((i+4)*4+3 downto (i+4)*4),
             compFromFifo            => compFromFifo(i+4),
             compToFifo              => compToFifo(i+4),
             obPpiClk                => obPpiClk(i),

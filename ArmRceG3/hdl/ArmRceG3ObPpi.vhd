@@ -45,7 +45,6 @@ entity ArmRceG3ObPpi is
       -- Configuration
       readDmaCache            : in  slv(3  downto 0);
       ppiOnline               : in  sl;
-      ppiData                 : out Slv32Array(3 downto 0);
 
       -- Completion FIFO
       compFromFifo            : out CompFromFifoType;
@@ -83,6 +82,9 @@ architecture structure of ArmRceG3ObPpi is
       mgmt   : sl;
       valid  : slv(7 downto 0);
    end record;
+
+   -- States
+   type States is ( ST_IDLE, ST_SHIFT, ST_PAUSE, ST_READ, ST_CHECK, ST_WAIT, ST_COMP  );
 
    -- Local signals
    signal obHeaderReg      : ObHeaderFromFifoVector(1 downto 0);
@@ -123,20 +125,53 @@ architecture structure of ArmRceG3ObPpi is
    signal firstLength      : slv(3   downto 0);
    signal currLength       : slv(3   downto 0);
    signal ppiOnlineReg     : slv(1   downto 0);
-   signal ppiDataReg       : Slv32Array(3 downto 0);
+   signal curState         : States;
+   signal nxtState         : States;
+   signal dbgState         : slv(2 downto 0);
 
-   -- Master States
-   signal   curState  : slv(2 downto 0);
-   signal   nxtState  : slv(2 downto 0);
-   constant ST_IDLE   : slv(2 downto 0) := "000";
-   constant ST_SHIFT  : slv(2 downto 0) := "001";
-   constant ST_PAUSE  : slv(2 downto 0) := "010";
-   constant ST_READ   : slv(2 downto 0) := "011";
-   constant ST_CHECK  : slv(2 downto 0) := "100";
-   constant ST_WAIT   : slv(2 downto 0) := "101";
-   constant ST_COMP   : slv(2 downto 0) := "110";
+
+   -- Local signals
+   --attribute mark_debug                     : string;
+   --attribute mark_debug of obHeaderReg      : signal is "true";
+   --attribute mark_debug of headerDma        : signal is "true";
+   --attribute mark_debug of fifoShift        : signal is "true";
+   --attribute mark_debug of fifoClear        : signal is "true";
+   --attribute mark_debug of rxLengthRem      : signal is "true";
+   --attribute mark_debug of rxLengthDec      : signal is "true";
+   --attribute mark_debug of rxDone           : signal is "true";
+   --attribute mark_debug of rxLast           : signal is "true";
+   --attribute mark_debug of rxFirst          : signal is "true";
+   --attribute mark_debug of rxEnable         : signal is "true";
+   --attribute mark_debug of headerWrite      : signal is "true";
+   --attribute mark_debug of headerEOF        : signal is "true";
+   --attribute mark_debug of headerEOH        : signal is "true";
+   --attribute mark_debug of obPpi            : signal is "true";
+   --attribute mark_debug of obPpiHead        : signal is "true";
+   --attribute mark_debug of obPpiWriteEn     : signal is "true";
+   --attribute mark_debug of obPpiHold        : signal is "true";
+   --attribute mark_debug of obPpiFifo        : signal is "true";
+   --attribute mark_debug of obPpiFirst       : signal is "true";
+   --attribute mark_debug of obPpiFifoWr      : signal is "true";
+   --attribute mark_debug of currCompData     : signal is "true";
+   --attribute mark_debug of nxtCompWrite     : signal is "true";
+   --attribute mark_debug of addrValid        : signal is "true";
+   --attribute mark_debug of readAddr         : signal is "true";
+   --attribute mark_debug of readPending      : signal is "true";
+   --attribute mark_debug of ppiPFull         : signal is "true";
+   --attribute mark_debug of nextValid        : signal is "true";
+   --attribute mark_debug of axiReadToCntrl   : signal is "true";
+   --attribute mark_debug of axiReadFromCntrl : signal is "true";
+   --attribute mark_debug of firstSize        : signal is "true";
+   --attribute mark_debug of currSize         : signal is "true";
+   --attribute mark_debug of firstLength      : signal is "true";
+   --attribute mark_debug of currLength       : signal is "true";
+   --attribute mark_debug of ppiOnlineReg     : signal is "true";
+   --attribute mark_debug of dbgState         : signal is "true";
 
 begin
+
+   -- State Debug
+   dbgState <= conv_std_logic_vector(States'POS(curState), 3);
 
    -----------------------------------------
    -- Outbound Header FIFO Interface
@@ -694,21 +729,6 @@ begin
    end process;
 
    obPpiFromFifo.online <= ppiOnlineReg(1);
-
-   -- Synchronize the PPI data
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         ppiDataReg <= (others=>(others=>'0')) after TPD_G;
-         ppiData    <= (others=>(others=>'0')) after TPD_G;
-      elsif rising_edge(axiClk) then
-         ppiDataReg(0) <= obPpiToFifo.id       after TPD_G;
-         ppiDataReg(1) <= obPpiToFifo.version  after TPD_G;
-         ppiDataReg(2) <= obPpiToFifo.configA  after TPD_G;
-         ppiDataReg(3) <= obPpiToFifo.configB  after TPD_G;
-         ppiData       <= ppiDataReg           after TPD_G;
-      end if;
-   end process;
-
 
    -----------------------------------------
    -- Completion FIFO

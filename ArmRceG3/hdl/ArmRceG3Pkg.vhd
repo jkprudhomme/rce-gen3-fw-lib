@@ -524,19 +524,11 @@ package ArmRceG3Pkg is
    -- Base Record
    type ObPpiToFifoType is record
       read    : sl;               -- Read from PPI FIFO
-      id      : slv(31 downto 0); -- Outbound PPI ID
-      version : slv(31 downto 0); -- Outbound PPI Version
-      configA : slv(31 downto 0); -- Outbound PPI Config Word A
-      configB : slv(31 downto 0); -- Outbound PPI Config Word B
    end record;
 
    -- Initialization constants
    constant ObPpiToFifoInit : ObPpiToFifoType := ( 
-      read    => '0',
-      id      => x"00000000",
-      version => x"00000000",
-      configA => x"00000000",
-      configB => x"00000000"
+      read    => '0'
    );
 
    -- Vector
@@ -588,10 +580,6 @@ package ArmRceG3Pkg is
       ftype   : slv(2 downto 0);  -- Frame type
       mgmt    : sl;               -- Frame is management
       valid   : sl;               -- Frame data is valid
-      id      : slv(31 downto 0); -- Inbound PPI ID
-      version : slv(31 downto 0); -- Inbound PPI Version
-      configA : slv(31 downto 0); -- Inbound PPI Config Word A
-      configB : slv(31 downto 0); -- Inbound PPI Config Word B
    end record;
 
    -- Initialization constants
@@ -603,11 +591,7 @@ package ArmRceG3Pkg is
       err     => '0',
       ftype   => "000",
       mgmt    => '0',
-      valid   => '0',
-      id      => x"00000000",
-      version => x"00000000",
-      configA => x"00000000",
-      configB => x"00000000"
+      valid   => '0'
    );
 
    -- Vector

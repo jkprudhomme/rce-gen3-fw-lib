@@ -18,6 +18,7 @@
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.numeric_std.all;
 
@@ -93,6 +94,9 @@ architecture structure of ArmRceG3IbHeaderFifo is
 
    -- Inbound FIFO Vector
    type IbFifoVector is array (natural range<>) of IbFifoType;
+
+   -- State Types
+   type States is ( ST_IDLE, ST_NEXT, ST_REQ, ST_WRITE, ST_CHECK, ST_WAIT );
    
    -- Local signals
    signal headerPtrDout            : slv(35 downto 0);
@@ -125,19 +129,45 @@ architecture structure of ArmRceG3IbHeaderFifo is
    signal ibDesc                   : IbDescType;
    signal fifoReq                  : sl;
    signal nextReq                  : sl;
+   signal curState                 : States;
+   signal nxtState                 : States;
+   signal dbgState                 : slv(2 downto 0);
 
-   -- States
-   signal   curState   : slv(2 downto 0);
-   signal   nxtState   : slv(2 downto 0);
-   constant ST_IDLE    : slv(2 downto 0) := "000";
-   constant ST_NEXT    : slv(2 downto 0) := "001";
-   constant ST_REQ     : slv(2 downto 0) := "010";
-   constant ST_WRITE   : slv(2 downto 0) := "011";
-   constant ST_CHECK   : slv(2 downto 0) := "100";
-   constant ST_WAIT    : slv(2 downto 0) := "101";
+   -- Mark For Debug
+   --attribute mark_debug                             : string;
+   --attribute mark_debug of headerPtrValid           : signal is "true";
+   --attribute mark_debug of headerPtrOffset          : signal is "true";
+   --attribute mark_debug of ibValid                  : signal is "true";
+   --attribute mark_debug of ibHeader                 : signal is "true";
+   --attribute mark_debug of fifoShift                : signal is "true";
+   --attribute mark_debug of headerDone               : signal is "true";
+   --attribute mark_debug of pipeReady                : signal is "true";
+   --attribute mark_debug of pipeShift                : signal is "true";
+   --attribute mark_debug of fifoRd                   : signal is "true";
+   --attribute mark_debug of fifoReady                : signal is "true";
+   --attribute mark_debug of writeAddr                : signal is "true";
+   --attribute mark_debug of countReset               : signal is "true";
+   --attribute mark_debug of addrValid                : signal is "true";
+   --attribute mark_debug of dataValid                : signal is "true";
+   --attribute mark_debug of dataLast                 : signal is "true";
+   --attribute mark_debug of curDone                  : signal is "true";
+   --attribute mark_debug of nxtDone                  : signal is "true";
+   --attribute mark_debug of ackCount                 : signal is "true";
+   --attribute mark_debug of burstCount               : signal is "true";
+   --attribute mark_debug of burstCountEn             : signal is "true";
+   --attribute mark_debug of wordCount                : signal is "true";
+   --attribute mark_debug of headerLength             : signal is "true";
+   --attribute mark_debug of curError                 : signal is "true";
+   --attribute mark_debug of nxtError                 : signal is "true";
+   --attribute mark_debug of ibDesc                   : signal is "true";
+   --attribute mark_debug of fifoReq                  : signal is "true";
+   --attribute mark_debug of nextReq                  : signal is "true";
+   --attribute mark_debug of dbgState                 : signal is "true";
 
 begin
 
+   -- State Debug
+   dbgState <= conv_std_logic_vector(States'POS(curState), 3);
 
    -----------------------------------------
    -- Free list FIFO

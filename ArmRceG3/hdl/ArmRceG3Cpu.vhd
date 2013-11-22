@@ -15,6 +15,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.numeric_std.all;
 
@@ -95,7 +96,7 @@ architecture structure of ArmRceG3Cpu is
 
 begin
 
-
+   -- Reset outputs
    axiGpMasterReset <= not axiGpMasterResetN;
    axiGpSlaveReset  <= not axiGpSlaveResetN;
    axiAcpSlaveReset <= not axiAcpSlaveResetN;

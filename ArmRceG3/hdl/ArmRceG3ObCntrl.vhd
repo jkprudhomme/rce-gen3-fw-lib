@@ -72,6 +72,15 @@ architecture structure of ArmRceG3ObCntrl is
    signal freePtrReadDly     : sl;
    signal freePtrValid       : slv(3 downto 0);
 
+   -- Mark For Debug
+   attribute mark_debug                       : string;
+   attribute mark_debug of axiReadToCntrl     : signal is "true";
+   attribute mark_debug of axiReadFromCntrl   : signal is "true";
+   --attribute mark_debug of freePtrWrite       : signal is "true";
+   --attribute mark_debug of freePtrRead        : signal is "true";
+   --attribute mark_debug of freePtrReadDly     : signal is "true";
+   --attribute mark_debug of freePtrValid       : signal is "true";
+
 begin
 
    -----------------------------------------

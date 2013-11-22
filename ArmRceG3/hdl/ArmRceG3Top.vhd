@@ -116,6 +116,32 @@ architecture structure of ArmRceG3Top is
    signal iclkSelA                 : slv(1 downto 0);
    signal iclkSelB                 : slv(1 downto 0);
 
+   -- Mark For Debug
+   attribute mark_debug                             : string;
+   --attribute mark_debug of axiGpMasterReset         : signal is "true";
+   --attribute mark_debug of axiGpMasterWriteFromArm  : signal is "true";
+   --attribute mark_debug of axiGpMasterWriteToArm    : signal is "true";
+   --attribute mark_debug of axiGpMasterReadFromArm   : signal is "true";
+   --attribute mark_debug of axiGpMasterReadToArm     : signal is "true";
+   --attribute mark_debug of axiAcpSlaveReset         : signal is "true";
+   attribute mark_debug of axiAcpSlaveWriteFromArm  : signal is "true";
+   attribute mark_debug of axiAcpSlaveWriteToArm    : signal is "true";
+   attribute mark_debug of axiAcpSlaveReadFromArm   : signal is "true";
+   attribute mark_debug of axiAcpSlaveReadToArm     : signal is "true";
+   --attribute mark_debug of axiHpSlaveReset          : signal is "true";
+   --attribute mark_debug of axiHpSlaveWriteFromArm   : signal is "true";
+   --attribute mark_debug of axiHpSlaveWriteToArm     : signal is "true";
+   --attribute mark_debug of axiHpSlaveReadFromArm    : signal is "true";
+   --attribute mark_debug of axiHpSlaveReadToArm      : signal is "true";
+   --attribute mark_debug of armInt                   : signal is "true";
+   --attribute mark_debug of intLocalBusMaster        : signal is "true";
+   --attribute mark_debug of intLocalBusSlave         : signal is "true";
+   --attribute mark_debug of scratchPad               : signal is "true";
+   --attribute mark_debug of bsiToFifo                : signal is "true";
+   --attribute mark_debug of bsiFromFifo              : signal is "true";
+   --attribute mark_debug of iclkSelA                 : signal is "true";
+   --attribute mark_debug of iclkSelB                 : signal is "true";
+
 begin
 
    --------------------------------------------

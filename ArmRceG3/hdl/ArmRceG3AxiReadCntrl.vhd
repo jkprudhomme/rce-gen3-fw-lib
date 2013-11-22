@@ -17,6 +17,7 @@
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.numeric_std.all;
 
@@ -68,6 +69,24 @@ architecture structure of AxiRceG3AxiReadCntrl is
    signal rlast            : sl;
    signal rvalid           : slv(CHAN_CNT_G-1 downto 0);
    signal rresp            : slv(1 downto 0);
+
+   -- Mark For Debug
+   attribute mark_debug                         : string;
+   attribute mark_debug of arbReq               : signal is "true";
+   attribute mark_debug of arbGnt               : signal is "true";
+   attribute mark_debug of arbSelect            : signal is "true";
+   attribute mark_debug of arbSelectFilt        : signal is "true";
+   attribute mark_debug of regReadToCntrl       : signal is "true";
+   attribute mark_debug of aFifoWr              : signal is "true";
+   attribute mark_debug of aFifoRd              : signal is "true";
+   attribute mark_debug of aFifoDin             : signal is "true";
+   attribute mark_debug of aFifoDout            : signal is "true";
+   attribute mark_debug of aFifoValid           : signal is "true";
+   attribute mark_debug of aFifoPFull           : signal is "true";
+   attribute mark_debug of rdata                : signal is "true";
+   attribute mark_debug of rlast                : signal is "true";
+   attribute mark_debug of rvalid               : signal is "true";
+   attribute mark_debug of rresp                : signal is "true";
 
 begin
 

@@ -49,7 +49,6 @@ entity ArmRceG3IbPpi is
       -- Configuration
       writeDmaCache           : in  slv(3  downto 0);
       ppiOnline               : in  sl;
-      ppiData                 : out Slv32Array(3 downto 0);
 
       -- Completion FIFO
       compFromFifo            : out CompFromFifoType;
@@ -84,6 +83,9 @@ architecture structure of ArmRceG3IbPpi is
       mgmt   : sl;
       valid  : slv(7 downto 0);
    end record;
+
+   -- States
+   type States is ( ST_IDLE, ST_ADDR, ST_WRITE, ST_CHECK, ST_WAIT, ST_DROP, ST_CLEAR );
 
    -- Local signals
    signal currCompData      : CompFromFifoType;
@@ -131,20 +133,58 @@ architecture structure of ArmRceG3IbPpi is
    signal firstLength       : slv(3   downto 0);
    signal currLength        : slv(3   downto 0);
    signal ppiOnlineReg      : slv(1   downto 0);
-   signal ppiDataReg        : Slv32Array(3 downto 0);
+   signal currState         : States;
+   signal nextState         : States;
+   signal dbgState          : slv(2 downto 0);
 
-   -- States
-   signal   currState  : slv(2 downto 0);
-   signal   nextState  : slv(2 downto 0);
-   constant ST_IDLE    : slv(2 downto 0) := "000";
-   constant ST_ADDR    : slv(2 downto 0) := "001";
-   constant ST_WRITE   : slv(2 downto 0) := "010";
-   constant ST_CHECK   : slv(2 downto 0) := "011";
-   constant ST_WAIT    : slv(2 downto 0) := "100";
-   constant ST_DROP    : slv(2 downto 0) := "101";
-   constant ST_CLEAR   : slv(2 downto 0) := "110";
+   -- Mark For Debug
+   --attribute mark_debug                      : string;
+   --attribute mark_debug of currCompData      : signal is "true";
+   --attribute mark_debug of nextCompWrite     : signal is "true";
+   --attribute mark_debug of ppiPtrRead        : signal is "true";
+   --attribute mark_debug of ppiPtrValid       : signal is "true";
+   --attribute mark_debug of ibPpiFifo         : signal is "true";
+   --attribute mark_debug of ibPpiHold         : signal is "true";
+   --attribute mark_debug of ibPpi             : signal is "true";
+   --attribute mark_debug of ibPpiFifoRead     : signal is "true";
+   --attribute mark_debug of ibPpiRead         : signal is "true";
+   --attribute mark_debug of ibPpiStart        : signal is "true";
+   --attribute mark_debug of ibPpiValid        : signal is "true";
+   --attribute mark_debug of ibPpiShift        : signal is "true";
+   --attribute mark_debug of ibPpiShiftEn      : signal is "true";
+   --attribute mark_debug of ibPpiWrite        : signal is "true";
+   --attribute mark_debug of ibPpiProgFull     : signal is "true";
+   --attribute mark_debug of ibPpiFull         : signal is "true";
+   --attribute mark_debug of addrValid         : signal is "true";
+   --attribute mark_debug of dataValid         : signal is "true";
+   --attribute mark_debug of dataLast          : signal is "true";
+   --attribute mark_debug of writeAddr         : signal is "true";
+   --attribute mark_debug of currDone          : signal is "true";
+   --attribute mark_debug of nextDone          : signal is "true";
+   --attribute mark_debug of ackCount          : signal is "true";
+   --attribute mark_debug of burstCount        : signal is "true";
+   --attribute mark_debug of wordCount         : signal is "true";
+   --attribute mark_debug of frameLength       : signal is "true";
+   --attribute mark_debug of payloadEn         : signal is "true";
+   --attribute mark_debug of burstCountEn      : signal is "true";
+   --attribute mark_debug of wordCountEn       : signal is "true";
+   --attribute mark_debug of ibDesc            : signal is "true";
+   --attribute mark_debug of ibDescCount       : signal is "true";
+   --attribute mark_debug of ibDescClear       : signal is "true";
+   --attribute mark_debug of countReset        : signal is "true";
+   --attribute mark_debug of axiWriteToCntrl   : signal is "true";
+   --attribute mark_debug of axiWriteFromCntrl : signal is "true";
+   --attribute mark_debug of firstSize         : signal is "true";
+   --attribute mark_debug of currSize          : signal is "true";
+   --attribute mark_debug of firstLength       : signal is "true";
+   --attribute mark_debug of currLength        : signal is "true";
+   --attribute mark_debug of ppiOnlineReg      : signal is "true";
+   --attribute mark_debug of dbgState          : signal is "true";
 
 begin
+
+   -- State Debug
+   dbgState <= conv_std_logic_vector(States'POS(currState), 3);
 
    -----------------------------------------
    -- Receive Control FIFO
@@ -344,21 +384,6 @@ begin
    end process;
 
    ibPpiFromFifo.online <= ppiOnlineReg(1);
-
-   -- Synchronize the PPI data
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         ppiDataReg <= (others=>(others=>'0')) after TPD_G;
-         ppiData    <= (others=>(others=>'0')) after TPD_G;
-      elsif rising_edge(axiClk) then
-         ppiDataReg(0) <= ibPpiToFifo.id       after TPD_G;
-         ppiDataReg(1) <= ibPpiToFifo.version  after TPD_G;
-         ppiDataReg(2) <= ibPpiToFifo.configA  after TPD_G;
-         ppiDataReg(3) <= ibPpiToFifo.configB  after TPD_G;
-         ppiData       <= ppiDataReg           after TPD_G;
-      end if;
-   end process;
-
 
    -----------------------------------------
    -- FIFO Output Byte Reordering

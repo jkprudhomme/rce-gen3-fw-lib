@@ -37,6 +37,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use ieee.std_logic_arith.all;
 use IEEE.numeric_std.all;
 
 library unisim;
@@ -69,6 +70,9 @@ end ArmRceG3LocalBus;
 
 architecture structure of ArmRceG3LocalBus is
 
+   -- States
+   type States is ( ST_IDLE, ST_WRADDR, ST_WRITE, ST_ACK, ST_RDADDR, ST_READ, ST_READY );
+
    -- Local signals
    signal intMasterReadToArm   : AxiReadSlaveType;
    signal intMasterWriteToArm  : AxiWriteSlaveType;
@@ -83,17 +87,23 @@ architecture structure of ArmRceG3LocalBus is
    signal timeout              : sl;
    signal nxtSlave             : slv(3 downto 0);
    signal curSlave             : slv(3 downto 0);
+   signal curState             : States;
+   signal nxtState             : States;
+   signal dbgState             : slv(2 downto 0);
 
-   -- States
-   signal   curState   : slv(2 downto 0);
-   signal   nxtState   : slv(2 downto 0);
-   constant ST_IDLE    : slv(2 downto 0) := "001";
-   constant ST_WRADDR  : slv(2 downto 0) := "010";
-   constant ST_WRITE   : slv(2 downto 0) := "011";
-   constant ST_ACK     : slv(2 downto 0) := "100";
-   constant ST_RDADDR  : slv(2 downto 0) := "101";
-   constant ST_READ    : slv(2 downto 0) := "110";
-   constant ST_READY   : slv(2 downto 0) := "111";
+   -- Mark For Debug
+   --attribute mark_debug                         : string;
+   --attribute mark_debug of intMasterReadToArm   : signal is "true";
+   --attribute mark_debug of intMasterWriteToArm  : signal is "true";
+   --attribute mark_debug of nxtMasterReadToArm   : signal is "true";
+   --attribute mark_debug of nxtMasterWriteToArm  : signal is "true";
+   --attribute mark_debug of intLocalBusMaster    : signal is "true";
+   --attribute mark_debug of curLocalBusMaster    : signal is "true";
+   --attribute mark_debug of curLocalBusSlave     : signal is "true";
+   --attribute mark_debug of timeoutCnt           : signal is "true";
+   --attribute mark_debug of timeout              : signal is "true";
+   --attribute mark_debug of curSlave             : signal is "true";
+   --attribute mark_debug of dbgState             : signal is "true";
 
 begin
 
