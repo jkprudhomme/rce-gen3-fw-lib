@@ -67,21 +67,6 @@ architecture structure of ArmRceG3DmaComp is
    signal compFifoPFull : slv(10 downto 0);
    signal compFifoValid : slv(10 downto 0);
 
-   -- Mark For Debug
-   --attribute mark_debug                  : string;
-   --attribute mark_debug of fifoCount     : signal is "true";
-   --attribute mark_debug of fifoRead      : signal is "true";
-   --attribute mark_debug of compHold      : signal is "true";
-   --attribute mark_debug of compWrite     : signal is "true";
-   --attribute mark_debug of compDest      : signal is "true";
-   --attribute mark_debug of compValid     : signal is "true";
-   --attribute mark_debug of compFifoDin   : signal is "true";
-   --attribute mark_debug of compFifoWrEn  : signal is "true";
-   --attribute mark_debug of compFifoRdEn  : signal is "true";
-   --attribute mark_debug of compFifoRdDly : signal is "true";
-   --attribute mark_debug of compFifoPFull : signal is "true";
-   --attribute mark_debug of compFifoValid : signal is "true";
-
 begin
 
    -- Holding location for FIFO outputs

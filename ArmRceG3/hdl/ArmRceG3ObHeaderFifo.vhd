@@ -97,24 +97,6 @@ architecture structure of ArmRceG3ObHeaderFifo is
    signal nxtState                 : States;
    signal dbgState                 : slv(2 downto 0);
 
-   -- Mark For Debug
-   --attribute mark_debug                             : string;
-   --attribute mark_debug of obDesc                   : signal is "true";
-   --attribute mark_debug of nextFreeWrite            : signal is "true";
-   --attribute mark_debug of header                   : signal is "true";
-   --attribute mark_debug of rxLengthCnt              : signal is "true";
-   --attribute mark_debug of rxDone                   : signal is "true";
-   --attribute mark_debug of rxLast                   : signal is "true";
-   --attribute mark_debug of rxInit                   : signal is "true";
-   --attribute mark_debug of obHeaderAFull            : signal is "true";
-   --attribute mark_debug of obHeaderPFull            : signal is "true";
-   --attribute mark_debug of addrValid                : signal is "true";
-   --attribute mark_debug of readAddr                 : signal is "true";
-   --attribute mark_debug of readPending              : signal is "true";
-   --attribute mark_debug of nextReq                  : signal is "true";
-   --attribute mark_debug of fifoReq                  : signal is "true";
-   --attribute mark_debug of dbgState                 : signal is "true";
-
 begin
 
    -- State Debug

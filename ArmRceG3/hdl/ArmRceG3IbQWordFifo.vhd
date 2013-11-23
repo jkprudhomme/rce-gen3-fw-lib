@@ -82,33 +82,6 @@ architecture structure of ArmRceG3IbQWordFifo is
    signal curState                 : States;
    signal nxtState                 : States;
 
-   -- Mark For Debug
-   --attribute mark_debug                            : string;
-   --attribute mark_debug of axiClk                  : signal is "true";
-   --attribute mark_debug of axiClkRst               : signal is "true";
-   --attribute mark_debug of axiWriteToCntrl         : signal is "true";
-   --attribute mark_debug of axiWriteFromCntrl       : signal is "true";
-   --attribute mark_debug of memDirty                : signal is "true";
-   --attribute mark_debug of memDirtySet             : signal is "true";
-   --attribute mark_debug of writeDmaBusyOut         : signal is "true";
-   --attribute mark_debug of writeDmaBusyIn          : signal is "true";
-   --attribute mark_debug of fifoEnable              : signal is "true";
-   --attribute mark_debug of writeDmaId              : signal is "true";
-   --attribute mark_debug of memBaseAddress          : signal is "true";
-   --attribute mark_debug of qwordToFifo             : signal is "true";
-   --attribute mark_debug of qwordFromFifo           : signal is "true";
-   --attribute mark_debug of burstDone               : signal is "true";
-   --attribute mark_debug of memAddress              : signal is "true";
-   --attribute mark_debug of memReady                : signal is "true";
-   --attribute mark_debug of fifoValid               : signal is "true";
-   --attribute mark_debug of fifoRd                  : signal is "true";
-   --attribute mark_debug of fifoDout                : signal is "true";
-   --attribute mark_debug of fifoReady               : signal is "true";
-   --attribute mark_debug of nextReq                 : signal is "true";
-   --attribute mark_debug of fifoReq                 : signal is "true";
-   --attribute mark_debug of nextBusy                : signal is "true";
-   --attribute mark_debug of dbgState                : signal is "true";
-
 begin
 
    -- State Debug

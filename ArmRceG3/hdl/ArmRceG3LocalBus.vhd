@@ -91,20 +91,6 @@ architecture structure of ArmRceG3LocalBus is
    signal nxtState             : States;
    signal dbgState             : slv(2 downto 0);
 
-   -- Mark For Debug
-   --attribute mark_debug                         : string;
-   --attribute mark_debug of intMasterReadToArm   : signal is "true";
-   --attribute mark_debug of intMasterWriteToArm  : signal is "true";
-   --attribute mark_debug of nxtMasterReadToArm   : signal is "true";
-   --attribute mark_debug of nxtMasterWriteToArm  : signal is "true";
-   --attribute mark_debug of intLocalBusMaster    : signal is "true";
-   --attribute mark_debug of curLocalBusMaster    : signal is "true";
-   --attribute mark_debug of curLocalBusSlave     : signal is "true";
-   --attribute mark_debug of timeoutCnt           : signal is "true";
-   --attribute mark_debug of timeout              : signal is "true";
-   --attribute mark_debug of curSlave             : signal is "true";
-   --attribute mark_debug of dbgState             : signal is "true";
-
 begin
 
    -- Outputs

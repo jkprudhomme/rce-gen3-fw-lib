@@ -103,30 +103,6 @@ architecture structure of ArmRceG3DmaCntrl is
    signal freePtrData         : slv(31 downto 0);
    signal freePtrRdValid      : sl;
 
-   -- Mark For Debug
-   --attribute mark_debug                        : string;
-   --attribute mark_debug of obFifoToFifo        : signal is "true";
-   --attribute mark_debug of obFifoFromFifo      : signal is "true";
-   --attribute mark_debug of ibFifoToFifo        : signal is "true";
-   --attribute mark_debug of ibFifoFromFifo      : signal is "true";
-   --attribute mark_debug of dirtyFlag           : signal is "true";
-   --attribute mark_debug of dirtyFlagClrEn      : signal is "true";
-   --attribute mark_debug of dirtyFlagClrSel     : signal is "true";
-   --attribute mark_debug of fifoEnable          : signal is "true";
-   --attribute mark_debug of intEnable           : signal is "true";
-   --attribute mark_debug of compFromFifo        : signal is "true";
-   --attribute mark_debug of compToFifo          : signal is "true";
-   --attribute mark_debug of compFifoSel         : signal is "true";
-   --attribute mark_debug of compFifoRd          : signal is "true";
-   --attribute mark_debug of compInt             : signal is "true";
-   --attribute mark_debug of compFifoData        : signal is "true";
-   --attribute mark_debug of compFifoRdValid     : signal is "true";
-   --attribute mark_debug of ppiOnline           : signal is "true";
-   --attribute mark_debug of freePtrSel          : signal is "true";
-   --attribute mark_debug of freePtrRd           : signal is "true";
-   --attribute mark_debug of freePtrData         : signal is "true";
-   --attribute mark_debug of freePtrRdValid      : signal is "true";
-
 begin
 
    -- Interrupts

@@ -133,37 +133,6 @@ architecture structure of ArmRceG3IbHeaderFifo is
    signal nxtState                 : States;
    signal dbgState                 : slv(2 downto 0);
 
-   -- Mark For Debug
-   --attribute mark_debug                             : string;
-   --attribute mark_debug of headerPtrValid           : signal is "true";
-   --attribute mark_debug of headerPtrOffset          : signal is "true";
-   --attribute mark_debug of ibValid                  : signal is "true";
-   --attribute mark_debug of ibHeader                 : signal is "true";
-   --attribute mark_debug of fifoShift                : signal is "true";
-   --attribute mark_debug of headerDone               : signal is "true";
-   --attribute mark_debug of pipeReady                : signal is "true";
-   --attribute mark_debug of pipeShift                : signal is "true";
-   --attribute mark_debug of fifoRd                   : signal is "true";
-   --attribute mark_debug of fifoReady                : signal is "true";
-   --attribute mark_debug of writeAddr                : signal is "true";
-   --attribute mark_debug of countReset               : signal is "true";
-   --attribute mark_debug of addrValid                : signal is "true";
-   --attribute mark_debug of dataValid                : signal is "true";
-   --attribute mark_debug of dataLast                 : signal is "true";
-   --attribute mark_debug of curDone                  : signal is "true";
-   --attribute mark_debug of nxtDone                  : signal is "true";
-   --attribute mark_debug of ackCount                 : signal is "true";
-   --attribute mark_debug of burstCount               : signal is "true";
-   --attribute mark_debug of burstCountEn             : signal is "true";
-   --attribute mark_debug of wordCount                : signal is "true";
-   --attribute mark_debug of headerLength             : signal is "true";
-   --attribute mark_debug of curError                 : signal is "true";
-   --attribute mark_debug of nxtError                 : signal is "true";
-   --attribute mark_debug of ibDesc                   : signal is "true";
-   --attribute mark_debug of fifoReq                  : signal is "true";
-   --attribute mark_debug of nextReq                  : signal is "true";
-   --attribute mark_debug of dbgState                 : signal is "true";
-
 begin
 
    -- State Debug

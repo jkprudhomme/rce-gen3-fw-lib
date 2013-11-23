@@ -129,45 +129,6 @@ architecture structure of ArmRceG3ObPpi is
    signal nxtState         : States;
    signal dbgState         : slv(2 downto 0);
 
-
-   -- Local signals
-   --attribute mark_debug                     : string;
-   --attribute mark_debug of obHeaderReg      : signal is "true";
-   --attribute mark_debug of headerDma        : signal is "true";
-   --attribute mark_debug of fifoShift        : signal is "true";
-   --attribute mark_debug of fifoClear        : signal is "true";
-   --attribute mark_debug of rxLengthRem      : signal is "true";
-   --attribute mark_debug of rxLengthDec      : signal is "true";
-   --attribute mark_debug of rxDone           : signal is "true";
-   --attribute mark_debug of rxLast           : signal is "true";
-   --attribute mark_debug of rxFirst          : signal is "true";
-   --attribute mark_debug of rxEnable         : signal is "true";
-   --attribute mark_debug of headerWrite      : signal is "true";
-   --attribute mark_debug of headerEOF        : signal is "true";
-   --attribute mark_debug of headerEOH        : signal is "true";
-   --attribute mark_debug of obPpi            : signal is "true";
-   --attribute mark_debug of obPpiHead        : signal is "true";
-   --attribute mark_debug of obPpiWriteEn     : signal is "true";
-   --attribute mark_debug of obPpiHold        : signal is "true";
-   --attribute mark_debug of obPpiFifo        : signal is "true";
-   --attribute mark_debug of obPpiFirst       : signal is "true";
-   --attribute mark_debug of obPpiFifoWr      : signal is "true";
-   --attribute mark_debug of currCompData     : signal is "true";
-   --attribute mark_debug of nxtCompWrite     : signal is "true";
-   --attribute mark_debug of addrValid        : signal is "true";
-   --attribute mark_debug of readAddr         : signal is "true";
-   --attribute mark_debug of readPending      : signal is "true";
-   --attribute mark_debug of ppiPFull         : signal is "true";
-   --attribute mark_debug of nextValid        : signal is "true";
-   --attribute mark_debug of axiReadToCntrl   : signal is "true";
-   --attribute mark_debug of axiReadFromCntrl : signal is "true";
-   --attribute mark_debug of firstSize        : signal is "true";
-   --attribute mark_debug of currSize         : signal is "true";
-   --attribute mark_debug of firstLength      : signal is "true";
-   --attribute mark_debug of currLength       : signal is "true";
-   --attribute mark_debug of ppiOnlineReg     : signal is "true";
-   --attribute mark_debug of dbgState         : signal is "true";
-
 begin
 
    -- State Debug

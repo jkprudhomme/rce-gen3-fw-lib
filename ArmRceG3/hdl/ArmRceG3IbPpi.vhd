@@ -137,50 +137,6 @@ architecture structure of ArmRceG3IbPpi is
    signal nextState         : States;
    signal dbgState          : slv(2 downto 0);
 
-   -- Mark For Debug
-   --attribute mark_debug                      : string;
-   --attribute mark_debug of currCompData      : signal is "true";
-   --attribute mark_debug of nextCompWrite     : signal is "true";
-   --attribute mark_debug of ppiPtrRead        : signal is "true";
-   --attribute mark_debug of ppiPtrValid       : signal is "true";
-   --attribute mark_debug of ibPpiFifo         : signal is "true";
-   --attribute mark_debug of ibPpiHold         : signal is "true";
-   --attribute mark_debug of ibPpi             : signal is "true";
-   --attribute mark_debug of ibPpiFifoRead     : signal is "true";
-   --attribute mark_debug of ibPpiRead         : signal is "true";
-   --attribute mark_debug of ibPpiStart        : signal is "true";
-   --attribute mark_debug of ibPpiValid        : signal is "true";
-   --attribute mark_debug of ibPpiShift        : signal is "true";
-   --attribute mark_debug of ibPpiShiftEn      : signal is "true";
-   --attribute mark_debug of ibPpiWrite        : signal is "true";
-   --attribute mark_debug of ibPpiProgFull     : signal is "true";
-   --attribute mark_debug of ibPpiFull         : signal is "true";
-   --attribute mark_debug of addrValid         : signal is "true";
-   --attribute mark_debug of dataValid         : signal is "true";
-   --attribute mark_debug of dataLast          : signal is "true";
-   --attribute mark_debug of writeAddr         : signal is "true";
-   --attribute mark_debug of currDone          : signal is "true";
-   --attribute mark_debug of nextDone          : signal is "true";
-   --attribute mark_debug of ackCount          : signal is "true";
-   --attribute mark_debug of burstCount        : signal is "true";
-   --attribute mark_debug of wordCount         : signal is "true";
-   --attribute mark_debug of frameLength       : signal is "true";
-   --attribute mark_debug of payloadEn         : signal is "true";
-   --attribute mark_debug of burstCountEn      : signal is "true";
-   --attribute mark_debug of wordCountEn       : signal is "true";
-   --attribute mark_debug of ibDesc            : signal is "true";
-   --attribute mark_debug of ibDescCount       : signal is "true";
-   --attribute mark_debug of ibDescClear       : signal is "true";
-   --attribute mark_debug of countReset        : signal is "true";
-   --attribute mark_debug of axiWriteToCntrl   : signal is "true";
-   --attribute mark_debug of axiWriteFromCntrl : signal is "true";
-   --attribute mark_debug of firstSize         : signal is "true";
-   --attribute mark_debug of currSize          : signal is "true";
-   --attribute mark_debug of firstLength       : signal is "true";
-   --attribute mark_debug of currLength        : signal is "true";
-   --attribute mark_debug of ppiOnlineReg      : signal is "true";
-   --attribute mark_debug of dbgState          : signal is "true";
-
 begin
 
    -- State Debug
