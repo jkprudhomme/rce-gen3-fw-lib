@@ -1,12 +1,11 @@
 -------------------------------------------------------------------------------
--- Title         : Clock/Trigger Source Module For COB
--- File          : CobTimingSource.vhd
+-- Title         : Trigger Source Module For COB
+-- File          : CobOpCodeSource.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 12/10/2013
 -------------------------------------------------------------------------------
 -- Description:
--- Clock & Trigger source module for COB
--- Delivers clock on both DPM clk0 and clk1 lines (GPIO and GTP reference).
+-- OpCode source module for COB
 -- Delivers encoded 8-bit opcode on DPM clk2 line. Opcode is synchronous to the
 -- rising edge of clk. 
 --
@@ -24,16 +23,19 @@
 -- Modification history:
 -- 12/10/2013: created.
 -------------------------------------------------------------------------------
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.numeric_std.all;
 
 library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 use work.StdRtlPkg.all;
 
-entity CobTimingSource is
+entity CobOpCodeSource is
    generic (
-      TPD_G        : time    := 1 ns
+      TPD_G : time := 1 ns
    );
    port (
 
@@ -46,14 +48,14 @@ entity CobTimingSource is
       timingCodeEn             : in  sl;
 
       -- Timing bus
-      dpmClk                   : out slv(2 downto 0)
+      dpmClk                   : out sl
    );
-end CobTimingSource;
+end CobOpCodeSource;
 
-architecture STRUCTURE of CobTimingSource is
+architecture STRUCTURE of CobOpCodeSource is
 
    -- Local Signals
-   signal bitCount : slv(4 downto 0);
+   signal txCount  : slv(4 downto 0);
    signal txEnable : sl;
    signal outBit   : sl;
    signal codeEn   : sl;
@@ -62,97 +64,65 @@ architecture STRUCTURE of CobTimingSource is
 begin
 
    ----------------------------------------
-   -- Clock Outputs
-   ----------------------------------------
-
-   -- Clock output
-   U_Clk0: ODDR
-      generic map(
-         DDR_CLK_EDGE => "OPPOSITE_EDGE", -- "OPPOSITE_EDGE" or "SAME_EDGE"
-         INIT         => '0',             -- Initial value for Q port ('1' or '0')
-         SRTYPE       => "SYNC"           -- Reset Type ("ASYNC" or "SYNC")
-      ) port map (
-         Q  => dpmClk(0),  -- 1-bit DDR output
-         C  => sysClk,     -- 1-bit clock input
-         CE => '1',        -- 1-bit clock enable input
-         D1 => '1',        -- 1-bit data input (positive edge)
-         D2 => '0',        -- 1-bit data input (negative edge)
-         R  => sysClkRst,  -- 1-bit reset input
-         S  => '0'         -- 1-bit set input
-      );
-
-   -- Clock output
-   U_Clk1: ODDR
-      generic map(
-         DDR_CLK_EDGE => "OPPOSITE_EDGE", -- "OPPOSITE_EDGE" or "SAME_EDGE"
-         INIT         => '0',             -- Initial value for Q port ('1' or '0')
-         SRTYPE       => "SYNC"           -- Reset Type ("ASYNC" or "SYNC")
-      ) port map (
-         Q  => dpmClk(1),  -- 1-bit DDR output
-         C  => sysClk,     -- 1-bit clock input
-         CE => '1',        -- 1-bit clock enable input
-         D1 => '1',        -- 1-bit data input (positive edge)
-         D2 => '0',        -- 1-bit data input (negative edge)
-         R  => sysClkRst,  -- 1-bit reset input
-         S  => '0'         -- 1-bit set input
-      );
-
-
-   ----------------------------------------
    -- Sync Data Generator
    ----------------------------------------
    process ( sysClk, sysClkRst ) begin
       if sysClkRst = '1' then
-         bitCount <= (others=>'0') after TPD_G;
+         txCount <= (others=>'0') after TPD_G;
          txEnable <= '0'           after TPD_G;
          outBit   <= '0'           after TPD_G;
          codeEn   <= '0'           after TPD_G;
          codeVal  <= (others=>'0') after TPD_G;
-      elsif rising_edge(sysClk) begin
+      elsif rising_edge(sysClk) then
 
          -- Sample incoming data when idle
-         if txEnable = '0' then
+         if txEnable = '0' and timingCodeEn = '1' then
             codeVal <= timingCode after TPD_G;
          end if;
 
          -- Pass enable when idle
          codeEn <= timingCodeEn and (not codeEn) after TPD_G;
 
+         -- Setup counter
+         if codeEn = '1' then
+            txCount <= "00001" after TPD_G;
+         else
+            txCount <= txCount + 1 after TPD_G;
+         end if;
+
          -- Start new transmission, bit = '0'
          if codeEn = '1' then
-            bitCount <= x"01" after TPD_G;
             outBit   <= '1'   after TPD_G;
-            txMode   <= '1'   after TPD_G;
+            txEnable <= '1'   after TPD_G;
 
          -- In transmission
-         elsif txMode = '1' then
-            bitCount <= bitCount + 1 after TPD_G;
+         elsif txEnable = '1' then
 
             -- Preamble 0-3
-            if bitCount < 4 then
+            if txCount < 4 then
                outBit <= '0' after TPD_G;
 
             -- Preamble 4-7
-            elsif bitCount < 8 then
+            elsif txCount < 8 then
                outBit <= '1' after TPD_G;
 
             -- Regular Bit
-            elsif bitCount(0) = '0' then
-               outBit <= codeVal(conv_integer(bitCount(4 downto 0))) after TPD_G;
+            elsif txCount(0) = '0' then
+               outBit <= codeVal(conv_integer(txCount(4 downto 0))) after TPD_G;
 
             -- Inverted Bit
             else
-               outBit <= not codeVal(conv_integer(bitCount(4 downto 0))) after TPD_G;
+               outBit <= not codeVal(conv_integer(txCount(4 downto 0))) after TPD_G;
             end if;
 
             -- Done at 23
-            if bitCount = 23 then
-               txMode <= '0' after TPD_G;
+            if txCount = 23 then
+               txEnable <= '0' after TPD_G;
             end if;
 
          -- Idle 
          else 
-            outBit <= bitCount(0) after TPD_G;
+            outBit <= txCount(0) after TPD_G;
          end if;
 
       end if;
@@ -163,9 +133,9 @@ begin
    ----------------------------------------
    process ( sysClk, sysClkRst ) begin
       if sysClkRst = '1' then
-         dpmClk(2) <= '0'    after TPD_G;
-      elsif rising_edge(sysClk) begin
-         dpmClk(2) <= outBit after TPD_G;
+         dpmClk <= '0'    after TPD_G;
+      elsif rising_edge(sysClk) then
+         dpmClk <= outBit after TPD_G;
       end if;
    end process;
 

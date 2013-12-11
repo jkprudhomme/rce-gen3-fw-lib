@@ -13,7 +13,7 @@
 #-- 11/14/2013: created.
 #-------------------------------------------------------------------------------
 
-# ClocksS
+# Clocks
 create_clock -name fclkClk0 -period 10 \
    [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Cpu/U_PS7/PS7_i/FCLKCLK[0]]
 create_clock -name eth_txoutclk -period 16 \
