@@ -76,11 +76,11 @@ architecture structure of ArmRceG3Clocks is
    signal ponResetL          : sl;
    signal ponReset           : sl;
    signal lockedReset        : sl;
-   signal isysClk125Rst      : sl;
-   signal isysClk200Rst      : sl;
-   signal iaxiClkRst         : sl;
-   signal iaxiClkRstRegA     : sl;
-   signal iaxiClkRstRegB     : sl;
+   --signal isysClk125Rst      : sl;
+   --signal isysClk200Rst      : sl;
+   --signal iaxiClkRst         : sl;
+   --signal iaxiClkRstRegA     : sl;
+   --signal iaxiClkRstRegB     : sl;
 
 begin
 
@@ -212,16 +212,17 @@ begin
       port map (
         clk      => iaxiClk,
         asyncRst => axiCombinedRst,
-        syncRst  => iaxiClkRst
+        --syncRst  => iaxiClkRst
+        syncRst  => axiClkRst
       );
 
-   process ( iaxiClk ) begin
-      if rising_edge(iaxiClk) then
-         iaxiClkRstRegA <= iaxiClkRst     after TPD_G;
-         iaxiClkRstRegB <= iaxiClkRstRegA after TPD_G;
-         axiClkRst      <= iaxiClkRstRegB after TPD_G;
-      end if;
-   end process;
+--   process ( iaxiClk ) begin
+--      if rising_edge(iaxiClk) then
+--         iaxiClkRstRegA <= iaxiClkRst     after TPD_G;
+--         iaxiClkRstRegB <= iaxiClkRstRegA after TPD_G;
+--         axiClkRst      <= iaxiClkRstRegB after TPD_G;
+--      end if;
+--   end process;
 
 
    U_sysClk200RstGen : entity work.RstSync
@@ -234,14 +235,15 @@ begin
       port map (
         clk      => isysClk200,
         asyncRst => lockedReset,
-        syncRst  => isysClk200Rst
+        --syncRst  => isysClk200Rst
+        syncRst  => sysClk200Rst
       );
 
-   process ( isysClk200 ) begin
-      if rising_edge(isysClk200) then
-         sysClk200Rst <= isysClk200Rst after TPD_G;
-      end if;
-   end process;
+--   process ( isysClk200 ) begin
+--      if rising_edge(isysClk200) then
+--         sysClk200Rst <= isysClk200Rst after TPD_G;
+--      end if;
+--   end process;
 
 
    U_sysClk125RstGen : entity work.RstSync
@@ -254,13 +256,14 @@ begin
       port map (
         clk      => isysClk125,
         asyncRst => lockedReset,
-        syncRst  => isysClk125Rst
+        --syncRst  => isysClk125Rst
+        syncRst  => sysClk125Rst
       );
 
-   process ( isysClk200 ) begin
-      if rising_edge(isysClk200) then
-         isysClk125Rst <= isysClk125Rst after TPD_G;
-      end if;
-   end process;
+--   process ( isysClk200 ) begin
+--      if rising_edge(isysClk200) then
+--         isysClk125Rst <= isysClk125Rst after TPD_G;
+--      end if;
+--   end process;
 
 end architecture structure;

@@ -20,12 +20,12 @@ create_clock -name fclkClk0 -period 10 \
 create_clock -name eth_txoutclk -period 16 \
    [get_pins U_DpmCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
 
-create_clock -name dtmClkP -period 5 [get_ports dtmClkP[0]]
+create_clock -name dtmClk -period 5 [get_ports dtmClkP[0]]
 
 set_clock_groups -physically_exclusive -group [get_clocks fclkClk0]   -group [get_clocks CLKOUT0]
 set_clock_groups -physically_exclusive -group [get_clocks fclkClk0]   -group [get_clocks CLKOUT1]
 set_clock_groups -physically_exclusive -group [get_clocks CLKOUT0]    -group [get_clocks CLKOUT1]
-set_clock_groups -physically_exclusive -group [get_clocks CLKOUT0]    -group [get_clocks dtmClkP]
+set_clock_groups -physically_exclusive -group [get_clocks CLKOUT0]    -group [get_clocks dtmClk]
 set_clock_groups -physically_exclusive -group [get_clocks CLKOUT1]    -group [get_clocks CLKOUT0]
 set_clock_groups -physically_exclusive -group [get_clocks CLKOUT1]    -group [get_clocks CLKOUT0_1]
 set_clock_groups -physically_exclusive -group [get_clocks CLKOUT1]    -group [get_clocks CLKOUT1_1]
