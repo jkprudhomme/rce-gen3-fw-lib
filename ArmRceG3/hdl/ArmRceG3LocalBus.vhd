@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title         : AXI Bus To Local Bus Bridge
--- File          : ArmRceG3ReadCntrl.vhd
+-- File          : ArmRceG3LocalBus.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 04/02/2013
 -------------------------------------------------------------------------------
@@ -219,7 +219,7 @@ begin
             -- Timeout
             elsif timeout = '1' then
                nxtMasterReadToArm.rvalid <= '1';
-               nxtMasterReadToArm.rdata  <= x"deadbeefdeadbeef";
+               nxtMasterReadToArm.rdata  <= (others=>'0');
                nxtState                  <= ST_READY;
             end if;
 

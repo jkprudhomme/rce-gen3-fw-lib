@@ -12,6 +12,7 @@ vhdl work hdl/ArmRceG3IbHeaderFifo.vhd
 vhdl work hdl/ArmRceG3IbPpi.vhd
 vhdl work hdl/ArmRceG3IbQWordFifo.vhd
 vhdl work hdl/ArmRceG3LocalBus.vhd
+vhdl work hdl/ArmRceG3LocalBusDec.vhd
 vhdl work hdl/ArmRceG3ObCntrl.vhd
 vhdl work hdl/ArmRceG3ObHeaderFifo.vhd
 vhdl work hdl/ArmRceG3ObPpi.vhd

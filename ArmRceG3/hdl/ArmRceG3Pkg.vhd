@@ -296,12 +296,16 @@ package ArmRceG3Pkg is
 
    -- Base Record
    type LocalBusSlaveType is record
+      addrMask  : slv(31 downto 0); -- Address matching mask
+      addrBase  : slv(31 downto 0); -- Address base value
       readValid : sl;               -- Read data valid pulse
       readData  : slv(31 downto 0); -- Read data
    end record;
 
    -- Initialization constants
    constant LocalBusSlaveInit : LocalBusSlaveType := ( 
+      addrMask  => x"00000000",
+      addrBase  => x"00000000",
       readValid => '0',
       readData  => x"00000000"
    );

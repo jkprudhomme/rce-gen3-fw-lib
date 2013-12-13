@@ -48,10 +48,7 @@ begin
          ibPpiToFifo        => ibPpiToFifo,
          ibPpiFromFifo      => ibPpiFromFifo,
          clkSelA            => open,
-         clkSelB            => open,
-         psSrstB            => '0',
-         psClk              => '0',
-         psPorB             => '0'
+         clkSelB            => open
       );
 
    i2cSda <= '1';
@@ -72,18 +69,10 @@ begin
       ibPpiToFifo(i).eoh     <= obPpiFromFifo(i).eoh;
       ibPpiToFifo(i).eof     <= obPpiFromFifo(i).eof;
       ibPpiToFifo(i).err     <= '0';
-      ibPpiToFifo(i).id      <= (others=>'0');
-      ibPpiToFifo(i).version <= (others=>'0');
-      ibPpiToFifo(i).configA <= (others=>'0');
-      ibPpiToFifo(i).configB <= (others=>'0');
 
       ibPpiToFifo(i).valid   <= obPpiFromFifo(i).valid;
 
       obPpiToFifo(i).read    <= obPpiFromFifo(i).valid;
-      obPpiToFifo(i).id      <= (others=>'0');
-      obPpiToFifo(i).version <= (others=>'0');
-      obPpiToFifo(i).configA <= (others=>'0');
-      obPpiToFifo(i).configB <= (others=>'0');
 
    end generate;
 

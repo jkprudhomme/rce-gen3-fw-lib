@@ -16,8 +16,24 @@
 # Clocks
 create_clock -name fclkClk0 -period 10 \
    [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Cpu/U_PS7/PS7_i/FCLKCLK[0]]
+
 create_clock -name eth_txoutclk -period 16 \
    [get_pins U_DpmCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
+
+create_clock -name dtmClk -period 5 [get_ports U_DpmCore/dtmClk[0]]
+
+set_clock_groups -physically_exclusive -group [get_clocks fclkClk0]   -group [get_clocks CLKOUT0]
+set_clock_groups -physically_exclusive -group [get_clocks fclkClk0]   -group [get_clocks CLKOUT1]
+set_clock_groups -physically_exclusive -group [get_clocks CLKOUT0]    -group [get_clocks CLKOUT1]
+set_clock_groups -physically_exclusive -group [get_clocks CLKOUT0]    -group [get_clocks dtmClk]
+set_clock_groups -physically_exclusive -group [get_clocks CLKOUT1]    -group [get_clocks CLKOUT0]
+set_clock_groups -physically_exclusive -group [get_clocks CLKOUT1]    -group [get_clocks CLKOUT0_1]
+set_clock_groups -physically_exclusive -group [get_clocks CLKOUT1]    -group [get_clocks CLKOUT1_1]
+set_clock_groups -physically_exclusive -group [get_clocks CLKOUT0_1]  -group [get_clocks CLKOUT1]
+set_clock_groups -physically_exclusive -group [get_clocks CLKOUT1_1]  -group [get_clocks CLKOUT1]
+
+# StdLib
+set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
 
 # Locations
 set_property PACKAGE_PIN AA28 [get_ports led[0]]

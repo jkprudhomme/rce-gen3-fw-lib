@@ -32,6 +32,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3Version.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3Clocks.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3I2c.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3LocalBusDec.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3AxiWriteCntrl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3IbQWordFifo.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3IbHeaderFifo.vhd

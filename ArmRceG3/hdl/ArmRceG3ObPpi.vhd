@@ -128,7 +128,7 @@ architecture structure of ArmRceG3ObPpi is
    signal curState         : States;
    signal nxtState         : States;
    signal dbgState         : slv(2 downto 0);
-
+   signal ppiPFullReg      : sl;
 begin
 
    -- State Debug
@@ -187,7 +187,11 @@ begin
          currCompData.id    <= (others=>'0') after TPD_G;
          currSize           <= (others=>'0') after TPD_G;
          currLength         <= (others=>'0') after TPD_G;
+         ppiPFullReg        <= '0'           after TPD_G;
       elsif rising_edge(axiClk) then
+
+         -- Almost full
+         ppiPFullReg <= ppiPFull after TPD_G;
 
          -- State
          curState <= nxtState after TPD_G;
@@ -217,7 +221,7 @@ begin
 
    -- ASync states
    process ( curState, obHeaderFromFifo, rxDone, rxLast, 
-             headerDma, axiReadFromCntrl, ppiPFull, readPending ) begin
+             headerDma, axiReadFromCntrl, ppiPFullReg, readPending ) begin
 
       -- Init signals
       nxtState        <= curState;
@@ -286,7 +290,7 @@ begin
                nxtState <= ST_WAIT;
 
             -- Only continue if FIFO is not filling up
-            elsif ppiPFull = '0' then
+            elsif ppiPFullReg = '0' then
                nxtState <= ST_READ;
             end if;
 
@@ -331,7 +335,7 @@ begin
    axiReadToCntrl.avalid    <= addrValid;
    axiReadToCntrl.id        <= "000";
    axiReadToCntrl.length    <= currLength;
-   axiReadToCntrl.afull     <= ppiPFull;
+   axiReadToCntrl.afull     <= ppiPFullReg;
 
    -----------------------------------------
    -- Read data processing
