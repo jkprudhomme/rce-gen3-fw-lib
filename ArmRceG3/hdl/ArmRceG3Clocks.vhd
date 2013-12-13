@@ -66,19 +66,21 @@ architecture structure of ArmRceG3Clocks is
    signal axiCombinedRst     : sl;
    signal daxiClk            : sl;
    signal iaxiClk            : sl;
-   signal iaxiClkRst         : sl;
    signal dsysClk125         : sl;
    signal isysClk125         : sl;
-   signal isysClk125Rst      : sl;
    signal dsysClk200         : sl;
    signal isysClk200         : sl;
-   signal isysClk200Rst      : sl;
    signal clkFbOut           : sl;
    signal mmcmLocked         : sl;
    signal ponCount           : slv(7 downto 0);
    signal ponResetL          : sl;
    signal ponReset           : sl;
    signal lockedReset        : sl;
+   signal isysClk125Rst      : sl;
+   signal isysClk200Rst      : sl;
+   signal iaxiClkRst         : sl;
+   signal iaxiClkRstRegA     : sl;
+   signal iaxiClkRstRegB     : sl;
 
 begin
 
@@ -210,8 +212,17 @@ begin
       port map (
         clk      => iaxiClk,
         asyncRst => axiCombinedRst,
-        syncRst  => axiClkRst
+        syncRst  => iaxiClkRst
       );
+
+   process ( iaxiClk ) begin
+      if rising_edge(iaxiClk) then
+         iaxiClkRstRegA <= iaxiClkRst     after TPD_G;
+         iaxiClkRstRegB <= iaxiClkRstRegA after TPD_G;
+         axiClkRst      <= iaxiClkRstRegB after TPD_G;
+      end if;
+   end process;
+
 
    U_sysClk200RstGen : entity work.RstSync
       generic map (
@@ -223,8 +234,15 @@ begin
       port map (
         clk      => isysClk200,
         asyncRst => lockedReset,
-        syncRst  => sysClk200Rst
+        syncRst  => isysClk200Rst
       );
+
+   process ( isysClk200 ) begin
+      if rising_edge(isysClk200) then
+         sysClk200Rst <= isysClk200Rst after TPD_G;
+      end if;
+   end process;
+
 
    U_sysClk125RstGen : entity work.RstSync
       generic map (
@@ -236,7 +254,13 @@ begin
       port map (
         clk      => isysClk125,
         asyncRst => lockedReset,
-        syncRst  => sysClk125Rst
+        syncRst  => isysClk125Rst
       );
+
+   process ( isysClk200 ) begin
+      if rising_edge(isysClk200) then
+         isysClk125Rst <= isysClk125Rst after TPD_G;
+      end if;
+   end process;
 
 end architecture structure;

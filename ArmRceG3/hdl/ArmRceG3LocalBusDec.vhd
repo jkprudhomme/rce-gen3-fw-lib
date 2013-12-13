@@ -49,7 +49,7 @@ end ArmRceG3LocalBusDec;
 architecture structure of ArmRceG3LocalBusDec is
 
    -- Local signals
-   signal dsEnable : slv(COUNT_G-1 downto 0);
+   signal dsSelect : slv(7 downto 0);
 
 begin
 
@@ -57,8 +57,11 @@ begin
    process ( axiClk, axiClkRst ) begin
       if axiClkRst = '1' then
          dsLocalBusMaster <= (others=>localBusMasterInit) after TPD_G;
-         dsEnable         <= (others=>'0')                after TPD_G;
+         dsSelect         <= (others=>'0')                after TPD_G;
       elsif rising_edge(axiClk) then
+
+         -- Init 
+         dsSelect <= (others=>'0') after TPD_G;
 
          -- Each downstream client
          for i in 0 to COUNT_G-1 loop
@@ -66,13 +69,12 @@ begin
             dsLocalBusMaster(i).writeData   <= usLocalBusMaster.writeData after TPD_G;
             dsLocalBusMaster(i).writeEnable <= '0'                        after TPD_G;
             dsLocalBusMaster(i).readEnable  <= '0'                        after TPD_G;
-            dsEnable(i)                     <= '0'                        after TPD_G;
 
             -- Match address
             if (usLocalBusMaster.addr and dsLocalBusSlave(i).addrMask) = dsLocalBusSlave(i).addrBase then
                dsLocalBusMaster(i).writeEnable <= usLocalBusMaster.writeEnable after TPD_G;
                dsLocalBusMaster(i).readEnable  <= usLocalBusMaster.readEnable  after TPD_G;
-               dsEnable(i)                     <= '1'                          after TPD_G;
+               dsSelect                        <= conv_std_logic_vector(i,8)   after TPD_G;
             end if;
          end loop;
       end if;
@@ -84,15 +86,17 @@ begin
          usLocalBusSlave <= localBusSlaveInit after TPD_G;
       elsif rising_edge(axiClk) then
 
+         usLocalBusSlave <= dsLocalBusSlave(conv_integer(dsSelect)) after TPD_G;
+
          -- Init
-         usLocalBusSlave <= localBusSlaveInit after TPD_G;
+         --usLocalBusSlave <= localBusSlaveInit after TPD_G;
 
          -- Each downstream client
-         for i in 0 to COUNT_G-1 loop
-            if dsEnable(i) = '1' then
-               usLocalBusSlave <= dsLocalBusSlave(i) after TPD_G;
-            end if;
-         end loop;
+         --for i in 0 to COUNT_G-1 loop
+            --if dsEnable(i) = '1' then
+               --usLocalBusSlave <= dsLocalBusSlave(i) after TPD_G;
+            --end if;
+         --end loop;
       end if;
    end process;
 
