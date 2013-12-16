@@ -53,7 +53,10 @@ entity DtmTimingSource is
 
       -- Timing bus
       dpmClk                   : out slv(2 downto 0);
-      dpmFb                    : in  slv(7 downto 0)
+      dpmFb                    : in  slv(7 downto 0);
+
+      -- Debug
+      led                      : out slv(1 downto 0)
    );
 end DtmTimingSource;
 
@@ -83,6 +86,8 @@ architecture STRUCTURE of DtmTimingSource is
    signal fbFifoRd            : slv(7 downto 0);
    signal fbFifoValid         : slv(7 downto 0);
    signal fbFifoData          : Slv8Array(7 downto 0);
+   signal ledCountA           : slv(15 downto 0);
+   signal ledCountB           : slv(15 downto 0);
 
 begin
 
@@ -302,6 +307,7 @@ begin
          ocFifoRd         <= '0'               after TPD_G;
          fbFifoRd         <= (others=>'0')     after TPD_G;
          fbFifoWrEn       <= (others=>'0')     after TPD_G;
+         ocFifoWrEn       <= '0'               after TPD_G;
       elsif rising_edge(axiClk) then
 
          -- Init
@@ -351,6 +357,14 @@ begin
             localBusSlave.readData(8)           <= ocFifoValid               after TPD_G;
             localBusSlave.readData(7 downto  0) <= ocFifoData                after TPD_G;
 
+         -- OC Fifo Enable
+         elsif localBusMaster.addr(23 downto 0) = x"000408" then
+            localBusSlave.readData(0) <= ocFifoWrEn after TPD_G;
+
+            if localBusMaster.writeEnable = '1' then
+               ocFifoWrEn <= localBusMaster.writeData(0) after TPD_G;
+            end if;
+
          end if;
 
          -- Command code delay
@@ -375,6 +389,38 @@ begin
          dataOut(8)          => regCodeEn,
          dataOut(7 downto 0) => regCode
       );
+
+
+    ----------------------------------
+    -- LED Blinking
+    ----------------------------------
+   process ( sysClk, sysClkRst ) begin
+      if axiClkRst = '1' then
+         ledCountA <= (others=>'0') after TPD_G;
+      elsif rising_edge(sysClk) then
+         ledCountA <= ledCountA + 1 after TPD_G;
+      end if;
+   end process;
+
+   led(0) <= ledCountA(15);
+
+   process ( sysClk, sysClkRst ) begin
+      if axiClkRst = '1' then
+         ledCountB <= (others=>'0') after TPD_G;
+         led(1)    <= '0'           after TPD_G;
+      elsif rising_edge(sysClk) then
+
+         if intCodeEn = '1' then
+            ledCountB <= (others=>'0') after TPD_G;
+            led(1)    <= '0'           after TPD_G;
+         elsif ledCountB /= 0 then
+            ledCountB <= ledCountB - 1 after TPD_G;
+            led(1)    <= '0'           after TPD_G;
+         else
+            led(1)    <= '1'           after TPD_G;
+         end if;
+      end if;
+   end process;
 
 end architecture STRUCTURE;
 
