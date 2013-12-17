@@ -78,23 +78,14 @@ architecture STRUCTURE of DpmTimingSink is
    signal ocFifoRd            : sl;
    signal ocFifoValid         : sl;
    signal ocFifoData          : slv(7 downto 0);
-   signal ledCountA           : slv(15 downto 0);
-   signal ledCountB           : slv(15 downto 0);
-   signal clkCount            : slv(31 downto 0);
+   signal ledCountA           : slv(31 downto 0);
+   signal ledCountB           : slv(31 downto 0);
 
 begin
 
    -- Clock and reset out
    sysClk    <= intClk;
    sysClkRst <= intClkRst;
-
-   process ( intClk, intClkRst ) begin
-      if intClkRst = '1' then
-         clkCount <= (others=>'0') after TPD_G;
-      elsif rising_edge(intClk) then
-         clkCount <= clkCount + 1 after TPD_G;
-      end if;
-   end process;
 
    ----------------------------------------
    -- Delay Control
@@ -266,7 +257,7 @@ begin
 
          -- Clock Count
          elsif localBusMaster.addr(23 downto 0) = x"000014" then
-            localBusSlave.readData <= clkCount  after TPD_G;
+            localBusSlave.readData <= ledCountA  after TPD_G;
 
          end if;
 
@@ -279,23 +270,23 @@ begin
    -- LED Blinking
    ----------------------------------
    process ( intClk, intClkRst ) begin
-      if axiClkRst = '1' then
+      if intClkRst = '1' then
          ledCountA <= (others=>'0') after TPD_G;
       elsif rising_edge(intClk) then
          ledCountA <= ledCountA + 1 after TPD_G;
       end if;
    end process;
 
-   led(0) <= ledCountA(15);
+   led(0) <= ledCountA(26);
 
    process ( intClk, intClkRst ) begin
-      if axiClkRst = '1' then
+      if intClkRst = '1' then
          ledCountB <= (others=>'0') after TPD_G;
          led(1)    <= '0'           after TPD_G;
       elsif rising_edge(intClk) then
 
          if intCodeEn = '1' then
-            ledCountB <= (others=>'0') after TPD_G;
+            ledCountB <= (others=>'1') after TPD_G;
             led(1)    <= '0'           after TPD_G;
          elsif ledCountB /= 0 then
             ledCountB <= ledCountB - 1 after TPD_G;

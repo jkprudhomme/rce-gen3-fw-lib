@@ -86,8 +86,8 @@ architecture STRUCTURE of DtmTimingSource is
    signal fbFifoRd            : slv(7 downto 0);
    signal fbFifoValid         : slv(7 downto 0);
    signal fbFifoData          : Slv8Array(7 downto 0);
-   signal ledCountA           : slv(15 downto 0);
-   signal ledCountB           : slv(15 downto 0);
+   signal ledCountA           : slv(31 downto 0);
+   signal ledCountB           : slv(26 downto 0);
 
 begin
 
@@ -343,7 +343,7 @@ begin
             localBusSlave.readData(7 downto  0) <= fbFifoData(conv_integer(localBusMaster.addr(5 downto 2)))  after TPD_G;
 
          -- OC Opcode Generation
-         elsif localBusMaster.addr(23 downto 8) = x"0004" then
+         elsif localBusMaster.addr(23 downto 0) = x"000400" then
             cmdCodeEn <= localBusMaster.writeEnable after TPD_G;
 
             if localBusMaster.writeEnable = '1' then
@@ -364,6 +364,9 @@ begin
             if localBusMaster.writeEnable = '1' then
                ocFifoWrEn <= localBusMaster.writeData(0) after TPD_G;
             end if;
+
+         elsif localBusMaster.addr(23 downto 0) = x"00040C" then
+            localBusSlave.readData <= ledCountA after TPD_G;
 
          end if;
 
@@ -391,27 +394,27 @@ begin
       );
 
 
-    ----------------------------------
-    -- LED Blinking
-    ----------------------------------
+   ----------------------------------
+   -- LED Blinking
+   ----------------------------------
    process ( sysClk, sysClkRst ) begin
-      if axiClkRst = '1' then
+      if sysClkRst = '1' then
          ledCountA <= (others=>'0') after TPD_G;
       elsif rising_edge(sysClk) then
          ledCountA <= ledCountA + 1 after TPD_G;
       end if;
    end process;
 
-   led(0) <= ledCountA(15);
+   led(0) <= ledCountA(26);
 
    process ( sysClk, sysClkRst ) begin
-      if axiClkRst = '1' then
+      if sysClkRst = '1' then
          ledCountB <= (others=>'0') after TPD_G;
          led(1)    <= '0'           after TPD_G;
       elsif rising_edge(sysClk) then
 
          if intCodeEn = '1' then
-            ledCountB <= (others=>'0') after TPD_G;
+            ledCountB <= (others=>'1') after TPD_G;
             led(1)    <= '0'           after TPD_G;
          elsif ledCountB /= 0 then
             ledCountB <= ledCountB - 1 after TPD_G;
