@@ -71,7 +71,6 @@ architecture STRUCTURE of DtmTimingSource is
    signal fbStatusErrorCnt    : Slv16Array(7 downto 0);
    signal cmdCode             : slv(7 downto 0);
    signal cmdCodeEn           : sl;
-   signal cmdCodeEnDly        : sl;
    signal regCode             : slv(7 downto 0);
    signal regCodeEn           : sl;
    signal intCode             : slv(7 downto 0);
@@ -303,7 +302,6 @@ begin
          fbCfgDelay       <= (others=>'0')     after TPD_G;
          cmdCode          <= (others=>'0')     after TPD_G;
          cmdCodeEn        <= '0'               after TPD_G;
-         cmdCodeEnDly     <= '0'               after TPD_G;
          ocFifoRd         <= '0'               after TPD_G;
          fbFifoRd         <= (others=>'0')     after TPD_G;
          fbFifoWrEn       <= (others=>'0')     after TPD_G;
@@ -370,27 +368,39 @@ begin
 
          end if;
 
-         -- Command code delay
-         cmdCodeEnDly <= cmdCodeEn after TPD_G;
       end if;
    end process;
 
    -- Command code synchronizer
-   U_CmdSync : entity work.SynchronizerVector 
+   U_CmdDataSync : entity work.SynchronizerVector 
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '1',
          RST_ASYNC_G    => false,
          STAGES_G       => 2, 
-         WIDTH_G        => 9,
+         WIDTH_G        => 8,
          INIT_G         => "0"
       ) port map (
-         clk                 => sysClk,
-         rst                 => sysClkRst,
-         dataIn(8)           => cmdCodeEnDly,
-         dataIn(7 downto 0)  => cmdCode,
-         dataOut(8)          => regCodeEn,
-         dataOut(7 downto 0) => regCode
+         clk     => sysClk,
+         rst     => sysClkRst,
+         dataIn  => cmdCode,
+         dataOut => regCode
+      );
+
+   U_CmdSync : entity work.SynchronizerEdge 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 3,
+         INIT_G         => "0"
+      ) port map (
+         clk         => sysClk,
+         rst         => sysClkRst,
+         dataIn      => cmdCodeEn,
+         dataOut     => open,
+         risingEdge  => regCodeEn,
+         fallingEdge => open
       );
 
 

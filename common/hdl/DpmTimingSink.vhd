@@ -84,8 +84,10 @@ architecture STRUCTURE of DpmTimingSink is
 begin
 
    -- Clock and reset out
-   sysClk    <= intClk;
-   sysClkRst <= intClkRst;
+   sysClk       <= intClk;
+   sysClkRst    <= intClkRst;
+   timingCode   <= intCode;
+   timingCodeEn <= intCodeEn;
 
    ----------------------------------------
    -- Delay Control

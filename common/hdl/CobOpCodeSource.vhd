@@ -59,7 +59,7 @@ architecture STRUCTURE of CobOpCodeSource is
    signal txEnable : sl;
    signal outBit   : sl;
    signal codeEn   : sl;
-   signal codeVal  : slv(7 downto 0);
+   signal codeVal  : slv(31 downto 0);
 
 begin
 
@@ -77,11 +77,16 @@ begin
 
          -- Sample incoming data when idle
          if txEnable = '0' and timingCodeEn = '1' then
-            codeVal <= timingCode after TPD_G;
+            codeVal(7 downto 0) <= "11110000" after TPD_G;
+
+            for i in 0 to 7 loop
+               codeVal(i*2+8) <=     timingCode(i) after TPD_G;
+               codeVal(i*2+9) <= not timingCode(i) after TPD_G;
+            end loop;
          end if;
 
          -- Pass enable when idle
-         codeEn <= timingCodeEn and (not codeEn) after TPD_G;
+         codeEn <= timingCodeEn and (not txEnable) after TPD_G;
 
          -- Setup counter
          if codeEn = '1' then
@@ -92,28 +97,12 @@ begin
 
          -- Start new transmission, bit = '0'
          if codeEn = '1' then
-            outBit   <= '1'   after TPD_G;
+            outBit   <= '0'   after TPD_G;
             txEnable <= '1'   after TPD_G;
 
          -- In transmission
          elsif txEnable = '1' then
-
-            -- Preamble 0-3
-            if txCount < 4 then
-               outBit <= '0' after TPD_G;
-
-            -- Preamble 4-7
-            elsif txCount < 8 then
-               outBit <= '1' after TPD_G;
-
-            -- Regular Bit
-            elsif txCount(0) = '0' then
-               outBit <= codeVal(conv_integer(txCount(4 downto 0))) after TPD_G;
-
-            -- Inverted Bit
-            else
-               outBit <= not codeVal(conv_integer(txCount(4 downto 0))) after TPD_G;
-            end if;
+            outBit <= codeVal(conv_integer(txCount)) after TPD_G;
 
             -- Done at 23
             if txCount = 23 then
