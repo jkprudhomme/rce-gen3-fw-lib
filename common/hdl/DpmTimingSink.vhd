@@ -158,7 +158,7 @@ begin
          USE_DSP48_G    => "no",
          ALTERA_SYN_G   => false,
          ALTERA_RAM_G   => "M9K",
-         SYNC_STAGES_G  => 2,
+         SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 8,
          ADDR_WIDTH_G   => 6,
          INIT_G         => "0",
