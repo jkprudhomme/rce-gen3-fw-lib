@@ -634,7 +634,7 @@ begin
          FWFT_EN_G      => true,
          USE_DSP48_G    => "no",
          XIL_DEVICE_G   => "7SERIES",
-         SYNC_STAGES_G  => 2,
+         SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 72,
          ADDR_WIDTH_G   => 9,
          FULL_THRES_G   => (511-8),
