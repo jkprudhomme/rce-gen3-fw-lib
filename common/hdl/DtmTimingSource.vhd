@@ -87,6 +87,7 @@ architecture STRUCTURE of DtmTimingSource is
    signal fbFifoData          : Slv8Array(7 downto 0);
    signal ledCountA           : slv(31 downto 0);
    signal ledCountB           : slv(26 downto 0);
+   signal dpmClkRst           : sl;
 
 begin
 
@@ -104,6 +105,16 @@ begin
    ----------------------------------------
    -- Clock Outputs
    ----------------------------------------
+   
+   -- Add a synchronizer to help with timing
+   U_ODDR_RST : entity work.Synchronizer 
+      generic map (
+         TPD_G => TPD_G
+      ) port map (
+         clk     => sysClk,
+         dataIn  => sysClkRst,
+         dataOut => dpmClkRst
+      );   
 
    -- Clock output
    U_Clk0: ODDR
@@ -117,7 +128,7 @@ begin
          CE => '1',        -- 1-bit clock enable input
          D1 => '1',        -- 1-bit data input (positive edge)
          D2 => '0',        -- 1-bit data input (negative edge)
-         R  => sysClkRst,  -- 1-bit reset input
+         R  => dpmClkRst,  -- 1-bit reset input
          S  => '0'         -- 1-bit set input
       );
 
@@ -133,7 +144,7 @@ begin
          CE => '1',        -- 1-bit clock enable input
          D1 => '1',        -- 1-bit data input (positive edge)
          D2 => '0',        -- 1-bit data input (negative edge)
-         R  => sysClkRst,  -- 1-bit reset input
+         R  => dpmClkRst,  -- 1-bit reset input
          S  => '0'         -- 1-bit set input
       );
 

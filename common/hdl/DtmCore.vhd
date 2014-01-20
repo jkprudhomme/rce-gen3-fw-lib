@@ -1,24 +1,27 @@
 -------------------------------------------------------------------------------
--- Title         : Common DTM Core Module
--- File          : DtmCore.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 11/14/2013
+-- Title      : Common DTM Core Module
+-- File       : DtmCore.vhd
+-- Author     : Ryan Herbst, rherbst@slac.stanford.edu
+-- Created    : 2013-11-14
+-- Last update: 2014-01-17
 -------------------------------------------------------------------------------
 -- Description:
 -- Common top level module for DTM
 -------------------------------------------------------------------------------
--- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
+-- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 11/14/2013: created.
 -------------------------------------------------------------------------------
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
 
-library UNISIM;
-use UNISIM.VCOMPONENTS.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+
+library unisim;
+use unisim.vcomponents.all;
 
 entity DtmCore is
    port (
@@ -248,8 +251,6 @@ begin
          ethTxM             => ethTxM
       );
 
-   iethToArm(1) <= EthToArmInit;
-
    --------------------------------------------------
    -- PCI Express
    --------------------------------------------------
@@ -271,22 +272,31 @@ begin
    --------------------------------------------------
    -- Base Ethernet
    --------------------------------------------------
-
-   --ethRxCtrl                : in    slv(1 downto 0);
-   --ethRxClk                 : in    slv(1 downto 0);
-   --ethRxDataA               : in    Slv(1 downto 0);
-   --ethRxDataB               : in    Slv(1 downto 0);
-   --ethRxDataC               : in    Slv(1 downto 0);
-   --ethRxDataD               : in    Slv(1 downto 0);
-   ethTxCtrl        <= (others=>'Z');
-   ethTxClk         <= (others=>'Z');
-   ethTxDataA       <= (others=>'Z');
-   ethTxDataB       <= (others=>'Z');
-   ethTxDataC       <= (others=>'Z');
-   ethTxDataD       <= (others=>'Z');
-   ethMdc           <= (others=>'Z');
-   ethMio           <= (others=>'Z');
-   ethResetL        <= (others=>'Z');
+   
+   U_GmiiToRgmiiSwitch : entity work.GmiiToRgmiiSwitch 
+      generic map (
+         SELECT_CH1_G => false
+      ) port map (
+         sysClk200    => isysClk200,
+         sysClk200Rst => isysClk200Rst,
+         ethFromArm   => iethFromArm(1),
+         ethToArm     => iethToArm(1),         
+         ethRxCtrl    => ethRxCtrl,
+         ethRxClk     => ethRxClk,
+         ethRxDataA   => ethRxDataA,
+         ethRxDataB   => ethRxDataB,
+         ethRxDataC   => ethRxDataC,
+         ethRxDataD   => ethRxDataD,
+         ethTxCtrl    => ethTxCtrl,
+         ethTxClk     => ethTxClk,
+         ethTxDataA   => ethTxDataA,
+         ethTxDataB   => ethTxDataB,
+         ethTxDataC   => ethTxDataC,
+         ethTxDataD   => ethTxDataD,
+         ethMdc       => ethMdc,
+         ethMio       => ethMio,
+         ethResetL    => ethResetL
+      );      
 
    --------------------------------------------------
    -- Unused
