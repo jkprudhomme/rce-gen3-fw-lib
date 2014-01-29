@@ -192,5 +192,7 @@ begin
    ethMdc(DIS_CH_C)     <= 'Z';
    ethMio(DIS_CH_C)     <= 'Z';
    ethResetL(DIS_CH_C)  <= 'Z';
+
+   ethResetL(EN_CH_C)  <= not sysClk200Rst;
    
 end mapping;
