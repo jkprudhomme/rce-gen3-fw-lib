@@ -1,0 +1,2 @@
+hdl/DpmTimingSink.vhd
+hdl/DpmCore.vhd

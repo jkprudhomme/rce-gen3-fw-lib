@@ -131,7 +131,7 @@ begin
    ----------------------------------------
 
    -- Input processor
-   U_OpCodeSink : entity work.CobOpCodeSink 
+   U_OpCodeSink : entity work.CobOpCodeSink8Bit 
       generic map (
          TPD_G => TPD_G
       ) port map (
@@ -196,7 +196,7 @@ begin
    ----------------------------------------
 
    -- Module
-   U_FbSource : entity work.CobOpCodeSource 
+   U_FbSource : entity work.CobOpCodeSource8Bit
       generic map (
          TPD_G => TPD_G
       ) port map (
