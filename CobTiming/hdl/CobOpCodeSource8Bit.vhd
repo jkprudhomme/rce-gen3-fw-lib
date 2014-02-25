@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title         : Trigger Source Module For COB
--- File          : CobOpCodeSource.vhd
+-- File          : CobOpCodeSource8Bit.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 12/10/2013
 -------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 use work.StdRtlPkg.all;
 
-entity CobOpCodeSource is
+entity CobOpCodeSource8Bit is
    generic (
       TPD_G : time := 1 ns
    );
@@ -50,9 +50,9 @@ entity CobOpCodeSource is
       -- Timing bus
       dpmClk                   : out sl
    );
-end CobOpCodeSource;
+end CobOpCodeSource8Bit;
 
-architecture STRUCTURE of CobOpCodeSource is
+architecture STRUCTURE of CobOpCodeSource8Bit is
 
    -- Local Signals
    signal txCount  : slv(4 downto 0);

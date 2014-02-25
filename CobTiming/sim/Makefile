@@ -11,8 +11,8 @@ EN64=-full64
 rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/glbl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/StdRtlPkg.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/CobOpCodeSource.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/CobOpCodeSink.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/CobOpCodeSource8Bit.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/CobOpCodeSink8Bit.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/tb.vhd
 
 sim_gen:

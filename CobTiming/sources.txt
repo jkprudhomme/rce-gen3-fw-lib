@@ -1,0 +1,3 @@
+hdl/CobOpCodeSink8Bit.vhd*
+hdl/CobOpCodeSource8Bit.vhd*
+
