@@ -1,0 +1,1 @@
+coregen/GmiiToRgmiiCore/GmiiToRgmiiCore.xci
