@@ -48,7 +48,7 @@ entity CobOpCodeSource8Bit is
       timingCodeEn             : in  sl;
 
       -- Timing bus
-      dpmClk                   : out sl
+      serialCode               : out sl
    );
 end CobOpCodeSource8Bit;
 
@@ -122,9 +122,9 @@ begin
    ----------------------------------------
    process ( sysClk, sysClkRst ) begin
       if sysClkRst = '1' then
-         dpmClk <= '0'    after TPD_G;
+         serialCode <= '0'    after TPD_G;
       elsif rising_edge(sysClk) then
-         dpmClk <= outBit after TPD_G;
+         serialCode <= outBit after TPD_G;
       end if;
    end process;
 

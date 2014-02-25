@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title         : Trigger Sink Module For COB
--- File          : CobOpCodeSink.vhd
+-- File          : CobOpCodeSink8Bit.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 12/10/2013
 -------------------------------------------------------------------------------
@@ -31,14 +31,14 @@ library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 use work.StdRtlPkg.all;
 
-entity CobOpCodeSink is
+entity CobOpCodeSink8Bit is
    generic (
       TPD_G        : time    := 1 ns
    );
    port (
 
       -- Serial Input
-      dpmClk                   : in  sl;
+      serialCode               : in  sl;
 
       -- Timing Clock
       sysClk                   : in  sl;
@@ -56,9 +56,9 @@ entity CobOpCodeSink is
       statusIdleCnt            : out slv(15 downto 0);
       statusErrorCnt           : out slv(15 downto 0)
    );
-end CobOpCodeSink;
+end CobOpCodeSink8Bit;
 
-architecture STRUCTURE of CobOpCodeSink is
+architecture STRUCTURE of CobOpCodeSink8Bit is
 
    -- Local Signals
    signal delayLd     : sl;
@@ -108,7 +108,7 @@ begin
          CINVCTRL    => '0',         -- 1-bit input: Dynamic clock inversion input
          CNTVALUEIN  => delayValue,  -- 5-bit input: Counter value input
          DATAIN      => '0',         -- 1-bit input: Internal delay data input
-         IDATAIN     => dpmClk,      -- 1-bit input: Data input from the I/O
+         IDATAIN     => serialCode,  -- 1-bit input: Data input from the I/O
          INC         => '0',         -- 1-bit input: Increment / Decrement tap delay input
          LD          => delayLd,     -- 1-bit input: Load IDELAY_VALUE input
          LDPIPEEN    => '0',         -- 1-bit input: Enable PIPELINE register to load data input
