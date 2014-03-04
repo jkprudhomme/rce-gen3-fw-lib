@@ -69,8 +69,22 @@ architecture structure of AxiRceG3AxiReadCntrl is
    signal rlast            : sl;
    signal rvalid           : slv(CHAN_CNT_G-1 downto 0);
    signal rresp            : slv(1 downto 0);
+   signal axiClkRstInt     : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -----------------------------------------
    -- Input Registration
@@ -78,11 +92,13 @@ begin
 
    -- Input registration stage is only used if channel count is greater than 1
    U_RegEn: if CHAN_CNT_G > 1 generate
-      process ( axiClk, axiClkRst ) begin
-         if axiClkRst = '1' then
-            regReadToCntrl <= (others=>AxiReadToCntrlInit) after TPD_G;
-         elsif rising_edge(axiClk) then
-            regReadToCntrl <= axiReadToCntrl after TPD_G;
+      process ( axiClk ) begin
+         if rising_edge(axiClk) then
+            if axiClkRstInt = '1' then
+               regReadToCntrl <= (others=>AxiReadToCntrlInit) after TPD_G;
+            else
+               regReadToCntrl <= axiReadToCntrl after TPD_G;
+            end if;
          end if;
       end process;
    end generate;
@@ -122,7 +138,7 @@ begin
             REQ_SIZE_G     => 4
          ) port map (
             clk      => axiClk,
-            rst      => axiClkRst,
+            rst      => axiClkRstInt,
             req      => arbReq,
             selected => arbSelect,
             valid    => open,
@@ -130,11 +146,13 @@ begin
          );
 
       -- Delay one clock cycle
-      process ( axiClk, axiClkRst ) begin
-         if axiClkRst = '1' then
-            arbSelectFilt <= (others=>'0') after TPD_G;
-         elsif rising_edge(axiClk) then
-            arbSelectFilt <= arbSelect after TPD_G;
+      process ( axiClk ) begin
+         if rising_edge(axiClk) then
+            if axiClkRstInt = '1' then
+               arbSelectFilt <= (others=>'0') after TPD_G;
+            else
+               arbSelectFilt <= arbSelect after TPD_G;
+            end if;
          end if;
       end process;
    end generate;
@@ -144,15 +162,17 @@ begin
    -----------------------------------------
 
    -- Mux address
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         aFifoWr  <= '0'           after TPD_G;
-         aFifoDin <= (others=>'0') after TPD_G;
-      elsif rising_edge(axiClk) then
-         aFifoWr                <= regReadToCntrl(conv_integer(arbSelectFilt)).avalid  after TPD_G;
-         aFifoDin(28 downto  0) <= regReadToCntrl(conv_integer(arbSelectFilt)).address after TPD_G;
-         aFifoDin(31 downto 29) <= axiReadToCntrl(conv_integer(arbSelectFilt)).id      after TPD_G;
-         aFifoDin(35 downto 32) <= regReadToCntrl(conv_integer(arbSelectFilt)).length  after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            aFifoWr  <= '0'           after TPD_G;
+            aFifoDin <= (others=>'0') after TPD_G;
+         else
+            aFifoWr                <= regReadToCntrl(conv_integer(arbSelectFilt)).avalid  after TPD_G;
+            aFifoDin(28 downto  0) <= regReadToCntrl(conv_integer(arbSelectFilt)).address after TPD_G;
+            aFifoDin(31 downto 29) <= axiReadToCntrl(conv_integer(arbSelectFilt)).id      after TPD_G;
+            aFifoDin(35 downto 32) <= regReadToCntrl(conv_integer(arbSelectFilt)).length  after TPD_G;
+         end if;
       end if;
    end process;
 
@@ -169,7 +189,7 @@ begin
          FULL_THRES_G   => 450,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst          => axiClkRst,
+         rst          => axiClkRstInt,
          clk          => axiClk,
          wr_en        => aFifoWr,
          rd_en        => aFifoRd,
@@ -190,14 +210,14 @@ begin
       );
 
    -- AXI Address Channel
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         axiSlaveReadToArm.araddr  <= (others=>'0') after TPD_G;
-         axiSlaveReadToArm.arid    <= (others=>'0') after TPD_G;
-         axiSlaveReadToArm.arlen   <= (others=>'0') after TPD_G;
-         axiSlaveReadToArm.arvalid <= '0'           after TPD_G;
-      elsif rising_edge(axiClk) then
-         if aFifoRd = '1' then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            axiSlaveReadToArm.araddr  <= (others=>'0') after TPD_G;
+            axiSlaveReadToArm.arid    <= (others=>'0') after TPD_G;
+            axiSlaveReadToArm.arlen   <= (others=>'0') after TPD_G;
+            axiSlaveReadToArm.arvalid <= '0'           after TPD_G;
+         elsif aFifoRd = '1' then
             axiSlaveReadToArm.araddr(31 downto 3) <= aFifoDout(28 downto 0)  after TPD_G;
             axiSlaveReadToArm.araddr(2  downto 0) <= "000"                   after TPD_G;
             axiSlaveReadToArm.arid(11 downto 3)   <= "000000000"             after TPD_G;
@@ -226,36 +246,40 @@ begin
    -----------------------------------------
 
    -- Distribution
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         rdata  <= (others=>'0') after TPD_G;
-         rlast  <= '0'           after TPD_G;
-         rvalid <= (others=>'0') after TPD_G;
-         rresp  <= (others=>'0') after TPD_G;
-      elsif rising_edge(axiClk) then
-         rdata  <= axiSlaveReadFromArm.rdata after TPD_G;
-         rlast  <= axiSlaveReadFromArm.rlast after TPD_G;
-         rresp  <= axiSlaveReadFromArm.rresp after TPD_G;
-         rvalid <= (others=>'0')                after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            rdata  <= (others=>'0') after TPD_G;
+            rlast  <= '0'           after TPD_G;
+            rvalid <= (others=>'0') after TPD_G;
+            rresp  <= (others=>'0') after TPD_G;
+         else
+            rdata  <= axiSlaveReadFromArm.rdata after TPD_G;
+            rlast  <= axiSlaveReadFromArm.rlast after TPD_G;
+            rresp  <= axiSlaveReadFromArm.rresp after TPD_G;
+            rvalid <= (others=>'0')                after TPD_G;
 
-         for i in 0 to CHAN_CNT_G-1 loop
-            if CHAN_CNT_G = 1 then
-               rvalid(i) <= axiSlaveReadFromArm.rvalid after TPD_G;
-            elsif axiSlaveReadFromArm.rid(2 downto 0) = axiReadToCntrl(i).id then
-               rvalid(i) <= axiSlaveReadFromArm.rvalid after TPD_G;
-            end if;
-         end loop;
+            for i in 0 to CHAN_CNT_G-1 loop
+               if CHAN_CNT_G = 1 then
+                  rvalid(i) <= axiSlaveReadFromArm.rvalid after TPD_G;
+               elsif axiSlaveReadFromArm.rid(2 downto 0) = axiReadToCntrl(i).id then
+                  rvalid(i) <= axiSlaveReadFromArm.rvalid after TPD_G;
+               end if;
+            end loop;
 
+         end if;
       end if;
    end process;
 
    -- Generate ready
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         axiSlaveReadToArm.rready <= '0' after TPD_G;
-      elsif rising_edge(axiClk) then
-         axiSlaveReadToArm.rready <= 
-            not regReadToCntrl(conv_integer(axiSlaveReadFromArm.rid(2 downto 0))).afull after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            axiSlaveReadToArm.rready <= '0' after TPD_G;
+         else
+            axiSlaveReadToArm.rready <= 
+               not regReadToCntrl(conv_integer(axiSlaveReadFromArm.rid(2 downto 0))).afull after TPD_G;
+         end if;
       end if;
    end process;
 

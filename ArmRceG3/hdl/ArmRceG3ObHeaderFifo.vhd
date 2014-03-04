@@ -96,8 +96,22 @@ architecture structure of ArmRceG3ObHeaderFifo is
    signal curState                 : States;
    signal nxtState                 : States;
    signal dbgState                 : slv(2 downto 0);
+   signal axiClkRstInt             : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -- State Debug
    dbgState <= conv_std_logic_vector(States'POS(curState), 3);
@@ -117,7 +131,7 @@ begin
          FULL_THRES_G   => 1,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRst,
+         rst                => axiClkRstInt,
          clk                => axiClk,
          wr_en              => headerPtrWrite,
          rd_en              => nextFreeWrite,
@@ -157,35 +171,36 @@ begin
    axiReadToCntrl.afull     <= '0';
 
    -- Sync states
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         curState        <= ST_IDLE          after TPD_G;
-         freePtrWrite    <= '0'              after TPD_G;
-         freePtrData     <= (others=>'0')    after TPD_G;
-         readAddr        <= (others=>'0')    after TPD_G;
-         readPending     <= (others=>'0')    after TPD_G;
-         fifoReq         <= '0'              after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            curState        <= ST_IDLE          after TPD_G;
+            freePtrWrite    <= '0'              after TPD_G;
+            freePtrData     <= (others=>'0')    after TPD_G;
+            readAddr        <= (others=>'0')    after TPD_G;
+            readPending     <= (others=>'0')    after TPD_G;
+            fifoReq         <= '0'              after TPD_G;
+         else
 
-         -- State
-         curState <= nxtState after TPD_G;
-         fifoReq  <= nextReq  after TPD_G;
+            -- State
+            curState <= nxtState after TPD_G;
+            fifoReq  <= nextReq  after TPD_G;
 
-         -- Free list write
-         freePtrData  <= obDesc.offset after TPD_G;
-         freePtrWrite <= nextFreeWrite after TPD_G;
+            -- Free list write
+            freePtrData  <= obDesc.offset after TPD_G;
+            freePtrWrite <= nextFreeWrite after TPD_G;
 
-         -- Reset counters
-         if rxInit = '1' then
-            readAddr    <= memBaseAddress & obDesc.offset after TPD_G;
-            readPending <= (others=>'0')                  after TPD_G;
+            -- Reset counters
+            if rxInit = '1' then
+               readAddr    <= memBaseAddress & obDesc.offset after TPD_G;
+               readPending <= (others=>'0')                  after TPD_G;
 
-         -- Increment pending and address
-         elsif addrValid = '1' then
-            readAddr    <= readAddr    + 32 after TPD_G;
-            readPending <= readPending + 4  after TPD_G;
+            -- Increment pending and address
+            elsif addrValid = '1' then
+               readAddr    <= readAddr    + 32 after TPD_G;
+               readPending <= readPending + 4  after TPD_G;
+            end if;
          end if;
-
       end if;
    end process;
 
@@ -268,16 +283,16 @@ begin
    -----------------------------------------
    -- Read data processing
    -----------------------------------------
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         header          <= ObHeaderFromFifoInit after TPD_G;
-         rxLengthCnt     <= (others=>'0')        after TPD_G;
-         rxDone          <= '0'                  after TPD_G;
-         rxLast          <= '0'                  after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            header          <= ObHeaderFromFifoInit after TPD_G;
+            rxLengthCnt     <= (others=>'0')        after TPD_G;
+            rxDone          <= '0'                  after TPD_G;
+            rxLast          <= '0'                  after TPD_G;
 
          -- Receiver Init
-         if rxInit = '1' then
+         elsif rxInit = '1' then
             header.valid    <= '0'           after TPD_G;
             rxDone          <= '0'           after TPD_G;
             rxLast          <= '0'           after TPD_G;
@@ -329,7 +344,7 @@ begin
          FULL_THRES_G   => (511 - 40),
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRst,
+         rst                => axiClkRstInt,
          clk                => axiClk,
          wr_en              => header.valid,
          din                => headerDin,

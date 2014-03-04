@@ -71,8 +71,22 @@ architecture structure of ArmRceG3ObCntrl is
    signal freePtrRead        : slv(3 downto 0);
    signal freePtrReadDly     : sl;
    signal freePtrValid       : slv(3 downto 0);
+   signal axiClkRstInt       : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -----------------------------------------
    -- Read Controller
@@ -83,7 +97,7 @@ begin
          CHAN_CNT_G => 4
       ) port map (
          axiClk               => axiClk,
-         axiClkRst            => axiClkRst,
+         axiClkRst            => axiClkRstInt,
          axiSlaveReadFromArm  => axiAcpSlaveReadFromArm,
          axiSlaveReadToArm    => axiAcpSlaveReadToArm,
          readDmaCache         => readDmaCache,
@@ -101,7 +115,7 @@ begin
             TPD_G      => TPD_G
          ) port map (
             axiClk                  => axiClk,
-            axiClkRst               => axiClkRst,
+            axiClkRst               => axiClkRstInt,
             axiReadToCntrl          => axiReadToCntrl(i),
             axiReadFromCntrl        => axiReadFromCntrl(i),
             headerPtrWrite          => headerPtrWrite(i),
@@ -136,7 +150,7 @@ begin
             FULL_THRES_G   => 479,
             EMPTY_THRES_G  => 1
          ) port map (
-            rst               => axiClkRst,
+            rst               => axiClkRstInt,
             clk               => axiClk,
             wr_en             => freePtrWrite(i),
             din               => freePtrDin(i),
@@ -160,22 +174,24 @@ begin
    -----------------------------------------
    -- FIFO Read
    -----------------------------------------
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         freePtrRdValid <= '0'           after TPD_G;
-         freePtrRead    <= (others=>'0') after TPD_G;
-         freePtrReadDly <= '0'           after TPD_G;
-         freePtrData    <= (others=>'0') after TPD_G;
-      elsif rising_edge(axiClk) then
-         freePtrReadDly <= freePtrRd      after TPD_G;
-         freePtrRdValid <= freePtrReadDly after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            freePtrRdValid <= '0'           after TPD_G;
+            freePtrRead    <= (others=>'0') after TPD_G;
+            freePtrReadDly <= '0'           after TPD_G;
+            freePtrData    <= (others=>'0') after TPD_G;
+         else
+            freePtrReadDly <= freePtrRd      after TPD_G;
+            freePtrRdValid <= freePtrReadDly after TPD_G;
 
-         freePtrRead(conv_integer(freePtrSel)) <= freePtrRd after TPD_G;
+            freePtrRead(conv_integer(freePtrSel)) <= freePtrRd after TPD_G;
 
-         freePtrData(17 downto  0) <= freePtrDout(conv_integer(freePtrSel))  after TPD_G;
-         freePtrData(30 downto 18) <= (others=>'0')                            after TPD_G;
-         freePtrData(31)           <= freePtrValid(conv_integer(freePtrSel)) after TPD_G;
+            freePtrData(17 downto  0) <= freePtrDout(conv_integer(freePtrSel))  after TPD_G;
+            freePtrData(30 downto 18) <= (others=>'0')                            after TPD_G;
+            freePtrData(31)           <= freePtrValid(conv_integer(freePtrSel)) after TPD_G;
 
+         end if;
       end if;
    end process;
 

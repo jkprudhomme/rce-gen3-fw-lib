@@ -45,11 +45,6 @@ entity DtmCore is
       ethTxP      : out   sl;
       ethTxM      : out   sl;
 
-      -- Reference Clock
-      locRefClkP  : in    sl;
-      locRefClkM  : in    sl;
-      locRefClk   : out   sl;
-
       -- Clock Select
       clkSelA     : out   sl;
       clkSelB     : out   sl;
@@ -71,24 +66,9 @@ entity DtmCore is
       ethMio      : inout Slv(1 downto 0);
       ethResetL   : out   Slv(1 downto 0);
 
-      -- DPM Signals
-      dpmClkP      : out   slv(2  downto 0);
-      dpmClkM      : out   slv(2  downto 0);
-      dpmClk       : in    slv(2  downto 0);
-      dpmFbP       : in    slv(7  downto 0);
-      dpmFbM       : in    slv(7  downto 0);
-      dpmFb        : out   slv(7  downto 0);
-
       -- IPMI
       dtmToIpmiP   : out   slv(1 downto 0);
       dtmToIpmiM   : out   slv(1 downto 0);
-
-      -- Spare Signals
-      plSpareP     : inout slv(4 downto 0);
-      plSpareM     : inout slv(4 downto 0);
-      plSpareDis   : in    slv(4 downto 0);
-      plSpareIn    : out   slv(4 downto 0);
-      plSpareOut   : in    slv(4 downto 0);
 
       -- Clocks
       axiClk                   : out   sl;
@@ -130,7 +110,6 @@ architecture STRUCTURE of DtmCore is
    signal iclkSelA           : slv(1 downto 0);
    signal iclkSelB           : slv(1 downto 0);
    signal pciRefClk          : sl;
-   signal ilocRefClk         : sl;
 
 begin
 
@@ -148,52 +127,9 @@ begin
          CEB     => '0'
       );
 
-   -- Local Ref Clk 
-   U_LocRefClk : IBUFDS_GTE2
-      port map(
-         O       => ilocRefClk,
-         ODIV2   => open,
-         I       => locRefClkP,
-         IB      => locRefClkM,
-         CEB     => '0'
-      );
-
-   -- DPM Clocks 
-   U_DpmClkGen : for i in 0 to 2 generate
-      U_DpmClkBuf : OBUFDS
-         port map(
-            O      => dpmClkP(i),
-            OB     => dpmClkM(i),
-            I      => dpmClk(i)
-         );
-   end generate;
-
-   -- DPM Feedback
-   U_DpmFbGen : for i in 0 to 7 generate
-      U_DpmFbBuf : IBUFDS
-         port map(
-            I      => dpmFbP(i),
-            IB     => dpmFbM(i),
-            O      => dpmFb(i)
-         );
-   end generate;
-
-   -- Spare Signals 
-   U_SpareGen : for i in 0 to 4 generate
-      U_SpareBuf : IOBUFDS
-         port map(
-            O       => plSpareIn(i),
-            IO      => plSpareP(i),
-            IOB     => plSpareM(i),
-            I       => plSpareOut(i),
-            T       => plSpareDis(i)
-         );
-   end generate;
-
    --------------------------------------------------
    -- Outputs
    --------------------------------------------------
-   locRefClk       <= ilocRefClk;
    clkSelA         <= iclkSelA(0);
    clkSelB         <= iclkSelB(0);
    axiClk          <= iaxiClk;

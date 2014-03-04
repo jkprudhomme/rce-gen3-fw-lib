@@ -107,8 +107,25 @@ architecture structure of ArmRceG3DmaCntrl is
    signal freePtrRd           : sl;
    signal freePtrData         : slv(31 downto 0);
    signal freePtrRdValid      : sl;
+   signal axiClkRstInt        : sl := '1';
+   signal axiClkRstReg        : sl := '1';
+   signal axiClkRstSw         : sl;
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstReg <= axiClkRst                after TPD_G;
+         axiClkRstInt <= axiClkRst or axiClkRstSw after TPD_G;
+      end if;
+   end process;
 
    -- Interrupts
    interrupt <= (compInt & dirtyFlag) and intEnable;
@@ -124,7 +141,7 @@ begin
          COUNT_G => LocalBusCount_C
       ) port map (
          axiClk            => axiClk,
-         axiClkRst         => axiClkRst,
+         axiClkRst         => axiClkRstInt,
          usLocalBusMaster  => localBusMaster,
          usLocalBusSlave   => localBusSlave,
          dsLocalBusMaster  => intLocalBusMaster,
@@ -132,183 +149,189 @@ begin
       );
 
    -- Register Block
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         intLocalBusSlave  <= (others=>LocalBusSlaveInit) after TPD_G;
-         dirtyFlagClrEn    <= '0'                         after TPD_G;
-         dirtyFlagClrSel   <= (others=>'0')               after TPD_G;
-         ibHeaderPtrWrite  <= (others=>'0')               after TPD_G;
-         ibPpiPtrWrite     <= (others=>'0')               after TPD_G;
-         obHeaderPtrWrite  <= (others=>'0')               after TPD_G;
-         genPtrData        <= (others=>'0')               after TPD_G;
-         fifoEnable        <= (others=>'0')               after TPD_G;
-         memBaseAddress    <= (others=>'0')               after TPD_G;
-         writeDmaCache     <= (others=>'0')               after TPD_G;
-         readDmaCache      <= (others=>'0')               after TPD_G;
-         intEnable         <= (others=>'0')               after TPD_G;
-         ppiReadDmaCache   <= (others=>'0')               after TPD_G;
-         ppiWriteDmaCache  <= (others=>'0')               after TPD_G;
-         compFifoRd        <= '0'                         after TPD_G;
-         compFifoSel       <= (others=>'0')               after TPD_G;
-         freePtrRd         <= '0'                         after TPD_G;
-         freePtrSel        <= (others=>'0')               after TPD_G;
-         ppiOnline         <= (others=>'0')               after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            intLocalBusSlave  <= (others=>LocalBusSlaveInit) after TPD_G;
+            dirtyFlagClrEn    <= '0'                         after TPD_G;
+            dirtyFlagClrSel   <= (others=>'0')               after TPD_G;
+            ibHeaderPtrWrite  <= (others=>'0')               after TPD_G;
+            ibPpiPtrWrite     <= (others=>'0')               after TPD_G;
+            obHeaderPtrWrite  <= (others=>'0')               after TPD_G;
+            genPtrData        <= (others=>'0')               after TPD_G;
+            fifoEnable        <= (others=>'0')               after TPD_G;
+            memBaseAddress    <= (others=>'0')               after TPD_G;
+            writeDmaCache     <= (others=>'0')               after TPD_G;
+            readDmaCache      <= (others=>'0')               after TPD_G;
+            intEnable         <= (others=>'0')               after TPD_G;
+            ppiReadDmaCache   <= (others=>'0')               after TPD_G;
+            ppiWriteDmaCache  <= (others=>'0')               after TPD_G;
+            compFifoRd        <= '0'                         after TPD_G;
+            compFifoSel       <= (others=>'0')               after TPD_G;
+            freePtrRd         <= '0'                         after TPD_G;
+            freePtrSel        <= (others=>'0')               after TPD_G;
+            ppiOnline         <= (others=>'0')               after TPD_G;
+            axiClkRstSw       <= '0'                         after TPD_G;
+         else
 
-         -- Init
-         intLocalBusSlave <= (others=>LocalBusSlaveInit) after TPD_G;
+            -- Init
+            intLocalBusSlave <= (others=>LocalBusSlaveInit) after TPD_G;
 
-         -- Generic 
-         genPtrData(35 downto 32) <= intLocalBusMaster(0).addr(5 downto 2) after TPD_G;
-         genPtrData(31 downto  0) <= intLocalBusMaster(0).writeData        after TPD_G;
+            -- Generic 
+            genPtrData(35 downto 32) <= intLocalBusMaster(0).addr(5 downto 2) after TPD_G;
+            genPtrData(31 downto  0) <= intLocalBusMaster(0).writeData        after TPD_G;
 
-         -- Completion FIFO read space 11 - 0x88000000 - 0x88000028
-         intLocalBusSlave(0).addrMask  <= x"03FFFFC0"                           after TPD_G;
-         intLocalBusSlave(0).addrBase  <= x"00000000"                           after TPD_G;
-         intLocalBusSlave(0).readValid <= compFifoRdValid                       after TPD_G;
-         intLocalBusSlave(0).readData  <= compFifoData                          after TPD_G;
-         compFifoRd                    <= intLocalBusMaster(0).readEnable       after TPD_G;
-         compFifoSel                   <= intLocalBusMaster(0).addr(5 downto 2) after TPD_G;
-         
-         -- OB Free List FIFO read space 4 - 0x88000040 - 0x8800004C
-         intLocalBusSlave(1).addrMask  <= x"03FFFFF0"                           after TPD_G;
-         intLocalBusSlave(1).addrBase  <= x"00000040"                           after TPD_G;
-         intLocalBusSlave(1).readValid <= freePtrRdValid                        after TPD_G;
-         intLocalBusSlave(1).readData  <= freePtrData                           after TPD_G;
-         freePtrRd                     <= intLocalBusMaster(1).readEnable       after TPD_G;
-         freePtrSel                    <= intLocalBusMaster(1).addr(3 downto 2) after TPD_G;
+            -- Completion FIFO read space 11 - 0x88000000 - 0x88000028
+            intLocalBusSlave(0).addrMask  <= x"03FFFFC0"                           after TPD_G;
+            intLocalBusSlave(0).addrBase  <= x"00000000"                           after TPD_G;
+            intLocalBusSlave(0).readValid <= compFifoRdValid                       after TPD_G;
+            intLocalBusSlave(0).readData  <= compFifoData                          after TPD_G;
+            compFifoRd                    <= intLocalBusMaster(0).readEnable       after TPD_G;
+            compFifoSel                   <= intLocalBusMaster(0).addr(5 downto 2) after TPD_G;
+            
+            -- OB Free List FIFO read space 4 - 0x88000040 - 0x8800004C
+            intLocalBusSlave(1).addrMask  <= x"03FFFFF0"                           after TPD_G;
+            intLocalBusSlave(1).addrBase  <= x"00000040"                           after TPD_G;
+            intLocalBusSlave(1).readValid <= freePtrRdValid                        after TPD_G;
+            intLocalBusSlave(1).readData  <= freePtrData                           after TPD_G;
+            freePtrRd                     <= intLocalBusMaster(1).readEnable       after TPD_G;
+            freePtrSel                    <= intLocalBusMaster(1).addr(3 downto 2) after TPD_G;
 
-         -- Inbound header free list entries, 64 total (4 * 16) - 0x88000100 - 0x880001FF
-         -- Write only
-         intLocalBusSlave(2).addrMask  <= x"03FFFF00"                     after TPD_G;
-         intLocalBusSlave(2).addrBase  <= x"00000100"                     after TPD_G;
-         intLocalBusSlave(2).readValid <= intLocalBusMaster(2).readEnable after TPD_G;
-         intLocalBusSlave(2).readData  <= (others=>'0')                   after TPD_G;
+            -- Inbound header free list entries, 64 total (4 * 16) - 0x88000100 - 0x880001FF
+            -- Write only
+            intLocalBusSlave(2).addrMask  <= x"03FFFF00"                     after TPD_G;
+            intLocalBusSlave(2).addrBase  <= x"00000100"                     after TPD_G;
+            intLocalBusSlave(2).readValid <= intLocalBusMaster(2).readEnable after TPD_G;
+            intLocalBusSlave(2).readData  <= (others=>'0')                   after TPD_G;
 
-         ibHeaderPtrWrite                                                      <= (others=>'0')                    after TPD_G;
-         ibHeaderPtrWrite(conv_integer(intLocalBusMaster(2).addr(7 downto 6))) <= intLocalBusMaster(2).writeEnable after TPD_G;
+            ibHeaderPtrWrite                                                      <= (others=>'0')                    after TPD_G;
+            ibHeaderPtrWrite(conv_integer(intLocalBusMaster(2).addr(7 downto 6))) <= intLocalBusMaster(2).writeEnable after TPD_G;
 
-         -- Outbound header tx list entries, 64 total (4 * 16) - 0x88000200 - 0x880002FF
-         intLocalBusSlave(3).addrMask  <= x"03FFFF00"                     after TPD_G;
-         intLocalBusSlave(3).addrBase  <= x"00000200"                     after TPD_G;
-         intLocalBusSlave(3).readValid <= intLocalBusMaster(3).readEnable after TPD_G;
-         intLocalBusSlave(3).readData  <= (others=>'0')                   after TPD_G;
+            -- Outbound header tx list entries, 64 total (4 * 16) - 0x88000200 - 0x880002FF
+            intLocalBusSlave(3).addrMask  <= x"03FFFF00"                     after TPD_G;
+            intLocalBusSlave(3).addrBase  <= x"00000200"                     after TPD_G;
+            intLocalBusSlave(3).readValid <= intLocalBusMaster(3).readEnable after TPD_G;
+            intLocalBusSlave(3).readData  <= (others=>'0')                   after TPD_G;
 
-         obHeaderPtrWrite                                                      <= (others=>'0')                    after TPD_G;
-         obHeaderPtrWrite(conv_integer(intLocalBusMaster(3).addr(7 downto 6))) <= intLocalBusMaster(3).writeEnable after TPD_G;
+            obHeaderPtrWrite                                                      <= (others=>'0')                    after TPD_G;
+            obHeaderPtrWrite(conv_integer(intLocalBusMaster(3).addr(7 downto 6))) <= intLocalBusMaster(3).writeEnable after TPD_G;
 
-         -- Channel Dirty flags clear, 5 - 0x88000300 - 0x88000310
-         -- One per quad word memory channel
-         intLocalBusSlave(4).addrMask  <= x"03FFFFE0"                           after TPD_G;
-         intLocalBusSlave(4).addrBase  <= x"00000300"                           after TPD_G;
-         intLocalBusSlave(4).readValid <= intLocalBusMaster(4).readEnable       after TPD_G;
-         intLocalBusSlave(4).readData  <= (others=>'0')                         after TPD_G;
-         dirtyFlagClrEn                <= intLocalBusMaster(4).writeEnable      after TPD_G;
-         dirtyFlagClrSel               <= intLocalBusMaster(4).addr(4 downto 2) after TPD_G;
+            -- Channel Dirty flags clear, 5 - 0x88000300 - 0x88000310
+            -- One per quad word memory channel
+            intLocalBusSlave(4).addrMask  <= x"03FFFFE0"                           after TPD_G;
+            intLocalBusSlave(4).addrBase  <= x"00000300"                           after TPD_G;
+            intLocalBusSlave(4).readValid <= intLocalBusMaster(4).readEnable       after TPD_G;
+            intLocalBusSlave(4).readData  <= (others=>'0')                         after TPD_G;
+            dirtyFlagClrEn                <= intLocalBusMaster(4).writeEnable      after TPD_G;
+            dirtyFlagClrSel               <= intLocalBusMaster(4).addr(4 downto 2) after TPD_G;
 
-         -- Dirty/Ready status, 16 bits 0x88000400
-         -- Bits 3:0   = inbound header FIFOs
-         -- Bits 4     = BSI FIFO
-         -- Bits 15:5  = completion FIFOs
-         intLocalBusSlave(5).addrMask              <= x"03FFFFFC"                     after TPD_G;
-         intLocalBusSlave(5).addrBase              <= x"00000400"                     after TPD_G;
-         intLocalBusSlave(5).readValid             <= intLocalBusMaster(5).readEnable after TPD_G;
-         intLocalBusSlave(5).readData(15 downto 5) <= compInt                         after TPD_G;
-         intLocalBusSlave(5).readData(4  downto 0) <= dirtyFlag                       after TPD_G;
+            -- Dirty/Ready status, 16 bits 0x88000400
+            -- Bits 3:0   = inbound header FIFOs
+            -- Bits 4     = BSI FIFO
+            -- Bits 15:5  = completion FIFOs
+            intLocalBusSlave(5).addrMask              <= x"03FFFFFC"                     after TPD_G;
+            intLocalBusSlave(5).addrBase              <= x"00000400"                     after TPD_G;
+            intLocalBusSlave(5).readValid             <= intLocalBusMaster(5).readEnable after TPD_G;
+            intLocalBusSlave(5).readData(15 downto 5) <= compInt                         after TPD_G;
+            intLocalBusSlave(5).readData(4  downto 0) <= dirtyFlag                       after TPD_G;
 
-         -- Interrupt Enable, 16 bits, 0x88000404
-         intLocalBusSlave(6).addrMask              <= x"03FFFFFC"                     after TPD_G;
-         intLocalBusSlave(6).addrBase              <= x"00000404"                     after TPD_G;
-         intLocalBusSlave(6).readValid             <= intLocalBusMaster(6).readEnable after TPD_G;
-         intLocalBusSlave(6).readData(15 downto 0) <= intEnable                       after TPD_G;
+            -- Interrupt Enable, 16 bits, 0x88000404
+            intLocalBusSlave(6).addrMask              <= x"03FFFFFC"                     after TPD_G;
+            intLocalBusSlave(6).addrBase              <= x"00000404"                     after TPD_G;
+            intLocalBusSlave(6).readValid             <= intLocalBusMaster(6).readEnable after TPD_G;
+            intLocalBusSlave(6).readData(15 downto 0) <= intEnable                       after TPD_G;
 
-         if intLocalBusMaster(6).writeEnable = '1' then
-            intEnable <= intLocalBusMaster(6).writeData(15 downto 0) after TPD_G;
-         end if;
+            if intLocalBusMaster(6).writeEnable = '1' then
+               intEnable <= intLocalBusMaster(6).writeData(15 downto 0) after TPD_G;
+            end if;
 
-         -- AXI Write DMA Cache Config, single location, 0x88000408
-         intLocalBusSlave(7).addrMask             <= x"03FFFFFC"                     after TPD_G;
-         intLocalBusSlave(7).addrBase             <= x"00000408"                     after TPD_G;
-         intLocalBusSlave(7).readValid            <= intLocalBusMaster(7).readEnable after TPD_G;
-         intLocalBusSlave(7).readData(3 downto 0) <= writeDmaCache                   after TPD_G;
+            -- AXI Write DMA Cache Config, single location, 0x88000408
+            intLocalBusSlave(7).addrMask             <= x"03FFFFFC"                     after TPD_G;
+            intLocalBusSlave(7).addrBase             <= x"00000408"                     after TPD_G;
+            intLocalBusSlave(7).readValid            <= intLocalBusMaster(7).readEnable after TPD_G;
+            intLocalBusSlave(7).readData(3 downto 0) <= writeDmaCache                   after TPD_G;
 
-         if intLocalBusMaster(7).writeEnable = '1' then
-            writeDmaCache <= intLocalBusMaster(7).writeData(3 downto 0) after TPD_G;
-         end if;
+            if intLocalBusMaster(7).writeEnable = '1' then
+               writeDmaCache <= intLocalBusMaster(7).writeData(3 downto 0) after TPD_G;
+            end if;
 
-         -- AXI Read DMA Cache Config, single location, 0x8800040C
-         intLocalBusSlave(8).addrMask             <= x"03FFFFFC"                     after TPD_G;
-         intLocalBusSlave(8).addrBase             <= x"0000040C"                     after TPD_G;
-         intLocalBusSlave(8).readValid            <= intLocalBusMaster(8).readEnable after TPD_G;
-         intLocalBusSlave(8).readData(3 downto 0) <= readDmaCache                    after TPD_G;
+            -- AXI Read DMA Cache Config, single location, 0x8800040C
+            intLocalBusSlave(8).addrMask             <= x"03FFFFFC"                     after TPD_G;
+            intLocalBusSlave(8).addrBase             <= x"0000040C"                     after TPD_G;
+            intLocalBusSlave(8).readValid            <= intLocalBusMaster(8).readEnable after TPD_G;
+            intLocalBusSlave(8).readData(3 downto 0) <= readDmaCache                    after TPD_G;
 
-         if intLocalBusMaster(8).writeEnable = '1' then
-            readDmaCache <= intLocalBusMaster(8).writeData(3 downto 0) after TPD_G;
-         end if;
+            if intLocalBusMaster(8).writeEnable = '1' then
+               readDmaCache <= intLocalBusMaster(8).writeData(3 downto 0) after TPD_G;
+            end if;
 
-         -- FIFO Enable, 20 bits - 0x88000410
-         -- Bits 3:0   = inbound header FIFOs
-         -- Bits 4     = BSI FIFO
-         -- Bits 8:5   = outbound header FIFOs
-         intLocalBusSlave(9).addrMask             <= x"03FFFFFC"                     after TPD_G;
-         intLocalBusSlave(9).addrBase             <= x"00000410"                     after TPD_G;
-         intLocalBusSlave(9).readValid            <= intLocalBusMaster(9).readEnable after TPD_G;
-         intLocalBusSlave(9).readData(8 downto 0) <= fifoEnable                      after TPD_G;
+            -- FIFO Enable, 20 bits - 0x88000410
+            -- Bits 3:0   = inbound header FIFOs
+            -- Bits 4     = BSI FIFO
+            -- Bits 8:5   = outbound header FIFOs
+            -- Bits 31    = Reset
+            intLocalBusSlave(9).addrMask             <= x"03FFFFFC"                     after TPD_G;
+            intLocalBusSlave(9).addrBase             <= x"00000410"                     after TPD_G;
+            intLocalBusSlave(9).readValid            <= intLocalBusMaster(9).readEnable after TPD_G;
+            intLocalBusSlave(9).readData(8 downto 0) <= fifoEnable                      after TPD_G;
+            intLocalBusSlave(9).readData(31)         <= axiClkRstSw                     after TPD_G;
 
-         if intLocalBusMaster(9).writeEnable = '1' then
-            fifoEnable <= intLocalBusMaster(9).writeData(8 downto 0) after TPD_G;
-         end if;
+            if intLocalBusMaster(9).writeEnable = '1' then
+               fifoEnable  <= intLocalBusMaster(9).writeData(8 downto 0) after TPD_G;
+               axiClkRstSw <= intLocalBusMaster(9).writeData(31)         after TPD_G;
+            end if;
 
-         -- Memory base address 0x88000418
-         intLocalBusSlave(10).addrMask               <= x"03FFFFFC"                      after TPD_G;
-         intLocalBusSlave(10).addrBase               <= x"00000418"                      after TPD_G;
-         intLocalBusSlave(10).readValid              <= intLocalBusMaster(10).readEnable after TPD_G;
-         intLocalBusSlave(10).readData(31 downto 18) <= memBaseAddress                   after TPD_G;
+            -- Memory base address 0x88000418
+            intLocalBusSlave(10).addrMask               <= x"03FFFFFC"                      after TPD_G;
+            intLocalBusSlave(10).addrBase               <= x"00000418"                      after TPD_G;
+            intLocalBusSlave(10).readValid              <= intLocalBusMaster(10).readEnable after TPD_G;
+            intLocalBusSlave(10).readData(31 downto 18) <= memBaseAddress                   after TPD_G;
 
-         if intLocalBusMaster(10).writeEnable = '1' then
-            memBaseAddress <= intLocalBusMaster(10).writeData(31 downto 18) after TPD_G;
-         end if;
+            if intLocalBusMaster(10).writeEnable = '1' then
+               memBaseAddress <= intLocalBusMaster(10).writeData(31 downto 18) after TPD_G;
+            end if;
 
-         -- PPI Read DMA Cache 0x8800041C
-         intLocalBusSlave(11).addrMask             <= x"03FFFFFC"                      after TPD_G;
-         intLocalBusSlave(11).addrBase             <= x"00000418"                      after TPD_G;
-         intLocalBusSlave(11).readValid            <= intLocalBusMaster(11).readEnable after TPD_G;
-         intLocalBusSlave(11).readData(3 downto 0) <= ppiReadDmaCache                  after TPD_G;
+            -- PPI Read DMA Cache 0x8800041C
+            intLocalBusSlave(11).addrMask             <= x"03FFFFFC"                      after TPD_G;
+            intLocalBusSlave(11).addrBase             <= x"00000418"                      after TPD_G;
+            intLocalBusSlave(11).readValid            <= intLocalBusMaster(11).readEnable after TPD_G;
+            intLocalBusSlave(11).readData(3 downto 0) <= ppiReadDmaCache                  after TPD_G;
 
-         if intLocalBusMaster(11).writeEnable = '1' then
-            ppiReadDmaCache <= intLocalBusMaster(10).writeData(3 downto 0) after TPD_G;
-         end if;
+            if intLocalBusMaster(11).writeEnable = '1' then
+               ppiReadDmaCache <= intLocalBusMaster(10).writeData(3 downto 0) after TPD_G;
+            end if;
 
-         -- PPI Write DMA Cache 0x88000420
-         intLocalBusSlave(12).addrMask             <= x"03FFFFFC"                      after TPD_G;
-         intLocalBusSlave(12).addrBase             <= x"00000420"                      after TPD_G;
-         intLocalBusSlave(12).readValid            <= intLocalBusMaster(12).readEnable after TPD_G;
-         intLocalBusSlave(12).readData(3 downto 0) <= ppiWriteDmaCache                 after TPD_G;
+            -- PPI Write DMA Cache 0x88000420
+            intLocalBusSlave(12).addrMask             <= x"03FFFFFC"                      after TPD_G;
+            intLocalBusSlave(12).addrBase             <= x"00000420"                      after TPD_G;
+            intLocalBusSlave(12).readValid            <= intLocalBusMaster(12).readEnable after TPD_G;
+            intLocalBusSlave(12).readData(3 downto 0) <= ppiWriteDmaCache                 after TPD_G;
 
-         if intLocalBusMaster(12).writeEnable = '1' then
-            ppiWriteDmaCache <= intLocalBusMaster(12).writeData(3 downto 0) after TPD_G;
-         end if;
+            if intLocalBusMaster(12).writeEnable = '1' then
+               ppiWriteDmaCache <= intLocalBusMaster(12).writeData(3 downto 0) after TPD_G;
+            end if;
 
-         -- PPI online control, 8-bits - 0x88000424 
-         intLocalBusSlave(13).addrMask             <= x"03FFFFFC"                      after TPD_G;
-         intLocalBusSlave(13).addrBase             <= x"00000424"                      after TPD_G;
-         intLocalBusSlave(13).readValid            <= intLocalBusMaster(13).readEnable after TPD_G;
-         intLocalBusSlave(13).readData(7 downto 0) <= ppiOnline                        after TPD_G;
+            -- PPI online control, 8-bits - 0x88000424 
+            intLocalBusSlave(13).addrMask             <= x"03FFFFFC"                      after TPD_G;
+            intLocalBusSlave(13).addrBase             <= x"00000424"                      after TPD_G;
+            intLocalBusSlave(13).readValid            <= intLocalBusMaster(13).readEnable after TPD_G;
+            intLocalBusSlave(13).readData(7 downto 0) <= ppiOnline                        after TPD_G;
 
-         if intLocalBusMaster(13).writeEnable = '1' then
-            ppiOnline <= intLocalBusMaster(13).writeData(7 downto 0) after TPD_G;
-         end if;
+            if intLocalBusMaster(13).writeEnable = '1' then
+               ppiOnline <= intLocalBusMaster(13).writeData(7 downto 0) after TPD_G;
+            end if;
 
-         -- Inbound ppi pointer entries, 64 total (4 * 16) - 0x88000500 - 0x880005FF
-         -- Write only
-         intLocalBusSlave(14).addrMask             <= x"03FFFF00"                      after TPD_G;
-         intLocalBusSlave(14).addrBase             <= x"00000500"                      after TPD_G;
-         intLocalBusSlave(14).readValid            <= intLocalBusMaster(14).readEnable after TPD_G;
-         intLocalBusSlave(14).readData             <= (others=>'0')                    after TPD_G;
+            -- Inbound ppi pointer entries, 64 total (4 * 16) - 0x88000500 - 0x880005FF
+            -- Write only
+            intLocalBusSlave(14).addrMask             <= x"03FFFF00"                      after TPD_G;
+            intLocalBusSlave(14).addrBase             <= x"00000500"                      after TPD_G;
+            intLocalBusSlave(14).readValid            <= intLocalBusMaster(14).readEnable after TPD_G;
+            intLocalBusSlave(14).readData             <= (others=>'0')                    after TPD_G;
 
-         ibPpiPtrWrite(conv_integer(intLocalBusMaster(14).addr(7 downto 6))) <= intLocalBusMaster(14).writeEnable after TPD_G;
+            ibPpiPtrWrite(conv_integer(intLocalBusMaster(14).addr(7 downto 6))) <= intLocalBusMaster(14).writeEnable after TPD_G;
 
-      end if;  
+         end if;  
+      end if;
    end process;         
 
 
@@ -320,7 +343,7 @@ begin
          TPD_G => TPD_G
       ) port map (
          axiClk                   => axiClk,
-         axiClkRst                => axiClkRst,
+         axiClkRst                => axiClkRstInt,
          axiAcpSlaveWriteFromArm  => axiAcpSlaveWriteFromArm,
          axiAcpSlaveWriteToArm    => axiAcpSlaveWriteToArm,
          dirtyFlag                => dirtyFlag,
@@ -347,7 +370,7 @@ begin
          TPD_G => TPD_G
       ) port map (
          axiClk                  => axiClk,
-         axiClkRst               => axiClkRst,
+         axiClkRst               => axiClkRstInt,
          axiAcpSlaveReadFromArm  => axiAcpSlaveReadFromArm,
          axiAcpSlaveReadToArm    => axiAcpSlaveReadToArm,
          headerPtrWrite          => obHeaderPtrWrite,
@@ -374,7 +397,7 @@ begin
             TPD_G      => TPD_G
          ) port map (
             axiClk                   => axiClk,
-            axiClkRst                => axiClkRst,
+            axiClkRst                => axiClkRstInt,
             axiHpSlaveWriteFromArm   => axiHpSlaveWriteFromArm(i),
             axiHpSlaveWriteToArm     => axiHpSlaveWriteToArm(i),
             ibHeaderToFifo           => ibFifoToFifo(i),
@@ -402,7 +425,7 @@ begin
             TPD_G      => TPD_G
          ) port map (
             axiClk                  => axiClk,
-            axiClkRst               => axiClkRst,
+            axiClkRst               => axiClkRstInt,
             axiHpSlaveReadFromArm   => axiHpSlaveReadFromArm(i),
             axiHpSlaveReadToArm     => axiHpSlaveReadToArm(i),
             obHeaderToFifo          => obFifoToFifo(i),
@@ -426,7 +449,7 @@ begin
          TPD_G => TPD_G
       ) port map (
          axiClk           => axiClk,
-         axiClkRst        => axiClkRst,
+         axiClkRst        => axiClkRstInt,
          compFromFifo     => compFromFifo,
          compToFifo       => compToFifo,
          compFifoSel      => compFifoSel,

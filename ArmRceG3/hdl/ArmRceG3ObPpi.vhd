@@ -129,7 +129,22 @@ architecture structure of ArmRceG3ObPpi is
    signal nxtState         : States;
    signal dbgState         : slv(2 downto 0);
    signal ppiPFullReg      : sl;
+   signal axiClkRstInt     : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
+
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -- State Debug
    dbgState <= conv_std_logic_vector(States'POS(curState), 3);
@@ -142,11 +157,11 @@ begin
    obHeaderToFifo.read <= fifoShift;
 
    -- Output pipeline, 2 extra registers after FIFO.
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         obHeaderReg  <= (others=>ObHeaderFromFifoInit) after TPD_G;
-      elsif rising_edge(axiClk) then
-         if fifoClear = '1' then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            obHeaderReg  <= (others=>ObHeaderFromFifoInit) after TPD_G;
+         elsif fifoClear = '1' then
             obHeaderReg  <= (others=>ObHeaderFromFifoInit) after TPD_G;
          elsif fifoShift = '1' then
             obHeaderReg(0) <= obHeaderFromFifo after TPD_G;
@@ -178,43 +193,45 @@ begin
    firstLength           <= x"F"  - headerDma.addr(6 downto 3);
 
    -- Sync states
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         curState           <= ST_IDLE       after TPD_G;
-         readAddr           <= (others=>'0') after TPD_G;
-         readPending        <= (others=>'0') after TPD_G;
-         currCompData.valid <= '0'           after TPD_G;
-         currCompData.id    <= (others=>'0') after TPD_G;
-         currSize           <= (others=>'0') after TPD_G;
-         currLength         <= (others=>'0') after TPD_G;
-         ppiPFullReg        <= '0'           after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            curState           <= ST_IDLE       after TPD_G;
+            readAddr           <= (others=>'0') after TPD_G;
+            readPending        <= (others=>'0') after TPD_G;
+            currCompData.valid <= '0'           after TPD_G;
+            currCompData.id    <= (others=>'0') after TPD_G;
+            currSize           <= (others=>'0') after TPD_G;
+            currLength         <= (others=>'0') after TPD_G;
+            ppiPFullReg        <= '0'           after TPD_G;
+         else
 
-         -- Almost full
-         ppiPFullReg <= ppiPFull after TPD_G;
+            -- Almost full
+            ppiPFullReg <= ppiPFull after TPD_G;
 
-         -- State
-         curState <= nxtState after TPD_G;
+            -- State
+            curState <= nxtState after TPD_G;
 
-         -- Completion Data
-         currCompData.id    <= headerDma.compId  after TPD_G;
-         currCompData.index <= headerDma.compIdx after TPD_G;
-         currCompData.valid <= nxtCompWrite      after TPD_G;
+            -- Completion Data
+            currCompData.id    <= headerDma.compId  after TPD_G;
+            currCompData.index <= headerDma.compIdx after TPD_G;
+            currCompData.valid <= nxtCompWrite      after TPD_G;
 
-         -- Reset counters
-         if rxEnable = '0' then
-            readAddr(31 downto 3)  <= headerDma.addr(31 downto 3) after TPD_G;
-            readAddr(2  downto 0)  <= "000"                       after TPD_G;
-            currSize               <= firstSize                   after TPD_G;
-            currLength             <= firstLength                 after TPD_G;
-            readPending            <= (others=>'0')               after TPD_G;
+            -- Reset counters
+            if rxEnable = '0' then
+               readAddr(31 downto 3)  <= headerDma.addr(31 downto 3) after TPD_G;
+               readAddr(2  downto 0)  <= "000"                       after TPD_G;
+               currSize               <= firstSize                   after TPD_G;
+               currLength             <= firstLength                 after TPD_G;
+               readPending            <= (others=>'0')               after TPD_G;
 
-         -- Increment pending and address, 128 bytes per read
-         elsif addrValid = '1' then
-            readAddr    <= readAddr + currSize after TPD_G;
-            currSize    <= x"80"               after TPD_G; -- 128
-            currLength  <= x"F"                after TPD_G; -- 15
-            readPending <= readPending + 128   after TPD_G;
+            -- Increment pending and address, 128 bytes per read
+            elsif addrValid = '1' then
+               readAddr    <= readAddr + currSize after TPD_G;
+               currSize    <= x"80"               after TPD_G; -- 128
+               currLength  <= x"F"                after TPD_G; -- 15
+               readPending <= readPending + 128   after TPD_G;
+            end if;
          end if;
       end if;
    end process;
@@ -321,7 +338,7 @@ begin
          CHAN_CNT_G => 1
       ) port map (
          axiClk               => axiClk,
-         axiClkRst            => axiClkRst,
+         axiClkRst            => axiClkRstInt,
          axiSlaveReadFromArm  => axiHpSlaveReadFromArm,
          axiSlaveReadToArm    => axiHpSlaveReadToArm,
          readDmaCache         => readDmaCache,
@@ -364,65 +381,67 @@ begin
                 "00000000";
 
    -- Sync states
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         obPpi.data      <= (others=>'0') after TPD_G;
-         obPpi.eof       <= '0'           after TPD_G;
-         obPpi.eoh       <= '0'           after TPD_G;
-         obPpi.ftype     <= (others=>'0') after TPD_G;
-         obPpi.mgmt      <= '0'           after TPD_G;
-         obPpi.valid     <= (others=>'0') after TPD_G;
-         obPpiHead       <= '0'           after TPD_G;
-         obPpiFirst      <= '0'           after TPD_G;
-         rxLengthRem     <= (others=>'0') after TPD_G;
-         rxDone          <= '0'           after TPD_G;
-         rxLast          <= '0'           after TPD_G;
-         rxFirst         <= '0'           after TPD_G;
-      elsif rising_edge(axiClk) then
-
-         -- Constant data
-         obPpi.mgmt  <= obHeaderReg(1).mgmt  after TPD_G;
-         obPpi.ftype <= obHeaderReg(1).htype after TPD_G;
-
-         -- RX Engine disabled, writes sourced from main state machine (header data)
-         if rxEnable = '0' then
-            obPpi.valid    <= (others=>headerWrite) after TPD_G;
-            obPpi.eof      <= headerEOF             after TPD_G;
-            obPpi.eoh      <= headerEOH             after TPD_G;
-            obPpi.data     <= obHeaderReg(1).data   after TPD_G;
-            obPpiHead      <= '1'                   after TPD_G;
-            rxDone         <= '0'                   after TPD_G;
-            rxLast         <= '0'                   after TPD_G;
-            rxFirst        <= '1'                   after TPD_G;
-            obPpiFirst     <= '1'                   after TPD_G;
-            rxLengthRem    <= headerDma.length      after TPD_G;
-
-         -- Read data is valid and id matches
-         elsif axiReadFromCntrl.rvalid = '1' then
-            obPpiHead  <= '0'                    after TPD_G;
-            obPpi.eoh  <= '0'                    after TPD_G;
-            rxLast     <= axiReadFromCntrl.rlast after TPD_G;
-            obPpiFirst <= rxFirst                after TPD_G;
-            
-            -- Output data
-            obPpi.data <= axiReadFromCntrl.rdata after TPD_G;
-
-            -- Write
-            obPpi.valid <= nextValid after TPD_G;
-
-            -- Last qword of the transfer
-            if rxLengthRem <= 8 then
-               rxDone    <= '1' after TPD_G;
-               obPpi.eof <= '1' after TPD_G;
-
-            -- Decrement remaining length
-            else
-               rxLengthRem <= rxLengthRem - rxLengthDec after TPD_G;
-               obPpi.eof   <= '0'                       after TPD_G;
-               rxFirst     <= '0'                       after TPD_G;
-            end if;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            obPpi.data      <= (others=>'0') after TPD_G;
+            obPpi.eof       <= '0'           after TPD_G;
+            obPpi.eoh       <= '0'           after TPD_G;
+            obPpi.ftype     <= (others=>'0') after TPD_G;
+            obPpi.mgmt      <= '0'           after TPD_G;
+            obPpi.valid     <= (others=>'0') after TPD_G;
+            obPpiHead       <= '0'           after TPD_G;
+            obPpiFirst      <= '0'           after TPD_G;
+            rxLengthRem     <= (others=>'0') after TPD_G;
+            rxDone          <= '0'           after TPD_G;
+            rxLast          <= '0'           after TPD_G;
+            rxFirst         <= '0'           after TPD_G;
          else
-            obPpi.valid <= (others=>'0') after TPD_G;
+
+            -- Constant data
+            obPpi.mgmt  <= obHeaderReg(1).mgmt  after TPD_G;
+            obPpi.ftype <= obHeaderReg(1).htype after TPD_G;
+
+            -- RX Engine disabled, writes sourced from main state machine (header data)
+            if rxEnable = '0' then
+               obPpi.valid    <= (others=>headerWrite) after TPD_G;
+               obPpi.eof      <= headerEOF             after TPD_G;
+               obPpi.eoh      <= headerEOH             after TPD_G;
+               obPpi.data     <= obHeaderReg(1).data   after TPD_G;
+               obPpiHead      <= '1'                   after TPD_G;
+               rxDone         <= '0'                   after TPD_G;
+               rxLast         <= '0'                   after TPD_G;
+               rxFirst        <= '1'                   after TPD_G;
+               obPpiFirst     <= '1'                   after TPD_G;
+               rxLengthRem    <= headerDma.length      after TPD_G;
+
+            -- Read data is valid and id matches
+            elsif axiReadFromCntrl.rvalid = '1' then
+               obPpiHead  <= '0'                    after TPD_G;
+               obPpi.eoh  <= '0'                    after TPD_G;
+               rxLast     <= axiReadFromCntrl.rlast after TPD_G;
+               obPpiFirst <= rxFirst                after TPD_G;
+               
+               -- Output data
+               obPpi.data <= axiReadFromCntrl.rdata after TPD_G;
+
+               -- Write
+               obPpi.valid <= nextValid after TPD_G;
+
+               -- Last qword of the transfer
+               if rxLengthRem <= 8 then
+                  rxDone    <= '1' after TPD_G;
+                  obPpi.eof <= '1' after TPD_G;
+
+               -- Decrement remaining length
+               else
+                  rxLengthRem <= rxLengthRem - rxLengthDec after TPD_G;
+                  obPpi.eof   <= '0'                       after TPD_G;
+                  rxFirst     <= '0'                       after TPD_G;
+               end if;
+            else
+               obPpi.valid <= (others=>'0') after TPD_G;
+            end if;
          end if;
       end if;
    end process;
@@ -433,187 +452,189 @@ begin
    -- alignment. A two stage register is used to shift the read data 
    -- accordingly as it is received from the AXI slave
    -------------------------------------------------------------------------------
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         obPpiHold.data    <= (others=>'0') after TPD_G;
-         obPpiHold.eof     <= '0'           after TPD_G;
-         obPpiHold.eoh     <= '0'           after TPD_G;
-         obPpiHold.ftype   <= (others=>'0') after TPD_G;
-         obPpiHold.mgmt    <= '0'           after TPD_G;
-         obPpiHold.valid   <= (others=>'0') after TPD_G;
-         obPpiFifo.data    <= (others=>'0') after TPD_G;
-         obPpiFifo.eof     <= '0'           after TPD_G;
-         obPpiFifo.eoh     <= '0'           after TPD_G;
-         obPpiFifo.ftype   <= (others=>'0') after TPD_G;
-         obPpiFifo.mgmt    <= '0'           after TPD_G;
-         obPpiFifo.valid   <= (others=>'0') after TPD_G;
-         obPpiWriteEn      <= '0'           after TPD_G;
-      elsif rising_edge(axiClk) then
-
-         -- EOF is present in hold register, 
-         -- shift to FIFO register, clear hold register, write to FIFO
-         if obPpiHold.eof = '1' and obPpiHold.valid /= 0 then
-            obPpiFifo       <= obPpiHold  after TPD_G;
-            obPpiHold.eof   <= '0'        after TPD_G;
-            obPpiHold.valid <= "00000000" after TPD_G;
-            obPpiWriteEn    <= '1'        after TPD_G;
-
-         -- EOF is present in fifo register, 
-         -- clear FIFO register, clear write
-         elsif obPpiFifo.eof = '1' and obPpiFifo.valid /= 0 then
-            obPpiFifo.eof   <= '0'        after TPD_G;
-            obPpiFifo.valid <= "00000000" after TPD_G;
-            obPpiWriteEn    <= '0'        after TPD_G;
-
-         -- Shifting in header mode, no alignment adjust
-         elsif obPpi.valid /= 0 and obPpiHead = '1' then
-            obPpiHold         <= obPpi         after TPD_G;
-            obPpiHold.valid   <= "11111111"    after TPD_G;
-            obPpiFifo         <= obPpiHold     after TPD_G;
-            obPpiWriteEn      <= '1'           after TPD_G;
-
-         -- Shifting in payload data
-         elsif obPpi.valid(0) = '1' and obPpiHead = '0' then
-
-            -- Init values
-            obPpiHold       <= obPpi      after TPD_G;
-            obPpiHold.valid <= "00000000" after TPD_G;
-            obPpiFifo       <= obPpiHold  after TPD_G;
-            obPpiWriteEn    <= '1'        after TPD_G;
-
-            -- Determine which hold and FIFO bytes to update
-            case headerDma.addr(2 downto 0) is 
-
-               -- Aligned address, no shift
-               when "000" =>
-                  obPpiHold.data  <= obPpi.data  after TPD_G;
-                  obPpiHold.valid <= obPPi.valid after TPD_G;
-
-               -- Shift by 1
-               when "001" =>
-                  obPpiHold.data(55 downto  0) <= obPpi.data(63 downto 8) after TPD_G;
-                  obPpiHold.valid(6 downto  0) <= obPpi.valid(7 downto 1) after TPD_G;
-
-                  -- Don't write into FIFO register on first write
-                  if obPpiFirst = '0' then
-                     obPpiFifo.data(63 downto 56) <= obPpi.data(7 downto 0) after TPD_G;
-                     obPpiFifo.valid(7)           <= obPpi.valid(0)         after TPD_G;
-                  end if;
-
-                  -- Force FIFO register EOF if hold register will be empty
-                  if obPpi.valid(7 downto 1) = 0 then
-                     obPpiHold.eof <= '0'       after TPD_G;
-                     obPpiFifo.eof <= obPpi.eof after TPD_G;
-                  end if;
-
-               -- Shift by 2
-               when "010" =>
-                  obPpiHold.data(47 downto 0) <= obPpi.data(63 downto 16) after TPD_G;
-                  obPpiHold.valid(5 downto 0) <= obPpi.valid(7 downto 2)  after TPD_G;
-
-                  -- Don't write into FIFO register on first write
-                  if obPpiFirst = '0' then
-                     obPpiFifo.data(63 downto 48) <= obPpi.data(15 downto 0) after TPD_G;
-                     obPpiFifo.valid(7 downto  6) <= obPpi.valid(1 downto 0) after TPD_G;
-                  end if;
-
-                  -- Force FIFO register EOF if hold register will be empty
-                  if obPpi.valid(7 downto 2) = 0 then
-                     obPpiHold.eof <= '0'       after TPD_G;
-                     obPpiFifo.eof <= obPpi.eof after TPD_G;
-                  end if;
-
-               -- Shift by 3
-               when "011" =>
-                  obPpiHold.data(39 downto 0) <= obPpi.data(63 downto 24) after TPD_G;
-                  obPpiHold.valid(4 downto 0) <= obPpi.valid(7 downto 3)  after TPD_G;
-
-                  -- Don't write into FIFO register on first write
-                  if obPpiFirst = '0' then
-                     obPpiFifo.data(63 downto 40) <= obPpi.data(23 downto 0) after TPD_G;
-                     obPpiFifo.valid(7 downto  5) <= obPpi.valid(2 downto 0) after TPD_G;
-                  end if;
-
-                  -- Force FIFO register EOF if hold register will be empty
-                  if obPpi.valid(7 downto 3) = 0 then
-                     obPpiHold.eof <= '0'       after TPD_G;
-                     obPpiFifo.eof <= obPpi.eof after TPD_G;
-                  end if;
-
-               -- Shift by 4
-               when "100" =>
-                  obPpiHold.data(31 downto 0) <= obPpi.data(63 downto 32) after TPD_G;
-                  obPpiHold.valid(3 downto 0) <= obPpi.valid(7 downto 4)  after TPD_G;
-
-                  -- Don't write into FIFO register on first write
-                  if obPpiFirst = '0' then
-                     obPpiFifo.data(63 downto 32) <= obPpi.data(31 downto 0) after TPD_G;
-                     obPpiFifo.valid(7 downto  4) <= obPpi.valid(3 downto 0) after TPD_G;
-                  end if;
-
-                  -- Force FIFO register EOF if hold register will be empty
-                  if obPpi.valid(7 downto 4) = 0 then
-                     obPpiHold.eof <= '0'       after TPD_G;
-                     obPpiFifo.eof <= obPpi.eof after TPD_G;
-                  end if;
-
-               -- Shift by 5
-               when "101" =>
-                  obPpiHold.data(23 downto 0) <= obPpi.data(63 downto 40) after TPD_G;
-                  obPpiHold.valid(2 downto 0) <= obPpi.valid(7 downto 5)  after TPD_G;
-
-                  -- Don't write into FIFO register on first write
-                  if obPpiFirst = '0' then
-                     obPpiFifo.data(63 downto 24) <= obPpi.data(39 downto 0) after TPD_G;
-                     obPpiFifo.valid(7 downto  3) <= obPpi.valid(4 downto 0) after TPD_G;
-                  end if;
-
-                  -- Force FIFO register EOF if hold register will be empty
-                  if obPpi.valid(7 downto 5) = 0 then
-                     obPpiHold.eof <= '0'       after TPD_G;
-                     obPpiFifo.eof <= obPpi.eof after TPD_G;
-                  end if;
-
-               -- Shift by 6
-               when "110" =>
-                  obPpiHold.data(15 downto 0) <= obPpi.data(63 downto 48) after TPD_G;
-                  obPpiHold.valid(1 downto 0) <= obPpi.valid(7 downto 6)  after TPD_G;
-
-                  -- Don't write into FIFO register on first write
-                  if obPpiFirst = '0' then
-                     obPpiFifo.data(63 downto 16) <= obPpi.data(47 downto 0) after TPD_G;
-                     obPpiFifo.valid(7 downto  2) <= obPpi.valid(5 downto 0) after TPD_G;
-                  end if;
-
-                  -- Force FIFO register EOF if hold register will be empty
-                  if obPpi.valid(7 downto 6) = 0 then
-                     obPpiHold.eof <= '0'       after TPD_G;
-                     obPpiFifo.eof <= obPpi.eof after TPD_G;
-                  end if;
-
-               -- Shift by 7
-               when "111" =>
-                  obPpiHold.data(7  downto  0) <= obPpi.data(63 downto 56) after TPD_G;
-                  obPpiHold.valid(0)           <= obPpi.valid(7)           after TPD_G;
-
-                  -- Don't write into FIFO register on first write
-                  if obPpiFirst = '0' then
-                     obPpiFifo.data(63 downto  8) <= obPpi.data(55 downto 0) after TPD_G;
-                     obPpiFifo.valid(7 downto  1) <= obPpi.valid(6 downto 0) after TPD_G;
-                  end if;
-
-                  -- Force FIFO register EOF if hold register will be empty
-                  if obPpi.valid(7) = '0' then
-                     obPpiHold.eof <= '0'       after TPD_G;
-                     obPpiFifo.eof <= obPpi.eof after TPD_G;
-                  end if;
-
-               when others =>
-            end case;
-
-         -- No write
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            obPpiHold.data    <= (others=>'0') after TPD_G;
+            obPpiHold.eof     <= '0'           after TPD_G;
+            obPpiHold.eoh     <= '0'           after TPD_G;
+            obPpiHold.ftype   <= (others=>'0') after TPD_G;
+            obPpiHold.mgmt    <= '0'           after TPD_G;
+            obPpiHold.valid   <= (others=>'0') after TPD_G;
+            obPpiFifo.data    <= (others=>'0') after TPD_G;
+            obPpiFifo.eof     <= '0'           after TPD_G;
+            obPpiFifo.eoh     <= '0'           after TPD_G;
+            obPpiFifo.ftype   <= (others=>'0') after TPD_G;
+            obPpiFifo.mgmt    <= '0'           after TPD_G;
+            obPpiFifo.valid   <= (others=>'0') after TPD_G;
+            obPpiWriteEn      <= '0'           after TPD_G;
          else
-            obPpiWriteEn <= '0' after TPD_G;
+
+            -- EOF is present in hold register, 
+            -- shift to FIFO register, clear hold register, write to FIFO
+            if obPpiHold.eof = '1' and obPpiHold.valid /= 0 then
+               obPpiFifo       <= obPpiHold  after TPD_G;
+               obPpiHold.eof   <= '0'        after TPD_G;
+               obPpiHold.valid <= "00000000" after TPD_G;
+               obPpiWriteEn    <= '1'        after TPD_G;
+
+            -- EOF is present in fifo register, 
+            -- clear FIFO register, clear write
+            elsif obPpiFifo.eof = '1' and obPpiFifo.valid /= 0 then
+               obPpiFifo.eof   <= '0'        after TPD_G;
+               obPpiFifo.valid <= "00000000" after TPD_G;
+               obPpiWriteEn    <= '0'        after TPD_G;
+
+            -- Shifting in header mode, no alignment adjust
+            elsif obPpi.valid /= 0 and obPpiHead = '1' then
+               obPpiHold         <= obPpi         after TPD_G;
+               obPpiHold.valid   <= "11111111"    after TPD_G;
+               obPpiFifo         <= obPpiHold     after TPD_G;
+               obPpiWriteEn      <= '1'           after TPD_G;
+
+            -- Shifting in payload data
+            elsif obPpi.valid(0) = '1' and obPpiHead = '0' then
+
+               -- Init values
+               obPpiHold       <= obPpi      after TPD_G;
+               obPpiHold.valid <= "00000000" after TPD_G;
+               obPpiFifo       <= obPpiHold  after TPD_G;
+               obPpiWriteEn    <= '1'        after TPD_G;
+
+               -- Determine which hold and FIFO bytes to update
+               case headerDma.addr(2 downto 0) is 
+
+                  -- Aligned address, no shift
+                  when "000" =>
+                     obPpiHold.data  <= obPpi.data  after TPD_G;
+                     obPpiHold.valid <= obPPi.valid after TPD_G;
+
+                  -- Shift by 1
+                  when "001" =>
+                     obPpiHold.data(55 downto  0) <= obPpi.data(63 downto 8) after TPD_G;
+                     obPpiHold.valid(6 downto  0) <= obPpi.valid(7 downto 1) after TPD_G;
+
+                     -- Don't write into FIFO register on first write
+                     if obPpiFirst = '0' then
+                        obPpiFifo.data(63 downto 56) <= obPpi.data(7 downto 0) after TPD_G;
+                        obPpiFifo.valid(7)           <= obPpi.valid(0)         after TPD_G;
+                     end if;
+
+                     -- Force FIFO register EOF if hold register will be empty
+                     if obPpi.valid(7 downto 1) = 0 then
+                        obPpiHold.eof <= '0'       after TPD_G;
+                        obPpiFifo.eof <= obPpi.eof after TPD_G;
+                     end if;
+
+                  -- Shift by 2
+                  when "010" =>
+                     obPpiHold.data(47 downto 0) <= obPpi.data(63 downto 16) after TPD_G;
+                     obPpiHold.valid(5 downto 0) <= obPpi.valid(7 downto 2)  after TPD_G;
+
+                     -- Don't write into FIFO register on first write
+                     if obPpiFirst = '0' then
+                        obPpiFifo.data(63 downto 48) <= obPpi.data(15 downto 0) after TPD_G;
+                        obPpiFifo.valid(7 downto  6) <= obPpi.valid(1 downto 0) after TPD_G;
+                     end if;
+
+                     -- Force FIFO register EOF if hold register will be empty
+                     if obPpi.valid(7 downto 2) = 0 then
+                        obPpiHold.eof <= '0'       after TPD_G;
+                        obPpiFifo.eof <= obPpi.eof after TPD_G;
+                     end if;
+
+                  -- Shift by 3
+                  when "011" =>
+                     obPpiHold.data(39 downto 0) <= obPpi.data(63 downto 24) after TPD_G;
+                     obPpiHold.valid(4 downto 0) <= obPpi.valid(7 downto 3)  after TPD_G;
+
+                     -- Don't write into FIFO register on first write
+                     if obPpiFirst = '0' then
+                        obPpiFifo.data(63 downto 40) <= obPpi.data(23 downto 0) after TPD_G;
+                        obPpiFifo.valid(7 downto  5) <= obPpi.valid(2 downto 0) after TPD_G;
+                     end if;
+
+                     -- Force FIFO register EOF if hold register will be empty
+                     if obPpi.valid(7 downto 3) = 0 then
+                        obPpiHold.eof <= '0'       after TPD_G;
+                        obPpiFifo.eof <= obPpi.eof after TPD_G;
+                     end if;
+
+                  -- Shift by 4
+                  when "100" =>
+                     obPpiHold.data(31 downto 0) <= obPpi.data(63 downto 32) after TPD_G;
+                     obPpiHold.valid(3 downto 0) <= obPpi.valid(7 downto 4)  after TPD_G;
+
+                     -- Don't write into FIFO register on first write
+                     if obPpiFirst = '0' then
+                        obPpiFifo.data(63 downto 32) <= obPpi.data(31 downto 0) after TPD_G;
+                        obPpiFifo.valid(7 downto  4) <= obPpi.valid(3 downto 0) after TPD_G;
+                     end if;
+
+                     -- Force FIFO register EOF if hold register will be empty
+                     if obPpi.valid(7 downto 4) = 0 then
+                        obPpiHold.eof <= '0'       after TPD_G;
+                        obPpiFifo.eof <= obPpi.eof after TPD_G;
+                     end if;
+
+                  -- Shift by 5
+                  when "101" =>
+                     obPpiHold.data(23 downto 0) <= obPpi.data(63 downto 40) after TPD_G;
+                     obPpiHold.valid(2 downto 0) <= obPpi.valid(7 downto 5)  after TPD_G;
+
+                     -- Don't write into FIFO register on first write
+                     if obPpiFirst = '0' then
+                        obPpiFifo.data(63 downto 24) <= obPpi.data(39 downto 0) after TPD_G;
+                        obPpiFifo.valid(7 downto  3) <= obPpi.valid(4 downto 0) after TPD_G;
+                     end if;
+
+                     -- Force FIFO register EOF if hold register will be empty
+                     if obPpi.valid(7 downto 5) = 0 then
+                        obPpiHold.eof <= '0'       after TPD_G;
+                        obPpiFifo.eof <= obPpi.eof after TPD_G;
+                     end if;
+
+                  -- Shift by 6
+                  when "110" =>
+                     obPpiHold.data(15 downto 0) <= obPpi.data(63 downto 48) after TPD_G;
+                     obPpiHold.valid(1 downto 0) <= obPpi.valid(7 downto 6)  after TPD_G;
+
+                     -- Don't write into FIFO register on first write
+                     if obPpiFirst = '0' then
+                        obPpiFifo.data(63 downto 16) <= obPpi.data(47 downto 0) after TPD_G;
+                        obPpiFifo.valid(7 downto  2) <= obPpi.valid(5 downto 0) after TPD_G;
+                     end if;
+
+                     -- Force FIFO register EOF if hold register will be empty
+                     if obPpi.valid(7 downto 6) = 0 then
+                        obPpiHold.eof <= '0'       after TPD_G;
+                        obPpiFifo.eof <= obPpi.eof after TPD_G;
+                     end if;
+
+                  -- Shift by 7
+                  when "111" =>
+                     obPpiHold.data(7  downto  0) <= obPpi.data(63 downto 56) after TPD_G;
+                     obPpiHold.valid(0)           <= obPpi.valid(7)           after TPD_G;
+
+                     -- Don't write into FIFO register on first write
+                     if obPpiFirst = '0' then
+                        obPpiFifo.data(63 downto  8) <= obPpi.data(55 downto 0) after TPD_G;
+                        obPpiFifo.valid(7 downto  1) <= obPpi.valid(6 downto 0) after TPD_G;
+                     end if;
+
+                     -- Force FIFO register EOF if hold register will be empty
+                     if obPpi.valid(7) = '0' then
+                        obPpiHold.eof <= '0'       after TPD_G;
+                        obPpiFifo.eof <= obPpi.eof after TPD_G;
+                     end if;
+
+                  when others =>
+               end case;
+
+            -- No write
+            else
+               obPpiWriteEn <= '0' after TPD_G;
+            end if;
          end if;
       end if;
    end process;
@@ -640,7 +661,7 @@ begin
          FULL_THRES_G   => (511-8),
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRst,
+         rst                => axiClkRstInt,
          wr_clk             => axiClk,
          wr_en              => obPpiFifoWr,
          din                => obPpiDin,
@@ -712,7 +733,7 @@ begin
          FULL_THRES_G   => 15,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRst,
+         rst                => axiClkRstInt,
          clk                => axiClk,
          wr_en              => currCompData.valid,
          din                => compFifoDin,

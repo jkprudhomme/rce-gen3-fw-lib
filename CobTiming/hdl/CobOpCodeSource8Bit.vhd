@@ -40,8 +40,8 @@ entity CobOpCodeSource8Bit is
    port (
 
       -- Clock and reset
-      sysClk                   : in  sl;
-      sysClkRst                : in  sl;
+      distClk                  : in  sl;
+      distClkRst               : in  sl;
       
       -- Opcode information
       timingCode               : in  slv(7 downto 0);
@@ -66,65 +66,69 @@ begin
    ----------------------------------------
    -- Sync Data Generator
    ----------------------------------------
-   process ( sysClk, sysClkRst ) begin
-      if sysClkRst = '1' then
-         txCount <= (others=>'0') after TPD_G;
-         txEnable <= '0'           after TPD_G;
-         outBit   <= '0'           after TPD_G;
-         codeEn   <= '0'           after TPD_G;
-         codeVal  <= (others=>'0') after TPD_G;
-      elsif rising_edge(sysClk) then
-
-         -- Sample incoming data when idle
-         if txEnable = '0' and timingCodeEn = '1' then
-            codeVal(7 downto 0) <= "11110000" after TPD_G;
-
-            for i in 0 to 7 loop
-               codeVal(i*2+8) <=     timingCode(i) after TPD_G;
-               codeVal(i*2+9) <= not timingCode(i) after TPD_G;
-            end loop;
-         end if;
-
-         -- Pass enable when idle
-         codeEn <= timingCodeEn and (not txEnable) after TPD_G;
-
-         -- Setup counter
-         if codeEn = '1' then
-            txCount <= "00001" after TPD_G;
+   process ( distClk ) begin
+      if rising_edge(distClk) then
+         if distClkRst = '1' then
+            txCount <= (others=>'0') after TPD_G;
+            txEnable <= '0'           after TPD_G;
+            outBit   <= '0'           after TPD_G;
+            codeEn   <= '0'           after TPD_G;
+            codeVal  <= (others=>'0') after TPD_G;
          else
-            txCount <= txCount + 1 after TPD_G;
-         end if;
 
-         -- Start new transmission, bit = '0'
-         if codeEn = '1' then
-            outBit   <= '0'   after TPD_G;
-            txEnable <= '1'   after TPD_G;
+            -- Sample incoming data when idle
+            if txEnable = '0' and timingCodeEn = '1' then
+               codeVal(7 downto 0) <= "11110000" after TPD_G;
 
-         -- In transmission
-         elsif txEnable = '1' then
-            outBit <= codeVal(conv_integer(txCount)) after TPD_G;
-
-            -- Done at 23
-            if txCount = 23 then
-               txEnable <= '0' after TPD_G;
+               for i in 0 to 7 loop
+                  codeVal(i*2+8) <=     timingCode(i) after TPD_G;
+                  codeVal(i*2+9) <= not timingCode(i) after TPD_G;
+               end loop;
             end if;
 
-         -- Idle 
-         else 
-            outBit <= txCount(0) after TPD_G;
-         end if;
+            -- Pass enable when idle
+            codeEn <= timingCodeEn and (not txEnable) after TPD_G;
 
+            -- Setup counter
+            if codeEn = '1' then
+               txCount <= "00001" after TPD_G;
+            else
+               txCount <= txCount + 1 after TPD_G;
+            end if;
+
+            -- Start new transmission, bit = '0'
+            if codeEn = '1' then
+               outBit   <= '0'   after TPD_G;
+               txEnable <= '1'   after TPD_G;
+
+            -- In transmission
+            elsif txEnable = '1' then
+               outBit <= codeVal(conv_integer(txCount)) after TPD_G;
+
+               -- Done at 23
+               if txCount = 23 then
+                  txEnable <= '0' after TPD_G;
+               end if;
+
+            -- Idle 
+            else 
+               outBit <= txCount(0) after TPD_G;
+            end if;
+
+         end if;
       end if;
    end process;
 
    ----------------------------------------
    -- Output Register
    ----------------------------------------
-   process ( sysClk, sysClkRst ) begin
-      if sysClkRst = '1' then
-         serialCode <= '0'    after TPD_G;
-      elsif rising_edge(sysClk) then
-         serialCode <= outBit after TPD_G;
+   process ( distClk ) begin
+      if rising_edge(distClk) then
+         if distClkRst = '1' then
+            serialCode <= '0'    after TPD_G;
+         else
+            serialCode <= outBit after TPD_G;
+         end if;
       end if;
    end process;
 

@@ -6,6 +6,12 @@
 -------------------------------------------------------------------------------
 -- Description:
 -- Clock & Trigger source module for DTM
+--
+-- The following lines are required in the XDC file:
+--
+--set_property IODELAY_GROUP "DtmTimingGrp" [get_cells {U_DtmTimingSource/U_DlyCntrl}]
+--set_property IODELAY_GROUP "DtmTimingGrp" [get_cells -hier -filter {name =~ *U_OpCodeSink/IDELAYE2_inst}]
+--
 -------------------------------------------------------------------------------
 -- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -39,9 +45,9 @@ entity DtmTimingSource is
       sysClk200                : in  sl;
       sysClk200Rst             : in  sl;
 
-      -- Clock and reset
-      sysClk                   : in  sl;
-      sysClkRst                : in  sl;
+      -- Distributed Clock and reset
+      distClk                  : in  sl;
+      distClkRst               : in  sl;
       
       -- Opcode information
       timingCode               : in  slv(7 downto 0);
@@ -51,11 +57,13 @@ entity DtmTimingSource is
       fbCode                   : out Slv8Array(7 downto 0);
       fbCodeEn                 : out slv(7 downto 0);
 
-      -- Timing bus
-      dpmClk                   : out slv(2 downto 0);
-      dpmFb                    : in  slv(7 downto 0);
+      -- COB Timing bus
+      dpmClkP                  : out slv(2  downto 0);
+      dpmClkM                  : out slv(2  downto 0);
+      dpmFbP                   : in  slv(7  downto 0);
+      dpmFbM                   : in  slv(7  downto 0);
 
-      -- Debug
+      -- Optional LED Debug
       led                      : out slv(1 downto 0)
    );
 end DtmTimingSource;
@@ -87,9 +95,24 @@ architecture STRUCTURE of DtmTimingSource is
    signal fbFifoData          : Slv8Array(7 downto 0);
    signal ledCountA           : slv(31 downto 0);
    signal ledCountB           : slv(26 downto 0);
-   signal dpmClkRst           : sl;
+   signal dpmClk              : slv(2 downto 0);
+   signal dpmFb               : slv(7 downto 0);
+   signal axiClkRstInt        : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    ----------------------------------------
    -- Delay Control
@@ -101,52 +124,36 @@ begin
          RST    => sysClk200Rst -- 1-bit input: Active high reset input
       );
 
-
    ----------------------------------------
    -- Clock Outputs
    ----------------------------------------
    
-   -- Add a synchronizer to help with timing
-   U_ODDR_RST : entity work.Synchronizer 
-      generic map (
-         TPD_G => TPD_G
-      ) port map (
-         clk     => sysClk,
-         dataIn  => sysClkRst,
-         dataOut => dpmClkRst
-      );   
+   -- Clock outputs
+   U_ClkOut : for i in 0 to 1 generate
 
-   -- Clock output
-   U_Clk0: ODDR
-      generic map(
-         DDR_CLK_EDGE => "OPPOSITE_EDGE", -- "OPPOSITE_EDGE" or "SAME_EDGE"
-         INIT         => '0',             -- Initial value for Q port ('1' or '0')
-         SRTYPE       => "SYNC"           -- Reset Type ("ASYNC" or "SYNC")
-      ) port map (
-         Q  => dpmClk(0),  -- 1-bit DDR output
-         C  => sysClk,     -- 1-bit clock input
-         CE => '1',        -- 1-bit clock enable input
-         D1 => '1',        -- 1-bit data input (positive edge)
-         D2 => '0',        -- 1-bit data input (negative edge)
-         R  => dpmClkRst,  -- 1-bit reset input
-         S  => '0'         -- 1-bit set input
-      );
+      U_ClkGen: ODDR
+         generic map(
+            DDR_CLK_EDGE => "OPPOSITE_EDGE", -- "OPPOSITE_EDGE" or "SAME_EDGE"
+            INIT         => '0',             -- Initial value for Q port ('1' or '0')
+            SRTYPE       => "SYNC"           -- Reset Type ("ASYNC" or "SYNC")
+         ) port map (
+            Q  => dpmClk(i),  -- 1-bit DDR output
+            C  => distClk,    -- 1-bit clock input
+            CE => '1',        -- 1-bit clock enable input
+            D1 => '1',        -- 1-bit data input (positive edge)
+            D2 => '0',        -- 1-bit data input (negative edge)
+            R  => distClkRst, -- 1-bit reset input
+            S  => '0'         -- 1-bit set input
+         );
 
-   -- Clock output
-   U_Clk1: ODDR
-      generic map(
-         DDR_CLK_EDGE => "OPPOSITE_EDGE", -- "OPPOSITE_EDGE" or "SAME_EDGE"
-         INIT         => '0',             -- Initial value for Q port ('1' or '0')
-         SRTYPE       => "SYNC"           -- Reset Type ("ASYNC" or "SYNC")
-      ) port map (
-         Q  => dpmClk(1),  -- 1-bit DDR output
-         C  => sysClk,     -- 1-bit clock input
-         CE => '1',        -- 1-bit clock enable input
-         D1 => '1',        -- 1-bit data input (positive edge)
-         D2 => '0',        -- 1-bit data input (negative edge)
-         R  => dpmClkRst,  -- 1-bit reset input
-         S  => '0'         -- 1-bit set input
-      );
+      U_DpmClkOut : OBUFDS
+         port map(
+            O      => dpmClkP(i),
+            OB     => dpmClkM(i),
+            I      => dpmClk(i)
+         );
+
+   end generate;
 
 
    ----------------------------------------
@@ -154,13 +161,13 @@ begin
    ----------------------------------------
 
    -- Select source
-   process ( sysClk, sysClkRst ) begin
-      if sysClkRst = '1' then
-         intCodeEn <= '0'           after TPD_G;
-         intCode   <= (others=>'0') after TPD_G;
-      elsif rising_edge(sysClk) then
+   process ( distClk ) begin
+      if rising_edge(distClk) then
+         if distClkRst = '1' then
+            intCodeEn <= '0'           after TPD_G;
+            intCode   <= (others=>'0') after TPD_G;
 
-         if timingCodeEn = '1' then
+         elsif timingCodeEn = '1' then
             intCodeEn <= '1'        after TPD_G;
             intCode   <= timingCode after TPD_G;
 
@@ -176,16 +183,24 @@ begin
    end process;
 
    -- Module
-   U_OpCodeSource : entity work.CobOpCodeSource 
+   U_OpCodeSource : entity work.CobOpCodeSource8Bit 
       generic map (
          TPD_G => TPD_G
       ) port map (
-         sysClk          => sysClk,
-         sysClkRst       => sysClkRst,
+         distClk         => distClk,
+         distClkRst      => distClkRst,
          timingCode      => intCode,
          timingCodeEn    => intCodeEn,
-         dpmClk          => dpmClk(2)
+         serialCode      => dpmClk(2)
       );
+
+   U_OpCodeClkBuf : OBUFDS
+      port map(
+         O      => dpmClkP(2),
+         OB     => dpmClkM(2),
+         I      => dpmClk(2)
+      );
+
 
    -- OpCode FIFO
    U_OcFifo : entity work.FifoASync
@@ -204,8 +219,8 @@ begin
          FULL_THRES_G   => 63,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRst,
-         wr_clk             => sysClk,
+         rst                => axiClkRstInt,
+         wr_clk             => distClk,
          wr_en              => ocFifoWr,
          din                => intCode,
          wr_data_count      => open,
@@ -235,18 +250,26 @@ begin
    ----------------------------------------
    U_FbGen : for i in 0 to 7 generate
 
+      -- IO Pin
+      U_DpmFbBuf : IBUFDS
+         port map(
+            I      => dpmFbP(i),
+            IB     => dpmFbM(i),
+            O      => dpmFb(i)
+         );
+
       -- Input processor
-      U_OpCodeSink : entity work.CobOpCodeSink
+      U_OpCodeSink : entity work.CobOpCodeSink8Bit
          generic map (
             TPD_G => TPD_G
          ) port map (
-            dpmClk          => dpmFb(i),
-            sysClk          => sysClk,
-            sysClkRst       => sysClkRst,
+            serialCode      => dpmFb(i),
+            distClk         => distClk,
+            distClkRst      => distClkRst,
             timingCode      => ifbCode(i),
             timingCodeEn    => ifbCodeEn(i),
             configClk       => axiClk,
-            configClkRst    => axiClkRst,
+            configClkRst    => axiClkRstInt,
             configSet       => fbCfgSet(i),
             configDelay     => fbCfgDelay,
             statusIdleCnt   => fbStatusIdleCnt(i),
@@ -263,15 +286,15 @@ begin
             USE_DSP48_G    => "no",
             ALTERA_SYN_G   => false,
             ALTERA_RAM_G   => "M9K",
-            --SYNC_STAGES_G  => 2,
+            SYNC_STAGES_G  => 3,
             DATA_WIDTH_G   => 8,
             ADDR_WIDTH_G   => 6,
             INIT_G         => "0",
             FULL_THRES_G   => 63,
             EMPTY_THRES_G  => 1
          ) port map (
-            rst                => axiClkRst,
-            wr_clk             => sysClk,
+            rst                => axiClkRstInt,
+            wr_clk             => distClk,
             wr_en              => fbFifoWr(i),
             din                => ifbCode(i),
             wr_data_count      => open,
@@ -306,79 +329,81 @@ begin
    -- Local Registers
    ----------------------------------------
 
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         localBusSlave    <= LocalBusSlaveInit after TPD_G;
-         fbCfgSet         <= (others=>'0')     after TPD_G;
-         fbCfgDelay       <= (others=>'0')     after TPD_G;
-         cmdCode          <= (others=>'0')     after TPD_G;
-         cmdCodeEn        <= '0'               after TPD_G;
-         ocFifoRd         <= '0'               after TPD_G;
-         fbFifoRd         <= (others=>'0')     after TPD_G;
-         fbFifoWrEn       <= (others=>'0')     after TPD_G;
-         ocFifoWrEn       <= '0'               after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            localBusSlave    <= LocalBusSlaveInit after TPD_G;
+            fbCfgSet         <= (others=>'0')     after TPD_G;
+            fbCfgDelay       <= (others=>'0')     after TPD_G;
+            cmdCode          <= (others=>'0')     after TPD_G;
+            cmdCodeEn        <= '0'               after TPD_G;
+            ocFifoRd         <= '0'               after TPD_G;
+            fbFifoRd         <= (others=>'0')     after TPD_G;
+            fbFifoWrEn       <= (others=>'0')     after TPD_G;
+            ocFifoWrEn       <= '0'               after TPD_G;
+         else
 
-         -- Init
-         localBusSlave.readValid <= localBusMaster.readEnable            after TPD_G;
-         localBusSlave.readData  <= (others=>'0')                        after TPD_G;
-         fbCfgSet                <= (others=>'0')                        after TPD_G;
-         fbCfgDelay              <= localBusMaster.writeData(4 downto 0) after TPD_G;
-         cmdCodeEn               <= '0'                                  after TPD_G;
-         ocFifoRd                <= '0'                                  after TPD_G;
-         fbFifoRd                <= (others=>'0')                        after TPD_G;
+            -- Init
+            localBusSlave.readValid <= localBusMaster.readEnable            after TPD_G;
+            localBusSlave.readData  <= (others=>'0')                        after TPD_G;
+            fbCfgSet                <= (others=>'0')                        after TPD_G;
+            fbCfgDelay              <= localBusMaster.writeData(4 downto 0) after TPD_G;
+            cmdCodeEn               <= '0'                                  after TPD_G;
+            ocFifoRd                <= '0'                                  after TPD_G;
+            fbFifoRd                <= (others=>'0')                        after TPD_G;
 
-         -- FB Fifo Write Enable, one per FIFO
-         if localBusMaster.addr(23 downto 0) = x"000000" then
-            if localBusMaster.writeEnable = '1' then
-               fbFifoWrEn <= localBusMaster.writeData(7 downto 0) after TPD_G;
+            -- FB Fifo Write Enable, one per FIFO
+            if localBusMaster.addr(23 downto 0) = x"000000" then
+               if localBusMaster.writeEnable = '1' then
+                  fbFifoWrEn <= localBusMaster.writeData(7 downto 0) after TPD_G;
+               end if;
+
+            -- FB Delay configuration, one per FIFO
+            elsif localBusMaster.addr(23 downto 8) = x"0001" then
+               fbCfgSet(conv_integer(localBusMaster.addr(5 downto 2))) <= localBusMaster.writeEnable after TPD_G;
+
+            -- FB FIFO status, one per FIFO
+            elsif localBusMaster.addr(23 downto 8) = x"0002" then
+               localBusSlave.readData(31 downto 16) <= fbStatusErrorCnt(conv_integer(localBusMaster.addr(5 downto 2))) after TPD_G;
+               localBusSlave.readData(15 downto  0) <= fbStatusIdleCnt(conv_integer(localBusMaster.addr(5 downto 2)))  after TPD_G;
+
+            -- FB FIFO read, one per FIFO
+            elsif localBusMaster.addr(23 downto 8) = x"0003" then
+               fbFifoRd(conv_integer(localBusMaster.addr(5 downto 2))) <= localBusMaster.readEnable after TPD_G;
+
+               localBusSlave.readValid             <= fbFifoRd(conv_integer(localBusMaster.addr(5 downto 2)))    after TPD_G;
+               localBusSlave.readData(8)           <= fbFifoValid(conv_integer(localBusMaster.addr(5 downto 2))) after TPD_G;
+               localBusSlave.readData(7 downto  0) <= fbFifoData(conv_integer(localBusMaster.addr(5 downto 2)))  after TPD_G;
+
+            -- OC Opcode Generation
+            elsif localBusMaster.addr(23 downto 0) = x"000400" then
+               cmdCodeEn <= localBusMaster.writeEnable after TPD_G;
+
+               if localBusMaster.writeEnable = '1' then
+                  cmdCode <= localBusMaster.writeData(7 downto 0) after TPD_G;
+               end if;
+
+            -- OC FIFO read
+            elsif localBusMaster.addr(23 downto 0) = x"000404" then
+               ocFifoRd                            <= localBusMaster.readEnable after TPD_G;
+               localBusSlave.readValid             <= ocFifoRd                  after TPD_G;
+               localBusSlave.readData(8)           <= ocFifoValid               after TPD_G;
+               localBusSlave.readData(7 downto  0) <= ocFifoData                after TPD_G;
+
+            -- OC Fifo Enable
+            elsif localBusMaster.addr(23 downto 0) = x"000408" then
+               localBusSlave.readData(0) <= ocFifoWrEn after TPD_G;
+
+               if localBusMaster.writeEnable = '1' then
+                  ocFifoWrEn <= localBusMaster.writeData(0) after TPD_G;
+               end if;
+
+            elsif localBusMaster.addr(23 downto 0) = x"00040C" then
+               localBusSlave.readData <= ledCountA after TPD_G;
+
             end if;
-
-         -- FB Delay configuration, one per FIFO
-         elsif localBusMaster.addr(23 downto 8) = x"0001" then
-            fbCfgSet(conv_integer(localBusMaster.addr(5 downto 2))) <= localBusMaster.writeEnable after TPD_G;
-
-         -- FB FIFO status, one per FIFO
-         elsif localBusMaster.addr(23 downto 8) = x"0002" then
-            localBusSlave.readData(31 downto 16) <= fbStatusErrorCnt(conv_integer(localBusMaster.addr(5 downto 2))) after TPD_G;
-            localBusSlave.readData(15 downto  0) <= fbStatusIdleCnt(conv_integer(localBusMaster.addr(5 downto 2)))  after TPD_G;
-
-         -- FB FIFO read, one per FIFO
-         elsif localBusMaster.addr(23 downto 8) = x"0003" then
-            fbFifoRd(conv_integer(localBusMaster.addr(5 downto 2))) <= localBusMaster.readEnable after TPD_G;
-
-            localBusSlave.readValid             <= fbFifoRd(conv_integer(localBusMaster.addr(5 downto 2)))    after TPD_G;
-            localBusSlave.readData(8)           <= fbFifoValid(conv_integer(localBusMaster.addr(5 downto 2))) after TPD_G;
-            localBusSlave.readData(7 downto  0) <= fbFifoData(conv_integer(localBusMaster.addr(5 downto 2)))  after TPD_G;
-
-         -- OC Opcode Generation
-         elsif localBusMaster.addr(23 downto 0) = x"000400" then
-            cmdCodeEn <= localBusMaster.writeEnable after TPD_G;
-
-            if localBusMaster.writeEnable = '1' then
-               cmdCode <= localBusMaster.writeData(7 downto 0) after TPD_G;
-            end if;
-
-         -- OC FIFO read
-         elsif localBusMaster.addr(23 downto 0) = x"000404" then
-            ocFifoRd                            <= localBusMaster.readEnable after TPD_G;
-            localBusSlave.readValid             <= ocFifoRd                  after TPD_G;
-            localBusSlave.readData(8)           <= ocFifoValid               after TPD_G;
-            localBusSlave.readData(7 downto  0) <= ocFifoData                after TPD_G;
-
-         -- OC Fifo Enable
-         elsif localBusMaster.addr(23 downto 0) = x"000408" then
-            localBusSlave.readData(0) <= ocFifoWrEn after TPD_G;
-
-            if localBusMaster.writeEnable = '1' then
-               ocFifoWrEn <= localBusMaster.writeData(0) after TPD_G;
-            end if;
-
-         elsif localBusMaster.addr(23 downto 0) = x"00040C" then
-            localBusSlave.readData <= ledCountA after TPD_G;
 
          end if;
-
       end if;
    end process;
 
@@ -392,8 +417,8 @@ begin
          WIDTH_G        => 8,
          INIT_G         => "0"
       ) port map (
-         clk     => sysClk,
-         rst     => sysClkRst,
+         clk     => distClk,
+         rst     => distClkRst,
          dataIn  => cmdCode,
          dataOut => regCode
       );
@@ -406,8 +431,8 @@ begin
          STAGES_G       => 3,
          INIT_G         => "0"
       ) port map (
-         clk         => sysClk,
-         rst         => sysClkRst,
+         clk         => distClk,
+         rst         => distClkRst,
          dataIn      => cmdCodeEn,
          dataOut     => open,
          risingEdge  => regCodeEn,
@@ -418,23 +443,24 @@ begin
    ----------------------------------
    -- LED Blinking
    ----------------------------------
-   process ( sysClk, sysClkRst ) begin
-      if sysClkRst = '1' then
-         ledCountA <= (others=>'0') after TPD_G;
-      elsif rising_edge(sysClk) then
-         ledCountA <= ledCountA + 1 after TPD_G;
+   process ( distClk ) begin
+      if rising_edge(distClk) then
+         if distClkRst = '1' then
+            ledCountA <= (others=>'0') after TPD_G;
+         else
+            ledCountA <= ledCountA + 1 after TPD_G;
+         end if;
       end if;
    end process;
 
    led(0) <= ledCountA(26);
 
-   process ( sysClk, sysClkRst ) begin
-      if sysClkRst = '1' then
-         ledCountB <= (others=>'0') after TPD_G;
-         led(1)    <= '0'           after TPD_G;
-      elsif rising_edge(sysClk) then
-
-         if intCodeEn = '1' then
+   process ( distClk ) begin
+      if rising_edge(distClk) then
+         if distClkRst = '1' then
+            ledCountB <= (others=>'0') after TPD_G;
+            led(1)    <= '0'           after TPD_G;
+         elsif intCodeEn = '1' then
             ledCountB <= (others=>'1') after TPD_G;
             led(1)    <= '0'           after TPD_G;
          elsif ledCountB /= 0 then

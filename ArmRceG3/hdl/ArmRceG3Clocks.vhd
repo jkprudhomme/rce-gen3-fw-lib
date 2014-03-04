@@ -42,12 +42,6 @@ entity ArmRceG3Clocks is
       fclkRst1                : in     sl;
       fclkRst0                : in     sl;
 
-      -- AXI bus clock inputs
-      axiGpMasterReset        : in     slv(1 downto 0);
-      axiGpSlaveReset         : in     slv(1 downto 0);
-      axiAcpSlaveReset        : in     sl;
-      axiHpSlaveReset         : in     slv(3 downto 0);
-
       -- AXI clock and reset
       axiClk                  : out    sl;
       axiClkRst               : out    sl;
@@ -63,7 +57,6 @@ end ArmRceG3Clocks;
 architecture structure of ArmRceG3Clocks is
 
    -- Local signals
-   signal axiCombinedRst     : sl;
    signal daxiClk            : sl;
    signal iaxiClk            : sl;
    signal dsysClk125         : sl;
@@ -76,11 +69,12 @@ architecture structure of ArmRceG3Clocks is
    signal ponResetL          : sl;
    signal ponReset           : sl;
    signal lockedReset        : sl;
-   --signal isysClk125Rst      : sl;
-   --signal isysClk200Rst      : sl;
-   --signal iaxiClkRst         : sl;
-   --signal iaxiClkRstRegA     : sl;
-   --signal iaxiClkRstRegB     : sl;
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClk       : signal is "true";
+   attribute mark_debug of axiClkRst    : signal is "true";
+   attribute mark_debug of sysClk125Rst : signal is "true";
+   attribute mark_debug of sysClk200Rst : signal is "true";
 
 begin
 
@@ -198,10 +192,6 @@ begin
    -- Locked reset
    lockedReset <= ponReset or (not mmcmLocked);
 
-   -- Combine AXI bus resets
-   axiCombinedRst <= lockedReset when (axiGpMasterReset = "00" and axiGpSlaveReset = "00" and
-                                       axiAcpSlaveReset = '0'  and axiHpSlaveReset = "0000") else '1';
-
    U_axiClkRstGen : entity work.RstSync
       generic map (
          TPD_G           => TPD_G,
@@ -211,19 +201,9 @@ begin
       )
       port map (
         clk      => iaxiClk,
-        asyncRst => axiCombinedRst,
-        --syncRst  => iaxiClkRst
+        asyncRst => lockedReset,
         syncRst  => axiClkRst
       );
-
---   process ( iaxiClk ) begin
---      if rising_edge(iaxiClk) then
---         iaxiClkRstRegA <= iaxiClkRst     after TPD_G;
---         iaxiClkRstRegB <= iaxiClkRstRegA after TPD_G;
---         axiClkRst      <= iaxiClkRstRegB after TPD_G;
---      end if;
---   end process;
-
 
    U_sysClk200RstGen : entity work.RstSync
       generic map (
@@ -235,16 +215,8 @@ begin
       port map (
         clk      => isysClk200,
         asyncRst => lockedReset,
-        --syncRst  => isysClk200Rst
         syncRst  => sysClk200Rst
       );
-
---   process ( isysClk200 ) begin
---      if rising_edge(isysClk200) then
---         sysClk200Rst <= isysClk200Rst after TPD_G;
---      end if;
---   end process;
-
 
    U_sysClk125RstGen : entity work.RstSync
       generic map (
@@ -256,14 +228,7 @@ begin
       port map (
         clk      => isysClk125,
         asyncRst => lockedReset,
-        --syncRst  => isysClk125Rst
         syncRst  => sysClk125Rst
       );
-
---   process ( isysClk200 ) begin
---      if rising_edge(isysClk200) then
---         isysClk125Rst <= isysClk125Rst after TPD_G;
---      end if;
---   end process;
 
 end architecture structure;

@@ -58,6 +58,13 @@ uint IbHeaderFifo::popEntry ( IbHeaderDesc *ptr ) {
 
       ptr->size   = (ptr->size) * 2;
 
+      cout << "Got Header"
+           << " err " << ptr->err
+           << " mgmt " << ptr->mgmt
+           << " htype " << ptr->htype
+           << " size " << ptr->size
+           << " offset " << ptr->offset << std::endl;
+
       if ( ptr->alloc < ptr->size ) return -1;
 
       // Copy data

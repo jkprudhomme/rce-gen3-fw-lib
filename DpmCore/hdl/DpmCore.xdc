@@ -13,23 +13,50 @@
 #-- 11/14/2013: created.
 #-------------------------------------------------------------------------------
 
-# Clocks
+# Arm Core Clocks
 create_clock -name fclkClk0 -period 10 \
-   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Cpu/U_PS7/PS7_i/FCLKCLK[0]]
+   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Cpu/U_PS7/U0/PS7_i/FCLKCLK[0]]
+set axiClkGroup    [get_clocks -of_objects \
+   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT0]]
+set sysClk200Group [get_clocks -of_objects \
+   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT1]]
+set sysClk125Group [get_clocks -of_objects \
+   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT2]]
 
+# Local 1G Ethernet Clocks
 create_clock -name eth_txoutclk -period 16 \
    [get_pins U_DpmCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
+set intEthClk0Group [get_clocks -of_objects \
+   [get_pins U_DpmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]]
+set intEthClk1Group [get_clocks -of_objects \
+   [get_pins U_DpmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]]
 
-set_clock_groups -asynchronous -group [get_clocks fclkClk0]   -group [get_clocks CLKOUT0]
-set_clock_groups -asynchronous -group [get_clocks fclkClk0]   -group [get_clocks CLKOUT1]
-set_clock_groups -asynchronous -group [get_clocks CLKOUT0]    -group [get_clocks CLKOUT1]
-set_clock_groups -asynchronous -group [get_clocks CLKOUT1]    -group [get_clocks CLKOUT0_1]
-set_clock_groups -asynchronous -group [get_clocks CLKOUT1]    -group [get_clocks CLKOUT1_1]
+# Set Asynchronous Paths
+set_clock_groups -asynchronous -group [get_clocks {fclkClk0}] \
+                               -group ${axiClkGroup} \
+                               -group ${sysClk200Group} \
+                               -group ${sysClk125Group} 
+
+set_clock_groups -asynchronous -group ${axiClkGroup}    -group ${intEthClk0Group}
+set_clock_groups -asynchronous -group ${axiClkGroup}    -group ${intEthClk1Group}
+
+set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk0Group}
+set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk1Group}
+
+set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk0Group}
+set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk1Group}
 
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
 
-# Locations
+# Reset Fanout
+set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/axiClkRst]
+set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/sysClk200Rst]
+set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/sysClk125Rst]
+
+#########################################################
+# Pin Locations. All Defined Here
+#########################################################
 set_property PACKAGE_PIN AA28 [get_ports led[0]]
 set_property PACKAGE_PIN AB26 [get_ports led[1]]
 
@@ -122,18 +149,26 @@ set_property PACKAGE_PIN N3  [get_ports dpmToRtmHsM[11]]
 set_property PACKAGE_PIN P6  [get_ports rtmToDpmHsP[11]]
 set_property PACKAGE_PIN P5  [get_ports rtmToDpmHsM[11]]
 
-# IO Standard
-set_property IOSTANDARD LVCMOS25 [get_ports led]
+#########################################################
+# Common IO Types
+#########################################################
 
 set_property IOSTANDARD LVCMOS25 [get_ports i2cScl]
 set_property IOSTANDARD LVCMOS25 [get_ports i2cSda]
 
-set_property IOSTANDARD LVDS_25 [get_ports dtmClkP]
-set_property IOSTANDARD LVDS_25 [get_ports dtmClkM]
-
-set_property IOSTANDARD LVDS_25 [get_ports dtmFbP]
-set_property IOSTANDARD LVDS_25 [get_ports dtmFbM]
-
 set_property IOSTANDARD LVCMOS25 [get_ports clkSelA]
 set_property IOSTANDARD LVCMOS25 [get_ports clkSelB]
+
+#########################################################
+# Top Level IO Types, To Be Defined At Top Level
+#########################################################
+
+# IO Standard
+#set_property IOSTANDARD LVCMOS25 [get_ports led]
+
+#set_property IOSTANDARD LVDS_25 [get_ports dtmClkP]
+#set_property IOSTANDARD LVDS_25 [get_ports dtmClkM]
+
+#set_property IOSTANDARD LVDS_25 [get_ports dtmFbP]
+#set_property IOSTANDARD LVDS_25 [get_ports dtmFbM]
 

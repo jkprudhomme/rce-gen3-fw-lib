@@ -1,7 +1,0 @@
-verilog work hdl/verilog/aw_atc.v
-verilog work hdl/verilog/w_atc.v
-verilog work hdl/verilog/b_atc.v
-verilog work hdl/verilog/atc.v
-verilog work hdl/verilog/trace_buffer.v
-verilog work hdl/verilog/processing_system7.v
-vhdl    work hdl/vhdl/processing_system7.vhd

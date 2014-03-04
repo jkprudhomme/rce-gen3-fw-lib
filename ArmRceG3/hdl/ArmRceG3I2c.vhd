@@ -50,22 +50,36 @@ end ArmRceG3I2c;
 
 architecture IMP of ArmRceG3I2c is
 
-   signal i2cBramRd   : sl;
-   signal i2cBramWr   : sl;
-   signal i2cBramAddr : slv(15 downto 0);
-   signal i2cBramDout : slv( 7 downto 0);
-   signal locBramDout : slv( 7 downto 0);
-   signal i2cBramDin  : slv( 7 downto 0);
-   signal cpuBramWr   : sl;
-   signal cpuBramAddr : slv(8  downto 0);
-   signal cpuBramDout : slv(31 downto 0);
-   signal cpuBramDin  : slv(31 downto 0);
-   signal i2cIn       : i2c_in_type;
-   signal i2cOut      : i2c_out_type;
-   signal readEnDly   : slv(1 downto 0);
-   signal aFullData   : slv(7 downto 0);
+   signal i2cBramRd    : sl;
+   signal i2cBramWr    : sl;
+   signal i2cBramAddr  : slv(15 downto 0);
+   signal i2cBramDout  : slv( 7 downto 0);
+   signal locBramDout  : slv( 7 downto 0);
+   signal i2cBramDin   : slv( 7 downto 0);
+   signal cpuBramWr    : sl;
+   signal cpuBramAddr  : slv(8  downto 0);
+   signal cpuBramDout  : slv(31 downto 0);
+   signal cpuBramDin   : slv(31 downto 0);
+   signal i2cIn        : i2c_in_type;
+   signal i2cOut       : i2c_out_type;
+   signal readEnDly    : slv(1 downto 0);
+   signal aFullData    : slv(7 downto 0);
+   signal axiClkRstInt : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -------------------------
    -- I2c Slave
@@ -82,7 +96,7 @@ begin
          ENDIANNESS_G         => 0  -- 0=LE, 1=BE
       ) port map (
          sRst   => '0',
-         aRst   => axiClkRst,
+         aRst   => axiClkRstInt,
          clk    => axiClk,
          addr   => i2cBramAddr,
          wrEn   => i2cBramWr,
@@ -132,23 +146,24 @@ begin
    i2cBramDout <= aFullData when i2cBramAddr(11) = '1' else locBramDout;
 
    -- Register almost full data
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         aFullData <= (others=>'0') after TPD_G;
-      elsif rising_edge(axiClk) then
-         aFullData(0) <= bsiFromFifo.almostFull after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            aFullData <= (others=>'0') after TPD_G;
+         else
+            aFullData(0) <= bsiFromFifo.almostFull after TPD_G;
+         end if;
       end if;
    end process;
 
    -------------------------
    -- Connect to CPU FIFO
    -------------------------
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         bsiToFifo <= QWordToFifoInit after TPD_G;
-      elsif rising_edge(axiClk) then
-
-         if i2cBramWr = '1' then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            bsiToFifo <= QWordToFifoInit after TPD_G;
+         elsif i2cBramWr = '1' then
             if i2cBramAddr(1 downto 0) = 0 then
                bsiToFifo.data(7  downto  0) <= i2cBramDin after TPD_G;
                bsiToFifo.valid              <= '0'        after TPD_G;
@@ -172,29 +187,33 @@ begin
    -------------------------
    -- CPU Interface
    -------------------------
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         cpuBramWr   <= '0'           after TPD_G;
-         cpuBramAddr <= (others=>'0') after TPD_G;
-         cpuBramDin  <= (others=>'0') after TPD_G;
-      elsif rising_edge(axiClk) then
-         cpuBramWr   <= localBusMaster.writeEnable       after TPD_G;
-         cpuBramAddr <= localBusMaster.addr(10 downto 2) after TPD_G;
-         cpuBramDin  <= localBusMaster.writeData         after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            cpuBramWr   <= '0'           after TPD_G;
+            cpuBramAddr <= (others=>'0') after TPD_G;
+            cpuBramDin  <= (others=>'0') after TPD_G;
+         else
+            cpuBramWr   <= localBusMaster.writeEnable       after TPD_G;
+            cpuBramAddr <= localBusMaster.addr(10 downto 2) after TPD_G;
+            cpuBramDin  <= localBusMaster.writeData         after TPD_G;
+         end if;
       end if;
    end process;
 
    -- Clock delay for read data valid
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         localBusSlave.readValid <= '0'           after TPD_G;
-         localBusSlave.readData  <= (others=>'0') after TPD_G;
-         readEnDly               <= (others=>'0') after TPD_G;
-      elsif rising_edge(axiClk) then
-         localBusSlave.readData  <= cpuBramDout               after TPD_G;
-         readEnDly(1)            <= localBusMaster.readEnable after TPD_G;
-         readEnDly(0)            <= readEnDly(1)              after TPD_G;
-         localBusSlave.readValid <= readEnDly(0)              after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            localBusSlave.readValid <= '0'           after TPD_G;
+            localBusSlave.readData  <= (others=>'0') after TPD_G;
+            readEnDly               <= (others=>'0') after TPD_G;
+         else
+            localBusSlave.readData  <= cpuBramDout               after TPD_G;
+            readEnDly(1)            <= localBusMaster.readEnable after TPD_G;
+            readEnDly(0)            <= readEnDly(1)              after TPD_G;
+            localBusSlave.readValid <= readEnDly(0)              after TPD_G;
+         end if;
       end if;
    end process;
 

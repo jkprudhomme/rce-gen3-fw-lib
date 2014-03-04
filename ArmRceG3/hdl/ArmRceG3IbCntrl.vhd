@@ -80,8 +80,22 @@ architecture structure of ArmRceG3IbCntrl is
    signal axiWriteFromCntrl         : AxiWriteFromCntrlVector(8 downto 0);
    signal iqwordToFifo              : QWordToFifoVector(4 downto 0);
    signal iqwordFromFifo            : QWordFromFifoVector(4 downto 0);
+   signal axiClkRstInt              : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -----------------------------------------
    -- Dirty flags
@@ -89,16 +103,14 @@ begin
 
    -- Set and clear flags
    U_DirtyGen: for i in 0 to 4 generate
-      process ( axiClk, axiClkRst ) begin
-         if axiClkRst = '1' then
-            idirtyFlag(i) <= '0' after TPD_G;
-         elsif rising_edge(axiClk) then
-            if dirtyFlagClrEn = '1' and dirtyFlagClrSel = i then
+      process ( axiClk ) begin
+         if rising_edge(axiClk) then
+            if axiClkRstInt = '1' then
                idirtyFlag(i) <= '0' after TPD_G;
-            else
-               if dirtyFlagSet(i) = '1' then
-                  idirtyFlag(i) <= '1' after TPD_G;
-               end if;
+            elsif dirtyFlagClrEn = '1' and dirtyFlagClrSel = i then
+               idirtyFlag(i) <= '0' after TPD_G;
+            elsif dirtyFlagSet(i) = '1' then
+               idirtyFlag(i) <= '1' after TPD_G;
             end if;
          end if;
       end process;
@@ -116,7 +128,7 @@ begin
          CHAN_CNT_G => 9
       ) port map (
          axiClk               => axiClk,
-         axiClkRst            => axiClkRst,
+         axiClkRst            => axiClkRstInt,
          axiSlaveWriteFromArm => axiAcpSlaveWriteFromArm,
          axiSlaveWriteToArm   => axiAcpSlaveWriteToArm,
          writeDmaCache        => writeDmaCache,
@@ -151,7 +163,7 @@ begin
             TPD_G => TPD_G
          ) port map (
             axiClk                  => axiClk,
-            axiClkRst               => axiClkRst,
+            axiClkRst               => axiClkRstInt,
             axiWriteToCntrl         => axiWriteToCntrl(i),
             axiWriteFromCntrl       => axiWriteFromCntrl(i),
             headerPtrWrite          => headerPtrWrite(i),
@@ -182,7 +194,7 @@ begin
             MEM_CHAN_G  => i
          ) port map (
             axiClk                  => axiClk,
-            axiClkRst               => axiClkRst,
+            axiClkRst               => axiClkRstInt,
             axiWriteToCntrl         => axiWriteToCntrl(i+4),
             axiWriteFromCntrl       => axiWriteFromCntrl(i+4),
             memDirty                => idirtyFlag(i),

@@ -11,19 +11,19 @@ EN64=-full64
 rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/glbl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/Version.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/StdRtlPkg.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/Synchronizer.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/SynchronizerEdge.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/SynchronizerVector.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/ArbiterPkg.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/Arbiter.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/RstSync.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/SimpleDualPortRam.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/FifoAsyncBuiltIn.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/FifoSyncBuiltIn.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/FifoAsync.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/FifoSync.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/rtl/Fifo.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/StdRtlPkg.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/Synchronizer.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/SynchronizerEdge.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/SynchronizerVector.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/ArbiterPkg.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/Arbiter.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/RstSync.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/ram/rtl/SimpleDualPortRam.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoAsyncBuiltIn.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoSyncBuiltIn.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoAsync.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoSync.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/Fifo.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/stdlib.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cSlave.vhd

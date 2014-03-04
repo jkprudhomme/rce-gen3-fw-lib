@@ -81,22 +81,18 @@ architecture structure of ArmRceG3Top is
    signal fclkRst2                 : sl;
    signal fclkRst1                 : sl;
    signal fclkRst0                 : sl;
-   signal axiGpMasterReset         : slv(1 downto 0);
    signal axiGpMasterWriteFromArm  : AxiWriteMasterVector(1 downto 0);
    signal axiGpMasterWriteToArm    : AxiWriteSlaveVector(1 downto 0);
    signal axiGpMasterReadFromArm   : AxiReadMasterVector(1 downto 0);
    signal axiGpMasterReadToArm     : AxiReadSlaveVector(1 downto 0);
-   signal axiGpSlaveReset          : slv(1 downto 0);
    signal axiGpSlaveWriteFromArm   : AxiWriteSlaveVector(1 downto 0);
    signal axiGpSlaveWriteToArm     : AxiWriteMasterVector(1 downto 0);
    signal axiGpSlaveReadFromArm    : AxiReadSlaveVector(1 downto 0);
    signal axiGpSlaveReadToArm      : AxiReadMasterVector(1 downto 0);
-   signal axiAcpSlaveReset         : sl;
    signal axiAcpSlaveWriteFromArm  : AxiWriteSlaveType;
    signal axiAcpSlaveWriteToArm    : AxiWriteMasterType;
    signal axiAcpSlaveReadFromArm   : AxiReadSlaveType;
    signal axiAcpSlaveReadToArm     : AxiReadMasterType;
-   signal axiHpSlaveReset          : slv(3 downto 0);
    signal axiHpSlaveWriteFromArm   : AxiWriteSlaveVector(3 downto 0);
    signal axiHpSlaveWriteToArm     : AxiWriteMasterVector(3 downto 0);
    signal axiHpSlaveReadFromArm    : AxiReadSlaveVector(3 downto 0);
@@ -137,22 +133,18 @@ begin
          fclkRst0                 => fclkRst0,
          axiClk                   => iaxiClk,
          armInt                   => armInt,
-         axiGpMasterReset         => axiGpMasterReset,
          axiGpMasterWriteFromArm  => axiGpMasterWriteFromArm,
          axiGpMasterWriteToArm    => axiGpMasterWriteToArm,
          axiGpMasterReadFromArm   => axiGpMasterReadFromArm,
          axiGpMasterReadToArm     => axiGpMasterReadToArm,
-         axiGpSlaveReset          => axiGpSlaveReset,
          axiGpSlaveWriteFromArm   => axiGpSlaveWriteFromArm,
          axiGpSlaveWriteToArm     => axiGpSlaveWriteToArm,
          axiGpSlaveReadFromArm    => axiGpSlaveReadFromArm,
          axiGpSlaveReadToArm      => axiGpSlaveReadToArm,
-         axiAcpSlaveReset         => axiAcpSlaveReset,
          axiAcpSlaveWriteFromArm  => axiAcpSlaveWriteFromArm,
          axiAcpSlaveWriteToArm    => axiAcpSlaveWriteToArm,
          axiAcpSlaveReadFromArm   => axiAcpSlaveReadFromArm,
          axiAcpSlaveReadToArm     => axiAcpSlaveReadToArm,
-         axiHpSlaveReset          => axiHpSlaveReset,
          axiHpSlaveWriteFromArm   => axiHpSlaveWriteFromArm,
          axiHpSlaveWriteToArm     => axiHpSlaveWriteToArm,
          axiHpSlaveReadFromArm    => axiHpSlaveReadFromArm,
@@ -187,10 +179,6 @@ begin
          fclkRst2                 => fclkRst2,
          fclkRst1                 => fclkRst1,
          fclkRst0                 => fclkRst0,
-         axiGpMasterReset         => axiGpMasterReset,
-         axiGpSlaveReset          => axiGpSlaveReset,
-         axiAcpSlaveReset         => axiAcpSlaveReset,
-         axiHpSlaveReset          => axiHpSlaveReset,
          axiClk                   => iaxiClk,
          axiClkRst                => iaxiClkRst,
          sysClk125                => isysClk125,
@@ -239,65 +227,67 @@ begin
    locLocalBusMaster   <= intLocalBusMaster(0);
    intLocalBusSlave(0) <= locLocalBusSlave;
 
-   process ( iaxiClk, iaxiClkRst ) 
+   process ( iaxiClk ) 
       variable c : character;
    begin
-      if iaxiClkRst = '1' then
-         scratchPad       <= (others=>'0')     after TPD_G;
-         locLocalBusSlave <= LocalBusSlaveInit after TPD_G;
-         iclkSelA         <= (others=>'0')     after TPD_G;
-         iclkSelB         <= (others=>'0')     after TPD_G;
-      elsif rising_edge(iaxiClk) then
-         locLocalBusSlave.readValid <= locLocalBusMaster.readEnable after TPD_G;
-         locLocalBusSlave.readData  <= x"deadbeef"                     after TPD_G;
+      if rising_edge(iaxiClk) then
+         if iaxiClkRst = '1' then
+            scratchPad       <= (others=>'0')     after TPD_G;
+            locLocalBusSlave <= LocalBusSlaveInit after TPD_G;
+            iclkSelA         <= (others=>'0')     after TPD_G;
+            iclkSelB         <= (others=>'0')     after TPD_G;
+         else
+            locLocalBusSlave.readValid <= locLocalBusMaster.readEnable after TPD_G;
+            locLocalBusSlave.readData  <= x"deadbeef"                     after TPD_G;
 
-         -- 0x80000000
-         if locLocalBusMaster.addr(23 downto 0) = x"000000" then
-            locLocalBusSlave.readData <= FPGA_VERSION_C after TPD_G;
+            -- 0x80000000
+            if locLocalBusMaster.addr(23 downto 0) = x"000000" then
+               locLocalBusSlave.readData <= FPGA_VERSION_C after TPD_G;
 
-         -- 0x80000004
-         elsif locLocalBusMaster.addr(23 downto 2) = x"000004" then
-            if locLocalBusMaster.writeEnable = '1' then
-               scratchPad <= locLocalBusMaster.writeData after TPD_G;   
-            end if;
-            locLocalBusSlave.readData <= scratchPad after TPD_G;
-
-         -- 0x80000008
-         elsif locLocalBusMaster.addr(23 downto 0) = x"000008" then
-            locLocalBusSlave.readData <= ArmRceG3Version after TPD_G;
-
-         -- 0x80000010
-         elsif locLocalBusMaster.addr(23 downto 0) = x"000010" then
-            if locLocalBusMaster.writeEnable = '1' then
-               iclkSelA(0) <= locLocalBusMaster.writeData(0) after TPD_G;   
-               iclkSelB(0) <= locLocalBusMaster.writeData(1) after TPD_G;   
-            end if;
-
-            locLocalBusSlave.readData(0)           <= iclkSelA(0)   after TPD_G;
-            locLocalBusSlave.readData(1)           <= iclkSelB(0)   after TPD_G;
-            locLocalBusSlave.readData(31 downto 2) <= (others=>'0') after TPD_G;
-
-         -- 0x80000014
-         elsif locLocalBusMaster.addr(23 downto 0) = x"000014" then
-            if locLocalBusMaster.writeEnable = '1' then
-               iclkSelA(1) <= locLocalBusMaster.writeData(0) after TPD_G;   
-               iclkSelB(1) <= locLocalBusMaster.writeData(1) after TPD_G;   
-            end if;
-
-            locLocalBusSlave.readData(0)           <= iclkSelA(1)   after TPD_G;
-            locLocalBusSlave.readData(1)           <= iclkSelB(1)   after TPD_G;
-            locLocalBusSlave.readData(31 downto 2) <= (others=>'0') after TPD_G;
-
-         -- 0x80001000
-         elsif locLocalBusMaster.addr(23 downto 8) = x"0010" then
-            locLocalBusSlave.readData <= (others=>'0') after TPD_G;
-
-            for x in 0 to 3 loop
-               if (conv_integer(locLocalBusMaster.addr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
-                  c := BUILD_STAMP_C(conv_integer(locLocalBusMaster.addr(7 downto 0))+x+1);
-                  locLocalBusSlave.readData(x*8+7 downto x*8) <= conv_std_logic_vector(character'pos(c),8) after TPD_G;
+            -- 0x80000004
+            elsif locLocalBusMaster.addr(23 downto 2) = x"000004" then
+               if locLocalBusMaster.writeEnable = '1' then
+                  scratchPad <= locLocalBusMaster.writeData after TPD_G;   
                end if;
-            end loop;
+               locLocalBusSlave.readData <= scratchPad after TPD_G;
+
+            -- 0x80000008
+            elsif locLocalBusMaster.addr(23 downto 0) = x"000008" then
+               locLocalBusSlave.readData <= ArmRceG3Version after TPD_G;
+
+            -- 0x80000010
+            elsif locLocalBusMaster.addr(23 downto 0) = x"000010" then
+               if locLocalBusMaster.writeEnable = '1' then
+                  iclkSelA(0) <= locLocalBusMaster.writeData(0) after TPD_G;   
+                  iclkSelB(0) <= locLocalBusMaster.writeData(1) after TPD_G;   
+               end if;
+
+               locLocalBusSlave.readData(0)           <= iclkSelA(0)   after TPD_G;
+               locLocalBusSlave.readData(1)           <= iclkSelB(0)   after TPD_G;
+               locLocalBusSlave.readData(31 downto 2) <= (others=>'0') after TPD_G;
+
+            -- 0x80000014
+            elsif locLocalBusMaster.addr(23 downto 0) = x"000014" then
+               if locLocalBusMaster.writeEnable = '1' then
+                  iclkSelA(1) <= locLocalBusMaster.writeData(0) after TPD_G;   
+                  iclkSelB(1) <= locLocalBusMaster.writeData(1) after TPD_G;   
+               end if;
+
+               locLocalBusSlave.readData(0)           <= iclkSelA(1)   after TPD_G;
+               locLocalBusSlave.readData(1)           <= iclkSelB(1)   after TPD_G;
+               locLocalBusSlave.readData(31 downto 2) <= (others=>'0') after TPD_G;
+
+            -- 0x80001000
+            elsif locLocalBusMaster.addr(23 downto 8) = x"0010" then
+               locLocalBusSlave.readData <= (others=>'0') after TPD_G;
+
+               for x in 0 to 3 loop
+                  if (conv_integer(locLocalBusMaster.addr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
+                     c := BUILD_STAMP_C(conv_integer(locLocalBusMaster.addr(7 downto 0))+x+1);
+                     locLocalBusSlave.readData(x*8+7 downto x*8) <= conv_std_logic_vector(character'pos(c),8) after TPD_G;
+                  end if;
+               end loop;
+            end if;
          end if;
       end if;  
    end process;

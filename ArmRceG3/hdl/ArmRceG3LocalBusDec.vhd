@@ -49,54 +49,72 @@ end ArmRceG3LocalBusDec;
 architecture structure of ArmRceG3LocalBusDec is
 
    -- Local signals
-   signal dsSelect : slv(7 downto 0);
+   signal dsSelect     : slv(7 downto 0);
+   signal axiClkRstInt : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
 
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
+
    -- Decode transactions on the way down
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         dsLocalBusMaster <= (others=>localBusMasterInit) after TPD_G;
-         dsSelect         <= (others=>'0')                after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            dsLocalBusMaster <= (others=>localBusMasterInit) after TPD_G;
+            dsSelect         <= (others=>'0')                after TPD_G;
+         else
 
-         -- Init 
-         dsSelect <= (others=>'0') after TPD_G;
+            -- Init 
+            dsSelect <= (others=>'0') after TPD_G;
 
-         -- Each downstream client
-         for i in 0 to COUNT_G-1 loop
-            dsLocalBusMaster(i).addr        <= usLocalBusMaster.addr      after TPD_G;
-            dsLocalBusMaster(i).writeData   <= usLocalBusMaster.writeData after TPD_G;
-            dsLocalBusMaster(i).writeEnable <= '0'                        after TPD_G;
-            dsLocalBusMaster(i).readEnable  <= '0'                        after TPD_G;
+            -- Each downstream client
+            for i in 0 to COUNT_G-1 loop
+               dsLocalBusMaster(i).addr        <= usLocalBusMaster.addr      after TPD_G;
+               dsLocalBusMaster(i).writeData   <= usLocalBusMaster.writeData after TPD_G;
+               dsLocalBusMaster(i).writeEnable <= '0'                        after TPD_G;
+               dsLocalBusMaster(i).readEnable  <= '0'                        after TPD_G;
 
-            -- Match address
-            if (usLocalBusMaster.addr and dsLocalBusSlave(i).addrMask) = dsLocalBusSlave(i).addrBase then
-               dsLocalBusMaster(i).writeEnable <= usLocalBusMaster.writeEnable after TPD_G;
-               dsLocalBusMaster(i).readEnable  <= usLocalBusMaster.readEnable  after TPD_G;
-               dsSelect                        <= conv_std_logic_vector(i,8)   after TPD_G;
-            end if;
-         end loop;
+               -- Match address
+               if (usLocalBusMaster.addr and dsLocalBusSlave(i).addrMask) = dsLocalBusSlave(i).addrBase then
+                  dsLocalBusMaster(i).writeEnable <= usLocalBusMaster.writeEnable after TPD_G;
+                  dsLocalBusMaster(i).readEnable  <= usLocalBusMaster.readEnable  after TPD_G;
+                  dsSelect                        <= conv_std_logic_vector(i,8)   after TPD_G;
+               end if;
+            end loop;
+         end if;
       end if;
    end process;
 
    -- Mux transactions on the way up
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         usLocalBusSlave <= localBusSlaveInit after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            usLocalBusSlave <= localBusSlaveInit after TPD_G;
+         else
 
-         usLocalBusSlave <= dsLocalBusSlave(conv_integer(dsSelect)) after TPD_G;
+            usLocalBusSlave <= dsLocalBusSlave(conv_integer(dsSelect)) after TPD_G;
 
-         -- Init
-         --usLocalBusSlave <= localBusSlaveInit after TPD_G;
+            -- Init
+            --usLocalBusSlave <= localBusSlaveInit after TPD_G;
 
-         -- Each downstream client
-         --for i in 0 to COUNT_G-1 loop
-            --if dsEnable(i) = '1' then
-               --usLocalBusSlave <= dsLocalBusSlave(i) after TPD_G;
-            --end if;
-         --end loop;
+            -- Each downstream client
+            --for i in 0 to COUNT_G-1 loop
+               --if dsEnable(i) = '1' then
+                  --usLocalBusSlave <= dsLocalBusSlave(i) after TPD_G;
+               --end if;
+            --end loop;
+         end if;
       end if;
    end process;
 

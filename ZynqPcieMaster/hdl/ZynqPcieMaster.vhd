@@ -151,8 +151,22 @@ architecture structure of ZynqPcieMaster is
    signal cfgMsgDataReg          : slv(30 downto 0);
    signal control0               : slv(35 DOWNTO 0);
    signal trig0                  : slv(255 DOWNTO 0);
+   signal axiClkRstInt           : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -- Outputs
    localBusSlave <= intLocalBusSlave;
@@ -164,162 +178,164 @@ begin
    --------------------------------------------
    -- Registers: 0xBC00_0000 - 0xBFFF_FFFF
    --------------------------------------------
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         intLocalBusSlave <= LocalBusSlaveInit       after TPD_G;
-         wrFifoDin         <= (others=>'0')          after TPD_G;
-         wrFifoWrEn        <= '0'                    after TPD_G;
-         rdFifoRdEn        <= '0'                    after TPD_G;
-         cfgRead           <= '0'                    after TPD_G;
-         cfgWrite          <= '0'                    after TPD_G;
-         cfgBusNumber      <= (others=>'0')          after TPD_G;
-         cfgDeviceNumber   <= (others=>'0')          after TPD_G;
-         cfgFunctionNumber <= (others=>'0')          after TPD_G;
-         pcieEnable        <= '0'                    after TPD_G;
-         remResetL         <= '0'                    after TPD_G;
-      elsif rising_edge(axiClk) then
-         intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
-         intLocalBusSlave.readData  <= x"deadbeef"               after TPD_G;
-         wrFifoWrEn                 <= '0'                       after TPD_G;
-         rdFifoRdEn                 <= '0'                       after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            intLocalBusSlave <= LocalBusSlaveInit       after TPD_G;
+            wrFifoDin         <= (others=>'0')          after TPD_G;
+            wrFifoWrEn        <= '0'                    after TPD_G;
+            rdFifoRdEn        <= '0'                    after TPD_G;
+            cfgRead           <= '0'                    after TPD_G;
+            cfgWrite          <= '0'                    after TPD_G;
+            cfgBusNumber      <= (others=>'0')          after TPD_G;
+            cfgDeviceNumber   <= (others=>'0')          after TPD_G;
+            cfgFunctionNumber <= (others=>'0')          after TPD_G;
+            pcieEnable        <= '0'                    after TPD_G;
+            remResetL         <= '0'                    after TPD_G;
+         else
+            intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
+            intLocalBusSlave.readData  <= x"deadbeef"               after TPD_G;
+            wrFifoWrEn                 <= '0'                       after TPD_G;
+            rdFifoRdEn                 <= '0'                       after TPD_G;
 
-         -- Config done
-         if cfgDone = '1' then
-            cfgWrite <= '0' after TPD_G;
-            cfgRead  <= '0' after TPD_G;
-         end if;
-
-         -- PCIE Configuration Port, 0xBC000000 - 0xBC000FFF
-         if localBusMaster.addr(15 downto 12) = x"0" then
-
-            -- Write start
-            if localBusMaster.writeEnable = '1' then
-               cfgWrite <= '1' after TPD_G;
+            -- Config done
+            if cfgDone = '1' then
+               cfgWrite <= '0' after TPD_G;
+               cfgRead  <= '0' after TPD_G;
             end if;
 
-            -- Read start
-            if localBusMaster.readEnable = '1' then
-               cfgRead <= '1' after TPD_G;
+            -- PCIE Configuration Port, 0xBC000000 - 0xBC000FFF
+            if localBusMaster.addr(15 downto 12) = x"0" then
+
+               -- Write start
+               if localBusMaster.writeEnable = '1' then
+                  cfgWrite <= '1' after TPD_G;
+               end if;
+
+               -- Read start
+               if localBusMaster.readEnable = '1' then
+                  cfgRead <= '1' after TPD_G;
+               end if;
+
+               -- Read
+               intLocalBusSlave.readValid <= cfgDone and cfgRead after TPD_G;
+               intLocalBusSlave.readData  <= cfgDoutReg          after TPD_G;
+
+            -- Write FIFO QWord0, - 0xBC001000
+            elsif localBusMaster.addr(15 downto 0) = x"1000" then
+               if localBusMaster.writeEnable = '1' then
+                  wrFifoDin(31 downto  0)   <= localBusMaster.writeData after TPD_G;
+               end if;
+
+            -- Write FIFO QWord1, - 0xBC001004
+            elsif localBusMaster.addr(15 downto 0) = x"1004" then
+               if localBusMaster.writeEnable = '1' then
+                  wrFifoDin(63 downto 32)   <= localBusMaster.writeData after TPD_G;
+               end if;
+
+            -- Write FIFO QWord2, - 0xBC001008
+            elsif localBusMaster.addr(15 downto 0) = x"1008" then
+               if localBusMaster.writeEnable = '1' then
+                  wrFifoDin(94 downto 64)   <= localBusMaster.writeData(30 downto 0) after TPD_G;
+                  wrFifoWrEn                <= '1'                                   after TPD_G;
+               end if;
+
+            -- Read FIFO QWord0, - 0xBC00100C
+            elsif localBusMaster.addr(15 downto 0) = x"100C" then
+               intLocalBusSlave.readData <= rdFifoDout(31 downto 0)   after TPD_G;
+               rdFifoRdEn                <= localBusMaster.readEnable after TPD_G;
+
+            -- Read FIFO QWord1, - 0xBC001010
+            elsif localBusMaster.addr(15 downto 0) = x"1010" then
+               intLocalBusSlave.readData <= rdFifoDout(63 downto 32) after TPD_G;
+
+            -- Read FIFO QWord2, - 0xBC001014
+            elsif localBusMaster.addr(15 downto 0) = x"1014" then
+               intLocalBusSlave.readData(31)          <= rdFifoValid              after TPD_G;
+               intLocalBusSlave.readData(30 downto 0) <= rdFifoDout(94 downto 64) after TPD_G;
+
+            -- Config Bus Number, - 0xBC001018
+            elsif localBusMaster.addr(15 downto 0) = x"1018" then
+               if localBusMaster.writeEnable = '1' then
+                  cfgBusNumber <= localBusMaster.writeData(7 downto 0) after TPD_G;
+               end if;
+               intLocalBusSlave.readData <= x"000000" & cfgBusNumber after TPD_G;
+
+            -- Config Device Number, - 0xBC00101C
+            elsif localBusMaster.addr(15 downto 0) = x"101C" then
+               if localBusMaster.writeEnable = '1' then
+                  cfgDeviceNumber <= localBusMaster.writeData(4 downto 0) after TPD_G;
+               end if;
+               intLocalBusSlave.readData <= x"000000" & "000" & cfgDeviceNumber after TPD_G;
+
+            -- Config Function Number, - 0xBC001020
+            elsif localBusMaster.addr(15 downto 0) = x"1020" then
+               if localBusMaster.writeEnable = '1' then
+                  cfgFunctionNumber <= localBusMaster.writeData(2 downto 0) after TPD_G;
+               end if;
+               intLocalBusSlave.readData <= x"0000000" & "0" & cfgFunctionNumber after TPD_G;
+
+            -- Config Status, - 0xBC001024
+            elsif localBusMaster.addr(15 downto 0) = x"1024" then
+               intLocalBusSlave.readData <= x"0000" & cfgStatus after TPD_G;
+
+            -- Config Status, - 0xBC001028
+            elsif localBusMaster.addr(15 downto 0) = x"1028" then
+               intLocalBusSlave.readData <= x"0000" & cfgCommand after TPD_G;
+
+            -- Config DStatus, - 0xBC00102C
+            elsif localBusMaster.addr(15 downto 0) = x"102C" then
+               intLocalBusSlave.readData <= x"0000" & cfgDStatus after TPD_G;
+
+            -- Config DStatus, - 0xBC001030
+            elsif localBusMaster.addr(15 downto 0) = x"1030" then
+               intLocalBusSlave.readData <= x"0000" & cfgDCommand after TPD_G;
+
+            -- Config DStatus2, - 0xBC001034
+            elsif localBusMaster.addr(15 downto 0) = x"1034" then
+               intLocalBusSlave.readData <= x"0000" & cfgDCommand2 after TPD_G;
+
+            -- Config LStatus, - 0xBC001038
+            elsif localBusMaster.addr(15 downto 0) = x"1038" then
+               intLocalBusSlave.readData <= x"0000" & cfgLStatus after TPD_G;
+
+            -- Config LStatus, - 0xBC00103C
+            elsif localBusMaster.addr(15 downto 0) = x"103C" then
+               intLocalBusSlave.readData <= x"0000" & cfgLCommand after TPD_G;
+
+            -- Other Status, - 0xBC001040
+            elsif localBusMaster.addr(15 downto 0) = x"1040" then
+               intLocalBusSlave.readData(2 downto 0)   <= cfgPcieLinkState      after TPD_G;
+               intLocalBusSlave.readData(3)            <= linkUp                after TPD_G;
+               intLocalBusSlave.readData(4)            <= phyLinkUp             after TPD_G;
+               intLocalBusSlave.readData(6 downto 5)   <= cfgPmcsrPowerstate    after TPD_G;
+               intLocalBusSlave.readData(7)            <= cfgPmcsrPmeEn         after TPD_G;
+               intLocalBusSlave.readData(8)            <= cfgPmcsrPmeStatus     after TPD_G;
+               intLocalBusSlave.readData(9)            <= cfgReceivedFuncLvlRst after TPD_G;
+               intLocalBusSlave.readData(11 downto 10) <= (others=>'0')         after TPD_G;
+               intLocalBusSlave.readData(12)           <= pciClkRst             after TPD_G;
+               intLocalBusSlave.readData(15 downto 13) <= (others=>'0')         after TPD_G;
+               intLocalBusSlave.readData(31 downto 16) <= debugCount            after TPD_G;
+
+            -- Enable Register - 0xBC001044
+            elsif localBusMaster.addr(15 downto 0) = x"1044" then
+               if localBusMaster.writeEnable = '1' then
+                  pcieEnable <= localBusMaster.writeData(0) after TPD_G;
+                  remResetL  <= localBusMaster.writeData(1) after TPD_G;
+               end if;
+               intLocalBusSlave.readData(0)            <= pcieEnable            after TPD_G;
+               intLocalBusSlave.readData(1)            <= remResetL             after TPD_G;
+               intLocalBusSlave.readData(3  downto  2) <= (others=>'0')         after TPD_G;
+               intLocalBusSlave.readData(4)            <= intResetL             after TPD_G;
+               intLocalBusSlave.readData(31 downto  5) <= (others=>'0')         after TPD_G;
+
+            -- Config status Register - 0xBC001048
+            elsif localBusMaster.addr(15 downto 0) = x"1048" then
+               intLocalBusSlave.readData <= '0' & cfgMsgDataReg after TPD_G;
             end if;
 
-            -- Read
-            intLocalBusSlave.readValid <= cfgDone and cfgRead after TPD_G;
-            intLocalBusSlave.readData  <= cfgDoutReg          after TPD_G;
-
-         -- Write FIFO QWord0, - 0xBC001000
-         elsif localBusMaster.addr(15 downto 0) = x"1000" then
-            if localBusMaster.writeEnable = '1' then
-               wrFifoDin(31 downto  0)   <= localBusMaster.writeData after TPD_G;
-            end if;
-
-         -- Write FIFO QWord1, - 0xBC001004
-         elsif localBusMaster.addr(15 downto 0) = x"1004" then
-            if localBusMaster.writeEnable = '1' then
-               wrFifoDin(63 downto 32)   <= localBusMaster.writeData after TPD_G;
-            end if;
-
-         -- Write FIFO QWord2, - 0xBC001008
-         elsif localBusMaster.addr(15 downto 0) = x"1008" then
-            if localBusMaster.writeEnable = '1' then
-               wrFifoDin(94 downto 64)   <= localBusMaster.writeData(30 downto 0) after TPD_G;
-               wrFifoWrEn                <= '1'                                   after TPD_G;
-            end if;
-
-         -- Read FIFO QWord0, - 0xBC00100C
-         elsif localBusMaster.addr(15 downto 0) = x"100C" then
-            intLocalBusSlave.readData <= rdFifoDout(31 downto 0)   after TPD_G;
-            rdFifoRdEn                <= localBusMaster.readEnable after TPD_G;
-
-         -- Read FIFO QWord1, - 0xBC001010
-         elsif localBusMaster.addr(15 downto 0) = x"1010" then
-            intLocalBusSlave.readData <= rdFifoDout(63 downto 32) after TPD_G;
-
-         -- Read FIFO QWord2, - 0xBC001014
-         elsif localBusMaster.addr(15 downto 0) = x"1014" then
-            intLocalBusSlave.readData(31)          <= rdFifoValid              after TPD_G;
-            intLocalBusSlave.readData(30 downto 0) <= rdFifoDout(94 downto 64) after TPD_G;
-
-         -- Config Bus Number, - 0xBC001018
-         elsif localBusMaster.addr(15 downto 0) = x"1018" then
-            if localBusMaster.writeEnable = '1' then
-               cfgBusNumber <= localBusMaster.writeData(7 downto 0) after TPD_G;
-            end if;
-            intLocalBusSlave.readData <= x"000000" & cfgBusNumber after TPD_G;
-
-         -- Config Device Number, - 0xBC00101C
-         elsif localBusMaster.addr(15 downto 0) = x"101C" then
-            if localBusMaster.writeEnable = '1' then
-               cfgDeviceNumber <= localBusMaster.writeData(4 downto 0) after TPD_G;
-            end if;
-            intLocalBusSlave.readData <= x"000000" & "000" & cfgDeviceNumber after TPD_G;
-
-         -- Config Function Number, - 0xBC001020
-         elsif localBusMaster.addr(15 downto 0) = x"1020" then
-            if localBusMaster.writeEnable = '1' then
-               cfgFunctionNumber <= localBusMaster.writeData(2 downto 0) after TPD_G;
-            end if;
-            intLocalBusSlave.readData <= x"0000000" & "0" & cfgFunctionNumber after TPD_G;
-
-         -- Config Status, - 0xBC001024
-         elsif localBusMaster.addr(15 downto 0) = x"1024" then
-            intLocalBusSlave.readData <= x"0000" & cfgStatus after TPD_G;
-
-         -- Config Status, - 0xBC001028
-         elsif localBusMaster.addr(15 downto 0) = x"1028" then
-            intLocalBusSlave.readData <= x"0000" & cfgCommand after TPD_G;
-
-         -- Config DStatus, - 0xBC00102C
-         elsif localBusMaster.addr(15 downto 0) = x"102C" then
-            intLocalBusSlave.readData <= x"0000" & cfgDStatus after TPD_G;
-
-         -- Config DStatus, - 0xBC001030
-         elsif localBusMaster.addr(15 downto 0) = x"1030" then
-            intLocalBusSlave.readData <= x"0000" & cfgDCommand after TPD_G;
-
-         -- Config DStatus2, - 0xBC001034
-         elsif localBusMaster.addr(15 downto 0) = x"1034" then
-            intLocalBusSlave.readData <= x"0000" & cfgDCommand2 after TPD_G;
-
-         -- Config LStatus, - 0xBC001038
-         elsif localBusMaster.addr(15 downto 0) = x"1038" then
-            intLocalBusSlave.readData <= x"0000" & cfgLStatus after TPD_G;
-
-         -- Config LStatus, - 0xBC00103C
-         elsif localBusMaster.addr(15 downto 0) = x"103C" then
-            intLocalBusSlave.readData <= x"0000" & cfgLCommand after TPD_G;
-
-         -- Other Status, - 0xBC001040
-         elsif localBusMaster.addr(15 downto 0) = x"1040" then
-            intLocalBusSlave.readData(2 downto 0)   <= cfgPcieLinkState      after TPD_G;
-            intLocalBusSlave.readData(3)            <= linkUp                after TPD_G;
-            intLocalBusSlave.readData(4)            <= phyLinkUp             after TPD_G;
-            intLocalBusSlave.readData(6 downto 5)   <= cfgPmcsrPowerstate    after TPD_G;
-            intLocalBusSlave.readData(7)            <= cfgPmcsrPmeEn         after TPD_G;
-            intLocalBusSlave.readData(8)            <= cfgPmcsrPmeStatus     after TPD_G;
-            intLocalBusSlave.readData(9)            <= cfgReceivedFuncLvlRst after TPD_G;
-            intLocalBusSlave.readData(11 downto 10) <= (others=>'0')         after TPD_G;
-            intLocalBusSlave.readData(12)           <= pciClkRst             after TPD_G;
-            intLocalBusSlave.readData(15 downto 13) <= (others=>'0')         after TPD_G;
-            intLocalBusSlave.readData(31 downto 16) <= debugCount            after TPD_G;
-
-         -- Enable Register - 0xBC001044
-         elsif localBusMaster.addr(15 downto 0) = x"1044" then
-            if localBusMaster.writeEnable = '1' then
-               pcieEnable <= localBusMaster.writeData(0) after TPD_G;
-               remResetL  <= localBusMaster.writeData(1) after TPD_G;
-            end if;
-            intLocalBusSlave.readData(0)            <= pcieEnable            after TPD_G;
-            intLocalBusSlave.readData(1)            <= remResetL             after TPD_G;
-            intLocalBusSlave.readData(3  downto  2) <= (others=>'0')         after TPD_G;
-            intLocalBusSlave.readData(4)            <= intResetL             after TPD_G;
-            intLocalBusSlave.readData(31 downto  5) <= (others=>'0')         after TPD_G;
-
-         -- Config status Register - 0xBC001048
-         elsif localBusMaster.addr(15 downto 0) = x"1048" then
-            intLocalBusSlave.readData <= '0' & cfgMsgDataReg after TPD_G;
-         end if;
-
-      end if;  
+         end if;  
+      end if;
    end process;         
 
    -----------------------------------------
@@ -341,7 +357,7 @@ begin
          FULL_THRES_G   => 15,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRst,
+         rst                => axiClkRstInt,
          wr_clk             => axiClk,
          wr_en              => wrFifoWrEn,
          din                => wrFifoDin,
@@ -382,7 +398,7 @@ begin
          FULL_THRES_G   => 15,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRst,
+         rst                => axiClkRstInt,
          wr_clk             => pciClk,
          wr_en              => rdFifoWrEn,
          din                => rdFifoDin,
@@ -412,79 +428,83 @@ begin
    -----------------------------------------
 
    -- Generate control signals
-   process ( pciClk, pciClkRst ) begin
-      if pciClkRst = '1' then
-         cfgDinReg      <= (others=>'0') after TPD_G;
-         cfgDin         <= (others=>'0') after TPD_G;
-         cfgAddrReg     <= (others=>'0') after TPD_G;
-         cfgAddr        <= (others=>'0') after TPD_G;
-         cfgWrEnRegA    <= '0'           after TPD_G;
-         cfgWrEnRegB    <= '0'           after TPD_G;
-         cfgWrEnRegC    <= '0'           after TPD_G;
-         cfgWrEn        <= '0'           after TPD_G;
-         cfgRdEnRegA    <= '0'           after TPD_G;
-         cfgRdEnRegB    <= '0'           after TPD_G;
-         cfgRdEnRegC    <= '0'           after TPD_G;
-         cfgRdEn        <= '0'           after TPD_G;
-         cfgDoutReg     <= (others=>'0') after TPD_G;
-         cfgRdWrDoneReg <= '0'           after TPD_G;
-         cfgMsgDataReg  <= (others=>'0') after TPD_G;
-      elsif rising_edge(pciClk) then
+   process ( pciClk ) begin
+      if rising_edge(pciClk) then
+         if pciClkRst = '1' then
+            cfgDinReg      <= (others=>'0') after TPD_G;
+            cfgDin         <= (others=>'0') after TPD_G;
+            cfgAddrReg     <= (others=>'0') after TPD_G;
+            cfgAddr        <= (others=>'0') after TPD_G;
+            cfgWrEnRegA    <= '0'           after TPD_G;
+            cfgWrEnRegB    <= '0'           after TPD_G;
+            cfgWrEnRegC    <= '0'           after TPD_G;
+            cfgWrEn        <= '0'           after TPD_G;
+            cfgRdEnRegA    <= '0'           after TPD_G;
+            cfgRdEnRegB    <= '0'           after TPD_G;
+            cfgRdEnRegC    <= '0'           after TPD_G;
+            cfgRdEn        <= '0'           after TPD_G;
+            cfgDoutReg     <= (others=>'0') after TPD_G;
+            cfgRdWrDoneReg <= '0'           after TPD_G;
+            cfgMsgDataReg  <= (others=>'0') after TPD_G;
+         else
 
-         -- Sample
-         cfgDinReg    <= localBusMaster.writeData         after TPD_G;
-         cfgDin       <= cfgDinReg                        after TPD_G;
-         cfgAddr      <= localBusMaster.addr(11 downto 2) after TPD_G;
-         cfgAddrReg   <= cfgAddr                          after TPD_G;
-         cfgWrEnRegA  <= cfgWrite                         after TPD_G;
-         cfgWrEnRegB  <= cfgWrEnRegA                      after TPD_G;
-         cfgWrEnRegC  <= cfgWrEnRegB                      after TPD_G;
-         cfgRdEnRegA  <= cfgRead                          after TPD_G;
-         cfgRdEnRegB  <= cfgRdEnRegA                      after TPD_G;
-         cfgRdEnRegC  <= cfgRdEnRegB                      after TPD_G;
+            -- Sample
+            cfgDinReg    <= localBusMaster.writeData         after TPD_G;
+            cfgDin       <= cfgDinReg                        after TPD_G;
+            cfgAddr      <= localBusMaster.addr(11 downto 2) after TPD_G;
+            cfgAddrReg   <= cfgAddr                          after TPD_G;
+            cfgWrEnRegA  <= cfgWrite                         after TPD_G;
+            cfgWrEnRegB  <= cfgWrEnRegA                      after TPD_G;
+            cfgWrEnRegC  <= cfgWrEnRegB                      after TPD_G;
+            cfgRdEnRegA  <= cfgRead                          after TPD_G;
+            cfgRdEnRegB  <= cfgRdEnRegA                      after TPD_G;
+            cfgRdEnRegC  <= cfgRdEnRegB                      after TPD_G;
 
-         -- Done
-         if cfgRdWrDone = '1' then
-            cfgWrEn <= '0' after TPD_G;
-            cfgRdEn <= '0' after TPD_G;
+            -- Done
+            if cfgRdWrDone = '1' then
+               cfgWrEn <= '0' after TPD_G;
+               cfgRdEn <= '0' after TPD_G;
 
-         -- Read start
-         elsif cfgWrEnRegC = '0' and cfgWrEnRegB = '1' then
-            cfgWrEn <= '1' after TPD_G;
+            -- Read start
+            elsif cfgWrEnRegC = '0' and cfgWrEnRegB = '1' then
+               cfgWrEn <= '1' after TPD_G;
 
-         -- Write start
-         elsif cfgRdEnRegC = '0' and cfgRdEnRegB = '1' then
-            cfgRdEn <= '1' after TPD_G;
+            -- Write start
+            elsif cfgRdEnRegC = '0' and cfgRdEnRegB = '1' then
+               cfgRdEn <= '1' after TPD_G;
+            end if;
+
+            -- Store read data
+            if cfgRdWrDone = '1' then
+               cfgDoutReg <= cfgDout after TPD_G;
+            end if;
+
+            -- Extend done pulse
+            if cfgRdWrDone = '1' then
+               cfgRdWrDoneReg <= '1' after TPD_G;
+            elsif cfgRdEnRegB = '0' and cfgWrEnRegB = '0' then
+               cfgRdWrDoneReg <= '0' after TPD_G;
+            end if;
+
+            -- Register last config rx
+            if cfgMsgRx = '1' then
+               cfgMsgDataReg <= cfgMsgData after TPD_G;
+            end if;
+
          end if;
-
-         -- Store read data
-         if cfgRdWrDone = '1' then
-            cfgDoutReg <= cfgDout after TPD_G;
-         end if;
-
-         -- Extend done pulse
-         if cfgRdWrDone = '1' then
-            cfgRdWrDoneReg <= '1' after TPD_G;
-         elsif cfgRdEnRegB = '0' and cfgWrEnRegB = '0' then
-            cfgRdWrDoneReg <= '0' after TPD_G;
-         end if;
-
-         -- Register last config rx
-         if cfgMsgRx = '1' then
-            cfgMsgDataReg <= cfgMsgData after TPD_G;
-         end if;
-
       end if;
    end process;
 
    -- Return path
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         cfgRdWrDoneDly  <= '0' after TPD_G;
-         cfgDone         <= '0' after TPD_G;
-      elsif rising_edge(axiClk) then
-         cfgRdWrDoneDly  <= cfgRdWrDoneReg after TPD_G;
-         cfgDone         <= cfgRdWrDoneDly after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            cfgRdWrDoneDly  <= '0' after TPD_G;
+            cfgDone         <= '0' after TPD_G;
+         else
+            cfgRdWrDoneDly  <= cfgRdWrDoneReg after TPD_G;
+            cfgDone         <= cfgRdWrDoneDly after TPD_G;
+         end if;
       end if;
    end process;
 
@@ -676,11 +696,13 @@ begin
    --------------------------------------------
    -- Debug Counter
    --------------------------------------------
-   process ( pciClk, intResetL ) begin
-      if intResetL = '0' then
-         debugCount <= (others=>'0') after TPD_G;
-      elsif rising_edge(pciClk) then
-         debugCount <= debugCount + 1 after TPD_G;
+   process ( pciClk ) begin
+      if rising_edge(pciClk) then
+         if intResetL = '0' then
+            debugCount <= (others=>'0') after TPD_G;
+         else
+            debugCount <= debugCount + 1 after TPD_G;
+         end if;
       end if;
    end process;
 

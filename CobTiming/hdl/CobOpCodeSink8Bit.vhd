@@ -41,10 +41,10 @@ entity CobOpCodeSink8Bit is
       serialCode               : in  sl;
 
       -- Timing Clock
-      sysClk                   : in  sl;
-      sysClkRst                : in  sl;
+      distClk                   : in  sl;
+      distClkRst                : in  sl;
       
-      -- Opcode information, synchronous to sysClk
+      -- Opcode information, synchronous to distClk
       timingCode               : out slv(7 downto 0);
       timingCodeEn             : out sl;
 
@@ -118,13 +118,15 @@ begin
    ----------------------------------------
    -- Shift Register 
    ----------------------------------------
-   process ( sysClk, sysClkRst ) begin
-      if sysClkRst = '1' then
-         shiftReg <= (others=>'0') after TPD_G;
-      elsif rising_edge(sysClk) then
+   process ( distClk ) begin
+      if rising_edge(distClk) then
+         if distClkRst = '1' then
+            shiftReg <= (others=>'0') after TPD_G;
+         else
 
-         -- First bit recieved is LSB of pattern
-         shiftReg <= inBit & shiftReg(23 downto 1) after TPD_G;
+            -- First bit recieved is LSB of pattern
+            shiftReg <= inBit & shiftReg(23 downto 1) after TPD_G;
+         end if;
       end if;
    end process;
 
@@ -132,21 +134,23 @@ begin
    ----------------------------------------
    -- Idle Detect
    ----------------------------------------
-   process ( sysClk, sysClkRst ) begin
-      if sysClkRst = '1' then
-         intIdleCnt    <= (others=>'0') after TPD_G;
-         statusIdleCnt <= (others=>'0') after TPD_G;
-      elsif rising_edge(sysClk) then
-         if shiftReg = x"AAAAAA" or shiftReg = x"555555" then
-            if intIdleCnt /= x"FFFF" then
-               intIdleCnt <= intIdleCnt + 1 after TPD_G;
-            end if;
+   process ( distClk ) begin
+      if rising_edge(distClk) then
+         if distClkRst = '1' then
+            intIdleCnt    <= (others=>'0') after TPD_G;
+            statusIdleCnt <= (others=>'0') after TPD_G;
          else
-            intIdleCnt <= (others=>'0') after TPD_G;
+            if shiftReg = x"AAAAAA" or shiftReg = x"555555" then
+               if intIdleCnt /= x"FFFF" then
+                  intIdleCnt <= intIdleCnt + 1 after TPD_G;
+               end if;
+            else
+               intIdleCnt <= (others=>'0') after TPD_G;
+            end if;
+
+            statusIdleCnt <= intIdleCnt after TPD_G;
+
          end if;
-
-         statusIdleCnt <= intIdleCnt after TPD_G;
-
       end if;
    end process;
 
@@ -154,49 +158,51 @@ begin
    ----------------------------------------
    -- Pattern Detect
    ----------------------------------------
-   process ( sysClk, sysClkRst ) begin
-      if sysClkRst = '1' then
-         intCode        <= (others=>'0') after TPD_G;
-         intCodeEn      <= '0'           after TPD_G;
-         intCodeErr     <= '0'           after TPD_G;
-         intErrorCnt    <= (others=>'0') after TPD_G;
-         statusErrorCnt <= (others=>'0') after TPD_G;
-         timingCodeEn   <= '0'           after TPD_G;
-         timingCode     <= (others=>'0') after TPD_G;
-      elsif rising_edge(sysClk) then
-
-         -- Preamble detected
-         if shiftReg(7 downto 0) = x"F0" then
-            intCodeEn  <= '1' after TPD_G;
-            intCodeErr <= '0' after TPD_G;
-
-            -- Process bits
-            for i in 0 to 7 loop
-
-               -- Check inverting pattern
-               if shiftReg(i*2+8) = shiftReg(i*2+9) then
-                  intCodeEn  <= '0' after TPD_G;
-                  intCodeErr <= '1' after TPD_G;
-               end if;
-
-               -- Extract bit
-               intCode(i) <= shiftReg(i*2+8) after TPD_G;
-            end loop;
+   process ( distClk ) begin
+      if rising_edge(distClk) then
+         if distClkRst = '1' then
+            intCode        <= (others=>'0') after TPD_G;
+            intCodeEn      <= '0'           after TPD_G;
+            intCodeErr     <= '0'           after TPD_G;
+            intErrorCnt    <= (others=>'0') after TPD_G;
+            statusErrorCnt <= (others=>'0') after TPD_G;
+            timingCodeEn   <= '0'           after TPD_G;
+            timingCode     <= (others=>'0') after TPD_G;
          else
-            intCodeEn  <= '0' after TPD_G;
-            intCodeErr <= '0' after TPD_G;
+
+            -- Preamble detected
+            if shiftReg(7 downto 0) = x"F0" then
+               intCodeEn  <= '1' after TPD_G;
+               intCodeErr <= '0' after TPD_G;
+
+               -- Process bits
+               for i in 0 to 7 loop
+
+                  -- Check inverting pattern
+                  if shiftReg(i*2+8) = shiftReg(i*2+9) then
+                     intCodeEn  <= '0' after TPD_G;
+                     intCodeErr <= '1' after TPD_G;
+                  end if;
+
+                  -- Extract bit
+                  intCode(i) <= shiftReg(i*2+8) after TPD_G;
+               end loop;
+            else
+               intCodeEn  <= '0' after TPD_G;
+               intCodeErr <= '0' after TPD_G;
+            end if;
+
+            -- Error counter
+            if intCodeErr = '1' and intErrorCnt /= x"FFFF" then
+               intErrorCnt <= intErrorCnt + 1 after TPD_G;
+            end if;
+
+            -- Outputs
+            timingCode     <= intCode     after TPD_G;
+            timingCodeEn   <= intCodeEn   after TPD_G;
+            statusErrorCnt <= intErrorCnt after TPD_G;
+
          end if;
-
-         -- Error counter
-         if intCodeErr = '1' and intErrorCnt /= x"FFFF" then
-            intErrorCnt <= intErrorCnt + 1 after TPD_G;
-         end if;
-
-         -- Outputs
-         timingCode     <= intCode     after TPD_G;
-         timingCodeEn   <= intCodeEn   after TPD_G;
-         statusErrorCnt <= intErrorCnt after TPD_G;
-
       end if;
    end process;
 

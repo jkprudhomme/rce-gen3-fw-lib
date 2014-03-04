@@ -132,8 +132,22 @@ architecture structure of ArmRceG3IbHeaderFifo is
    signal curState                 : States;
    signal nxtState                 : States;
    signal dbgState                 : slv(2 downto 0);
+   signal axiClkRstInt             : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -- State Debug
    dbgState <= conv_std_logic_vector(States'POS(curState), 3);
@@ -153,7 +167,7 @@ begin
          FULL_THRES_G   => 1,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst          => axiClkRst,
+         rst          => axiClkRstInt,
          clk          => axiClk,
          wr_en        => headerPtrWrite,
          rd_en        => headerDone,
@@ -193,7 +207,7 @@ begin
          FULL_THRES_G   => 255,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst               => axiClkRst,
+         rst               => axiClkRstInt,
          wr_clk            => ibHeaderClk,
          wr_en             => ibHeaderToFifo.valid,
          din               => ibHeaderDin,
@@ -234,12 +248,12 @@ begin
    -- Allows a cache line to be pulled from the FIFO and examined
    -- before the write access is started
    U_FifoPipeGen : for i in 0 to 3 generate
-      process ( axiClk, axiClkRst ) begin
-         if axiClkRst = '1' then
-            ibHeader(i) <= IbFifoInit after TPD_G;
-            ibValid(i)  <= '0'        after TPD_G;
-         elsif rising_edge(axiClk) then
-            if fifoShift(i) = '1' then
+      process ( axiClk ) begin
+         if rising_edge(axiClk) then
+            if axiClkRstInt = '1' then
+               ibHeader(i) <= IbFifoInit after TPD_G;
+               ibValid(i)  <= '0'        after TPD_G;
+            elsif fifoShift(i) = '1' then
                ibHeader(i) <= ibHeader(i+1) after TPD_G;
                ibValid(i)  <= ibValid(i+1)  after TPD_G;
             end if;
@@ -283,85 +297,87 @@ begin
    axiWriteToCntrl.last      <= dataLast;
 
    -- Sync states
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         curState       <= ST_IDLE       after TPD_G;
-         curDone        <= '0'           after TPD_G;
-         curError       <= '0'           after TPD_G;
-         writeAddr      <= (others=>'0') after TPD_G;
-         burstCount     <= (others=>'0') after TPD_G;
-         wordCount      <= (others=>'0') after TPD_G;
-         ackCount       <= (others=>'0') after TPD_G;
-         fifoReq        <= '0'           after TPD_G;
-         headerLength   <= (others=>'0') after TPD_G;
-         ibDesc.mgmt    <= '0'           after TPD_G;
-         ibDesc.htype   <= (others=>'0') after TPD_G;
-         ibDesc.offset  <= (others=>'0') after TPD_G;
-         ibDesc.err     <= '0'           after TPD_G;
-         ibDesc.length  <= (others=>'0') after TPD_G;
-         ibDesc.valid   <= '0'           after TPD_G;
-      elsif rising_edge(axiClk) then
-         curState       <= nxtState        after TPD_G;
-         curDone        <= nxtDone         after TPD_G;
-         curError       <= nxtError        after TPD_G;
-         fifoReq        <= nextReq         after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            curState       <= ST_IDLE       after TPD_G;
+            curDone        <= '0'           after TPD_G;
+            curError       <= '0'           after TPD_G;
+            writeAddr      <= (others=>'0') after TPD_G;
+            burstCount     <= (others=>'0') after TPD_G;
+            wordCount      <= (others=>'0') after TPD_G;
+            ackCount       <= (others=>'0') after TPD_G;
+            fifoReq        <= '0'           after TPD_G;
+            headerLength   <= (others=>'0') after TPD_G;
+            ibDesc.mgmt    <= '0'           after TPD_G;
+            ibDesc.htype   <= (others=>'0') after TPD_G;
+            ibDesc.offset  <= (others=>'0') after TPD_G;
+            ibDesc.err     <= '0'           after TPD_G;
+            ibDesc.length  <= (others=>'0') after TPD_G;
+            ibDesc.valid   <= '0'           after TPD_G;
+         else
+            curState       <= nxtState        after TPD_G;
+            curDone        <= nxtDone         after TPD_G;
+            curError       <= nxtError        after TPD_G;
+            fifoReq        <= nextReq         after TPD_G;
 
-         -- Write address tracking
-         if countReset = '1' then
-            writeAddr <=  memBaseAddress & headerPtrOffset after TPD_G;
+            -- Write address tracking
+            if countReset = '1' then
+               writeAddr <=  memBaseAddress & headerPtrOffset after TPD_G;
 
-         -- Stop incrementing address after hitting max length
-         elsif burstCountEn = '1' and headerLength /= 32 then
-            writeAddr <= writeAddr + 32 after TPD_G;
-         end if;
-
-         -- Counter to track outstanding writes
-         if countReset = '1' then
-            burstCount <= (others=>'0') after TPD_G;
-         elsif burstCountEn = '1' then
-            burstCount <= burstCount + 1 after TPD_G;
-         end if;
-
-         -- Counter to track acks
-         if countReset = '1' then
-            ackCount <= (others=>'0') after TPD_G;
-         elsif axiWriteFromCntrl.bvalid = '1' then 
-            ackCount <= ackCount + 1 after TPD_G;
-         end if;
-
-         -- Word count tracking
-         if countReset = '1' then
-            wordCount <= "00" after TPD_G;
-         elsif dataValid = '1' then
-            wordCount <= wordCount + 1 after TPD_G;
-         end if;
-
-         -- Header length tracking
-         if countReset = '1' then
-            headerLength <= (others=>'0') after TPD_G;
-         elsif fifoRd = '1' then
-
-            -- Mark frame in error if exceeding max length
-            if headerLength = 32 then
-               curError <= '1' after TPD_G;
-            else
-               headerLength <= headerLength + 1 after TPD_G;
+            -- Stop incrementing address after hitting max length
+            elsif burstCountEn = '1' and headerLength /= 32 then
+               writeAddr <= writeAddr + 32 after TPD_G;
             end if;
+
+            -- Counter to track outstanding writes
+            if countReset = '1' then
+               burstCount <= (others=>'0') after TPD_G;
+            elsif burstCountEn = '1' then
+               burstCount <= burstCount + 1 after TPD_G;
+            end if;
+
+            -- Counter to track acks
+            if countReset = '1' then
+               ackCount <= (others=>'0') after TPD_G;
+            elsif axiWriteFromCntrl.bvalid = '1' then 
+               ackCount <= ackCount + 1 after TPD_G;
+            end if;
+
+            -- Word count tracking
+            if countReset = '1' then
+               wordCount <= "00" after TPD_G;
+            elsif dataValid = '1' then
+               wordCount <= wordCount + 1 after TPD_G;
+            end if;
+
+            -- Header length tracking
+            if countReset = '1' then
+               headerLength <= (others=>'0') after TPD_G;
+            elsif fifoRd = '1' then
+
+               -- Mark frame in error if exceeding max length
+               if headerLength = 32 then
+                  curError <= '1' after TPD_G;
+               else
+                  headerLength <= headerLength + 1 after TPD_G;
+               end if;
+            end if;
+
+            -- Generate descriptor information
+            -- Mgmt and type fields
+            if fifoRd = '1' and headerLength = 0 then
+               ibDesc.mgmt  <= ibHeader(0).mgmt  after TPD_G;
+               ibDesc.htype <= ibHeader(0).htype after TPD_G;
+            end if;
+
+            -- Rest of incoming descriptor
+            ibDesc.offset <= headerPtrOffset;
+            ibDesc.err    <= curError;
+            ibDesc.length <= headerLength;
+            ibDesc.valid  <= headerDone;
+
          end if;
-
-         -- Generate descriptor information
-         -- Mgmt and type fields
-         if fifoRd = '1' and headerLength = 0 then
-            ibDesc.mgmt  <= ibHeader(0).mgmt  after TPD_G;
-            ibDesc.htype <= ibHeader(0).htype after TPD_G;
-         end if;
-
-         -- Rest of incoming descriptor
-         ibDesc.offset <= headerPtrOffset;
-         ibDesc.err    <= curError;
-         ibDesc.length <= headerLength;
-         ibDesc.valid  <= headerDone;
-
       end if;
    end process;
 

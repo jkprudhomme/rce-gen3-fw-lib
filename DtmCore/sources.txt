@@ -1,3 +1,2 @@
-hdl/DtmTimingSource.vhd
-hdl/GmiiToRgmiiSwitch.vhd
-hdl/DtmCore.vhd
+vhdl work hdl/GmiiToRgmiiSwitch.vhd
+vhdl work hdl/DtmCore.vhd

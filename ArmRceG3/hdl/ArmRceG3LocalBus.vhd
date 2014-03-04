@@ -90,8 +90,22 @@ architecture structure of ArmRceG3LocalBus is
    signal curState             : States;
    signal nxtState             : States;
    signal dbgState             : slv(2 downto 0);
+   signal axiClkRstInt         : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -- Outputs
    axiMasterReadToArm   <= intMasterReadToArm;
@@ -99,31 +113,33 @@ begin
    localBusMaster       <= intLocalBusMaster;
 
    -- Sync states
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         curState             <= ST_IDLE                      after TPD_G;
-         curSlave             <= (others=>'0')                after TPD_G;
-         intMasterReadToArm   <= AxiReadSlaveInit             after TPD_G;
-         intMasterWriteToArm  <= AxiWriteSlaveInit            after TPD_G;
-         intLocalBusMaster    <= (others=>LocalBusMasterInit) after TPD_G;
-         timeoutCnt           <= (others=>'0')                after TPD_G;
-         timeout              <= '0'                          after TPD_G;
-      elsif rising_edge(axiClk) then
-         curState             <= nxtState            after TPD_G;
-         curSlave             <= nxtSlave            after TPD_G;
-         intMasterReadToArm   <= nxtMasterReadToArm  after TPD_G;
-         intMasterWriteToArm  <= nxtMasterWriteToArm after TPD_G;
-         intLocalBusMaster    <= genLocalBusMaster   after TPD_G;
-
-         -- Timeout counter
-         if curState /= ST_READ then
-            timeoutCnt  <= (others=>'1')  after TPD_G;
-            timeout     <= '0'            after TPD_G;
-         elsif timeoutCnt = 0 then
-            timeout     <= '1'            after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            curState             <= ST_IDLE                      after TPD_G;
+            curSlave             <= (others=>'0')                after TPD_G;
+            intMasterReadToArm   <= AxiReadSlaveInit             after TPD_G;
+            intMasterWriteToArm  <= AxiWriteSlaveInit            after TPD_G;
+            intLocalBusMaster    <= (others=>LocalBusMasterInit) after TPD_G;
+            timeoutCnt           <= (others=>'0')                after TPD_G;
+            timeout              <= '0'                          after TPD_G;
          else
-            timeoutCnt  <= timeoutCnt - 1 after TPD_G;
-            timeout     <= '0'            after TPD_G;
+            curState             <= nxtState            after TPD_G;
+            curSlave             <= nxtSlave            after TPD_G;
+            intMasterReadToArm   <= nxtMasterReadToArm  after TPD_G;
+            intMasterWriteToArm  <= nxtMasterWriteToArm after TPD_G;
+            intLocalBusMaster    <= genLocalBusMaster   after TPD_G;
+
+            -- Timeout counter
+            if curState /= ST_READ then
+               timeoutCnt  <= (others=>'1')  after TPD_G;
+               timeout     <= '0'            after TPD_G;
+            elsif timeoutCnt = 0 then
+               timeout     <= '1'            after TPD_G;
+            else
+               timeoutCnt  <= timeoutCnt - 1 after TPD_G;
+               timeout     <= '0'            after TPD_G;
+            end if;
          end if;
       end if;
    end process;

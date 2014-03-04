@@ -66,30 +66,46 @@ architecture structure of ArmRceG3DmaComp is
    signal compFifoRdDly : sl;
    signal compFifoPFull : slv(10 downto 0);
    signal compFifoValid : slv(10 downto 0);
+   signal axiClkRstInt  : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
+
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
 
    -- Holding location for FIFO outputs
    -- 8 Clocks are available for update
    U_HoldGen: for i in 0 to 7 generate
-      process ( axiClk, axiClkRst ) begin
-         if axiClkRst = '1' then
-            compHold(i)  <= CompFromFifoInit after TPD_G;
-            compValid(i) <= '0'              after TPD_G;
-            compWrite(i) <= (others=>'0')    after TPD_G;
-         elsif rising_edge(axiClk) then
+      process ( axiClk ) begin
+         if rising_edge(axiClk) then
+            if axiClkRstInt = '1' then
+               compHold(i)  <= CompFromFifoInit after TPD_G;
+               compValid(i) <= '0'              after TPD_G;
+               compWrite(i) <= (others=>'0')    after TPD_G;
+            else
 
-            -- Copy of FIFO data
-            compHold(i) <= compFromFifo(i) after TPD_G;
+               -- Copy of FIFO data
+               compHold(i) <= compFromFifo(i) after TPD_G;
 
-            -- Determine if source and destination is ready, set valid bit
-            compValid(i) <= compFromFifo(i).valid and 
-                            (not compFifoPFull(conv_integer(compDest(i)))) after TPD_G;
+               -- Determine if source and destination is ready, set valid bit
+               compValid(i) <= compFromFifo(i).valid and 
+                               (not compFifoPFull(conv_integer(compDest(i)))) after TPD_G;
 
-            -- Generate write vector
-            compWrite(i)                            <= (others=>'0') after TPD_G;
-            compWrite(i)(conv_integer(compDest(i))) <= '1'           after TPD_G;
+               -- Generate write vector
+               compWrite(i)                            <= (others=>'0') after TPD_G;
+               compWrite(i)(conv_integer(compDest(i))) <= '1'           after TPD_G;
 
+            end if;
          end if;
       end process;
 
@@ -103,28 +119,30 @@ begin
 
 
    -- Sync logic
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         compFifoDin  <= (others=>'0') after TPD_G;
-         compFifoWrEn <= (others=>'0') after TPD_G;
-         fifoRead     <= (others=>'0') after TPD_G;
-         fifoCount    <= (others=>'0') after TPD_G;
-      elsif rising_edge(axiClk) then
-         compFifoDin(31 downto 0) <= compHold(conv_integer(fifoCount)).id  after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            compFifoDin  <= (others=>'0') after TPD_G;
+            compFifoWrEn <= (others=>'0') after TPD_G;
+            fifoRead     <= (others=>'0') after TPD_G;
+            fifoCount    <= (others=>'0') after TPD_G;
+         else
+            compFifoDin(31 downto 0) <= compHold(conv_integer(fifoCount)).id  after TPD_G;
 
-         -- Move data to output register
-         for i in 0 to 10 loop
-            compFifoWrEn(i) <= compValid(conv_integer(fifoCount)) and 
-                               compWrite(conv_integer(fifoCount))(i) after TPD_G;
-         end loop;
+            -- Move data to output register
+            for i in 0 to 10 loop
+               compFifoWrEn(i) <= compValid(conv_integer(fifoCount)) and 
+                                  compWrite(conv_integer(fifoCount))(i) after TPD_G;
+            end loop;
 
-         -- Read from source fifo
-         fifoRead                          <= (others=>'0')                      after TPD_G; 
-         fifoRead(conv_integer(fifoCount)) <= compValid(conv_integer(fifoCount)) after TPD_G;
+            -- Read from source fifo
+            fifoRead                          <= (others=>'0')                      after TPD_G; 
+            fifoRead(conv_integer(fifoCount)) <= compValid(conv_integer(fifoCount)) after TPD_G;
 
-         -- Fifo counter
-         fifoCount <= fifoCount + 1 after TPD_G;
+            -- Fifo counter
+            fifoCount <= fifoCount + 1 after TPD_G;
 
+         end if;
       end if;
    end process;
 
@@ -144,7 +162,7 @@ begin
             FULL_THRES_G   => 479,
             EMPTY_THRES_G  => 1
          ) port map (
-            rst               => axiClkRst,
+            rst               => axiClkRstInt,
             clk               => axiClk,
             wr_en             => compFifoWrEn(i),
             din               => compFifoDin,
@@ -168,29 +186,30 @@ begin
    -----------------------------------------
    -- FIFO Read
    -----------------------------------------
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         compFifoRdValid <= '0'           after TPD_G;
-         compInt         <= (others=>'0') after TPD_G;
-         compFifoRdEn    <= (others=>'0') after TPD_G;
-         compFifoRdDly   <= '0'           after TPD_G;
-         compFifoData    <= (others=>'0') after TPD_G;
-      elsif rising_edge(axiClk) then
-         compFifoRdDly   <= compFifoRd    after TPD_G;
-         compFifoRdValid <= compFifoRdDly after TPD_G;
-         compInt         <= compFifoValid after TPD_G;
-         compFifoRdEn    <= (others=>'0') after TPD_G;
-
-         if compFifoSel < 11 then
-            compFifoRdEn(conv_integer(compFifoSel)) <= compFifoRd after TPD_G;
-         end if;
-
-         if compFifoSel < 11 then
-            compFifoData <= compFifoDout(conv_integer(compFifoSel))(31 downto 0) after TPD_G;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            compFifoRdValid <= '0'           after TPD_G;
+            compInt         <= (others=>'0') after TPD_G;
+            compFifoRdEn    <= (others=>'0') after TPD_G;
+            compFifoRdDly   <= '0'           after TPD_G;
+            compFifoData    <= (others=>'0') after TPD_G;
          else
-            compFifoData <= (others=>'0') after TPD_G;
-         end if;
+            compFifoRdDly   <= compFifoRd    after TPD_G;
+            compFifoRdValid <= compFifoRdDly after TPD_G;
+            compInt         <= compFifoValid after TPD_G;
+            compFifoRdEn    <= (others=>'0') after TPD_G;
 
+            if compFifoSel < 11 then
+               compFifoRdEn(conv_integer(compFifoSel)) <= compFifoRd after TPD_G;
+            end if;
+
+            if compFifoSel < 11 then
+               compFifoData <= compFifoDout(conv_integer(compFifoSel))(31 downto 0) after TPD_G;
+            else
+               compFifoData <= (others=>'0') after TPD_G;
+            end if;
+         end if;
       end if;
    end process;
 

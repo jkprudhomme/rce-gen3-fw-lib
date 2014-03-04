@@ -40,18 +40,20 @@ entity DpmTimingSink is
       sysClk200Rst             : in  sl;
 
       -- Timing bus
-      dpmClk                   : in  slv(2 downto 1);
-      dpmFb                    : out sl;
+      dtmClkP                  : in    slv(1 downto 0);
+      dtmClkM                  : in    slv(1 downto 0);
+      dtmFbP                   : out   sl;
+      dtmFbM                   : out   sl;
 
       -- Clock output   
-      sysClk                   : out sl;
-      sysClkRst                : out sl;
+      distClk                  : out sl;
+      distClkRst               : out sl;
       
-      -- Opcode information, synchronous to sysClk
+      -- Opcode information, synchronous to distClk
       timingCode               : out slv(7 downto 0);
       timingCodeEn             : out sl;
 
-      -- Feedback information, synchronous to sysClk
+      -- Feedback information, synchronous to distClk
       fbCode                   : in  slv(7 downto 0);
       fbCodeEn                 : in  sl;
 
@@ -63,6 +65,8 @@ end DpmTimingSink;
 architecture STRUCTURE of DpmTimingSink is
 
    -- Local Signals
+   signal dtmClk              : slv(1 downto 0);
+   signal dtmFb               : sl;
    signal intClk              : sl;
    signal intClkRst           : sl;
    signal intReset            : sl;
@@ -80,12 +84,26 @@ architecture STRUCTURE of DpmTimingSink is
    signal ocFifoData          : slv(7 downto 0);
    signal ledCountA           : slv(31 downto 0);
    signal ledCountB           : slv(31 downto 0);
+   signal axiClkRstInt        : sl := '1';
+
+   attribute mark_debug : string;
+   attribute mark_debug of axiClkRstInt : signal is "true";
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
 begin
 
+   -- Reset registration
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         axiClkRstInt <= axiClkRst after TPD_G;
+      end if;
+   end process;
+
    -- Clock and reset out
-   sysClk       <= intClk;
-   sysClkRst    <= intClkRst;
+   distClk      <= intClk;
+   distClkRst   <= intClkRst;
    timingCode   <= intCode;
    timingCodeEn <= intCodeEn;
 
@@ -103,13 +121,23 @@ begin
    ----------------------------------------
    -- Incoming global clock
    ----------------------------------------
+
+   -- DTM Clock 0
+   U_DtmClk0 : IBUFDS 
+      generic map ( DIFF_TERM => true ) 
+      port map ( 
+         I  => dtmClkP(0),
+         IB => dtmClkM(0),
+         O  => dtmClk(0)
+      );
+
    U_Bufg : BUFG
       port map (
-         I => dpmClk(1),
+         I => dtmClk(0),
          O => intClk
       );
 
-   intReset <= axiClkRst or cfgReset;
+   intReset <= axiClkRstInt or cfgReset;
 
    -- Reset gen
    U_RstGen : entity work.RstSync
@@ -130,18 +158,27 @@ begin
    -- Incoming Sync Stream
    ----------------------------------------
 
+   -- DTM Clock 1
+   U_DtmClk1 : IBUFDS 
+      generic map ( DIFF_TERM => true ) 
+      port map ( 
+         I  => dtmClkP(1),
+         IB => dtmClkM(1),
+         O  => dtmClk(1)
+      );
+
    -- Input processor
    U_OpCodeSink : entity work.CobOpCodeSink8Bit 
       generic map (
          TPD_G => TPD_G
       ) port map (
-         dpmClk          => dpmClk(2),
-         sysClk          => intClk,
-         sysClkRst       => intClkRst,
+         serialCode      => dtmClk(1),
+         distClk         => intClk,
+         distClkRst      => intClkRst,
          timingCode      => intCode,
          timingCodeEn    => intCodeEn,
          configClk       => axiClk,
-         configClkRst    => axiClkRst,
+         configClkRst    => axiClkRstInt,
          configSet       => cfgSet,
          configDelay     => cfgDelay,
          statusIdleCnt   => statusIdleCnt,
@@ -165,7 +202,7 @@ begin
          FULL_THRES_G   => 63,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRst,
+         rst                => axiClkRstInt,
          wr_clk             => intClk,
          wr_en              => ocFifoWr,
          din                => intCode,
@@ -200,69 +237,78 @@ begin
       generic map (
          TPD_G => TPD_G
       ) port map (
-         sysClk          => intClk,
-         sysClkRst       => intClkRst,
+         distClk         => intClk,
+         distClkRst      => intClkRst,
          timingCode      => fbCode,
          timingCodeEn    => fbCodeEn,
-         dpmClk          => dpmFb
+         serialCode      => dtmFb
       );
 
+   -- DTM Feedback
+   U_DtmFb : OBUFDS 
+      port map ( 
+         O  => dtmFbP,     
+         OB => dtmFbM,     
+         I  => dtmFb     
+      );
 
    ----------------------------------------
    -- Local Registers
    ----------------------------------------
 
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         localBusSlave    <= LocalBusSlaveInit after TPD_G;
-         cfgReset         <= '0'               after TPD_G;
-         cfgSet           <= '0'               after TPD_G;
-         cfgDelay         <= (others=>'0')     after TPD_G;
-         ocFifoRd         <= '0'               after TPD_G;
-         ocFifoWrEn       <= '0'               after TPD_G;
-      elsif rising_edge(axiClk) then
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            localBusSlave    <= LocalBusSlaveInit after TPD_G;
+            cfgReset         <= '0'               after TPD_G;
+            cfgSet           <= '0'               after TPD_G;
+            cfgDelay         <= (others=>'0')     after TPD_G;
+            ocFifoRd         <= '0'               after TPD_G;
+            ocFifoWrEn       <= '0'               after TPD_G;
+         else
 
-         -- Init
-         localBusSlave.readValid <= localBusMaster.readEnable            after TPD_G;
-         localBusSlave.readData  <= (others=>'0')                        after TPD_G;
-         cfgReset                <= '0'                                  after TPD_G;
-         cfgSet                  <= '0'                                  after TPD_G;
-         cfgDelay                <= localBusMaster.writeData(4 downto 0) after TPD_G;
-         ocFifoRd                <= '0'                                  after TPD_G;
+            -- Init
+            localBusSlave.readValid <= localBusMaster.readEnable            after TPD_G;
+            localBusSlave.readData  <= (others=>'0')                        after TPD_G;
+            cfgReset                <= '0'                                  after TPD_G;
+            cfgSet                  <= '0'                                  after TPD_G;
+            cfgDelay                <= localBusMaster.writeData(4 downto 0) after TPD_G;
+            ocFifoRd                <= '0'                                  after TPD_G;
 
-         -- Master Reset
-         if localBusMaster.addr(23 downto 0) = x"000000" then
-            cfgReset <= localBusMaster.writeEnable after TPD_G;
+            -- Master Reset
+            if localBusMaster.addr(23 downto 0) = x"000000" then
+               cfgReset <= localBusMaster.writeEnable after TPD_G;
 
-         -- OC Fifo Write Enable
-         elsif localBusMaster.addr(23 downto 0) = x"000004" then
-            if localBusMaster.writeEnable = '1' then
-               ocFifoWrEn <= localBusMaster.writeData(0) after TPD_G;
+            -- OC Fifo Write Enable
+            elsif localBusMaster.addr(23 downto 0) = x"000004" then
+               if localBusMaster.writeEnable = '1' then
+                  ocFifoWrEn <= localBusMaster.writeData(0) after TPD_G;
+               end if;
+
+            -- OC Delay configuration
+            elsif localBusMaster.addr(23 downto 0) = x"000008" then
+               cfgSet <= localBusMaster.writeEnable after TPD_G;
+
+            -- OC FIFO status, one per FIFO
+            elsif localBusMaster.addr(23 downto 0) = x"00000C" then
+               localBusSlave.readData(31 downto 16) <= statusErrorCnt after TPD_G;
+               localBusSlave.readData(15 downto  0) <= statusIdleCnt  after TPD_G;
+
+            -- OC FIFO read, one per FIFO
+            elsif localBusMaster.addr(23 downto 0) = x"000010" then
+               ocFifoRd <= localBusMaster.readEnable after TPD_G;
+
+               localBusSlave.readValid             <= ocFifoRd    after TPD_G;
+               localBusSlave.readData(8)           <= ocFifoValid after TPD_G;
+               localBusSlave.readData(7 downto  0) <= ocFifoData  after TPD_G;
+
+            -- Clock Count
+            elsif localBusMaster.addr(23 downto 0) = x"000014" then
+               localBusSlave.readData <= ledCountA  after TPD_G;
+
             end if;
 
-         -- OC Delay configuration
-         elsif localBusMaster.addr(23 downto 0) = x"000008" then
-            cfgSet <= localBusMaster.writeEnable after TPD_G;
-
-         -- OC FIFO status, one per FIFO
-         elsif localBusMaster.addr(23 downto 0) = x"00000C" then
-            localBusSlave.readData(31 downto 16) <= statusErrorCnt after TPD_G;
-            localBusSlave.readData(15 downto  0) <= statusIdleCnt  after TPD_G;
-
-         -- OC FIFO read, one per FIFO
-         elsif localBusMaster.addr(23 downto 0) = x"000010" then
-            ocFifoRd <= localBusMaster.readEnable after TPD_G;
-
-            localBusSlave.readValid             <= ocFifoRd    after TPD_G;
-            localBusSlave.readData(8)           <= ocFifoValid after TPD_G;
-            localBusSlave.readData(7 downto  0) <= ocFifoData  after TPD_G;
-
-         -- Clock Count
-         elsif localBusMaster.addr(23 downto 0) = x"000014" then
-            localBusSlave.readData <= ledCountA  after TPD_G;
-
          end if;
-
       end if;
    end process;
 
@@ -271,23 +317,24 @@ begin
    ----------------------------------
    -- LED Blinking
    ----------------------------------
-   process ( intClk, intClkRst ) begin
-      if intClkRst = '1' then
-         ledCountA <= (others=>'0') after TPD_G;
-      elsif rising_edge(intClk) then
-         ledCountA <= ledCountA + 1 after TPD_G;
+   process ( intClk ) begin
+      if rising_edge(intClk) then
+         if intClkRst = '1' then
+            ledCountA <= (others=>'0') after TPD_G;
+         else
+            ledCountA <= ledCountA + 1 after TPD_G;
+         end if;
       end if;
    end process;
 
    led(0) <= ledCountA(26);
 
-   process ( intClk, intClkRst ) begin
-      if intClkRst = '1' then
-         ledCountB <= (others=>'0') after TPD_G;
-         led(1)    <= '0'           after TPD_G;
-      elsif rising_edge(intClk) then
-
-         if intCodeEn = '1' then
+   process ( intClk ) begin
+      if rising_edge(intClk) then
+         if intClkRst = '1' then
+            ledCountB <= (others=>'0') after TPD_G;
+            led(1)    <= '1'           after TPD_G;
+         elsif intCodeEn = '1' then
             ledCountB <= (others=>'1') after TPD_G;
             led(1)    <= '0'           after TPD_G;
          elsif ledCountB /= 0 then
