@@ -63,7 +63,7 @@ uint IbHeaderFifo::popEntry ( IbHeaderDesc *ptr ) {
            << " mgmt " << ptr->mgmt
            << " htype " << ptr->htype
            << " size " << ptr->size
-           << " offset " << ptr->offset << std::endl;
+           << " offset " << offset << std::endl;
 
       if ( ptr->alloc < ptr->size ) return -1;
 

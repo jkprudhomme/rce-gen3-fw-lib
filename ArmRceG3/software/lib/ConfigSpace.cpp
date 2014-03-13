@@ -16,13 +16,13 @@ ConfigSpace::~ConfigSpace () { }
 
 // Read from completion FIFOs 0 - 10
 uint ConfigSpace::getCompFifoData ( uint fifo ) {
-   if ( fifo < 11 ) return(_mspace->readConfig(0,fifo));
+   if ( fifo < 11 ) return(_mspace->readConfig(0x1000,fifo));
    return(0);
 }
 
 // Read from free list FIFOs 0 - 3
 uint ConfigSpace::getObFreeFifoData ( uint fifo ) {
-   if ( fifo < 4 ) return(_mspace->readConfig(0x000040,fifo));
+   if ( fifo < 4 ) return(_mspace->readConfig(0x1100,fifo));
    return(0);
 }
 
