@@ -397,7 +397,7 @@ begin
                ibPpi.eof       <= '0'           after TPD_G;
                ibPpi.valid     <= (others=>'0') after TPD_G;
 
-               -- EOF is not sitting on hold register
+               -- EOF is sitting on hold register
                if ibPpiHold.eof = '1' then
                   ibPpi <= ibPpiHold after TPD_G;
 
