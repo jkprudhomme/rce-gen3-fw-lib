@@ -28,6 +28,16 @@ void DmaSpace::getSingleDma ( uint channel, uint *upper, uint *lower ) {
    *upper = _mspace->readMemory32(offset+4);
 }
 
+// Init the two 32-bit values from a particular memory channel
+void DmaSpace::initSingleDma ( uint channel ) {
+   uint offset;
+
+   offset = (SingleOffset + channel * 2) * 4;
+
+   _mspace->writeMemory32(offset+0,0xFFFFFFFF);
+   _mspace->writeMemory32(offset+4,0xFFFFFFFF);
+}
+
 // Get Header offset for a channel
 uint DmaSpace::getIbHeaderOffset(uint channel, uint idx) {
    return(IbHeaderOffset + channel * IbHeaderSize);

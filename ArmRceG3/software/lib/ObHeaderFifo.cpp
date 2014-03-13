@@ -22,6 +22,11 @@ ObHeaderFifo::ObHeaderFifo (ConfigSpace *cspace, DmaSpace *dspace, uint fifoNum)
    uint value;
    value = (uint)_dspace->getObHeaderOffset(_num,0) & 0x0003FFFF;
 
+   // Flush entries
+   uint count = 0;
+   while (cspace->getObFreeFifoData(_num) & 0x80000000) count++;
+   std::cout << "Ob Header Fifo. Flushed " << std::dec <<  count << " Entries." << std::endl;
+
    // Put one entry on the free list
    std::cout << "Ob Header Fifo " << std::dec << _num << " Free List Entry 0x" << std::hex << value << std::endl;
 
@@ -67,9 +72,10 @@ void ObHeaderFifo::pushEntry ( ObHeaderDesc *ptr ) {
    }
    length = ptr->size/2;
 
+   cout << "Header " << dec << _num << " start outbound transfer offset 0x" << hex << setw(8) << setfill('0') << offset << endl;
+
    // Copy data
    _dspace->obCopy32(ptr->data,offset,ptr->size);
-   cout << "Header " << dec << _num << " start outbound transfer offset 0x" << hex << setw(8) << setfill('0') << offset << endl;
 
    // Transmit
    value  = offset             & 0x0003FFFF;

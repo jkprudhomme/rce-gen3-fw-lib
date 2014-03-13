@@ -35,6 +35,9 @@ class DmaSpace {
       // Get the two 32-bit values from a particular memory channel
       void getSingleDma ( uint channel, uint *upper, uint *lower );
 
+      // Init the two 32-bit values from a particular memory channel
+      void initSingleDma ( uint channel );
+
       // Get offset for inbound header channel
       uint getIbHeaderOffset(uint channel, uint idx);
 

@@ -48,6 +48,12 @@ int main(int argc, char **argv) {
    // Dma space
    DmaSpace dspace(&mspace); 
 
+   // Reset everything
+   cspace.setReset(true);
+   usleep(100);
+   cspace.setReset(false);
+   usleep(100);
+
    cspace.setWriteDmaCache ( 0xF );
    cspace.setReadDmaCache ( 0xF );
    cspace.setPpiWriteDmaCache ( 0x0 );

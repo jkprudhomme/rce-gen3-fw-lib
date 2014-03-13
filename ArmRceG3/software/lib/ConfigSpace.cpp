@@ -93,6 +93,17 @@ void ConfigSpace::setFifoEnable (uint fifo, bool enable ) {
    }
 }
 
+// Reset
+void ConfigSpace::setReset ( bool enable ) {
+   uint old;
+   uint set;
+
+   old = _mspace->readConfig(0x000410,0);
+   if ( enable ) set = old | 0x80000000;
+   else set = old & 0x7FFFFFFF;
+   _mspace->writeConfig(0x000410,0,set);
+}
+
 // Memory base address
 void ConfigSpace::setMemBaseAddress (uint base ) {
    _mspace->writeConfig(0x000418, 0 , base);

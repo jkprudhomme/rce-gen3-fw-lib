@@ -14,6 +14,7 @@ QuadWordFifo::QuadWordFifo (ConfigSpace *cspace, DmaSpace *dspace, uint fifoNum)
    _dspace   = dspace;
    _num      = fifoNum;
    _enable   = false;
+   _dspace->initSingleDma ( _num );
 }
 
 QuadWordFifo::~QuadWordFifo () {}
@@ -32,6 +33,7 @@ bool QuadWordFifo::popEntry ( uint *high, uint *low ) {
 
    if ( _cspace->getDirty(_num) ) {
       _dspace->getSingleDma ( _num, high, low );
+      _dspace->initSingleDma ( _num );
       _cspace->clearDirtyFlag(_num);
       return(true);
    }

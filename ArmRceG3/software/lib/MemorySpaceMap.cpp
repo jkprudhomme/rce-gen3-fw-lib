@@ -88,9 +88,17 @@ void MemorySpaceMap::writeConfig ( uint base, uint offset, uint value ) {
 uint MemorySpaceMap::readConfig ( uint base, uint offset ) {
    if ( _devFd > 0 && offset < ConfigMapSize ) {
       volatile uint *ptr = (uint *)_cfgMappedBase;
-      uint value = ptr[base/4+offset];
-      //std::cout << "Read 0x" << std::hex << &(ptr[base/4+offset]) 
-                  //<< " value 0x" << std::hex << value << std::endl;
+
+      uint idx = base/4 + offset;
+      uint value = ptr[idx];
+
+      //uint *p  = &(ptr[idx]);
+      //std::cout << "Read Base: " << std::hex << base
+                //<< " Offset: " << std::hex << offset
+                //<< " Idx: " << std::hex << idx
+                //<< " Ptr: " << std::hex << p 
+                //<< " Value: " << std::hex << value   << std::endl;
+
       return(value);
    }
    else return(0);
@@ -111,7 +119,7 @@ void MemorySpaceMap::writeMemory32 ( uint offset, uint value ) {
       ptr[offset/4] = value;
    }
    else {
-      std::cout << "Write memory offset out of range = " << std::dec << offset << std::endl;
+      std::cout << "Write32 memory offset out of range = " << std::dec << offset << std::endl;
       exit(1);
    }
 }
@@ -151,19 +159,27 @@ void MemorySpaceMap::writeMemory8 ( uint offset, uchar value ) {
 
    }
    else {
-      std::cout << "Write memory offset out of range = " << std::dec << offset << std::endl;
+      std::cout << "Write8 memory offset out of range = " << std::dec << offset << std::endl;
       exit(1);
    }
 }
 
 // Read memory register
 uint MemorySpaceMap::readMemory32 ( uint offset ) {
+
    if ( _devFd > 0 && offset < MemoryMapSize ) {
       volatile uint *ptr = (uint *)_memMappedBase;
-      return(ptr[offset/4]);
+
+      uint idx = offset/4;
+      uint value = ptr[idx];
+
+      //std::cout << "readMemory32 Offset 0x" << std::hex << std::setw(8) << std::setfill('0') << idx
+                //<< " Value 0x" << std::hex << std::setw(8) << std::setfill('0') << value << std::endl;
+
+      return(value);
    }
    else {
-      std::cout << "Read memory offset out of range = " << std::dec << offset << std::endl;
+      std::cout << "Read32 memory offset out of range = " << std::dec << offset << std::endl;
       exit(1);
       return(0);
    }
@@ -195,7 +211,7 @@ uchar MemorySpaceMap::readMemory8 ( uint offset ) {
 
    }
    else {
-      std::cout << "Read memory offset out of range = " << std::dec << offset << std::endl;
+      std::cout << "Read8 memory offset out of range = " << std::dec << offset << std::endl;
       exit(1);
       return(0);
    }

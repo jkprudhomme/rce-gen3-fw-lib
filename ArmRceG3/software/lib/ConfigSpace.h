@@ -50,6 +50,9 @@ class ConfigSpace {
       // FIFO enables 0 - 8
       void setFifoEnable (uint fifo, bool enable );
 
+      // Reset Control
+      void ConfigSpace::setReset ( bool enable );
+
       // Memory base address
       void setMemBaseAddress (uint base );
 

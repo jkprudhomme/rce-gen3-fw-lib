@@ -12,7 +12,7 @@
 class MemorySpaceMap : public MemorySpace {
 
       static const uint ConfigBase             = 0x88000000;
-      static const unsigned long ConfigMapSize = 0x00040000;
+      static const unsigned long ConfigMapSize = 0x00080000;
 
       //static const uint MemoryBase             = 0x00001000;
       static const uint MemoryBase             = 0xFFFC0000;
