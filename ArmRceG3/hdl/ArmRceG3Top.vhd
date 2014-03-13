@@ -24,8 +24,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
-use work.Version.all;
-use work.ArmRceG3Version.all;
+use work.AxiLitePkg.all;
 
 entity ArmRceG3Top is
    generic (
@@ -46,27 +45,29 @@ entity ArmRceG3Top is
       sysClk200                : out   sl;
       sysClk200Rst             : out   sl;
 
-      -- External Local Bus
-      localBusMaster           : out   LocalBusMasterVector(15 downto 8);
-      localBusSlave            : in    LocalBusSlaveVector(15 downto 8);
+      -- External Axi Bus, 0xA0000000 - 0xBFFFFFFF
+      localAxiReadMaster       : out   AxiLiteReadMasterType;
+      localAxiReadSlave        : in    AxiLiteReadSlaveType;
+      localAxiWriteMaster      : out   AxiLiteWriteMasterType;
+      localAxiWriteSlave       : in    AxiLiteWriteSlaveType;
 
       -- PPI Outbound FIFO Interface
-      obPpiClk                : in     slv(3 downto 0);
-      obPpiToFifo             : in     ObPpiToFifoVector(3 downto 0);
-      obPpiFromFifo           : out    ObPpiFromFifoVector(3 downto 0);
+      obPpiClk                 : in    slv(3 downto 0);
+      obPpiToFifo              : in    ObPpiToFifoVector(3 downto 0);
+      obPpiFromFifo            : out   ObPpiFromFifoVector(3 downto 0);
 
       -- PPI Inbound FIFO Interface
-      ibPpiClk                : in     slv(3 downto 0);
-      ibPpiToFifo             : in     IbPpiToFifoVector(3 downto 0);
-      ibPpiFromFifo           : out    IbPpiFromFifoVector(3 downto 0);
+      ibPpiClk                 : in    slv(3 downto 0);
+      ibPpiToFifo              : in    IbPpiToFifoVector(3 downto 0);
+      ibPpiFromFifo            : out   IbPpiFromFifoVector(3 downto 0);
 
       -- Ethernet
-      ethFromArm              : out    EthFromArmVector(1 downto 0);
-      ethToArm                : in     EthToArmVector(1 downto 0);
+      ethFromArm               : out   EthFromArmVector(1 downto 0);
+      ethToArm                 : in    EthToArmVector(1 downto 0);
 
       -- Programmable Clock Select
-      clkSelA                 : out   slv(1 downto 0);
-      clkSelB                 : out   slv(1 downto 0)
+      clkSelA                  : out   slv(1 downto 0);
+      clkSelB                  : out   slv(1 downto 0)
    );
 end ArmRceG3Top;
 
@@ -98,9 +99,6 @@ architecture structure of ArmRceG3Top is
    signal axiHpSlaveReadFromArm    : AxiReadSlaveVector(3 downto 0);
    signal axiHpSlaveReadToArm      : AxiReadMasterVector(3 downto 0);
    signal armInt                   : slv(15 downto 0);
-   signal intLocalBusMaster        : LocalBusMasterVector(15 downto 0);
-   signal intLocalBusSlave         : LocalBusSlaveVector(15 downto 0);
-   signal scratchPad               : slv(31 downto 0);
    signal iaxiClk                  : sl;
    signal iaxiClkRst               : sl;
    signal isysClk125               : sl;
@@ -109,10 +107,10 @@ architecture structure of ArmRceG3Top is
    signal isysClk200Rst            : sl;
    signal bsiToFifo                : QWordToFifoType;
    signal bsiFromFifo              : QWordFromFifoType;
-   signal iclkSelA                 : slv(1 downto 0);
-   signal iclkSelB                 : slv(1 downto 0);
-   signal locLocalBusMaster        : LocalBusMasterType;
-   signal locLocalBusSlave         : LocalBusSlaveType;
+   signal intAxiReadMaster         : AxiLiteReadMasterArray(4 downto 0);
+   signal intAxiReadSlave          : AxiLiteReadSlaveArray(4 downto 0);
+   signal intAxiWriteMaster        : AxiLiteWriteMasterArray(4 downto 0);
+   signal intAxiWriteSlave         : AxiLiteWriteSlaveArray(4 downto 0);
 
 begin
 
@@ -196,129 +194,60 @@ begin
    sysClk200Rst <= isysClk200Rst;
 
    --------------------------------------------
-   -- Local Bus Controller
+   -- Local AXI Bus
    --------------------------------------------
    
    -- GP1: 8000_0000 to BFFF_FFFF
-   U_ArmRceG3LocalBus: entity work.ArmRceG3LocalBus 
+   U_ArmRceG3LocalAxi: entity work.ArmRceG3LocalAxi 
       generic map (
          TPD_G => TPD_G
       ) port map (
          axiClk                  => iaxiClk,
          axiClkRst               => iaxiClkRst,
-         axiMasterReadFromArm    => axiGpMasterReadFromArm(1),
-         axiMasterReadToArm      => axiGpMasterReadToArm(1),
-         axiMasterWriteFromArm   => axiGpMasterWriteFromArm(1),
-         axiMasterWriteToArm     => axiGpMasterWriteToArm(1),
-         localBusMaster          => intLocalBusMaster,
-         localBusSlave           => intLocalBusSlave
+         axiGpMasterReadFromArm  => axiGpMasterReadFromArm(1),
+         axiGpMasterReadToArm    => axiGpMasterReadToArm(1),
+         axiGpMasterWriteFromArm => axiGpMasterWriteFromArm(1),
+         axiGpMasterWriteToArm   => axiGpMasterWriteToArm(1),
+         localAxiReadMaster      => intAxiReadMaster,
+         localAxiReadSlave       => intAxiReadSlave,
+         localAxiWriteMaster     => intAxiWriteMaster,
+         localAxiWriteSlave      => intAxiWriteSlave,
+         clkSelA                 => clkSelA,
+         clkSelB                 => clkSelB
       );
 
-   -- External Local Bus
-   localBusMaster                 <= intLocalBusMaster(15 downto 8);
-   intLocalBusSlave(15 downto 8)  <= localBusSlave;
+   -- External Axi Bus, 0xA0000000 - 0xBFFFFFFF
+   localAxiReadMaster  <= intAxiReadMaster(4);
+   intAxiReadSlave(4)  <= localAxiReadSlave;
+   localAxiWriteMaster <= intAxiWriteMaster(4);
+   intAxiWriteSlave(4) <= localAxiWriteSlave;
 
-   -- Unused
-   intLocalBusSlave(7  downto 3) <= (others=>LocalBusSlaveInit);
-
-   --------------------------------------------
-   -- Local Registers
-   --------------------------------------------
-   locLocalBusMaster   <= intLocalBusMaster(0);
-   intLocalBusSlave(0) <= locLocalBusSlave;
-
-   process ( iaxiClk ) 
-      variable c : character;
-   begin
-      if rising_edge(iaxiClk) then
-         if iaxiClkRst = '1' then
-            scratchPad       <= (others=>'0')     after TPD_G;
-            locLocalBusSlave <= LocalBusSlaveInit after TPD_G;
-            iclkSelA         <= (others=>'0')     after TPD_G;
-            iclkSelB         <= (others=>'0')     after TPD_G;
-         else
-            locLocalBusSlave.readValid <= locLocalBusMaster.readEnable after TPD_G;
-            locLocalBusSlave.readData  <= x"deadbeef"                     after TPD_G;
-
-            -- 0x80000000
-            if locLocalBusMaster.addr(23 downto 0) = x"000000" then
-               locLocalBusSlave.readData <= FPGA_VERSION_C after TPD_G;
-
-            -- 0x80000004
-            elsif locLocalBusMaster.addr(23 downto 2) = x"000004" then
-               if locLocalBusMaster.writeEnable = '1' then
-                  scratchPad <= locLocalBusMaster.writeData after TPD_G;   
-               end if;
-               locLocalBusSlave.readData <= scratchPad after TPD_G;
-
-            -- 0x80000008
-            elsif locLocalBusMaster.addr(23 downto 0) = x"000008" then
-               locLocalBusSlave.readData <= ArmRceG3Version after TPD_G;
-
-            -- 0x80000010
-            elsif locLocalBusMaster.addr(23 downto 0) = x"000010" then
-               if locLocalBusMaster.writeEnable = '1' then
-                  iclkSelA(0) <= locLocalBusMaster.writeData(0) after TPD_G;   
-                  iclkSelB(0) <= locLocalBusMaster.writeData(1) after TPD_G;   
-               end if;
-
-               locLocalBusSlave.readData(0)           <= iclkSelA(0)   after TPD_G;
-               locLocalBusSlave.readData(1)           <= iclkSelB(0)   after TPD_G;
-               locLocalBusSlave.readData(31 downto 2) <= (others=>'0') after TPD_G;
-
-            -- 0x80000014
-            elsif locLocalBusMaster.addr(23 downto 0) = x"000014" then
-               if locLocalBusMaster.writeEnable = '1' then
-                  iclkSelA(1) <= locLocalBusMaster.writeData(0) after TPD_G;   
-                  iclkSelB(1) <= locLocalBusMaster.writeData(1) after TPD_G;   
-               end if;
-
-               locLocalBusSlave.readData(0)           <= iclkSelA(1)   after TPD_G;
-               locLocalBusSlave.readData(1)           <= iclkSelB(1)   after TPD_G;
-               locLocalBusSlave.readData(31 downto 2) <= (others=>'0') after TPD_G;
-
-            -- 0x80001000
-            elsif locLocalBusMaster.addr(23 downto 8) = x"0010" then
-               locLocalBusSlave.readData <= (others=>'0') after TPD_G;
-
-               for x in 0 to 3 loop
-                  if (conv_integer(locLocalBusMaster.addr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
-                     c := BUILD_STAMP_C(conv_integer(locLocalBusMaster.addr(7 downto 0))+x+1);
-                     locLocalBusSlave.readData(x*8+7 downto x*8) <= conv_std_logic_vector(character'pos(c),8) after TPD_G;
-                  end if;
-               end loop;
-            end if;
-         end if;
-      end if;  
-   end process;
-
-   clkSelA <= iclkSelA;
-   clkSelB <= iclkSelB;
 
    --------------------------------------------
-   -- I2C Controller
+   -- I2C Controller -- 0x84000000 - 0x84000FFF
    --------------------------------------------
-
-   -- 0x8400_0000 - 0x87FF_FFFF
    U_ArmRceG3I2c : entity work.ArmRceG3I2c
       generic map (
          TPD_G => TPD_G
       ) port map (
-         axiClk            => iaxiClk,
-         axiClkRst         => iaxiClkRst,
-         localBusMaster    => intLocalBusMaster(1),
-         localBusSlave     => intLocalBusSlave(1),
-         bsiToFifo         => bsiToFifo,
-         bsiFromFifo       => bsiFromFifo,
-         i2cSda            => i2cSda,
-         i2cScl            => i2cScl
+         axiClk              => iaxiClk,
+         axiClkRst           => iaxiClkRst,
+         localAxiReadMaster  => intAxiReadMaster(0),
+         localAxiReadSlave   => intAxiReadSlave(0),
+         localAxiWriteMaster => intAxiWriteMaster(0),
+         localAxiWriteSlave  => intAxiWriteSlave(0),
+         bsiToFifo           => bsiToFifo,
+         bsiFromFifo         => bsiFromFifo,
+         i2cSda              => i2cSda,
+         i2cScl              => i2cScl
       );
 
    --------------------------------------------
    -- DMA Controller
+   -- 0x88000000 - 0x88000FFF : DMA Control Registers
+   -- 0x88001000 - 0x880010FF : DMA Control Completion FIFOs
+   -- 0x88001100 - 0x880011FF : DMA Control Free List FIFOs
    --------------------------------------------
-
-   -- 0x8800_0000 - 0x8BFF_FFFF
    U_ArmRceG3DmaCntrl : entity work.ArmRceG3DmaCntrl 
       generic map (
          TPD_G => TPD_G
@@ -334,8 +263,10 @@ begin
          axiHpSlaveReadFromArm    => axiHpSlaveReadFromArm,
          axiHpSlaveReadToArm      => axiHpSlaveReadToArm,
          interrupt                => armInt,
-         localBusMaster           => intLocalBusMaster(2),
-         localBusSlave            => intLocalBusSlave(2),
+         localAxiReadMaster       => intAxiReadMaster(3 downto 1),
+         localAxiReadSlave        => intAxiReadSlave(3 downto 1),
+         localAxiWriteMaster      => intAxiWriteMaster(3 downto 1),
+         localAxiWriteSlave       => intAxiWriteSlave(3 downto 1),
          obPpiClk                 => obPpiClk,
          obPpiToFifo              => obPpiToFifo,
          obPpiFromFifo            => obPpiFromFifo,

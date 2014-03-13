@@ -28,6 +28,7 @@ library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 use work.StdRtlPkg.all;
 use work.ArmRceG3Pkg.all;
+use work.AxiLitePkg.all;
 
 entity DtmTimingSource is
    generic (
@@ -38,8 +39,10 @@ entity DtmTimingSource is
       -- Local Bus
       axiClk                   : in  sl;
       axiClkRst                : in  sl;
-      localBusMaster           : in  LocalBusMasterType;
-      localBusSlave            : out LocalBusSlaveType;
+      axiReadMaster            : in  AxiLiteReadMasterType;
+      axiReadSlave             : out AxiLiteReadSlaveType;
+      axiWriteMaster           : in  AxiLiteWriteMasterType;
+      axiWriteSlave            : out AxiLiteWriteSlaveType;
 
       -- Reference Clock
       sysClk200                : in  sl;
@@ -73,24 +76,16 @@ architecture STRUCTURE of DtmTimingSource is
    -- Local Signals
    signal ifbCode             : Slv8Array(7 downto 0);
    signal ifbCodeEn           : slv(7 downto 0);
-   signal fbCfgSet            : slv(7 downto 0);
-   signal fbCfgDelay          : slv(4 downto 0);
    signal fbStatusIdleCnt     : Slv16Array(7 downto 0);
    signal fbStatusErrorCnt    : Slv16Array(7 downto 0);
-   signal cmdCode             : slv(7 downto 0);
-   signal cmdCodeEn           : sl;
    signal regCode             : slv(7 downto 0);
    signal regCodeEn           : sl;
    signal intCode             : slv(7 downto 0);
    signal intCodeEn           : sl;
    signal ocFifoWr            : sl;
-   signal ocFifoWrEn          : sl;
-   signal ocFifoRd            : sl;
    signal ocFifoValid         : sl;
    signal ocFifoData          : slv(7 downto 0);
    signal fbFifoWr            : slv(7 downto 0);
-   signal fbFifoWrEn          : slv(7 downto 0);
-   signal fbFifoRd            : slv(7 downto 0);
    signal fbFifoValid         : slv(7 downto 0);
    signal fbFifoData          : Slv8Array(7 downto 0);
    signal ledCountA           : slv(31 downto 0);
@@ -98,6 +93,35 @@ architecture STRUCTURE of DtmTimingSource is
    signal dpmClk              : slv(2 downto 0);
    signal dpmFb               : slv(7 downto 0);
    signal axiClkRstInt        : sl := '1';
+
+   type RegType is record
+      fbCfgSet          : slv(7 downto 0);
+      fbCfgDelay        : slv(4 downto 0);
+      cmdCode           : slv(7 downto 0);
+      cmdCodeEn         : sl;
+      ocFifoRd          : sl;
+      fbFifoRd          : slv(7 downto 0);
+      fbFifoWrEn        : slv(7 downto 0);
+      ocFifoWrEn        : sl;
+      axiReadSlave      : AxiLiteReadSlaveType;
+      axiWriteSlave     : AxiLiteWriteSlaveType;
+   end record RegType;
+
+   constant REG_INIT_C : RegType := (
+      fbCfgSet          => (others=>'0'),
+      fbCfgDelay        => (others=>'0'),
+      cmdCode           => (others=>'0'),
+      cmdCodeEn         => '0',
+      ocFifoRd          => '0',
+      fbFifoRd          => (others=>'0'),
+      fbFifoWrEn        => (others=>'0'),
+      ocFifoWrEn        => '0',
+      axiReadSlave      => AXI_READ_SLAVE_INIT_C,
+      axiWriteSlave     => AXI_WRITE_SLAVE_INIT_C
+   );
+
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
@@ -212,7 +236,7 @@ begin
          USE_DSP48_G    => "no",
          ALTERA_SYN_G   => false,
          ALTERA_RAM_G   => "M9K",
-         --SYNC_STAGES_G  => 2,
+         SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 8,
          ADDR_WIDTH_G   => 6,
          INIT_G         => "0",
@@ -231,7 +255,7 @@ begin
          full               => open,
          not_full           => open,
          rd_clk             => axiClk,
-         rd_en              => ocFifoRd,
+         rd_en              => rin.ocFifoRd,
          dout               => ocFifoData,
          rd_data_count      => open,
          valid              => ocFifoValid,
@@ -242,7 +266,7 @@ begin
       );
 
    -- Control writes
-   ocFifoWr <= ocFifoWrEn and intCodeEn;
+   ocFifoWr <= r.ocFifoWrEn and intCodeEn;
 
 
    ----------------------------------------
@@ -270,8 +294,8 @@ begin
             timingCodeEn    => ifbCodeEn(i),
             configClk       => axiClk,
             configClkRst    => axiClkRstInt,
-            configSet       => fbCfgSet(i),
-            configDelay     => fbCfgDelay,
+            configSet       => r.fbCfgSet(i),
+            configDelay     => r.fbCfgDelay,
             statusIdleCnt   => fbStatusIdleCnt(i),
             statusErrorCnt  => fbStatusErrorCnt(i)
          );
@@ -305,7 +329,7 @@ begin
             full               => open,
             not_full           => open,
             rd_clk             => axiClk,
-            rd_en              => fbFifoRd(i),
+            rd_en              => rin.fbFifoRd(i),
             dout               => fbFifoData(i),
             rd_data_count      => open,
             valid              => fbFifoValid(i),
@@ -316,7 +340,7 @@ begin
          );
 
       -- Control writes
-      fbFifoWr(i) <= fbFifoWrEn(i) and ifbCodeEn(i);
+      fbFifoWr(i) <= r.fbFifoWrEn(i) and ifbCodeEn(i);
 
    end generate;
 
@@ -329,82 +353,103 @@ begin
    -- Local Registers
    ----------------------------------------
 
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            localBusSlave    <= LocalBusSlaveInit after TPD_G;
-            fbCfgSet         <= (others=>'0')     after TPD_G;
-            fbCfgDelay       <= (others=>'0')     after TPD_G;
-            cmdCode          <= (others=>'0')     after TPD_G;
-            cmdCodeEn        <= '0'               after TPD_G;
-            ocFifoRd         <= '0'               after TPD_G;
-            fbFifoRd         <= (others=>'0')     after TPD_G;
-            fbFifoWrEn       <= (others=>'0')     after TPD_G;
-            ocFifoWrEn       <= '0'               after TPD_G;
-         else
-
-            -- Init
-            localBusSlave.readValid <= localBusMaster.readEnable            after TPD_G;
-            localBusSlave.readData  <= (others=>'0')                        after TPD_G;
-            fbCfgSet                <= (others=>'0')                        after TPD_G;
-            fbCfgDelay              <= localBusMaster.writeData(4 downto 0) after TPD_G;
-            cmdCodeEn               <= '0'                                  after TPD_G;
-            ocFifoRd                <= '0'                                  after TPD_G;
-            fbFifoRd                <= (others=>'0')                        after TPD_G;
-
-            -- FB Fifo Write Enable, one per FIFO
-            if localBusMaster.addr(23 downto 0) = x"000000" then
-               if localBusMaster.writeEnable = '1' then
-                  fbFifoWrEn <= localBusMaster.writeData(7 downto 0) after TPD_G;
-               end if;
-
-            -- FB Delay configuration, one per FIFO
-            elsif localBusMaster.addr(23 downto 8) = x"0001" then
-               fbCfgSet(conv_integer(localBusMaster.addr(5 downto 2))) <= localBusMaster.writeEnable after TPD_G;
-
-            -- FB FIFO status, one per FIFO
-            elsif localBusMaster.addr(23 downto 8) = x"0002" then
-               localBusSlave.readData(31 downto 16) <= fbStatusErrorCnt(conv_integer(localBusMaster.addr(5 downto 2))) after TPD_G;
-               localBusSlave.readData(15 downto  0) <= fbStatusIdleCnt(conv_integer(localBusMaster.addr(5 downto 2)))  after TPD_G;
-
-            -- FB FIFO read, one per FIFO
-            elsif localBusMaster.addr(23 downto 8) = x"0003" then
-               fbFifoRd(conv_integer(localBusMaster.addr(5 downto 2))) <= localBusMaster.readEnable after TPD_G;
-
-               localBusSlave.readValid             <= fbFifoRd(conv_integer(localBusMaster.addr(5 downto 2)))    after TPD_G;
-               localBusSlave.readData(8)           <= fbFifoValid(conv_integer(localBusMaster.addr(5 downto 2))) after TPD_G;
-               localBusSlave.readData(7 downto  0) <= fbFifoData(conv_integer(localBusMaster.addr(5 downto 2)))  after TPD_G;
-
-            -- OC Opcode Generation
-            elsif localBusMaster.addr(23 downto 0) = x"000400" then
-               cmdCodeEn <= localBusMaster.writeEnable after TPD_G;
-
-               if localBusMaster.writeEnable = '1' then
-                  cmdCode <= localBusMaster.writeData(7 downto 0) after TPD_G;
-               end if;
-
-            -- OC FIFO read
-            elsif localBusMaster.addr(23 downto 0) = x"000404" then
-               ocFifoRd                            <= localBusMaster.readEnable after TPD_G;
-               localBusSlave.readValid             <= ocFifoRd                  after TPD_G;
-               localBusSlave.readData(8)           <= ocFifoValid               after TPD_G;
-               localBusSlave.readData(7 downto  0) <= ocFifoData                after TPD_G;
-
-            -- OC Fifo Enable
-            elsif localBusMaster.addr(23 downto 0) = x"000408" then
-               localBusSlave.readData(0) <= ocFifoWrEn after TPD_G;
-
-               if localBusMaster.writeEnable = '1' then
-                  ocFifoWrEn <= localBusMaster.writeData(0) after TPD_G;
-               end if;
-
-            elsif localBusMaster.addr(23 downto 0) = x"00040C" then
-               localBusSlave.readData <= ledCountA after TPD_G;
-
-            end if;
-
-         end if;
+   -- Sync
+   process (axiClk) is
+   begin
+      if (rising_edge(axiClk)) then
+         r <= rin after TPD_G;
       end if;
+   end process;
+
+   -- Async
+   process (axiClkRst, axiReadMaster, axiWriteMaster, r, fbStatusErrorCnt, fbStatusIdleCnt, 
+            fbFifoValid, fbFifoData, ocFifoValid, ocFifoData, ledCountA) is
+      variable v         : RegType;
+      variable axiStatus : AxiLiteStatusType;
+      variable c         : character;
+   begin
+      v := r;
+
+      v.fbCfgSet   := (others=>'0');
+      v.fbCfgDelay := axiWriteMaster.wdata(4 downto 0);
+      v.cmdCodeEn  := '0';
+      v.ocFifoRd   := '0';
+      v.fbFifoRd   := (others=>'0');
+
+      axiSlaveWaitTxn(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave, axiStatus);
+
+      -- Write
+      if (axiStatus.writeEnable = '1') then
+
+         -- FB Fifo Write Enable, one per FIFO
+         if axiWriteMaster.awaddr(11 downto 0)  = x"000" then
+            v.fbFifoWrEn := axiWriteMaster.wdata(7 downto 0);
+
+         -- FB Delay configuration, one per FIFO
+         elsif axiWriteMaster.awaddr(11 downto 8)  = x"1" then
+            v.fbCfgSet(conv_integer(axiWriteMaster.awaddr(5 downto 2))) := '1';
+
+         -- OC Opcode Generation
+         elsif axiWriteMaster.awaddr(11 downto 0)  = x"400" then
+            v.cmdCodeEn := '1';
+            v.cmdCode   := axiWriteMaster.wdata(7 downto 0);
+
+         -- OC Fifo Enable
+         elsif axiWriteMaster.awaddr(11 downto 0)  = x"408" then
+            v.ocFifoWrEn := axiWriteMaster.wdata(0);
+         end if;
+
+         -- Send Axi response
+         axiSlaveWriteResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
+      end if;
+
+      -- Read
+      if (axiStatus.readEnable = '1') then
+         v.axiReadSlave.rdata := (others => '0');
+
+         -- Decode address and assign read data
+         if axiReadMaster.araddr(11 downto 8)  = x"2" then
+            v.axiReadSlave.rdata(31 downto 16) := fbStatusErrorCnt(conv_integer(axiReadMaster.araddr(5 downto 2)));
+            v.axiReadSlave.rdata(15 downto  0) := fbStatusIdleCnt(conv_integer(axiReadMaster.araddr(5 downto 2)));
+
+         -- FB FIFO read, one per FIFO
+         elsif axiReadMaster.araddr(11 downto 8)  = x"3" then
+            v.fbFifoRd(conv_integer(axiReadMaster.araddr(5 downto 2))) := '1';
+
+            v.axiReadSlave.rdata(8)           := fbFifoValid(conv_integer(axiReadMaster.araddr(5 downto 2)));
+            v.axiReadSlave.rdata(7 downto  0) := fbFifoData(conv_integer(axiReadMaster.araddr(5 downto 2)));
+
+         -- OC FIFO read
+         elsif axiReadMaster.araddr(11 downto 0)  = x"404" then
+            v.ocFifoRd                        := '1';
+            v.axiReadSlave.rdata(8)           := ocFifoValid;
+            v.axiReadSlave.rdata(7 downto  0) := ocFifoData;
+
+         -- OC Fifo Enable
+         elsif axiReadMaster.araddr(11 downto 0)  = x"408" then
+            v.axiReadSlave.rdata(0) := r.ocFifoWrEn;
+
+         -- Debug counter
+         elsif axiReadMaster.araddr(11 downto 0)  = x"40C" then
+            v.axiReadSlave.rdata := ledCountA;
+         end if;
+
+         -- Send Axi Response
+         axiSlaveReadResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
+      end if;
+
+      -- Reset
+      if (axiClkRst = '1') then
+         v := REG_INIT_C;
+      end if;
+
+      -- Next register assignment
+      rin <= v;
+
+      -- Outputs
+      axiReadSlave  <= r.axiReadSlave;
+      axiWriteSlave <= r.axiWriteSlave;
+      
    end process;
 
    -- Command code synchronizer
@@ -419,7 +464,7 @@ begin
       ) port map (
          clk     => distClk,
          rst     => distClkRst,
-         dataIn  => cmdCode,
+         dataIn  => r.cmdCode,
          dataOut => regCode
       );
 
@@ -433,7 +478,7 @@ begin
       ) port map (
          clk         => distClk,
          rst         => distClkRst,
-         dataIn      => cmdCodeEn,
+         dataIn      => r.cmdCodeEn,
          dataOut     => open,
          risingEdge  => regCodeEn,
          fallingEdge => open

@@ -19,6 +19,7 @@ library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 entity DpmCore is
    port (
@@ -41,9 +42,11 @@ entity DpmCore is
       sysClk200                : out   sl;
       sysClk200Rst             : out   sl;
 
-      -- External Local Bus
-      localBusMaster           : out   LocalBusMasterVector(15 downto 8);
-      localBusSlave            : in    LocalBusSlaveVector(15 downto 8);
+      -- External Axi Bus, 0xA0000000 - 0xAFFFFFFF
+      localAxiReadMaster      : out    AxiLiteReadMasterType;
+      localAxiReadSlave       : in     AxiLiteReadSlaveType;
+      localAxiWriteMaster     : out    AxiLiteWriteMasterType;
+      localAxiWriteSlave      : in     AxiLiteWriteSlaveType;
 
       -- PPI Outbound FIFO Interface
       obPpiClk                : in     slv(3 downto 0);
@@ -64,8 +67,6 @@ end DpmCore;
 architecture STRUCTURE of DpmCore is
 
    -- Local Signals
-   signal ilocalBusSlave     : LocalBusSlaveVector(15 downto 8);
-   signal ilocalBusMaster    : LocalBusMasterVector(15 downto 8);
    signal iaxiClk            : sl;
    signal iaxiClkRst         : sl;
    signal isysClk125         : sl;
@@ -74,8 +75,15 @@ architecture STRUCTURE of DpmCore is
    signal isysClk200Rst      : sl;
    signal iethFromArm        : EthFromArmVector(1 downto 0);
    signal iethToArm          : EthToArmVector(1 downto 0);
-   signal idtmClk            : slv(1 downto 0);
-   signal idtmFb             : sl;
+   signal intAxiReadMaster   : AxiLiteReadMasterArray(0 downto 0);
+   signal intAxiReadSlave    : AxiLiteReadSlaveArray(0 downto 0);
+   signal intAxiWriteMaster  : AxiLiteWriteMasterArray(0 downto 0);
+   signal intAxiWriteSlave   : AxiLiteWriteSlaveArray(0 downto 0);
+   signal topAxiReadMaster   : AxiLiteReadMasterType;
+   signal topAxiReadSlave    : AxiLiteReadSlaveType;
+   signal topAxiWriteMaster  : AxiLiteWriteMasterType;
+   signal topAxiWriteSlave   : AxiLiteWriteSlaveType;
+
 
 begin
 
@@ -88,8 +96,6 @@ begin
    sysClk125Rst    <= isysClk125Rst;
    sysClk200       <= isysClk200;
    sysClk200Rst    <= isysClk200Rst;
-   localBusMaster  <= ilocalBusMaster;
-   ilocalBusSlave  <= localBusSlave; 
 
    --------------------------------------------------
    -- RCE Core
@@ -98,26 +104,28 @@ begin
       generic map (
          AXI_CLKDIV_G => 4.7
       ) port map (
-         i2cSda             => i2cSda,
-         i2cScl             => i2cScl,
-         axiClk             => iaxiClk,
-         axiClkRst          => iaxiClkRst,
-         sysClk125          => isysClk125,
-         sysClk125Rst       => isysClk125Rst,
-         sysClk200          => isysClk200,
-         sysClk200Rst       => isysClk200Rst,
-         localBusMaster     => ilocalBusMaster,
-         localBusSlave      => ilocalBusSlave,
-         obPpiClk           => obPpiClk,
-         obPpiToFifo        => obPpiToFifo,
-         obPpiFromFifo      => obPpiFromFifo,
-         ibPpiClk           => ibPpiClk,
-         ibPpiToFifo        => ibPpiToFifo,
-         ibPpiFromFifo      => ibPpiFromFifo,
-         ethFromArm         => iethFromArm,
-         ethToArm           => iethToArm,
-         clkSelA            => clkSelA,
-         clkSelB            => clkSelB
+         i2cSda              => i2cSda,
+         i2cScl              => i2cScl,
+         axiClk              => iaxiClk,
+         axiClkRst           => iaxiClkRst,
+         sysClk125           => isysClk125,
+         sysClk125Rst        => isysClk125Rst,
+         sysClk200           => isysClk200,
+         sysClk200Rst        => isysClk200Rst,
+         localAxiReadMaster  => topAxiReadMaster,
+         localAxiReadSlave   => topAxiReadSlave ,
+         localAxiWriteMaster => topAxiWriteMaster,
+         localAxiWriteSlave  => topAxiWriteSlave ,
+         obPpiClk            => obPpiClk,
+         obPpiToFifo         => obPpiToFifo,
+         obPpiFromFifo       => obPpiFromFifo,
+         ibPpiClk            => ibPpiClk,
+         ibPpiToFifo         => ibPpiToFifo,
+         ibPpiFromFifo       => ibPpiFromFifo,
+         ethFromArm          => iethFromArm,
+         ethToArm            => iethToArm,
+         clkSelA             => clkSelA,
+         clkSelB             => clkSelB
       );
 
    --------------------------------------------------
@@ -137,6 +145,41 @@ begin
       );
 
    iethToArm(1) <= EthToArmInit;
+
+   -------------------------------------
+   -- AXI Lite Crossbar
+   -- Base: 0xA0000000 - 0xBFFFFFFF
+   -------------------------------------
+   U_AxiCrossbar : entity work.AxiLiteCrossbar 
+      generic map (
+         NUM_SLAVE_SLOTS_G  => 1,
+         NUM_MASTER_SLOTS_G => 1,
+         DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
+         MASTERS_CONFIG_G   => (
+
+            -- Channel 0 = 0xA0000000 - 0xAFFFFFFF : External Top Level
+            0 => ( baseAddr     => x"A0000000",
+                   addrBits     => 28,
+                   connectivity => x"FFFF")
+         )
+      ) port map (
+         axiClk              => iaxiClk,
+         axiClkRst           => iaxiClkRst,
+         sAxiWriteMasters(0) => topAxiWriteMaster,
+         sAxiWriteSlaves(0)  => topAxiWriteSlave,
+         sAxiReadMasters(0)  => topAxiReadMaster,
+         sAxiReadSlaves(0)   => topAxiReadSlave,
+         mAxiWriteMasters    => intAxiWriteMaster,
+         mAxiWriteSlaves     => intAxiWriteSlave,
+         mAxiReadMasters     => intAxiReadMaster,
+         mAxiReadSlaves      => intAxiReadSlave
+      );
+
+   -- External Connections
+   localAxiReadMaster  <= intAxiReadMaster(0);
+   intAxiReadSlave(0)  <= localAxiReadSlave;
+   localAxiWriteMaster <= intAxiWriteMaster(0);
+   intAxiWriteSlave(0) <= localAxiWriteSlave;
 
 end architecture STRUCTURE;
 

@@ -22,6 +22,7 @@ library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 use work.StdRtlPkg.all;
 use work.ArmRceG3Pkg.all;
+use work.AxiLitePkg.all;
 
 entity DpmTimingSink is
    generic (
@@ -32,8 +33,10 @@ entity DpmTimingSink is
       -- Local Bus
       axiClk                   : in  sl;
       axiClkRst                : in  sl;
-      localBusMaster           : in  LocalBusMasterType;
-      localBusSlave            : out LocalBusSlaveType;
+      axiReadMaster            : in  AxiLiteReadMasterType;
+      axiReadSlave             : out AxiLiteReadSlaveType;
+      axiWriteMaster           : in  AxiLiteWriteMasterType;
+      axiWriteSlave            : out AxiLiteWriteSlaveType;
 
       -- Reference Clock
       sysClk200                : in  sl;
@@ -72,19 +75,37 @@ architecture STRUCTURE of DpmTimingSink is
    signal intReset            : sl;
    signal intCode             : slv(7 downto 0);
    signal intCodeEn           : sl;
-   signal cfgReset            : sl;
-   signal cfgSet              : sl;
-   signal cfgDelay            : slv(4 downto 0);
    signal statusIdleCnt       : Slv(15 downto 0);
    signal statusErrorCnt      : Slv(15 downto 0);
    signal ocFifoWr            : sl;
-   signal ocFifoWrEn          : sl;
-   signal ocFifoRd            : sl;
    signal ocFifoValid         : sl;
    signal ocFifoData          : slv(7 downto 0);
    signal ledCountA           : slv(31 downto 0);
    signal ledCountB           : slv(31 downto 0);
    signal axiClkRstInt        : sl := '1';
+
+   type RegType is record
+      cfgReset          : sl;
+      cfgSet            : sl;
+      cfgDelay          : slv(4 downto 0);
+      ocFifoRd          : sl;
+      ocFifoWrEn        : sl;
+      axiReadSlave      : AxiLiteReadSlaveType;
+      axiWriteSlave     : AxiLiteWriteSlaveType;
+   end record RegType;
+
+   constant REG_INIT_C : RegType := (
+      cfgReset         => '0',
+      cfgSet           => '0',
+      cfgDelay         => (others=>'0'),
+      ocFifoRd         => '0',
+      ocFifoWrEn       => '0',
+      axiReadSlave     => AXI_READ_SLAVE_INIT_C,
+      axiWriteSlave    => AXI_WRITE_SLAVE_INIT_C
+   );
+
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
@@ -137,7 +158,7 @@ begin
          O => intClk
       );
 
-   intReset <= axiClkRstInt or cfgReset;
+   intReset <= axiClkRstInt or r.cfgReset;
 
    -- Reset gen
    U_RstGen : entity work.RstSync
@@ -179,8 +200,8 @@ begin
          timingCodeEn    => intCodeEn,
          configClk       => axiClk,
          configClkRst    => axiClkRstInt,
-         configSet       => cfgSet,
-         configDelay     => cfgDelay,
+         configSet       => r.cfgSet,
+         configDelay     => r.cfgDelay,
          statusIdleCnt   => statusIdleCnt,
          statusErrorCnt  => statusErrorCnt
       );
@@ -214,7 +235,7 @@ begin
          full               => open,
          not_full           => open,
          rd_clk             => axiClk,
-         rd_en              => ocFifoRd,
+         rd_en              => rin.ocFifoRd,
          dout               => ocFifoData,
          rd_data_count      => open,
          valid              => ocFifoValid,
@@ -225,7 +246,7 @@ begin
       );
 
    -- Control writes
-   ocFifoWr <= ocFifoWrEn and intCodeEn;
+   ocFifoWr <= r.ocFifoWrEn and intCodeEn;
 
 
    ----------------------------------------
@@ -256,62 +277,89 @@ begin
    -- Local Registers
    ----------------------------------------
 
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            localBusSlave    <= LocalBusSlaveInit after TPD_G;
-            cfgReset         <= '0'               after TPD_G;
-            cfgSet           <= '0'               after TPD_G;
-            cfgDelay         <= (others=>'0')     after TPD_G;
-            ocFifoRd         <= '0'               after TPD_G;
-            ocFifoWrEn       <= '0'               after TPD_G;
-         else
-
-            -- Init
-            localBusSlave.readValid <= localBusMaster.readEnable            after TPD_G;
-            localBusSlave.readData  <= (others=>'0')                        after TPD_G;
-            cfgReset                <= '0'                                  after TPD_G;
-            cfgSet                  <= '0'                                  after TPD_G;
-            cfgDelay                <= localBusMaster.writeData(4 downto 0) after TPD_G;
-            ocFifoRd                <= '0'                                  after TPD_G;
-
-            -- Master Reset
-            if localBusMaster.addr(23 downto 0) = x"000000" then
-               cfgReset <= localBusMaster.writeEnable after TPD_G;
-
-            -- OC Fifo Write Enable
-            elsif localBusMaster.addr(23 downto 0) = x"000004" then
-               if localBusMaster.writeEnable = '1' then
-                  ocFifoWrEn <= localBusMaster.writeData(0) after TPD_G;
-               end if;
-
-            -- OC Delay configuration
-            elsif localBusMaster.addr(23 downto 0) = x"000008" then
-               cfgSet <= localBusMaster.writeEnable after TPD_G;
-
-            -- OC FIFO status, one per FIFO
-            elsif localBusMaster.addr(23 downto 0) = x"00000C" then
-               localBusSlave.readData(31 downto 16) <= statusErrorCnt after TPD_G;
-               localBusSlave.readData(15 downto  0) <= statusIdleCnt  after TPD_G;
-
-            -- OC FIFO read, one per FIFO
-            elsif localBusMaster.addr(23 downto 0) = x"000010" then
-               ocFifoRd <= localBusMaster.readEnable after TPD_G;
-
-               localBusSlave.readValid             <= ocFifoRd    after TPD_G;
-               localBusSlave.readData(8)           <= ocFifoValid after TPD_G;
-               localBusSlave.readData(7 downto  0) <= ocFifoData  after TPD_G;
-
-            -- Clock Count
-            elsif localBusMaster.addr(23 downto 0) = x"000014" then
-               localBusSlave.readData <= ledCountA  after TPD_G;
-
-            end if;
-
-         end if;
+   -- Sync
+   process (axiClk) is
+   begin
+      if (rising_edge(axiClk)) then
+         r <= rin after TPD_G;
       end if;
    end process;
 
+   -- Async
+   process (axiClkRst, axiReadMaster, axiWriteMaster, r, statusErrorCnt, statusIdleCnt, ocFifoValid, ocFifoData ) is
+      variable v         : RegType;
+      variable axiStatus : AxiLiteStatusType;
+      variable c         : character;
+   begin
+      v := r;
+
+      v.cfgReset  := '0';
+      v.cfgSet    := '0';
+      v.cfgDelay  := axiWriteMaster.wdata(4 downto 0);
+      v.ocFifoRd  := '0';
+
+      axiSlaveWaitTxn(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave, axiStatus);
+
+      -- Write
+      if (axiStatus.writeEnable = '1') then
+
+         -- Master Reset
+         if axiWriteMaster.awaddr(11 downto 0) = x"000" then
+            v.cfgReset := '1';
+
+         -- OC Fifo Write Enable
+         elsif axiWriteMaster.awaddr(11 downto 0) = x"004" then
+            v.ocFifoWrEn := axiWriteMaster.wdata(0);
+
+         -- OC Delay configuration
+         elsif axiWriteMaster.awaddr(11 downto 0) = x"008" then
+            v.cfgSet := '1';
+         end if;
+
+         -- Send Axi response
+         axiSlaveWriteResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
+
+      end if;
+
+      -- Read
+      if (axiStatus.readEnable = '1') then
+         v.axiReadSlave.rdata := (others => '0');
+
+         -- OC FIFO status
+         if axiWriteMaster.awaddr(11 downto 0) = x"00C" then
+            v.axiReadSlave.rdata(31 downto 16) := statusErrorCnt;
+            v.axiReadSlave.rdata(15 downto 0)  := statusIdleCnt;
+
+         -- OC FIFO read, one per FIFO
+         elsif axiWriteMaster.awaddr(11 downto 0) = x"010" then
+            v.ocFifoRd := '1';
+
+            v.axiReadSlave.rdata(8)           := ocFifoValid;
+            v.axiReadSlave.rdata(7 downto 0)  := ocFifoData;
+
+         -- Clock Count
+         elsif axiWriteMaster.awaddr(11 downto 0) = x"014" then
+            v.axiReadSlave.rdata := ledCountA;
+          end if;
+
+         -- Send Axi Response
+         axiSlaveReadResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
+
+      end if;
+
+      -- Reset
+      if (axiClkRst = '1') then
+         v := REG_INIT_C;
+      end if;
+
+      -- Next register assignment
+      rin <= v;
+
+      -- Outputs
+      axiReadSlave  <= r.axiReadSlave;
+      axiWriteSlave <= r.axiWriteSlave;
+      
+   end process;
 
 
    ----------------------------------

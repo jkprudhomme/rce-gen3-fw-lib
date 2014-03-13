@@ -23,6 +23,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 entity ZynqPcieMaster is
    generic (
@@ -33,11 +34,14 @@ entity ZynqPcieMaster is
       -- Local Bus
       axiClk                  : in  sl;
       axiClkRst               : in  sl;
-      localBusMaster          : in  LocalBusMasterType;
-      localBusSlave           : out LocalBusSlaveType;
+      axiReadMaster           : in  AxiLiteReadMasterType;
+      axiReadSlave            : out AxiLiteReadSlaveType;
+      axiWriteMaster          : in  AxiLiteWriteMasterType;
+      axiWriteSlave           : out AxiLiteWriteSlaveType;
 
       -- Master clock and reset
-      pciRefClk               : in  sl;
+      pciRefClkP              : in  sl;
+      pciRefClkM              : in  sl;
 
       -- Reset output
       pcieResetL              : out sl;
@@ -52,46 +56,14 @@ end ZynqPcieMaster;
 
 architecture structure of ZynqPcieMaster is
 
-   component zynq_icon
-      PORT (
-         CONTROL0 : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0)
-      );
-   end component;
-
-   component zynq_ila_256
-      PORT (
-         CONTROL : INOUT STD_LOGIC_VECTOR(35 DOWNTO 0);
-         CLK     : IN    STD_LOGIC;
-         TRIG0   : IN    STD_LOGIC_VECTOR(255 DOWNTO 0)
-      );
-   end component;
-
-   COMPONENT PcieFifo
-      PORT (
-         rst    : IN  STD_LOGIC;
-         wr_clk : IN  STD_LOGIC;
-         rd_clk : IN  STD_LOGIC;
-         din    : IN  STD_LOGIC_VECTOR(94 DOWNTO 0);
-         wr_en  : IN  STD_LOGIC;
-         rd_en  : IN  STD_LOGIC;
-         dout   : OUT STD_LOGIC_VECTOR(94 DOWNTO 0);
-         full   : OUT STD_LOGIC;
-         empty  : OUT STD_LOGIC;
-         valid  : OUT STD_LOGIC
-      );
-   END COMPONENT;
-
    -- Local signals
-   signal intLocalBusSlave       : LocalBusSlaveType;
-   signal wrFifoDin              : slv(94 downto 0);
+   signal pciRefClk              : sl;
    signal wrFifoDout             : slv(94 downto 0);
-   signal wrFifoWrEn             : sl;
    signal wrFifoRdEn             : sl;
    signal wrFifoValid            : sl;
    signal rdFifoDin              : slv(94 downto 0);
    signal rdFifoDout             : slv(94 downto 0);
    signal rdFifoWrEn             : sl;
-   signal rdFifoRdEn             : sl;
    signal rdFifoFull             : sl;
    signal rdFifoValid            : sl;
    signal pciClk                 : sl;
@@ -102,26 +74,6 @@ architecture structure of ZynqPcieMaster is
    signal rxReady                : sl;
    signal rxValid                : sl;
    signal linkUp                 : sl;
-   signal cfgRead                : sl;
-   signal cfgWrite               : sl;
-   signal cfgDone                : sl;
-   signal cfgDout                : slv(31 downto 0);
-   signal cfgDoutReg             : slv(31 downto 0);
-   signal cfgDinReg              : slv(31 downto 0);
-   signal cfgDin                 : slv(31 downto 0);
-   signal cfgAddrReg             : slv(9  downto 0);
-   signal cfgAddr                : slv(9  downto 0);
-   signal cfgWrEn                : sl;
-   signal cfgWrEnRegA            : sl;
-   signal cfgWrEnRegB            : sl;
-   signal cfgWrEnRegC            : sl;
-   signal cfgRdEn                : sl;
-   signal cfgRdEnRegA            : sl;
-   signal cfgRdEnRegB            : sl;
-   signal cfgRdEnRegC            : sl;
-   signal cfgRdWrDone            : sl;
-   signal cfgRdWrDoneReg         : sl;
-   signal cfgRdWrDoneDly         : sl;
    signal cfgStatus              : slv(15 downto 0);
    signal cfgCommand             : slv(15 downto 0);
    signal cfgDStatus             : slv(15 downto 0);
@@ -134,24 +86,42 @@ architecture structure of ZynqPcieMaster is
    signal cfgPmcsrPowerstate     : slv(1  downto 0);
    signal cfgPmcsrPmeStatus      : sl;
    signal cfgReceivedFuncLvlRst  : sl;
-   signal cfgBusNumber           : slv(7  downto 0);
-   signal cfgDeviceNumber        : slv(4  downto 0);
-   signal cfgFunctionNumber      : slv(2  downto 0);
    signal phyLinkUp              : sl;
    signal pciExpTxP              : slv(0  downto 0);
    signal pciExpTxN              : slv(0  downto 0);
    signal pciExpRxP              : slv(0  downto 0);
    signal pciExpRxN              : slv(0  downto 0);
    signal intResetL              : sl;
-   signal remResetL              : sl;
-   signal pcieEnable             : sl;
-   signal debugCount             : slv(15 downto 0);
-   signal cfgMsgRx               : sl;
-   signal cfgMsgData             : slv(30 downto 0);
-   signal cfgMsgDataReg          : slv(30 downto 0);
-   signal control0               : slv(35 DOWNTO 0);
-   signal trig0                  : slv(255 DOWNTO 0);
    signal axiClkRstInt           : sl := '1';
+
+   type RegType is record
+      wrFifoDin         : slv(94 downto 0);
+      wrFifoWrEn        : sl;
+      rdFifoRdEn        : sl;
+      cfgBusNumber      : slv(7  downto 0);
+      cfgDeviceNumber   : slv(4  downto 0);
+      cfgFunctionNumber : slv(2  downto 0);
+      remResetL         : sl;
+      pcieEnable        : sl;
+      axiReadSlave      : AxiLiteReadSlaveType;
+      axiWriteSlave     : AxiLiteWriteSlaveType;
+   end record RegType;
+
+   constant REG_INIT_C : RegType := (
+      wrFifoDin         => (others=>'0'),
+      wrFifoWrEn        => '0',
+      rdFifoRdEn        => '0',
+      cfgBusNumber      => (others=>'0'),
+      cfgDeviceNumber   => (others=>'0'),
+      cfgFunctionNumber => (others=>'0'),
+      remResetL         => '0',
+      pcieEnable        => '0',
+      axiReadSlave      => AXI_READ_SLAVE_INIT_C,
+      axiWriteSlave     => AXI_WRITE_SLAVE_INIT_C
+   );
+
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
@@ -169,174 +139,190 @@ begin
    end process;
 
    -- Outputs
-   localBusSlave <= intLocalBusSlave;
-   --pcieResetL    <= '0' when intResetL = '0' else 'Z';
-   --pcieResetL    <= intResetL and remResetL;
-   pcieResetL    <= remResetL;
-   intResetL     <= pcieEnable;
+   pcieResetL    <= r.remResetL;
+   intResetL     <= r.pcieEnable;
+
+   -- PCI Ref Clk 
+   U_PciRefClk : IBUFDS_GTE2
+      port map(
+         O       => pciRefClk,
+         ODIV2   => open,
+         I       => pciRefClkP,
+         IB      => pciRefClkM,
+         CEB     => '0'
+      );
+
 
    --------------------------------------------
-   -- Registers: 0xBC00_0000 - 0xBFFF_FFFF
+   -- Registers: 0x0000 - 0xFFFF
    --------------------------------------------
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            intLocalBusSlave <= LocalBusSlaveInit       after TPD_G;
-            wrFifoDin         <= (others=>'0')          after TPD_G;
-            wrFifoWrEn        <= '0'                    after TPD_G;
-            rdFifoRdEn        <= '0'                    after TPD_G;
-            cfgRead           <= '0'                    after TPD_G;
-            cfgWrite          <= '0'                    after TPD_G;
-            cfgBusNumber      <= (others=>'0')          after TPD_G;
-            cfgDeviceNumber   <= (others=>'0')          after TPD_G;
-            cfgFunctionNumber <= (others=>'0')          after TPD_G;
-            pcieEnable        <= '0'                    after TPD_G;
-            remResetL         <= '0'                    after TPD_G;
-         else
-            intLocalBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
-            intLocalBusSlave.readData  <= x"deadbeef"               after TPD_G;
-            wrFifoWrEn                 <= '0'                       after TPD_G;
-            rdFifoRdEn                 <= '0'                       after TPD_G;
 
-            -- Config done
-            if cfgDone = '1' then
-               cfgWrite <= '0' after TPD_G;
-               cfgRead  <= '0' after TPD_G;
-            end if;
-
-            -- PCIE Configuration Port, 0xBC000000 - 0xBC000FFF
-            if localBusMaster.addr(15 downto 12) = x"0" then
-
-               -- Write start
-               if localBusMaster.writeEnable = '1' then
-                  cfgWrite <= '1' after TPD_G;
-               end if;
-
-               -- Read start
-               if localBusMaster.readEnable = '1' then
-                  cfgRead <= '1' after TPD_G;
-               end if;
-
-               -- Read
-               intLocalBusSlave.readValid <= cfgDone and cfgRead after TPD_G;
-               intLocalBusSlave.readData  <= cfgDoutReg          after TPD_G;
-
-            -- Write FIFO QWord0, - 0xBC001000
-            elsif localBusMaster.addr(15 downto 0) = x"1000" then
-               if localBusMaster.writeEnable = '1' then
-                  wrFifoDin(31 downto  0)   <= localBusMaster.writeData after TPD_G;
-               end if;
-
-            -- Write FIFO QWord1, - 0xBC001004
-            elsif localBusMaster.addr(15 downto 0) = x"1004" then
-               if localBusMaster.writeEnable = '1' then
-                  wrFifoDin(63 downto 32)   <= localBusMaster.writeData after TPD_G;
-               end if;
-
-            -- Write FIFO QWord2, - 0xBC001008
-            elsif localBusMaster.addr(15 downto 0) = x"1008" then
-               if localBusMaster.writeEnable = '1' then
-                  wrFifoDin(94 downto 64)   <= localBusMaster.writeData(30 downto 0) after TPD_G;
-                  wrFifoWrEn                <= '1'                                   after TPD_G;
-               end if;
-
-            -- Read FIFO QWord0, - 0xBC00100C
-            elsif localBusMaster.addr(15 downto 0) = x"100C" then
-               intLocalBusSlave.readData <= rdFifoDout(31 downto 0)   after TPD_G;
-               rdFifoRdEn                <= localBusMaster.readEnable after TPD_G;
-
-            -- Read FIFO QWord1, - 0xBC001010
-            elsif localBusMaster.addr(15 downto 0) = x"1010" then
-               intLocalBusSlave.readData <= rdFifoDout(63 downto 32) after TPD_G;
-
-            -- Read FIFO QWord2, - 0xBC001014
-            elsif localBusMaster.addr(15 downto 0) = x"1014" then
-               intLocalBusSlave.readData(31)          <= rdFifoValid              after TPD_G;
-               intLocalBusSlave.readData(30 downto 0) <= rdFifoDout(94 downto 64) after TPD_G;
-
-            -- Config Bus Number, - 0xBC001018
-            elsif localBusMaster.addr(15 downto 0) = x"1018" then
-               if localBusMaster.writeEnable = '1' then
-                  cfgBusNumber <= localBusMaster.writeData(7 downto 0) after TPD_G;
-               end if;
-               intLocalBusSlave.readData <= x"000000" & cfgBusNumber after TPD_G;
-
-            -- Config Device Number, - 0xBC00101C
-            elsif localBusMaster.addr(15 downto 0) = x"101C" then
-               if localBusMaster.writeEnable = '1' then
-                  cfgDeviceNumber <= localBusMaster.writeData(4 downto 0) after TPD_G;
-               end if;
-               intLocalBusSlave.readData <= x"000000" & "000" & cfgDeviceNumber after TPD_G;
-
-            -- Config Function Number, - 0xBC001020
-            elsif localBusMaster.addr(15 downto 0) = x"1020" then
-               if localBusMaster.writeEnable = '1' then
-                  cfgFunctionNumber <= localBusMaster.writeData(2 downto 0) after TPD_G;
-               end if;
-               intLocalBusSlave.readData <= x"0000000" & "0" & cfgFunctionNumber after TPD_G;
-
-            -- Config Status, - 0xBC001024
-            elsif localBusMaster.addr(15 downto 0) = x"1024" then
-               intLocalBusSlave.readData <= x"0000" & cfgStatus after TPD_G;
-
-            -- Config Status, - 0xBC001028
-            elsif localBusMaster.addr(15 downto 0) = x"1028" then
-               intLocalBusSlave.readData <= x"0000" & cfgCommand after TPD_G;
-
-            -- Config DStatus, - 0xBC00102C
-            elsif localBusMaster.addr(15 downto 0) = x"102C" then
-               intLocalBusSlave.readData <= x"0000" & cfgDStatus after TPD_G;
-
-            -- Config DStatus, - 0xBC001030
-            elsif localBusMaster.addr(15 downto 0) = x"1030" then
-               intLocalBusSlave.readData <= x"0000" & cfgDCommand after TPD_G;
-
-            -- Config DStatus2, - 0xBC001034
-            elsif localBusMaster.addr(15 downto 0) = x"1034" then
-               intLocalBusSlave.readData <= x"0000" & cfgDCommand2 after TPD_G;
-
-            -- Config LStatus, - 0xBC001038
-            elsif localBusMaster.addr(15 downto 0) = x"1038" then
-               intLocalBusSlave.readData <= x"0000" & cfgLStatus after TPD_G;
-
-            -- Config LStatus, - 0xBC00103C
-            elsif localBusMaster.addr(15 downto 0) = x"103C" then
-               intLocalBusSlave.readData <= x"0000" & cfgLCommand after TPD_G;
-
-            -- Other Status, - 0xBC001040
-            elsif localBusMaster.addr(15 downto 0) = x"1040" then
-               intLocalBusSlave.readData(2 downto 0)   <= cfgPcieLinkState      after TPD_G;
-               intLocalBusSlave.readData(3)            <= linkUp                after TPD_G;
-               intLocalBusSlave.readData(4)            <= phyLinkUp             after TPD_G;
-               intLocalBusSlave.readData(6 downto 5)   <= cfgPmcsrPowerstate    after TPD_G;
-               intLocalBusSlave.readData(7)            <= cfgPmcsrPmeEn         after TPD_G;
-               intLocalBusSlave.readData(8)            <= cfgPmcsrPmeStatus     after TPD_G;
-               intLocalBusSlave.readData(9)            <= cfgReceivedFuncLvlRst after TPD_G;
-               intLocalBusSlave.readData(11 downto 10) <= (others=>'0')         after TPD_G;
-               intLocalBusSlave.readData(12)           <= pciClkRst             after TPD_G;
-               intLocalBusSlave.readData(15 downto 13) <= (others=>'0')         after TPD_G;
-               intLocalBusSlave.readData(31 downto 16) <= debugCount            after TPD_G;
-
-            -- Enable Register - 0xBC001044
-            elsif localBusMaster.addr(15 downto 0) = x"1044" then
-               if localBusMaster.writeEnable = '1' then
-                  pcieEnable <= localBusMaster.writeData(0) after TPD_G;
-                  remResetL  <= localBusMaster.writeData(1) after TPD_G;
-               end if;
-               intLocalBusSlave.readData(0)            <= pcieEnable            after TPD_G;
-               intLocalBusSlave.readData(1)            <= remResetL             after TPD_G;
-               intLocalBusSlave.readData(3  downto  2) <= (others=>'0')         after TPD_G;
-               intLocalBusSlave.readData(4)            <= intResetL             after TPD_G;
-               intLocalBusSlave.readData(31 downto  5) <= (others=>'0')         after TPD_G;
-
-            -- Config status Register - 0xBC001048
-            elsif localBusMaster.addr(15 downto 0) = x"1048" then
-               intLocalBusSlave.readData <= '0' & cfgMsgDataReg after TPD_G;
-            end if;
-
-         end if;  
+   -- Sync
+   process (axiClk) is
+   begin
+      if (rising_edge(axiClk)) then
+         r <= rin after TPD_G;
       end if;
-   end process;         
+   end process;
+
+   -- Async
+   process (axiClkRstInt, axiReadMaster, axiWriteMaster, r, rdFifoValid, rdFifoDout, cfgStatus, 
+            cfgCommand, cfgDStatus, cfgDCommand, cfgDCommand2, cfgLStatus, cfgLCommand,
+            cfgPcieLinkState, linkUp, phyLinkUp, cfgPmcsrPowerstate, cfgPmcsrPmeEn, 
+            cfgPmcsrPmeStatus, cfgReceivedFuncLvlRst, pciClkRst, intResetL ) is
+      variable v         : RegType;
+      variable axiStatus : AxiLiteStatusType;
+   begin
+      v := r;
+
+      v.wrFifoWrEn := '0';
+      v.rdFifoRdEn := '0';
+
+      axiSlaveWaitTxn(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave, axiStatus);
+
+      -- Write
+      if (axiStatus.writeEnable = '1') then
+
+         -- Decode address and perform write
+         case (axiWriteMaster.awaddr(15 downto 0)) is
+
+            -- Write FIFO QWord0, - 0x1000
+            when x"1000" => 
+               v.wrFifoDin(31 downto  0) := axiWriteMaster.wdata;
+
+            -- Write FIFO QWord1, - 0x1004
+            when x"1004" => 
+               v.wrFifoDin(63 downto 32) := axiWriteMaster.wdata;
+
+            -- Write FIFO QWord2, - 0x1008
+            when x"1008" => 
+               v.wrFifoDin(94 downto 64) := axiWriteMaster.wdata(30 downto 0);
+               v.wrFifoWrEn              := '1';
+
+            -- Config Bus Number, - 0x1018
+            when x"1018" => 
+               v.cfgBusNumber := axiWriteMaster.wdata(7 downto 0);
+
+            -- Config Device Number, - 0x101C
+            when x"101C" => 
+               v.cfgDeviceNumber := axiWriteMaster.wdata(4 downto 0);
+
+            -- Config Function Number, - 0x1020
+            when x"1020" => 
+               v.cfgFunctionNumber := axiWriteMaster.wdata(2 downto 0);
+
+            -- Enable Register - 0x1044
+            when x"1044" => 
+               v.pcieEnable := axiWriteMaster.wdata(0);
+               v.remResetL  := axiWriteMaster.wdata(1);
+
+            when others => null;
+         end case;
+
+         -- Send Axi response
+         axiSlaveWriteResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
+
+      end if;
+
+      -- Read
+      if (axiStatus.readEnable = '1') then
+         v.axiReadSlave.rdata := (others => '0');
+
+         -- Decode address and assign read data
+         case axiReadMaster.araddr(15 downto 0) is
+
+            -- Read FIFO QWord0, - 0x100C
+            when X"100C" =>
+               v.axiReadSlave.rdata := rdFifoDout(31 downto 0);
+               v.rdFifoRdEn         := '1';
+
+            -- Read FIFO QWord1, - 0x1010
+            when X"1010" =>
+               v.axiReadSlave.rdata := rdFifoDout(63 downto 32);
+
+            -- Read FIFO QWord2, - 0x1014
+            when X"1014" =>
+               v.axiReadSlave.rdata(31)          := rdFifoValid;
+               v.axiReadSlave.rdata(30 downto 0) := rdFifoDout(94 downto 64);
+
+            -- Config Bus Number, - 0x1018
+            when X"1018" =>
+               v.axiReadSlave.rdata(7 downto 0) := r.cfgBusNumber;
+
+            -- Config Device Number, - 0x101C
+            when X"101C" =>
+               v.axiReadSlave.rdata(4 downto 0) := r.cfgDeviceNumber;
+
+            -- Config Function Number, - 0x1020
+            when X"1020" =>
+               v.axiReadSlave.rdata(2 downto 0) := r.cfgFunctionNumber;
+
+            -- Config Status, - 0x1024
+            when X"1024" =>
+               v.axiReadSlave.rdata(15 downto 0) := cfgStatus;
+
+            -- Config Status, - 0x1028
+            when X"1028" =>
+               v.axiReadSlave.rdata(15 downto 0) := cfgCommand;
+
+            -- Config DStatus, - 0x102C
+            when X"102C" =>
+               v.axiReadSlave.rdata(15 downto 0) := cfgDStatus;
+
+            -- Config DStatus, - 0x1030
+            when X"1030" =>
+               v.axiReadSlave.rdata(15 downto 0) := cfgDCommand;
+
+            -- Config DStatus, - 0x1034
+            when X"1034" =>
+               v.axiReadSlave.rdata(15 downto 0) := cfgDCommand2;
+
+            -- Config LStatus, - 0x1038
+            when X"1038" =>
+               v.axiReadSlave.rdata(15 downto 0) := cfgLStatus;
+
+            -- Config LStatus, - 0x103C
+            when X"103C" =>
+               v.axiReadSlave.rdata(15 downto 0) := cfgLCommand;
+
+            -- Other Status, - 0x1040
+            when X"1040" =>
+               v.axiReadSlave.rdata(2 downto 0)   := cfgPcieLinkState;
+               v.axiReadSlave.rdata(3)            := linkUp;
+               v.axiReadSlave.rdata(4)            := phyLinkUp;
+               v.axiReadSlave.rdata(6 downto 5)   := cfgPmcsrPowerstate;
+               v.axiReadSlave.rdata(7)            := cfgPmcsrPmeEn;
+               v.axiReadSlave.rdata(8)            := cfgPmcsrPmeStatus;
+               v.axiReadSlave.rdata(9)            := cfgReceivedFuncLvlRst;
+               v.axiReadSlave.rdata(12)           := pciClkRst;
+
+            -- Enable Register - 0x1044
+            when X"1044" =>
+               v.axiReadSlave.rdata(0)            := v.pcieEnable;
+               v.axiReadSlave.rdata(1)            := v.remResetL;
+               v.axiReadSlave.rdata(4)            := intResetL;
+
+            when others => null;
+         end case;
+
+         -- Send Axi Response
+         axiSlaveReadResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
+      end if;
+
+      -- Reset
+      if (axiClkRstInt = '1') then
+         v := REG_INIT_C;
+      end if;
+
+      -- Next register assignment
+      rin <= v;
+
+      -- Outputs
+      axiReadSlave  <= r.axiReadSlave;
+      axiWriteSlave <= r.axiWriteSlave;
+      
+   end process;
+
 
    -----------------------------------------
    -- FIFOs, Dist Ram
@@ -350,7 +336,7 @@ begin
          USE_DSP48_G    => "no",
          ALTERA_SYN_G   => false,
          ALTERA_RAM_G   => "M512",
-         --SYNC_STAGES_G  => 2,
+         SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 95,
          ADDR_WIDTH_G   => 4,
          INIT_G         => "0",
@@ -359,8 +345,8 @@ begin
       ) port map (
          rst                => axiClkRstInt,
          wr_clk             => axiClk,
-         wr_en              => wrFifoWrEn,
-         din                => wrFifoDin,
+         wr_en              => r.wrFifoWrEn,
+         din                => r.wrFifoDin,
          wr_data_count      => open,
          wr_ack             => open,
          overflow           => open,
@@ -391,7 +377,7 @@ begin
          USE_DSP48_G    => "no",
          ALTERA_SYN_G   => false,
          ALTERA_RAM_G   => "M512",
-         --SYNC_STAGES_G  => 2,
+         SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 95,
          ADDR_WIDTH_G   => 4,
          INIT_G         => "0",
@@ -410,7 +396,7 @@ begin
          full               => rdFifoFull,
          not_full           => open,
          rd_clk             => axiClk,
-         rd_en              => rdFifoRdEn,
+         rd_en              => r.rdFifoRdEn,
          rd_data_count      => open,
          dout               => rdFifoDout,
          valid              => rdFifoValid,
@@ -422,91 +408,6 @@ begin
 
    rxReady    <= not rdFifoFull;
    rdFifoWrEn <= rxReady and rxValid;
-
-   -----------------------------------------
-   -- Configuration Sync
-   -----------------------------------------
-
-   -- Generate control signals
-   process ( pciClk ) begin
-      if rising_edge(pciClk) then
-         if pciClkRst = '1' then
-            cfgDinReg      <= (others=>'0') after TPD_G;
-            cfgDin         <= (others=>'0') after TPD_G;
-            cfgAddrReg     <= (others=>'0') after TPD_G;
-            cfgAddr        <= (others=>'0') after TPD_G;
-            cfgWrEnRegA    <= '0'           after TPD_G;
-            cfgWrEnRegB    <= '0'           after TPD_G;
-            cfgWrEnRegC    <= '0'           after TPD_G;
-            cfgWrEn        <= '0'           after TPD_G;
-            cfgRdEnRegA    <= '0'           after TPD_G;
-            cfgRdEnRegB    <= '0'           after TPD_G;
-            cfgRdEnRegC    <= '0'           after TPD_G;
-            cfgRdEn        <= '0'           after TPD_G;
-            cfgDoutReg     <= (others=>'0') after TPD_G;
-            cfgRdWrDoneReg <= '0'           after TPD_G;
-            cfgMsgDataReg  <= (others=>'0') after TPD_G;
-         else
-
-            -- Sample
-            cfgDinReg    <= localBusMaster.writeData         after TPD_G;
-            cfgDin       <= cfgDinReg                        after TPD_G;
-            cfgAddr      <= localBusMaster.addr(11 downto 2) after TPD_G;
-            cfgAddrReg   <= cfgAddr                          after TPD_G;
-            cfgWrEnRegA  <= cfgWrite                         after TPD_G;
-            cfgWrEnRegB  <= cfgWrEnRegA                      after TPD_G;
-            cfgWrEnRegC  <= cfgWrEnRegB                      after TPD_G;
-            cfgRdEnRegA  <= cfgRead                          after TPD_G;
-            cfgRdEnRegB  <= cfgRdEnRegA                      after TPD_G;
-            cfgRdEnRegC  <= cfgRdEnRegB                      after TPD_G;
-
-            -- Done
-            if cfgRdWrDone = '1' then
-               cfgWrEn <= '0' after TPD_G;
-               cfgRdEn <= '0' after TPD_G;
-
-            -- Read start
-            elsif cfgWrEnRegC = '0' and cfgWrEnRegB = '1' then
-               cfgWrEn <= '1' after TPD_G;
-
-            -- Write start
-            elsif cfgRdEnRegC = '0' and cfgRdEnRegB = '1' then
-               cfgRdEn <= '1' after TPD_G;
-            end if;
-
-            -- Store read data
-            if cfgRdWrDone = '1' then
-               cfgDoutReg <= cfgDout after TPD_G;
-            end if;
-
-            -- Extend done pulse
-            if cfgRdWrDone = '1' then
-               cfgRdWrDoneReg <= '1' after TPD_G;
-            elsif cfgRdEnRegB = '0' and cfgWrEnRegB = '0' then
-               cfgRdWrDoneReg <= '0' after TPD_G;
-            end if;
-
-            -- Register last config rx
-            if cfgMsgRx = '1' then
-               cfgMsgDataReg <= cfgMsgData after TPD_G;
-            end if;
-
-         end if;
-      end if;
-   end process;
-
-   -- Return path
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            cfgRdWrDoneDly  <= '0' after TPD_G;
-            cfgDone         <= '0' after TPD_G;
-         else
-            cfgRdWrDoneDly  <= cfgRdWrDoneReg after TPD_G;
-            cfgDone         <= cfgRdWrDoneDly after TPD_G;
-         end if;
-      end if;
-   end process;
 
 
    -----------------------------------------
@@ -566,8 +467,8 @@ begin
          fc_pd                                      => open,
          fc_ph                                      => open,
          fc_sel                                     => "000",
-         cfg_mgmt_do                                => cfgDout,
-         cfg_mgmt_rd_wr_done                        => cfgRdWrDone,
+         cfg_mgmt_do                                => open,
+         cfg_mgmt_rd_wr_done                        => open,
          cfg_status                                 => cfgStatus,
          cfg_command                                => cfgCommand,
          cfg_dstatus                                => cfgDstatus,
@@ -580,11 +481,11 @@ begin
          cfg_pmcsr_powerstate                       => cfgPmcsrPowerstate,
          cfg_pmcsr_pme_status                       => cfgPmcsrPmeStatus,
          cfg_received_func_lvl_rst                  => cfgReceivedFuncLvlRst,
-         cfg_mgmt_di                                => cfgDin,
+         cfg_mgmt_di                                => (others=>'0'),
          cfg_mgmt_byte_en                           => "1111",
-         cfg_mgmt_dwaddr                            => cfgAddr,
-         cfg_mgmt_wr_en                             => cfgWrEn,
-         cfg_mgmt_rd_en                             => cfgRdEn,
+         cfg_mgmt_dwaddr                            => (others=>'0'),
+         cfg_mgmt_wr_en                             => '0',
+         cfg_mgmt_rd_en                             => '0',
          cfg_mgmt_wr_readonly                       => '0',
          cfg_err_ecrc                               => '0',
          cfg_err_ur                                 => '0',
@@ -628,12 +529,12 @@ begin
          cfg_function_number                        => open,
          cfg_pm_wake                                => '0',
          cfg_pm_send_pme_to                         => '0',
-         cfg_ds_bus_number                          => cfgBusNumber,
-         cfg_ds_device_number                       => cfgDeviceNumber,
-         cfg_ds_function_number                     => cfgFunctionNumber,
+         cfg_ds_bus_number                          => r.cfgBusNumber,
+         cfg_ds_device_number                       => r.cfgDeviceNumber,
+         cfg_ds_function_number                     => r.cfgFunctionNumber,
          cfg_mgmt_wr_rw1c_as_rw                     => '0',
-         cfg_msg_received                           => cfgMsgRx,
-         cfg_msg_data                               => cfgMsgData(15 downto 0),
+         cfg_msg_received                           => open,
+         cfg_msg_data                               => open,
          cfg_bridge_serr_en                         => open,
          cfg_slot_control_electromech_il_ctl_pulse  => open,
          cfg_root_control_syserr_corr_err_en        => open,
@@ -646,21 +547,21 @@ begin
          cfg_aer_rooterr_corr_err_received          => open,
          cfg_aer_rooterr_non_fatal_err_received     => open,
          cfg_aer_rooterr_fatal_err_received         => open,
-         cfg_msg_received_err_cor                   => cfgMsgData(16),
-         cfg_msg_received_err_non_fatal             => cfgMsgData(17),
-         cfg_msg_received_err_fatal                 => cfgMsgData(18),
-         cfg_msg_received_pm_as_nak                 => cfgMsgData(19),
-         cfg_msg_received_pm_pme                    => cfgMsgData(20),
-         cfg_msg_received_pme_to_ack                => cfgMsgData(21),
-         cfg_msg_received_assert_int_a              => cfgMsgData(22),
-         cfg_msg_received_assert_int_b              => cfgMsgData(23),
-         cfg_msg_received_assert_int_c              => cfgMsgData(24),
-         cfg_msg_received_assert_int_d              => cfgMsgData(25),
-         cfg_msg_received_deassert_int_a            => cfgMsgData(26),
-         cfg_msg_received_deassert_int_b            => cfgMsgData(27),
-         cfg_msg_received_deassert_int_c            => cfgMsgData(28),
-         cfg_msg_received_deassert_int_d            => cfgMsgData(29),
-         cfg_msg_received_setslotpowerlimit         => cfgMsgData(30),
+         cfg_msg_received_err_cor                   => open,
+         cfg_msg_received_err_non_fatal             => open,
+         cfg_msg_received_err_fatal                 => open,
+         cfg_msg_received_pm_as_nak                 => open,
+         cfg_msg_received_pm_pme                    => open,
+         cfg_msg_received_pme_to_ack                => open,
+         cfg_msg_received_assert_int_a              => open,
+         cfg_msg_received_assert_int_b              => open,
+         cfg_msg_received_assert_int_c              => open,
+         cfg_msg_received_assert_int_d              => open,
+         cfg_msg_received_deassert_int_a            => open,
+         cfg_msg_received_deassert_int_b            => open,
+         cfg_msg_received_deassert_int_c            => open,
+         cfg_msg_received_deassert_int_d            => open,
+         cfg_msg_received_setslotpowerlimit         => open,
          pl_directed_link_change                    => "00",
          pl_directed_link_width                     => "00",
          pl_directed_link_speed                     => '0',
@@ -691,65 +592,6 @@ begin
          sys_clk                                    => pciRefClk,
          sys_rst_n                                  => intResetL
       );
-
-
-   --------------------------------------------
-   -- Debug Counter
-   --------------------------------------------
-   process ( pciClk ) begin
-      if rising_edge(pciClk) then
-         if intResetL = '0' then
-            debugCount <= (others=>'0') after TPD_G;
-         else
-            debugCount <= debugCount + 1 after TPD_G;
-         end if;
-      end if;
-   end process;
-
-   --------------------------------------------
-   -- Debug
-   --------------------------------------------
-
-   U_Debug : if false generate
-
-      U_icon: zynq_icon
-         port map ( 
-            CONTROL0 => control0
-         );
-
-      U_ila: zynq_ila_256
-         port map (
-            CONTROL => control0,
-            CLK     => pciClk,
-            TRIG0   => trig0
-         );
-
-   end generate;
-
-   trig0(255 downto 239)  <= (others=>'0');
-   trig0(238 downto 229)  <= cfgAddr;
-   trig0(228 downto 221)  <= cfgDout(7 downto 0);
-   trig0(220 downto 213)  <= cfgDin(7 downto 0);
-   trig0(212)             <= cfgRdWrDone;
-   trig0(211)             <= cfgRdEn;
-   trig0(210)             <= cfgWrEn;
-   trig0(209)             <= wrFifoRdEn;
-   trig0(208)             <= wrFifoValid;
-   trig0(207)             <= rdFifoWrEn;
-   trig0(206)             <= rdFifoFull;
-   trig0(205)             <= pciClkRst;
-   trig0(204)             <= txReady;
-   trig0(203)             <= txValid;
-   trig0(202)             <= rxReady;
-   trig0(201)             <= rxValid;
-   trig0(200)             <= linkUp;
-   trig0(199)             <= phyLinkUp;
-   trig0(198)             <= intResetL;
-   trig0(197)             <= remResetL;
-   trig0(196)             <= pcieEnable;
-   trig0(195 downto 190)  <= txBufAv;
-   trig0(189 downto  95)  <= wrFifoDout;
-   trig0(94  downto   0)  <= rdFifoDin;
 
 end architecture structure;
 

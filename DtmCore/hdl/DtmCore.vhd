@@ -19,11 +19,15 @@ use ieee.std_logic_1164.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
 
 entity DtmCore is
+   generic (
+      TPD_G : time := 1 ns
+   );
    port (
 
       -- I2C
@@ -71,16 +75,18 @@ entity DtmCore is
       dtmToIpmiM   : out   slv(1 downto 0);
 
       -- Clocks
-      axiClk                   : out   sl;
-      axiClkRst                : out   sl;
-      sysClk125                : out   sl;
-      sysClk125Rst             : out   sl;
-      sysClk200                : out   sl;
-      sysClk200Rst             : out   sl;
+      axiClk                  : out   sl;
+      axiClkRst               : out   sl;
+      sysClk125               : out   sl;
+      sysClk125Rst            : out   sl;
+      sysClk200               : out   sl;
+      sysClk200Rst            : out   sl;
 
-      -- External Local Bus
-      localBusMaster           : out   LocalBusMasterVector(14 downto 8);
-      localBusSlave            : in    LocalBusSlaveVector(14 downto 8);
+      -- External Axi Bus, 0xA0000000 - 0xAFFFFFFF
+      localAxiReadMaster      : out   AxiLiteReadMasterType;
+      localAxiReadSlave       : in    AxiLiteReadSlaveType;
+      localAxiWriteMaster     : out   AxiLiteWriteMasterType;
+      localAxiWriteSlave      : in    AxiLiteWriteSlaveType;
 
       -- PPI Outbound FIFO Interface
       obPpiClk                : in     slv(3 downto 0);
@@ -97,35 +103,26 @@ end DtmCore;
 architecture STRUCTURE of DtmCore is
 
    -- Local Signals
-   signal ilocalBusSlave     : LocalBusSlaveVector(15 downto 8);
-   signal ilocalBusMaster    : LocalBusMasterVector(15 downto 8);
-   signal iaxiClk            : sl;
-   signal iaxiClkRst         : sl;
-   signal isysClk125         : sl;
-   signal isysClk125Rst      : sl;
-   signal isysClk200         : sl;
-   signal isysClk200Rst      : sl;
-   signal iethFromArm        : EthFromArmVector(1 downto 0);
-   signal iethToArm          : EthToArmVector(1 downto 0);
-   signal iclkSelA           : slv(1 downto 0);
-   signal iclkSelB           : slv(1 downto 0);
-   signal pciRefClk          : sl;
+   signal iaxiClk           : sl;
+   signal iaxiClkRst        : sl;
+   signal isysClk125        : sl;
+   signal isysClk125Rst     : sl;
+   signal isysClk200        : sl;
+   signal isysClk200Rst     : sl;
+   signal iethFromArm       : EthFromArmVector(1 downto 0);
+   signal iethToArm         : EthToArmVector(1 downto 0);
+   signal iclkSelA          : slv(1 downto 0);
+   signal iclkSelB          : slv(1 downto 0);
+   signal intAxiReadMaster  : AxiLiteReadMasterArray(1 downto 0);
+   signal intAxiReadSlave   : AxiLiteReadSlaveArray(1 downto 0);
+   signal intAxiWriteMaster : AxiLiteWriteMasterArray(1 downto 0);
+   signal intAxiWriteSlave  : AxiLiteWriteSlaveArray(1 downto 0);
+   signal topAxiReadMaster  : AxiLiteReadMasterType;
+   signal topAxiReadSlave   : AxiLiteReadSlaveType;
+   signal topAxiWriteMaster : AxiLiteWriteMasterType;
+   signal topAxiWriteSlave  : AxiLiteWriteSlaveType;
 
 begin
-
-   --------------------------------------------------
-   -- Top Level In/Out
-   --------------------------------------------------
-
-   -- PCI Ref Clk 
-   U_PciRefClk : IBUFDS_GTE2
-      port map(
-         O       => pciRefClk,
-         ODIV2   => open,
-         I       => pciRefClkP,
-         IB      => pciRefClkM,
-         CEB     => '0'
-      );
 
    --------------------------------------------------
    -- Outputs
@@ -138,9 +135,6 @@ begin
    sysClk125Rst    <= isysClk125Rst;
    sysClk200       <= isysClk200;
    sysClk200Rst    <= isysClk200Rst;
-   localBusMaster  <= ilocalBusMaster(14 downto 8);
-
-   ilocalBusSlave(14 downto 8) <= localBusSlave; 
 
    --------------------------------------------------
    -- RCE Core
@@ -149,26 +143,28 @@ begin
       generic map (
          AXI_CLKDIV_G => 4.7
       ) port map (
-         i2cSda             => i2cSda,
-         i2cScl             => i2cScl,
-         axiClk             => iaxiClk,
-         axiClkRst          => iaxiClkRst,
-         sysClk125          => isysClk125,
-         sysClk125Rst       => isysClk125Rst,
-         sysClk200          => isysClk200,
-         sysClk200Rst       => isysClk200Rst,
-         localBusMaster     => ilocalBusMaster,
-         localBusSlave      => ilocalBusSlave,
-         obPpiClk           => obPpiClk,
-         obPpiToFifo        => obPpiToFifo,
-         obPpiFromFifo      => obPpiFromFifo,
-         ibPpiClk           => ibPpiClk,
-         ibPpiToFifo        => ibPpiToFifo,
-         ibPpiFromFifo      => ibPpiFromFifo,
-         ethFromArm         => iethFromArm,
-         ethToArm           => iethToArm,
-         clkSelA            => iclkSelA,
-         clkSelB            => iclkSelB
+         i2cSda              => i2cSda,
+         i2cScl              => i2cScl,
+         axiClk              => iaxiClk,
+         axiClkRst           => iaxiClkRst,
+         sysClk125           => isysClk125,
+         sysClk125Rst        => isysClk125Rst,
+         sysClk200           => isysClk200,
+         sysClk200Rst        => isysClk200Rst,
+         localAxiReadMaster  => topAxiReadMaster,
+         localAxiReadSlave   => topAxiReadSlave ,
+         localAxiWriteMaster => topAxiWriteMaster,
+         localAxiWriteSlave  => topAxiWriteSlave ,
+         obPpiClk            => obPpiClk,
+         obPpiToFifo         => obPpiToFifo,
+         obPpiFromFifo       => obPpiFromFifo,
+         ibPpiClk            => ibPpiClk,
+         ibPpiToFifo         => ibPpiToFifo,
+         ibPpiFromFifo       => ibPpiFromFifo,
+         ethFromArm          => iethFromArm,
+         ethToArm            => iethToArm,
+         clkSelA             => iclkSelA,
+         clkSelB             => iclkSelB
       );
 
    --------------------------------------------------
@@ -188,16 +184,19 @@ begin
       );
 
    --------------------------------------------------
-   -- PCI Express
+   -- PCI Express : 0xBC00_0000 - 0xBC00_FFFF
    --------------------------------------------------
 
    U_ZynqPcieMaster : entity work.ZynqPcieMaster 
       port map (
          axiClk          => iaxiClk,
          axiClkRst       => iaxiClkRst,
-         localBusMaster  => ilocalBusMaster(15),
-         localBusSlave   => ilocalBusSlave(15),
-         pciRefClk       => pciRefClk,
+         axiReadMaster   => intAxiReadMaster(1),
+         axiReadSlave    => intAxiReadSlave(1),
+         axiWriteMaster  => intAxiWriteMaster(1),
+         axiWriteSlave   => intAxiWriteSlave(1),
+         pciRefClkP      => pciRefClkP,
+         pciRefClkM      => pciRefClkM,
          pcieResetL      => pciResetL,
          pcieRxP         => pciRxP,
          pcieRxM         => pciRxM,
@@ -242,6 +241,47 @@ begin
    dtmToIpmiP(1) <= 'Z';
    dtmToIpmiM(0) <= 'Z';
    dtmToIpmiM(1) <= 'Z';
+
+   -------------------------------------
+   -- AXI Lite Crossbar
+   -- Base: 0xA0000000 - 0xBFFFFFFF
+   -------------------------------------
+   U_AxiCrossbar : entity work.AxiLiteCrossbar 
+      generic map (
+         TPD_G              => TPD_G,
+         NUM_SLAVE_SLOTS_G  => 1,
+         NUM_MASTER_SLOTS_G => 2,
+         DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
+         MASTERS_CONFIG_G   => (
+
+            -- Channel 0 = 0xA0000000 - 0xAFFFFFFF : External Top Level
+            0 => ( baseAddr     => x"A0000000",
+                   addrBits     => 28,
+                   connectivity => x"FFFF"),
+
+            -- Channel 1 = 0xBC000000 - 0xBC00FFFF : PCI Express Registers
+            1 => ( baseAddr     => x"BC000000",
+                   addrBits     => 16,
+                   connectivity => x"FFFF")
+         )
+      ) port map (
+         axiClk              => iaxiClk,
+         axiClkRst           => iaxiClkRst,
+         sAxiWriteMasters(0) => topAxiWriteMaster,
+         sAxiWriteSlaves(0)  => topAxiWriteSlave,
+         sAxiReadMasters(0)  => topAxiReadMaster,
+         sAxiReadSlaves(0)   => topAxiReadSlave,
+         mAxiWriteMasters    => intAxiWriteMaster,
+         mAxiWriteSlaves     => intAxiWriteSlave,
+         mAxiReadMasters     => intAxiReadMaster,
+         mAxiReadSlaves      => intAxiReadSlave
+      );
+
+   -- External Connections
+   localAxiReadMaster  <= intAxiReadMaster(0);
+   intAxiReadSlave(0)  <= localAxiReadSlave;
+   localAxiWriteMaster <= intAxiWriteMaster(0);
+   intAxiWriteSlave(0) <= localAxiWriteSlave;
 
 end architecture STRUCTURE;
 

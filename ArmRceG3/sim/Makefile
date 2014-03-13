@@ -24,6 +24,9 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoAsync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoSync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/Fifo.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLitePkg.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/xilinx7/rtl/DeviceDna.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteCrossbar.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/stdlib.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cSlave.vhd
@@ -32,7 +35,6 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3Version.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3Clocks.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3I2c.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3LocalBusDec.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3AxiWriteCntrl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3IbQWordFifo.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3IbHeaderFifo.vhd
@@ -44,7 +46,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3ObPpi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3DmaComp.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3DmaCntrl.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3LocalBus.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3LocalAxi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/ArmRceG3Cpu.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3Top.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/tb.vhd

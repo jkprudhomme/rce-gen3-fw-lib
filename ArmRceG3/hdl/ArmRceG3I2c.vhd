@@ -23,6 +23,7 @@ use unisim.vcomponents.all;
 use work.ArmRceG3Pkg.all;
 use work.i2cPkg.all;
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 entity ArmRceG3I2c is
    generic (
@@ -31,20 +32,22 @@ entity ArmRceG3I2c is
    port (
 
       -- Clock and reset
-      axiClk         : in  sl;
-      axiClkRst      : in  sl;
+      axiClk              : in    sl;
+      axiClkRst           : in    sl;
 
-      -- Local bus interface
-      localBusMaster : in  LocalBusMasterType;
-      localBusSlave  : out LocalBusSlaveType;
+      -- Local AXI Lite Busses
+      localAxiReadMaster  : in    AxiLiteReadMasterType;
+      localAxiReadSlave   : out   AxiLiteReadSlaveType;
+      localAxiWriteMaster : in    AxiLiteWriteMasterType;
+      localAxiWriteSlave  : out   AxiLiteWriteSlaveType;
 
       -- FIFO Interface
-      bsiToFifo      : out QWordToFifoType;
-      bsiFromFifo    : in  QWordFromFifoType;
+      bsiToFifo           : out   QWordToFifoType;
+      bsiFromFifo         : in    QWordFromFifoType;
 
       -- IIC Interface
-      i2cSda         : inout sl;
-      i2cScl         : inout sl
+      i2cSda              : inout sl;
+      i2cScl              : inout sl
    );
 end ArmRceG3I2c;
 
@@ -56,15 +59,32 @@ architecture IMP of ArmRceG3I2c is
    signal i2cBramDout  : slv( 7 downto 0);
    signal locBramDout  : slv( 7 downto 0);
    signal i2cBramDin   : slv( 7 downto 0);
-   signal cpuBramWr    : sl;
-   signal cpuBramAddr  : slv(8  downto 0);
    signal cpuBramDout  : slv(31 downto 0);
-   signal cpuBramDin   : slv(31 downto 0);
    signal i2cIn        : i2c_in_type;
    signal i2cOut       : i2c_out_type;
-   signal readEnDly    : slv(1 downto 0);
    signal aFullData    : slv(7 downto 0);
    signal axiClkRstInt : sl := '1';
+
+   type RegType is record
+      cpuBramWr          : sl;
+      cpuBramAddr        : slv(8  downto 0);
+      cpuBramDin         : slv(31 downto 0);
+      readEnDly          : slv(1  downto 0);
+      localAxiReadSlave  : AxiLiteReadSlaveType;
+      localAxiWriteSlave : AxiLiteWriteSlaveType;
+   end record RegType;
+
+   constant REG_INIT_C : RegType := (
+      cpuBramWr          => '0',
+      cpuBramAddr        => (others=>'0'),
+      cpuBramDin         => (others=>'0'),
+      readEnDly          => (others=>'0'),
+      localAxiReadSlave  => AXI_READ_SLAVE_INIT_C,
+      localAxiWriteSlave => AXI_WRITE_SLAVE_INIT_C
+   );
+
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
@@ -124,13 +144,13 @@ begin
       port map ( 
          DOB   => cpuBramDout,
          DOPB  => open,
-         ADDRB => cpuBramAddr,
+         ADDRB => r.cpuBramAddr,
          CLKB  => axiClk,
-         DIB   => cpuBramDin,
+         DIB   => r.cpuBramDin,
          DIPB  => x"0",
          ENB   => '1',
          SSRB  => '0',
-         WEB   => cpuBramWr,
+         WEB   => r.cpuBramWr,
          DOA   => locBramDout,
          DOPA  => open,
          ADDRA => i2cBramAddr(10 downto 0),
@@ -187,34 +207,58 @@ begin
    -------------------------
    -- CPU Interface
    -------------------------
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            cpuBramWr   <= '0'           after TPD_G;
-            cpuBramAddr <= (others=>'0') after TPD_G;
-            cpuBramDin  <= (others=>'0') after TPD_G;
-         else
-            cpuBramWr   <= localBusMaster.writeEnable       after TPD_G;
-            cpuBramAddr <= localBusMaster.addr(10 downto 2) after TPD_G;
-            cpuBramDin  <= localBusMaster.writeData         after TPD_G;
-         end if;
+
+   -- Sync
+   process (axiClk) is
+   begin
+      if (rising_edge(axiClk)) then
+         r <= rin after TPD_G;
       end if;
    end process;
 
-   -- Clock delay for read data valid
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            localBusSlave.readValid <= '0'           after TPD_G;
-            localBusSlave.readData  <= (others=>'0') after TPD_G;
-            readEnDly               <= (others=>'0') after TPD_G;
-         else
-            localBusSlave.readData  <= cpuBramDout               after TPD_G;
-            readEnDly(1)            <= localBusMaster.readEnable after TPD_G;
-            readEnDly(0)            <= readEnDly(1)              after TPD_G;
-            localBusSlave.readValid <= readEnDly(0)              after TPD_G;
+   -- Async
+   process (axiClkRstInt, localAxiReadMaster, localAxiWriteMaster, cpuBramDout, r ) is
+      variable v         : RegType;
+      variable axiStatus : AxiLiteStatusType;
+   begin
+      v := r;
+
+      v.cpuBramWr   := '0';
+      v.cpuBramAddr := localAxiWriteMaster.awaddr(10 downto 2);
+      v.cpuBramDin  := localAxiWriteMaster.wdata;
+
+      axiSlaveWaitTxn(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave, axiStatus);
+
+      -- Write
+      if (axiStatus.writeEnable = '1') then
+         v.cpuBramWr := '1';
+         axiSlaveWriteResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+      end if;
+
+      -- Read
+      if (axiStatus.readEnable = '1') then
+         v.localAxiReadSlave.rdata := cpuBramDout;
+         v.readEnDly(0)            := '1';
+         v.readEnDly(1)            := r.readEnDly(0);
+
+         -- Send Axi Response
+         if ( r.readEnDly(1) = '1' ) then
+            axiSlaveReadResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
          end if;
       end if;
+
+      -- Reset
+      if (axiClkRstInt = '1') then
+         v := REG_INIT_C;
+      end if;
+
+      -- Next register assignment
+      rin <= v;
+
+      -- Outputs
+      localAxiReadSlave  <= r.localAxiReadSlave;
+      localAxiWriteSlave <= r.localAxiWriteSlave;
+      
    end process;
 
 end architecture IMP;

@@ -8,6 +8,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 entity tb is end tb;
 
@@ -30,25 +31,27 @@ begin
    U_ArmRceG3Top: entity work.ArmRceG3Top
       port map (
          i2cSda             => i2cSda,
-         i2cScl             => i2cScl,
-         axiClk             => axiClk,
-         axiClkRst          => open,
-         sysClk125          => open,
-         sysClk125Rst       => open,
-         sysClk200          => open,
-         sysClk200Rst       => open,
-         localBusMaster     => open,
-         localBusSlave      => (others=>LocalBusSlaveInit),
-         ethFromArm         => open,
-         ethToArm           => (others=>EthToArmInit),
-         obPpiClk           => obPpiClk,
-         obPpiToFifo        => obPpiToFifo,
-         obPpiFromFifo      => obPpiFromFifo,
-         ibPpiClk           => ibPpiClk,
-         ibPpiToFifo        => ibPpiToFifo,
-         ibPpiFromFifo      => ibPpiFromFifo,
-         clkSelA            => open,
-         clkSelB            => open
+         i2cScl               => i2cScl,
+         axiClk               => axiClk,
+         axiClkRst            => open,
+         sysClk125            => open,
+         sysClk125Rst         => open,
+         sysClk200            => open,
+         sysClk200Rst         => open,
+         localAxiReadMaster   => open,
+         localAxiReadSlave    => AXI_READ_SLAVE_INIT_C, 
+         localAxiWriteMaster  => open,
+         localAxiWriteSlave   => AXI_WRITE_SLAVE_INIT_C,
+         ethFromArm           => open,
+         ethToArm             => (others=>EthToArmInit),
+         obPpiClk             => obPpiClk,
+         obPpiToFifo          => obPpiToFifo,
+         obPpiFromFifo        => obPpiFromFifo,
+         ibPpiClk             => ibPpiClk,
+         ibPpiToFifo          => ibPpiToFifo,
+         ibPpiFromFifo        => ibPpiFromFifo,
+         clkSelA              => open,
+         clkSelB              => open
       );
 
    i2cSda <= '1';

@@ -23,6 +23,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 entity ArmRceG3ObCntrl is
    generic (
@@ -43,10 +44,10 @@ entity ArmRceG3ObCntrl is
       headerPtrData           : in  slv(35 downto 0);
 
       -- FIFO Read 
-      freePtrSel              : in  slv(1  downto 0);
-      freePtrData             : out slv(31 downto 0);
-      freePtrRd               : in  sl;
-      freePtrRdValid          : out sl;
+      localAxiReadMaster      : in  AxiLiteReadMasterType;
+      localAxiReadSlave       : out AxiLiteReadSlaveType;
+      localAxiWriteMaster     : in  AxiLiteWriteMasterType;
+      localAxiWriteSlave      : out AxiLiteWriteSlaveType;
 
       -- Configuration
       memBaseAddress          : in  slv(31 downto 18);      -- Lower bits from free list FIFO
@@ -68,10 +69,23 @@ architecture structure of ArmRceG3ObCntrl is
    signal freePtrWrite       : slv(3 downto 0);
    signal freePtrDin         : Slv18Array(3 downto 0);
    signal freePtrDout        : Slv18Array(3 downto 0);
-   signal freePtrRead        : slv(3 downto 0);
-   signal freePtrReadDly     : sl;
    signal freePtrValid       : slv(3 downto 0);
    signal axiClkRstInt       : sl := '1';
+
+   type RegType is record
+      freePtrRead        : slv(3 downto 0);
+      localAxiReadSlave  : AxiLiteReadSlaveType;
+      localAxiWriteSlave : AxiLiteWriteSlaveType;
+   end record RegType;
+
+   constant REG_INIT_C : RegType := (
+      freePtrRead        => (others => '0'),
+      localAxiReadSlave  => AXI_READ_SLAVE_INIT_C,
+      localAxiWriteSlave => AXI_WRITE_SLAVE_INIT_C
+   );
+
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
@@ -161,7 +175,7 @@ begin
             almost_full       => open,
             full              => open,
             not_full          => open,
-            rd_en             => freePtrRead(i),
+            rd_en             => rin.freePtrRead(i),
             dout              => freePtrDout(i),
             valid             => freePtrValid(i),
             underflow         => open,
@@ -174,25 +188,57 @@ begin
    -----------------------------------------
    -- FIFO Read
    -----------------------------------------
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            freePtrRdValid <= '0'           after TPD_G;
-            freePtrRead    <= (others=>'0') after TPD_G;
-            freePtrReadDly <= '0'           after TPD_G;
-            freePtrData    <= (others=>'0') after TPD_G;
-         else
-            freePtrReadDly <= freePtrRd      after TPD_G;
-            freePtrRdValid <= freePtrReadDly after TPD_G;
 
-            freePtrRead(conv_integer(freePtrSel)) <= freePtrRd after TPD_G;
-
-            freePtrData(17 downto  0) <= freePtrDout(conv_integer(freePtrSel))  after TPD_G;
-            freePtrData(30 downto 18) <= (others=>'0')                            after TPD_G;
-            freePtrData(31)           <= freePtrValid(conv_integer(freePtrSel)) after TPD_G;
-
-         end if;
+   -- Sync
+   process (axiClk) is
+   begin
+      if (rising_edge(axiClk)) then
+         r <= rin after TPD_G;
       end if;
+   end process;
+
+   -- Async
+   process (axiClkRstInt, localAxiReadMaster, localAxiWriteMaster, freePtrDout, freePtrValid, r ) is
+      variable v         : RegType;
+      variable axiStatus : AxiLiteStatusType;
+      variable c         : character;
+   begin
+      v := r;
+
+      v.freePtrRead := (others=>'0');
+
+      axiSlaveWaitTxn(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave, axiStatus);
+
+      -- Write
+      if (axiStatus.writeEnable = '1') then
+         axiSlaveWriteResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+      end if;
+
+      -- Read
+      if (axiStatus.readEnable = '1') then
+
+         v.localAxiReadSlave.rdata(17 downto  0) := freePtrDout(conv_integer(localAxiReadMaster.araddr(3 downto 2)));
+         v.localAxiReadSlave.rdata(30 downto 18) := (others=>'0');
+         v.localAxiReadSlave.rdata(31)           := freePtrValid(conv_integer(localAxiReadMaster.araddr(3 downto 2)));
+
+         v.freePtrRead(conv_integer(localAxiReadMaster.araddr(3 downto 2))) := '1';
+
+         -- Send Axi Response
+         axiSlaveReadResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+      end if;
+
+      -- Reset
+      if (axiClkRstInt = '1') then
+         v := REG_INIT_C;
+      end if;
+
+      -- Next register assignment
+      rin <= v;
+
+      -- Outputs
+      localAxiReadSlave  <= r.localAxiReadSlave;
+      localAxiWriteSlave <= r.localAxiWriteSlave;
+      
    end process;
 
 end architecture structure;

@@ -23,6 +23,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 entity ArmRceG3DmaComp is
    generic (
@@ -39,10 +40,10 @@ entity ArmRceG3DmaComp is
       compToFifo              : out CompToFifoVector(7 downto 0);
 
       -- FIFO Read 
-      compFifoSel             : in  slv(3  downto 0);
-      compFifoData            : out slv(31 downto 0);
-      compFifoRd              : in  sl;
-      compFifoRdValid         : out sl;
+      localAxiReadMaster      : in  AxiLiteReadMasterType;
+      localAxiReadSlave       : out AxiLiteReadSlaveType;
+      localAxiWriteMaster     : in  AxiLiteWriteMasterType;
+      localAxiWriteSlave      : out AxiLiteWriteSlaveType;
 
       -- FIFO Interrupts
       compInt                 : out slv(10 downto 0)
@@ -59,14 +60,29 @@ architecture structure of ArmRceG3DmaComp is
    signal compWrite     : Slv16Array(7 downto 0);
    signal compDest      : Slv4Array(7 downto 0);
    signal compValid     : slv(7 downto 0);
-   signal compFifoDout  : Slv36Array(10 downto 0);
+   signal compFifoDout  : Slv36Array(15 downto 0);
    signal compFifoDin   : slv(35 downto 0);
    signal compFifoWrEn  : slv(10 downto 0);
-   signal compFifoRdEn  : slv(10 downto 0);
-   signal compFifoRdDly : sl;
    signal compFifoPFull : slv(10 downto 0);
    signal compFifoValid : slv(10 downto 0);
    signal axiClkRstInt  : sl := '1';
+
+   type RegType is record
+      compFifoRdEn       : slv(15 downto 0);
+      compInt            : slv(10 downto 0);
+      localAxiReadSlave  : AxiLiteReadSlaveType;
+      localAxiWriteSlave : AxiLiteWriteSlaveType;
+   end record RegType;
+
+   constant REG_INIT_C : RegType := (
+      compFifoRdEn       => (others => '0'),
+      compInt            => (others => '0'),
+      localAxiReadSlave  => AXI_READ_SLAVE_INIT_C,
+      localAxiWriteSlave => AXI_WRITE_SLAVE_INIT_C
+   );
+
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
@@ -173,7 +189,7 @@ begin
             almost_full       => open,
             full              => open,
             not_full          => open,
-            rd_en             => compFifoRdEn(i),
+            rd_en             => rin.compFifoRdEn(i),
             dout              => compFifoDout(i),
             valid             => compFifoValid(i),
             underflow         => open,
@@ -183,34 +199,63 @@ begin
          );
    end generate;
 
+   compFifoDout(15 downto 11) <= (others=>(others=>'0'));
+
+
    -----------------------------------------
    -- FIFO Read
    -----------------------------------------
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            compFifoRdValid <= '0'           after TPD_G;
-            compInt         <= (others=>'0') after TPD_G;
-            compFifoRdEn    <= (others=>'0') after TPD_G;
-            compFifoRdDly   <= '0'           after TPD_G;
-            compFifoData    <= (others=>'0') after TPD_G;
-         else
-            compFifoRdDly   <= compFifoRd    after TPD_G;
-            compFifoRdValid <= compFifoRdDly after TPD_G;
-            compInt         <= compFifoValid after TPD_G;
-            compFifoRdEn    <= (others=>'0') after TPD_G;
 
-            if compFifoSel < 11 then
-               compFifoRdEn(conv_integer(compFifoSel)) <= compFifoRd after TPD_G;
-            end if;
-
-            if compFifoSel < 11 then
-               compFifoData <= compFifoDout(conv_integer(compFifoSel))(31 downto 0) after TPD_G;
-            else
-               compFifoData <= (others=>'0') after TPD_G;
-            end if;
-         end if;
+   -- Sync
+   process (axiClk) is
+   begin
+      if (rising_edge(axiClk)) then
+         r <= rin after TPD_G;
       end if;
+   end process;
+
+   -- Async
+   process (axiClkRstInt, localAxiReadMaster, localAxiWriteMaster, compFifoDout, compFifoValid, r ) is
+      variable v         : RegType;
+      variable axiStatus : AxiLiteStatusType;
+      variable c         : character;
+   begin
+      v := r;
+
+      v.compFifoRdEn := (others=>'0');
+      v.compInt      := compFifoValid;
+
+      axiSlaveWaitTxn(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave, axiStatus);
+
+      -- Write
+      if (axiStatus.writeEnable = '1') then
+         axiSlaveWriteResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+      end if;
+
+      -- Read
+      if (axiStatus.readEnable = '1') then
+
+         v.localAxiReadSlave.rdata := compFifoDout(conv_integer(localAxiReadMaster.araddr(5 downto 2)))(31 downto 0);
+
+         v.compFifoRdEn(conv_integer(localAxiReadMaster.araddr(5 downto 2))) := '1';
+
+         -- Send Axi Response
+         axiSlaveReadResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+      end if;
+
+      -- Reset
+      if (axiClkRstInt = '1') then
+         v := REG_INIT_C;
+      end if;
+
+      -- Next register assignment
+      rin <= v;
+
+      -- Outputs
+      localAxiReadSlave  <= r.localAxiReadSlave;
+      localAxiWriteSlave <= r.localAxiWriteSlave;
+      compInt            <= r.compInt;
+      
    end process;
 
 end architecture structure;
