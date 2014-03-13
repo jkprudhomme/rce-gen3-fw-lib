@@ -30,6 +30,7 @@ class IbPpiFifo {
       DmaSpace      * _dspace;
       uint            _num;
       uint            _compIdx;
+      uint            _count;
       bool            _enable;
 
    public:

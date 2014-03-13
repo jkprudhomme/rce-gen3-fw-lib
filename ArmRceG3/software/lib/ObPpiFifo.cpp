@@ -19,6 +19,7 @@ ObPpiFifo::ObPpiFifo (ConfigSpace *cspace, DmaSpace *dspace, uint fifoNum) {
    _dspace   = dspace;
    _num      = fifoNum;
    _enable   = false;
+   _count    = 0;
 
    _hfifo = new ObHeaderFifo(cspace,dspace, fifoNum);
 
@@ -37,6 +38,7 @@ void ObPpiFifo::setEnable ( bool enable ) {
 // Push a transmit entry onto FIFO
 void ObPpiFifo::pushEntry ( ObPpiDesc *ptr ) {
    uint         addr;
+   uint         cmp;
    ObHeaderDesc hdesc;
 
    // Not enabled
@@ -51,13 +53,14 @@ void ObPpiFifo::pushEntry ( ObPpiDesc *ptr ) {
    hdesc.size  = (ptr->hsize/4) + 4;
    hdesc.alloc = hdesc.size;
    hdesc.data  = (uint *)malloc(sizeof(uint) * hdesc.size);
+   _count ++;
 
    // Copy header data
    memcpy(hdesc.data,ptr->data,hdesc.size*4);
    hdesc.data[0]             = ptr->psize;
    hdesc.data[hdesc.size-4]  = _dspace->getDmaBase() + addr;
    hdesc.data[hdesc.size-3]  = ptr->psize;
-   hdesc.data[hdesc.size-2]  = 0x5a5a5a5a;
+   hdesc.data[hdesc.size-2]  =  _count+_num;
    hdesc.data[hdesc.size-1]  = _compIdx;
    hdesc.data[hdesc.size-1] |= 0x10; // compEn
 
@@ -77,7 +80,15 @@ void ObPpiFifo::pushEntry ( ObPpiDesc *ptr ) {
       cout << "Waiting for outbound completion entry!" << endl;
       while ( ! _cspace->getDirty(5 + _compIdx) ) usleep(100);
    }
+
+   cmp = _cspace->getCompFifoData ( _compIdx );
+
    cout << "Got outbound completion entry: 0x" 
-        << hex << setw(8) << setfill('0') << _cspace->getCompFifoData ( _compIdx ) << endl;
+        << hex << setw(8) << setfill('0') << cmp << endl;
+
+   if ( cmp != ( _count+_num )) {
+      cout << "Bad completion value." << endl;
+      exit(1);
+   }
 }
 

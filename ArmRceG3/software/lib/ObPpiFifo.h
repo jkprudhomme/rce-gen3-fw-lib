@@ -29,6 +29,7 @@ class ObPpiFifo {
       ConfigSpace   * _cspace;
       DmaSpace      * _dspace;
       uint            _num;
+      uint            _count;
       uint            _compIdx;
       bool            _enable;
 
