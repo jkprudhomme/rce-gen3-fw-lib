@@ -83,7 +83,6 @@ architecture STRUCTURE of DpmTimingSink is
    signal ledCountA           : slv(31 downto 0);
    signal ledCountB           : slv(31 downto 0);
    signal ocFifoRd            : sl;
-   signal axiClkRstInt        : sl := '1';
 
    type RegType is record
       cfgReset          : sl;
@@ -108,20 +107,7 @@ architecture STRUCTURE of DpmTimingSink is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   attribute mark_debug : string;
-   attribute mark_debug of axiClkRstInt : signal is "true";
-
-   attribute INIT : string;
-   attribute INIT of axiClkRstInt : signal is "1";
-
 begin
-
-   -- Reset registration
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         axiClkRstInt <= axiClkRst after TPD_G;
-      end if;
-   end process;
 
    -- Clock and reset out
    distClk      <= intClk;
@@ -159,7 +145,7 @@ begin
          O => intClk
       );
 
-   intReset <= axiClkRstInt or r.cfgReset;
+   intReset <= axiClkRst or r.cfgReset;
 
    -- Reset gen
    U_RstGen : entity work.RstSync
@@ -200,7 +186,7 @@ begin
          timingCode      => intCode,
          timingCodeEn    => intCodeEn,
          configClk       => axiClk,
-         configClkRst    => axiClkRstInt,
+         configClkRst    => axiClkRst,
          configSet       => r.cfgSet,
          configDelay     => r.cfgDelay,
          statusIdleCnt   => statusIdleCnt,
@@ -224,7 +210,7 @@ begin
          FULL_THRES_G   => 63,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRstInt,
+         rst                => axiClkRst,
          wr_clk             => intClk,
          wr_en              => ocFifoWr,
          din                => intCode,
@@ -290,7 +276,6 @@ begin
    process (axiClkRst, axiReadMaster, axiWriteMaster, r, statusErrorCnt, statusIdleCnt, ocFifoValid, ocFifoData ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
-      variable c         : character;
    begin
       v := r;
 
@@ -326,20 +311,24 @@ begin
       if (axiStatus.readEnable = '1') then
          v.axiReadSlave.rdata := (others => '0');
 
+         -- OC Fifo Write Enable
+         if axiReadMaster.araddr(11 downto 0) = x"004" then
+            v.axiReadSlave.rdata(0) := r.ocFifoWrEn;
+
          -- OC FIFO status
-         if axiWriteMaster.awaddr(11 downto 0) = x"00C" then
+         elsif axiReadMaster.araddr(11 downto 0) = x"00C" then
             v.axiReadSlave.rdata(31 downto 16) := statusErrorCnt;
             v.axiReadSlave.rdata(15 downto 0)  := statusIdleCnt;
 
          -- OC FIFO read, one per FIFO
-         elsif axiWriteMaster.awaddr(11 downto 0) = x"010" then
+         elsif axiReadMaster.araddr(11 downto 0) = x"010" then
             v.ocFifoRd := '1';
 
             v.axiReadSlave.rdata(8)           := ocFifoValid;
             v.axiReadSlave.rdata(7 downto 0)  := ocFifoData;
 
          -- Clock Count
-         elsif axiWriteMaster.awaddr(11 downto 0) = x"014" then
+         elsif axiReadMaster.araddr(11 downto 0) = x"014" then
             v.axiReadSlave.rdata := ledCountA;
           end if;
 

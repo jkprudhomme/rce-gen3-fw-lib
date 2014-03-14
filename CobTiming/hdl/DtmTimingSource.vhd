@@ -93,7 +93,7 @@ architecture STRUCTURE of DtmTimingSource is
    signal dpmClk              : slv(2 downto 0);
    signal dpmFb               : slv(7 downto 0);
    signal fbFifoRd            : slv(7 downto 0);
-   signal axiClkRstInt        : sl := '1';
+   signal ocFifoRd            : sl;
 
    type RegType is record
       fbCfgSet          : slv(7 downto 0);
@@ -124,20 +124,7 @@ architecture STRUCTURE of DtmTimingSource is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   attribute mark_debug : string;
-   attribute mark_debug of axiClkRstInt : signal is "true";
-
-   attribute INIT : string;
-   attribute INIT of axiClkRstInt : signal is "1";
-
 begin
-
-   -- Reset registration
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         axiClkRstInt <= axiClkRst after TPD_G;
-      end if;
-   end process;
 
    ----------------------------------------
    -- Delay Control
@@ -244,7 +231,7 @@ begin
          FULL_THRES_G   => 63,
          EMPTY_THRES_G  => 1
       ) port map (
-         rst                => axiClkRstInt,
+         rst                => axiClkRst,
          wr_clk             => distClk,
          wr_en              => ocFifoWr,
          din                => intCode,
@@ -256,7 +243,7 @@ begin
          full               => open,
          not_full           => open,
          rd_clk             => axiClk,
-         rd_en              => rin.ocFifoRd,
+         rd_en              => ocFifoRd,
          dout               => ocFifoData,
          rd_data_count      => open,
          valid              => ocFifoValid,
@@ -294,7 +281,7 @@ begin
             timingCode      => ifbCode(i),
             timingCodeEn    => ifbCodeEn(i),
             configClk       => axiClk,
-            configClkRst    => axiClkRstInt,
+            configClkRst    => axiClkRst,
             configSet       => r.fbCfgSet(i),
             configDelay     => r.fbCfgDelay,
             statusIdleCnt   => fbStatusIdleCnt(i),
@@ -318,7 +305,7 @@ begin
             FULL_THRES_G   => 63,
             EMPTY_THRES_G  => 1
          ) port map (
-            rst                => axiClkRstInt,
+            rst                => axiClkRst,
             wr_clk             => distClk,
             wr_en              => fbFifoWr(i),
             din                => ifbCode(i),
@@ -367,7 +354,6 @@ begin
             fbFifoValid, fbFifoData, ocFifoValid, ocFifoData, ledCountA) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
-      variable c         : character;
    begin
       v := r;
 
@@ -451,6 +437,7 @@ begin
       axiReadSlave  <= r.axiReadSlave;
       axiWriteSlave <= r.axiWriteSlave;
       fbFifoRd      <= v.fbFifoRd;
+      ocFifoRd      <= v.ocFifoRd;
       
    end process;
 
