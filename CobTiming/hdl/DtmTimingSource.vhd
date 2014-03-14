@@ -92,6 +92,7 @@ architecture STRUCTURE of DtmTimingSource is
    signal ledCountB           : slv(26 downto 0);
    signal dpmClk              : slv(2 downto 0);
    signal dpmFb               : slv(7 downto 0);
+   signal fbFifoRd            : slv(7 downto 0);
    signal axiClkRstInt        : sl := '1';
 
    type RegType is record
@@ -329,7 +330,7 @@ begin
             full               => open,
             not_full           => open,
             rd_clk             => axiClk,
-            rd_en              => rin.fbFifoRd(i),
+            rd_en              => fbFifoRd(i),
             dout               => fbFifoData(i),
             rd_data_count      => open,
             valid              => fbFifoValid(i),
@@ -449,6 +450,7 @@ begin
       -- Outputs
       axiReadSlave  <= r.axiReadSlave;
       axiWriteSlave <= r.axiWriteSlave;
+      fbFifoRd      <= v.fbFifoRd;
       
    end process;
 

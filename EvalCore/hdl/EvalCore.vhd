@@ -27,14 +27,14 @@ entity EvalCore is
       i2cScl                  : inout sl;
 
       -- Clocks
-      axiClk                  : out   sl;
-      axiClkRst               : out   sl;
       sysClk125               : out   sl;
       sysClk125Rst            : out   sl;
       sysClk200               : out   sl;
       sysClk200Rst            : out   sl;
 
       -- External Axi Bus, 0xA0000000 - 0xBFFFFFFF
+      axiClk                  : out   sl;
+      axiClkRst               : out   sl;
       localAxiReadMaster      : out   AxiLiteReadMasterType;
       localAxiReadSlave       : in    AxiLiteReadSlaveType;
       localAxiWriteMaster     : out   AxiLiteWriteMasterType;
@@ -75,12 +75,12 @@ begin
       ) port map (
          i2cSda              => i2cSda,
          i2cScl              => i2cScl,
-         axiClk              => intAxiClk,
-         axiClkRst           => intAxiClkRst,
          sysClk125           => sysClk125,
          sysClk125Rst        => sysClk125Rst,
          sysClk200           => sysClk200,
          sysClk200Rst        => sysClk200Rst,
+         axiClk              => intAxiClk,
+         axiClkRst           => intAxiClkRst,
          localAxiReadMaster  => topAxiReadMaster,
          localAxiReadSlave   => topAxiReadSlave ,
          localAxiWriteMaster => topAxiWriteMaster,

@@ -92,8 +92,8 @@ architecture structure of ArmRceG3LocalAxi is
 
    constant REG_INIT_C : RegType := (
       scratchPad    => (others => '0'),
-      clkSelA       => (others => '0'),
-      clkSelB       => (others => '0'),
+      clkSelA       => (others => '1'),
+      clkSelB       => (others => '1'),
       axiReadSlave  => AXI_READ_SLAVE_INIT_C,
       axiWriteSlave => AXI_WRITE_SLAVE_INIT_C
    );
@@ -269,34 +269,37 @@ begin
       if (axiStatus.readEnable = '1') then
          v.axiReadSlave.rdata := (others => '0');
 
-         -- Decode address and assign read data
-         case axiReadMaster.araddr(15 downto 0) is
-            when X"0000" =>
-               v.axiReadSlave.rdata := FPGA_VERSION_C;
-            when X"0004" =>
-               v.axiReadSlave.rdata := r.scratchPad;
-            when X"0008" =>
-               v.axiReadSlave.rdata := ArmRceG3Version;
-            when X"0010" =>
-               v.axiReadSlave.rdata(0) := r.clkSelA(0);
-               v.axiReadSlave.rdata(1) := r.clkSelB(0);
-            when X"0014" =>
-               v.axiReadSlave.rdata(0) := r.clkSelA(1);
-               v.axiReadSlave.rdata(1) := r.clkSelB(1);
-            when X"0020" =>
-               v.axiReadSlave.rdata(31)          := dnaValid;
-               v.axiReadSlave.rdata(24 downto 0) := dnaValue(56 downto 32);
-            when X"0024" =>
-               v.axiReadSlave.rdata := dnaValue(31 downto 0);
-            when X"1000" =>
-               for x in 0 to 3 loop
-                  if (conv_integer(axiReadMaster.araddr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
-                     c := BUILD_STAMP_C(conv_integer(axiReadMaster.araddr(7 downto 0))+x+1);
-                     v.axiReadSlave.rdata(x*8+7 downto x*8) := conv_std_logic_vector(character'pos(c),8);
-                  end if;
-               end loop;
-            when others => null;
-         end case;
+         if axiReadMaster.araddr(15 downto 12) = 0 then
+
+            -- Decode address and assign read data
+            case axiReadMaster.araddr(15 downto 0) is
+               when X"0000" =>
+                  v.axiReadSlave.rdata := FPGA_VERSION_C;
+               when X"0004" =>
+                  v.axiReadSlave.rdata := r.scratchPad;
+               when X"0008" =>
+                  v.axiReadSlave.rdata := ArmRceG3Version;
+               when X"0010" =>
+                  v.axiReadSlave.rdata(0) := r.clkSelA(0);
+                  v.axiReadSlave.rdata(1) := r.clkSelB(0);
+               when X"0014" =>
+                  v.axiReadSlave.rdata(0) := r.clkSelA(1);
+                  v.axiReadSlave.rdata(1) := r.clkSelB(1);
+               when X"0020" =>
+                  v.axiReadSlave.rdata(31)          := dnaValid;
+                  v.axiReadSlave.rdata(24 downto 0) := dnaValue(56 downto 32);
+               when X"0024" =>
+                  v.axiReadSlave.rdata := dnaValue(31 downto 0);
+               when others => null;
+            end case;
+         else
+            for x in 0 to 3 loop
+               if (conv_integer(axiReadMaster.araddr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
+                  c := BUILD_STAMP_C(conv_integer(axiReadMaster.araddr(7 downto 0))+x+1);
+                  v.axiReadSlave.rdata(x*8+7 downto x*8) := conv_std_logic_vector(character'pos(c),8);
+               end if;
+            end loop;
+         end if;
 
          -- Send Axi Response
          axiSlaveReadResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);

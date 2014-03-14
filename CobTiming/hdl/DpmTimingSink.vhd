@@ -82,6 +82,7 @@ architecture STRUCTURE of DpmTimingSink is
    signal ocFifoData          : slv(7 downto 0);
    signal ledCountA           : slv(31 downto 0);
    signal ledCountB           : slv(31 downto 0);
+   signal ocFifoRd            : sl;
    signal axiClkRstInt        : sl := '1';
 
    type RegType is record
@@ -235,7 +236,7 @@ begin
          full               => open,
          not_full           => open,
          rd_clk             => axiClk,
-         rd_en              => rin.ocFifoRd,
+         rd_en              => ocFifoRd,
          dout               => ocFifoData,
          rd_data_count      => open,
          valid              => ocFifoValid,
@@ -358,6 +359,7 @@ begin
       -- Outputs
       axiReadSlave  <= r.axiReadSlave;
       axiWriteSlave <= r.axiWriteSlave;
+      ocFifoRd      <= v.ocFifoRd;
       
    end process;
 

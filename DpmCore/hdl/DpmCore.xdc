@@ -16,7 +16,7 @@
 # Arm Core Clocks
 create_clock -name fclkClk0 -period 10 \
    [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Cpu/U_PS7/U0/PS7_i/FCLKCLK[0]]
-set axiClkGroup    [get_clocks -of_objects \
+set dmaClkGroup    [get_clocks -of_objects \
    [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT0]]
 set sysClk200Group [get_clocks -of_objects \
    [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT1]]
@@ -33,24 +33,24 @@ set intEthClk1Group [get_clocks -of_objects \
 
 # Set Asynchronous Paths
 set_clock_groups -asynchronous -group [get_clocks {fclkClk0}] \
-                               -group ${axiClkGroup} \
+                               -group ${dmaClkGroup} \
                                -group ${sysClk200Group} \
                                -group ${sysClk125Group} 
 
-set_clock_groups -asynchronous -group ${axiClkGroup}    -group ${intEthClk0Group}
-set_clock_groups -asynchronous -group ${axiClkGroup}    -group ${intEthClk1Group}
-
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk0Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk1Group}
+set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk0Group}
+set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk1Group}
 
 set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk0Group}
 set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk1Group}
+
+set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk0Group}
+set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk1Group}
 
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
 
 # Reset Fanout
-set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/axiClkRst]
+set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/dmaClkRst]
 set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/sysClk200Rst]
 set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/sysClk125Rst]
 

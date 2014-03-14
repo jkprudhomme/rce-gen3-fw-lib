@@ -223,26 +223,30 @@ begin
    begin
       v := r;
 
-      v.cpuBramWr   := '0';
-      v.cpuBramAddr := localAxiWriteMaster.awaddr(10 downto 2);
-      v.cpuBramDin  := localAxiWriteMaster.wdata;
+      v.cpuBramWr := '0';
+      v.readEnDly := (others=>'0');
 
       axiSlaveWaitTxn(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave, axiStatus);
 
       -- Write
       if (axiStatus.writeEnable = '1') then
-         v.cpuBramWr := '1';
+         v.cpuBramWr   := '1';
+         v.cpuBramAddr := localAxiWriteMaster.awaddr(10 downto 2);
+         v.cpuBramDin  := localAxiWriteMaster.wdata;
          axiSlaveWriteResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
       end if;
 
       -- Read
       if (axiStatus.readEnable = '1') then
-         v.localAxiReadSlave.rdata := cpuBramDout;
-         v.readEnDly(0)            := '1';
-         v.readEnDly(1)            := r.readEnDly(0);
+
+         v.cpuBramAddr := localAxiReadMaster.araddr(10 downto 2);
+
+         v.readEnDly(0) := '1';
+         v.readEnDly(1) := r.readEnDly(0);
 
          -- Send Axi Response
          if ( r.readEnDly(1) = '1' ) then
+            v.localAxiReadSlave.rdata := cpuBramDout;
             axiSlaveReadResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
          end if;
       end if;

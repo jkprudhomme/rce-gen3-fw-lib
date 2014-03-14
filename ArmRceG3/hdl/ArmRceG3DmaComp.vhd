@@ -65,6 +65,7 @@ architecture structure of ArmRceG3DmaComp is
    signal compFifoWrEn  : slv(10 downto 0);
    signal compFifoPFull : slv(10 downto 0);
    signal compFifoValid : slv(10 downto 0);
+   signal compFifoRdEn  : slv(15 downto 0);
    signal axiClkRstInt  : sl := '1';
 
    type RegType is record
@@ -85,7 +86,9 @@ architecture structure of ArmRceG3DmaComp is
    signal rin : RegType;
 
    attribute mark_debug : string;
-   attribute mark_debug of axiClkRstInt : signal is "true";
+   attribute mark_debug of axiClkRstInt : signal  is "true";
+   attribute mark_debug of compFifoRdEn : signal  is "true";
+   attribute mark_debug of compFifoDout : signal  is "true";
 
    attribute INIT : string;
    attribute INIT of axiClkRstInt : signal is "1";
@@ -189,7 +192,7 @@ begin
             almost_full       => open,
             full              => open,
             not_full          => open,
-            rd_en             => rin.compFifoRdEn(i),
+            rd_en             => compFifoRdEn(i),
             dout              => compFifoDout(i),
             valid             => compFifoValid(i),
             underflow         => open,
@@ -255,6 +258,7 @@ begin
       localAxiReadSlave  <= r.localAxiReadSlave;
       localAxiWriteSlave <= r.localAxiWriteSlave;
       compInt            <= r.compInt;
+      compFifoRdEn       <= v.compFifoRdEn;
       
    end process;
 

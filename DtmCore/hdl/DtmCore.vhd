@@ -75,14 +75,14 @@ entity DtmCore is
       dtmToIpmiM   : out   slv(1 downto 0);
 
       -- Clocks
-      axiClk                  : out   sl;
-      axiClkRst               : out   sl;
       sysClk125               : out   sl;
       sysClk125Rst            : out   sl;
       sysClk200               : out   sl;
       sysClk200Rst            : out   sl;
 
       -- External Axi Bus, 0xA0000000 - 0xAFFFFFFF
+      axiClk                  : out   sl;
+      axiClkRst               : out   sl;
       localAxiReadMaster      : out   AxiLiteReadMasterType;
       localAxiReadSlave       : in    AxiLiteReadSlaveType;
       localAxiWriteMaster     : out   AxiLiteWriteMasterType;
@@ -145,12 +145,12 @@ begin
       ) port map (
          i2cSda              => i2cSda,
          i2cScl              => i2cScl,
-         axiClk              => iaxiClk,
-         axiClkRst           => iaxiClkRst,
          sysClk125           => isysClk125,
          sysClk125Rst        => isysClk125Rst,
          sysClk200           => isysClk200,
          sysClk200Rst        => isysClk200Rst,
+         axiClk              => iaxiClk,
+         axiClkRst           => iaxiClkRst,
          localAxiReadMaster  => topAxiReadMaster,
          localAxiReadSlave   => topAxiReadSlave ,
          localAxiWriteMaster => topAxiWriteMaster,

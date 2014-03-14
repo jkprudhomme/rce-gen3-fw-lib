@@ -42,9 +42,9 @@ entity ArmRceG3Clocks is
       fclkRst1                : in     sl;
       fclkRst0                : in     sl;
 
-      -- AXI clock and reset
-      axiClk                  : out    sl;
-      axiClkRst               : out    sl;
+      -- DMA clock and reset
+      dmaClk                  : out    sl;
+      dmaClkRst               : out    sl;
 
       -- Other system clocks
       sysClk125               : out    sl;
@@ -57,8 +57,8 @@ end ArmRceG3Clocks;
 architecture structure of ArmRceG3Clocks is
 
    -- Local signals
-   signal daxiClk            : sl;
-   signal iaxiClk            : sl;
+   signal ddmaClk            : sl;
+   signal idmaClk            : sl;
    signal dsysClk125         : sl;
    signal isysClk125         : sl;
    signal dsysClk200         : sl;
@@ -71,15 +71,14 @@ architecture structure of ArmRceG3Clocks is
    signal lockedReset        : sl;
 
    attribute mark_debug : string;
-   attribute mark_debug of axiClk       : signal is "true";
-   attribute mark_debug of axiClkRst    : signal is "true";
+   attribute mark_debug of dmaClkRst    : signal is "true";
    attribute mark_debug of sysClk125Rst : signal is "true";
    attribute mark_debug of sysClk200Rst : signal is "true";
 
 begin
 
    -- Outputs
-   axiClk    <= iaxiClk;
+   dmaClk    <= idmaClk;
    sysClk125 <= isysClk125;
    sysClk200 <= isysClk200;
 
@@ -134,7 +133,7 @@ begin
       port map (
          CLKFBOUT             => clkFbOut,
          CLKFBOUTB            => open,
-         CLKOUT0              => daxiClk, 
+         CLKOUT0              => ddmaClk, 
          CLKOUT0B             => open,
          CLKOUT1              => dsysClk200,
          CLKOUT1B             => open,
@@ -167,10 +166,10 @@ begin
          RST                  => ponReset
       );
 
-   U_axiClkBuf : BUFG
+   U_DmaClkBuf : BUFG
       port map (
-         I     => daxiClk,
-         O     => iaxiClk
+         I     => ddmaClk,
+         O     => idmaClk
       );
 
    U_sysClk200Buf : BUFG
@@ -192,7 +191,7 @@ begin
    -- Locked reset
    lockedReset <= ponReset or (not mmcmLocked);
 
-   U_axiClkRstGen : entity work.RstSync
+   U_dmaClkRstGen : entity work.RstSync
       generic map (
          TPD_G           => TPD_G,
          IN_POLARITY_G   => '1',
@@ -200,9 +199,9 @@ begin
          RELEASE_DELAY_G => 16
       )
       port map (
-        clk      => iaxiClk,
+        clk      => idmaClk,
         asyncRst => lockedReset,
-        syncRst  => axiClkRst
+        syncRst  => dmaClkRst
       );
 
    U_sysClk200RstGen : entity work.RstSync
@@ -232,3 +231,4 @@ begin
       );
 
 end architecture structure;
+

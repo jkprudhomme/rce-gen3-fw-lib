@@ -38,14 +38,14 @@ entity ArmRceG3Top is
       i2cScl                   : inout sl;
 
       -- Clocks
-      axiClk                   : out   sl;
-      axiClkRst                : out   sl;
       sysClk125                : out   sl;
       sysClk125Rst             : out   sl;
       sysClk200                : out   sl;
       sysClk200Rst             : out   sl;
 
       -- External Axi Bus, 0xA0000000 - 0xBFFFFFFF
+      axiClk                   : out   sl;
+      axiClkRst                : out   sl;
       localAxiReadMaster       : out   AxiLiteReadMasterType;
       localAxiReadSlave        : in    AxiLiteReadSlaveType;
       localAxiWriteMaster      : out   AxiLiteWriteMasterType;
@@ -99,8 +99,8 @@ architecture structure of ArmRceG3Top is
    signal axiHpSlaveReadFromArm    : AxiReadSlaveVector(3 downto 0);
    signal axiHpSlaveReadToArm      : AxiReadMasterVector(3 downto 0);
    signal armInt                   : slv(15 downto 0);
-   signal iaxiClk                  : sl;
-   signal iaxiClkRst               : sl;
+   signal idmaClk                  : sl;
+   signal idmaClkRst               : sl;
    signal isysClk125               : sl;
    signal isysClk125Rst            : sl;
    signal isysClk200               : sl;
@@ -129,7 +129,7 @@ begin
          fclkRst2                 => fclkRst2,
          fclkRst1                 => fclkRst1,
          fclkRst0                 => fclkRst0,
-         axiClk                   => iaxiClk,
+         axiClk                   => idmaClk,
          armInt                   => armInt,
          axiGpMasterWriteFromArm  => axiGpMasterWriteFromArm,
          axiGpMasterWriteToArm    => axiGpMasterWriteToArm,
@@ -177,8 +177,8 @@ begin
          fclkRst2                 => fclkRst2,
          fclkRst1                 => fclkRst1,
          fclkRst0                 => fclkRst0,
-         axiClk                   => iaxiClk,
-         axiClkRst                => iaxiClkRst,
+         dmaClk                   => idmaClk,
+         dmaClkRst                => idmaClkRst,
          sysClk125                => isysClk125,
          sysClk125Rst             => isysClk125Rst,
          sysClk200                => isysClk200,
@@ -186,8 +186,6 @@ begin
       );
 
    -- Output clocks
-   axiClk       <= iaxiClk;
-   axiClkRst    <= iaxiClkRst;
    sysClk125    <= isysClk125;
    sysClk125Rst <= isysClk125Rst;
    sysClk200    <= isysClk200;
@@ -202,8 +200,8 @@ begin
       generic map (
          TPD_G => TPD_G
       ) port map (
-         axiClk                  => iaxiClk,
-         axiClkRst               => iaxiClkRst,
+         axiClk                  => idmaClk,
+         axiClkRst               => idmaClkRst,
          axiGpMasterReadFromArm  => axiGpMasterReadFromArm(1),
          axiGpMasterReadToArm    => axiGpMasterReadToArm(1),
          axiGpMasterWriteFromArm => axiGpMasterWriteFromArm(1),
@@ -217,10 +215,27 @@ begin
       );
 
    -- External Axi Bus, 0xA0000000 - 0xBFFFFFFF
-   localAxiReadMaster  <= intAxiReadMaster(4);
-   intAxiReadSlave(4)  <= localAxiReadSlave;
-   localAxiWriteMaster <= intAxiWriteMaster(4);
-   intAxiWriteSlave(4) <= localAxiWriteSlave;
+   U_AxiLiteAsync : entity work.AxiLiteAsync 
+      generic map (
+         NUM_ADDR_BITS_G  => 32
+      ) port map (
+         sAxiClk           => idmaClk,
+         sAxiClkRst        => idmaClkRst,
+         sAxiReadMaster    => intAxiReadMaster(4),
+         sAxiReadSlave     => intAxiReadSlave(4),
+         sAxiWriteMaster   => intAxiWriteMaster(4),
+         sAxiWriteSlave    => intAxiWriteSlave(4),
+         mAxiClk           => isysClk125,
+         mAxiClkRst        => isysClk125Rst,
+         mAxiReadMaster    => localAxiReadMaster,
+         mAxiReadSlave     => localAxiReadSlave,
+         mAxiWriteMaster   => localAxiWriteMaster,
+         mAxiWriteSlave    => localAxiWriteSlave
+      );
+
+   -- External AXI Clocks
+   axiClk       <= isysClk125;
+   axiClkRst    <= isysClk125Rst;
 
 
    --------------------------------------------
@@ -230,8 +245,8 @@ begin
       generic map (
          TPD_G => TPD_G
       ) port map (
-         axiClk              => iaxiClk,
-         axiClkRst           => iaxiClkRst,
+         axiClk              => idmaClk,
+         axiClkRst           => idmaClkRst,
          localAxiReadMaster  => intAxiReadMaster(0),
          localAxiReadSlave   => intAxiReadSlave(0),
          localAxiWriteMaster => intAxiWriteMaster(0),
@@ -252,8 +267,8 @@ begin
       generic map (
          TPD_G => TPD_G
       ) port map (
-         axiClk                   => iaxiClk,
-         axiClkRst                => iaxiClkRst,
+         axiClk                   => idmaClk,
+         axiClkRst                => idmaClkRst,
          axiAcpSlaveWriteFromArm  => axiAcpSlaveWriteFromArm,
          axiAcpSlaveWriteToArm    => axiAcpSlaveWriteToArm,
          axiAcpSlaveReadFromArm   => axiAcpSlaveReadFromArm,
