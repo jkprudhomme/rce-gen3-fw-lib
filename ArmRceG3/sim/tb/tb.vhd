@@ -24,6 +24,8 @@ architecture tb of tb is
    signal ibPpiClk        : slv(3 downto 0);
    signal ibPpiToFifo     : IbPpiToFifoVector(3 downto 0);
    signal ibPpiFromFifo   : IbPpiFromFifoVector(3 downto 0);
+   signal sysClk125       : sl;
+   signal sysClk125Rst    : sl;
 
 begin
 
@@ -34,8 +36,8 @@ begin
          i2cScl               => i2cScl,
          axiClk               => axiClk,
          axiClkRst            => open,
-         sysClk125            => open,
-         sysClk125Rst         => open,
+         sysClk125            => sysClk125,
+         sysClk125Rst         => sysCLk125Rst,
          sysClk200            => open,
          sysClk200Rst         => open,
          localAxiReadMaster   => open,
@@ -62,8 +64,8 @@ begin
    --------------------------------------------------
    U_LoopGen : for i in 0 to 3 generate
 
-      ibPpiClk(i) <= axiClk;
-      obPpiClk(i) <= axiClk;
+      ibPpiClk(i) <= sysCLk125;
+      obPpiClk(i) <= sysCLk125;
 
       ibPpiToFifo(i).data    <= obPpiFromFifo(i).data;
       ibPpiToFifo(i).size    <= obPpiFromFifo(i).size;

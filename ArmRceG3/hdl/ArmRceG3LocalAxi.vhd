@@ -6,12 +6,6 @@
 -------------------------------------------------------------------------------
 -- Description:
 -- Wrapper for AXI bus converter and crossbar.
--- Channel 0 = 0x84000000 - 0x84000FFF : BSI I2C Slave Registers
--- Channel 1 = 0x88000000 - 0x88000FFF : DMA Control Registers
--- Channel 2 = 0x88001000 - 0x880010FF : DMA Control Completion FIFOs
--- Channel 3 = 0x88001100 - 0x880011FF : DMA Control Free List FIFOs
--- Channel 4 = 0xA0000000 - 0xBFFFFFFF : External Address Space
--- Channel 5 = 0x80000000 - 0x8000FFFF : Top level module registers
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -81,6 +75,10 @@ architecture structure of ArmRceG3LocalAxi is
    signal axiWriteSlave     : AxiLiteWriteSlaveType;
    signal dnaValue          : slv(63 downto 0);
    signal dnaValid          : sl;
+   signal sinceLast         : slv(31 downto 0);
+   signal timeOut           : sl;
+   signal writeInp          : sl;
+   signal readInp           : sl;
 
    type RegType is record
       scratchPad    : slv(31 downto 0);
@@ -100,6 +98,70 @@ architecture structure of ArmRceG3LocalAxi is
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
+
+   -- Mask is constant
+   constant CROSSBAR_CONN_C : slv(15 downto 0) := x"FFFF";
+
+   -- Channel 0 = 0x84000000 - 0x84000FFF : BSI I2C Slave Registers
+   constant BSI_I2C_INDEX_C       : natural          := 0;
+   constant BSI_I2C_BASE_ADDR_C   : slv(31 downto 0) := x"84000000";
+   constant BSI_I2C_NUM_BITS_C    : natural          := 12;
+
+   -- Channel 1 = 0x88000000 - 0x88000FFF : DMA Control Registers
+   constant DMA_CNTRL_INDEX_C     : natural          := 1;
+   constant DMA_CNTRL_BASE_ADDR_C : slv(31 downto 0) := x"88000000";
+   constant DMA_CNTRL_NUM_BITS_C  : natural          := 12;
+
+   -- Channel 2 = 0x88001000 - 0x880010FF : DMA Control Completion FIFOs
+   constant DMA_COMPL_INDEX_C     : natural          := 2;
+   constant DMA_COMPL_BASE_ADDR_C : slv(31 downto 0) := x"88001000";
+   constant DMA_COMPL_NUM_BITS_C  : natural          := 8;
+
+   -- Channel 3 = 0x88001100 - 0x880011FF : DMA Control Free List FIFOs
+   constant DMA_FLIST_INDEX_C     : natural          := 3;
+   constant DMA_FLIST_BASE_ADDR_C : slv(31 downto 0) := x"88001100";
+   constant DMA_FLIST_NUM_BITS_C  : natural          := 8;
+
+   -- Channel 4 = 0xA0000000 - 0xBFFFFFFF : External Address Space
+   constant EXT_SPACE_INDEX_C     : natural          := 4;
+   constant EXT_SPACE_BASE_ADDR_C : slv(31 downto 0) := x"A0000000";
+   constant EXT_SPACE_NUM_BITS_C  : natural          := 29;
+
+   -- Channel 5 = 0x80000000 - 0x8000FFFF : Top level module registers
+   constant TOP_SPACE_INDEX_C     : natural          := 5;
+   constant TOP_SPACE_BASE_ADDR_C : slv(31 downto 0) := x"80000000";
+   constant TOP_SPACE_NUM_BITS_C  : natural          := 16;
+
+   constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_MASTER_SLOTS_G-1 downto 0) := (
+      BSI_I2C_INDEX_C => (
+         baseAddr     => BSI_I2C_BASE_ADDR_C,
+         addrBits     => BSI_I2C_NUM_BITS_C,
+         connectivity => CROSSBAR_CONN_C),
+      DMA_CNTRL_INDEX_C => (
+         baseAddr     => DMA_CNTRL_BASE_ADDR_C,
+         addrBits     => DMA_CNTRL_NUM_BITS_C,
+         connectivity => CROSSBAR_CONN_C),
+      DMA_COMPL_INDEX_C => (
+         baseAddr     => DMA_COMPL_BASE_ADDR_C,
+         addrBits     => DMA_COMPL_NUM_BITS_C,
+         connectivity => CROSSBAR_CONN_C),
+      DMA_FLIST_INDEX_C => (
+         baseAddr     => DMA_FLIST_BASE_ADDR_C,
+         addrBits     => DMA_FLIST_NUM_BITS_C,
+         connectivity => CROSSBAR_CONN_C),
+      EXT_SPACE_INDEX_C => (
+         baseAddr     => EXT_SPACE_BASE_ADDR_C,
+         addrBits     => EXT_SPACE_NUM_BITS_C,
+         connectivity => CROSSBAR_CONN_C),
+      TOP_SPACE_INDEX_C => (
+         baseAddr     => TOP_SPACE_BASE_ADDR_C,
+         addrBits     => TOP_SPACE_NUM_BITS_C,
+         connectivity => CROSSBAR_CONN_C));
+
+   attribute mark_debug : string;
+   attribute mark_debug of writeInp : signal is "true";
+   attribute mark_debug of readInp  : signal is "true";
+   attribute mark_debug of timeOut  : signal is "true";
 
 begin
 
@@ -142,13 +204,39 @@ begin
          if axiClkRst = '1' then
             axiGpMasterReadToArm.rid  <= (others=>'0') after TPD_G;
             axiGpMasterWriteToArm.bid <= (others=>'0') after TPD_G;
+            sinceLast                 <= (others=>'0') after TPD_G;
+            writeInp                  <= '0'           after TPD_G;
+            readInp                   <= '0'           after TPD_G;
+            timeOut                   <= '0'           after TPD_G;
          else
 
+            if axiGpMasterReadFromArm.arvalid = '1' or axiGpMasterWriteFromArm.awvalid = '1' then
+               sinceLast <= (others=>'0') after TPD_G;
+               timeOut   <= '0'           after TPD_G;
+            else
+               sinceLast <= sinceLast +1 after TPD_G;
+               if sinceLast = x"FFFFFFFF" then
+                  timeOut <= '1' after TPD_G;
+               end if;
+            end if;
+
             if axiGpMasterReadFromArm.arvalid = '1' then
-               axiGpMasterReadToArm.rid <= axiGpMasterReadFromArm.arid after TPD_G;
+               readInp <= '1' after TPD_G;
+            elsif midReadSlave.rvalid = '1' then
+               readInp <= '0' after TPD_G;
             end if;
 
             if axiGpMasterWriteFromArm.awvalid = '1' then
+               writeInp <= '1' after TPD_G;
+            elsif midWriteSlave.bvalid = '1' then
+               writeInp <= '0' after TPD_G;
+            end if;
+
+            if axiGpMasterReadFromArm.arvalid = '1' and midReadSlave.arready = '1' then
+               axiGpMasterReadToArm.rid <= axiGpMasterReadFromArm.arid after TPD_G;
+            end if;
+
+            if axiGpMasterWriteFromArm.awvalid = '1' and midWriteSlave.awready = '1' then
                axiGpMasterWriteToArm.bid <= axiGpMasterWriteFromArm.awid after TPD_G;
             end if;
          end if;
@@ -165,38 +253,7 @@ begin
          NUM_SLAVE_SLOTS_G  => 1,
          NUM_MASTER_SLOTS_G => NUM_MASTER_SLOTS_G,
          DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
-         MASTERS_CONFIG_G   => (
-
-            -- Channel 0 = 0x84000000 - 0x84000FFF : BSI I2C Slave Registers
-            0 => ( baseAddr     => x"84000000",
-                   addrBits     => 12,
-                   connectivity => x"FFFF"),
-
-            -- Channel 1 = 0x88000000 - 0x88000FFF : DMA Control Registers
-            1 => ( baseAddr     => x"88000000",
-                   addrBits     => 12,
-                   connectivity => x"FFFF"),
-
-            -- Channel 2 = 0x88001000 - 0x880010FF : DMA Control Completion FIFOs
-            2 => ( baseAddr     => x"88001000",
-                   addrBits     => 8,
-                   connectivity => x"FFFF"),
-
-            -- Channel 3 = 0x88001100 - 0x880011FF : DMA Control Free List FIFOs
-            3 => ( baseAddr     => x"88001100",
-                   addrBits     => 8,
-                   connectivity => x"FFFF"),
-
-            -- Channel 4 = 0xA0000000 - 0xBFFFFFFF : External Address Space
-            4 => ( baseAddr     => x"A0000000",
-                   addrBits     => 29,
-                   connectivity => x"FFFF"),
-
-            -- Channel 5 = 0x80000000 - 0x8000FFFF : Top level module registers
-            5 => ( baseAddr     => x"80000000",
-                   addrBits     => 16,
-                   connectivity => x"FFFF"))
-
+         MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C 
       ) port map (
          axiClk              => axiClk,
          axiClkRst           => axiClkRst,
@@ -236,7 +293,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, axiReadMaster, axiWriteMaster, dnaValid, dnaValue, r ) is
+   process (axiClkRst, axiReadMaster, axiWriteMaster, dnaValid, dnaValue, r, sinceLast, readInp, writeInp, timeOut ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
       variable c         : character;
@@ -285,6 +342,12 @@ begin
                when X"0014" =>
                   v.axiReadSlave.rdata(0) := r.clkSelA(1);
                   v.axiReadSlave.rdata(1) := r.clkSelB(1);
+               when X"0018" =>
+                  v.axiReadSlave.rdata := sinceLast;
+               when X"001C" =>
+                  v.axiReadSlave.rdata(0) := readInp;
+                  v.axiReadSlave.rdata(1) := writeInp;
+                  v.axiReadSlave.rdata(2) := timeOut;
                when X"0020" =>
                   v.axiReadSlave.rdata(31)          := dnaValid;
                   v.axiReadSlave.rdata(24 downto 0) := dnaValue(56 downto 32);

@@ -138,12 +138,20 @@ architecture structure of ArmRceG3IbPpi is
    signal dbgState          : slv(2 downto 0);
    signal ibPpiClkRst       : sl;
    signal axiClkRstInt      : sl := '1';
+   signal duplicate         : sl;
+   signal lastData          : slv(63 downto 0);
+
+   attribute INIT : string;
+   attribute INIT of axiClkRstInt : signal is "1";
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
 
-   attribute INIT : string;
-   attribute INIT of axiClkRstInt : signal is "1";
+   attribute mark_debug of axiWriteToCntrl  : signal is "true";
+   attribute mark_debug of ibPpiFifo        : signal is "true";
+   attribute mark_debug of ibPpiFifoRead    : signal is "true";
+   attribute mark_debug of duplicate        : signal is "true";
+   attribute mark_debug of lastData         : signal is "true";
 
 begin
 
@@ -612,6 +620,32 @@ begin
    axiWriteToCntrl.dvalid    <= dataValid;
    axiWriteToCntrl.dstrobe   <= ibPpi.valid when currDone = '0' else (others=>'0');
    axiWriteToCntrl.last      <= dataLast;
+
+
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if axiClkRstInt = '1' then
+            duplicate <= '0'           after TPD_G;
+            lastData  <= (others=>'0') after TPD_G;
+         else
+
+            if axiWriteToCntrl.avalid = '1' then
+               lastData <= (others=>'0') after TPD_G;
+            elsif axiWriteToCntrl.dvalid = '1' then
+               lastData <= axiWriteToCntrl.data after TPD_G;
+
+               if lastData = axiWriteToCntrl.data and ibPpiFifo.eof = '0' then
+                  duplicate <= '1' after TPD_G;
+               else 
+                  duplicate <= '0' after TPD_G;
+               end if;
+
+            end if;
+
+         end if;
+      end if;
+   end process;
+
 
    -----------------------------------------
    -- State Machine

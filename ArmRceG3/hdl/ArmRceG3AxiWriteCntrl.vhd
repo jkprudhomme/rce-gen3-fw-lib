@@ -383,7 +383,7 @@ begin
              "10000000" when dFifoDout(71 downto 68) = "1111" else
              "00000000";
 
-   -- AXI Address Channel
+   -- AXI Data Channel
    process ( axiClk ) begin
       if rising_edge(axiClk) then
          if axiClkRstInt = '1' then

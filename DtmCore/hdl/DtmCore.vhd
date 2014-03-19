@@ -141,7 +141,7 @@ begin
    --------------------------------------------------
    U_ArmRceG3Top: entity work.ArmRceG3Top
       generic map (
-         AXI_CLKDIV_G => 4.7
+         AXI_CLKDIV_G => 5.0
       ) port map (
          i2cSda              => i2cSda,
          i2cScl              => i2cScl,
