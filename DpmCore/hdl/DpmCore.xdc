@@ -95,7 +95,6 @@ set_property PACKAGE_PIN AE25 [get_ports dtmFbP]
 set_property PACKAGE_PIN AF25 [get_ports dtmFbM]
 
 set_property PACKAGE_PIN AK27 [get_ports clkSelA[0]]
-set_property PACKAGE_PIN AA25 [get_ports clkSelA[0]]
 set_property PACKAGE_PIN AK28 [get_ports clkSelB[0]]
 set_property PACKAGE_PIN AH26 [get_ports clkSelA[1]]
 set_property PACKAGE_PIN AH27 [get_ports clkSelB[1]]
