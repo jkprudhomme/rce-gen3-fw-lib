@@ -55,8 +55,8 @@ entity ArmRceG3ObCntrl is
       readDmaCache            : in  slv(3  downto 0);       -- Used in AXI transactions
 
       -- Header FIFO Interface
-      obHeaderToFifo          : in  ObHeaderToFifoVector(3 downto 0);
-      obHeaderFromFifo        : out ObHeaderFromFifoVector(3 downto 0)
+      obHeaderToFifo          : in  ObHeaderToFifoArray(3 downto 0);
+      obHeaderFromFifo        : out ObHeaderFromFifoArray(3 downto 0)
    );
 end ArmRceG3ObCntrl;
 
@@ -64,8 +64,8 @@ architecture structure of ArmRceG3ObCntrl is
 
    -- Local signals
    signal headerDmaId        : Slv3Array(3 downto 0);
-   signal axiReadToCntrl     : AxiReadToCntrlVector(3 downto 0);
-   signal axiReadFromCntrl   : AxiReadFromCntrlVector(3 downto 0);
+   signal axiReadToCntrl     : AxiReadToCntrlArray(3 downto 0);
+   signal axiReadFromCntrl   : AxiReadFromCntrlArray(3 downto 0);
    signal freePtrWrite       : slv(3 downto 0);
    signal freePtrDin         : Slv18Array(3 downto 0);
    signal freePtrDout        : Slv18Array(3 downto 0);

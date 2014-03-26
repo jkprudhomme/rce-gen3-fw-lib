@@ -46,8 +46,8 @@ entity AxiRceG3AxiWriteCntrl is
       writeDmaCache           : in  slv(3 downto 0);
 
       -- Variable number of writing blocks
-      axiWriteToCntrl         : in  AxiWriteToCntrlVector(CHAN_CNT_G-1 downto 0);
-      axiWriteFromCntrl       : out AxiWriteFromCntrlVector(CHAN_CNT_G-1 downto 0)
+      axiWriteToCntrl         : in  AxiWriteToCntrlArray(CHAN_CNT_G-1 downto 0);
+      axiWriteFromCntrl       : out AxiWriteFromCntrlArray(CHAN_CNT_G-1 downto 0)
    );
 end AxiRceG3AxiWriteCntrl;
 
@@ -61,7 +61,7 @@ architecture structure of AxiRceG3AxiWriteCntrl is
    signal arbValid                 : slv(3  downto 0);
    signal arbSelect                : slv(3  downto 0);
    signal arbSelectFilt            : slv(3  downto 0);
-   signal regWriteToCntrl          : AxiWriteToCntrlVector(CHAN_CNT_G-1 downto 0);
+   signal regWriteToCntrl          : AxiWriteToCntrlArray(CHAN_CNT_G-1 downto 0);
    signal aFifoWr                  : sl;
    signal aFifoRd                  : sl;
    signal aFifoDin                 : slv(35 downto 0);

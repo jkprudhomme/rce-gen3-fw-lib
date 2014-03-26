@@ -46,8 +46,8 @@ entity AxiRceG3AxiReadCntrl is
       readDmaCache            : in  slv(3 downto 0);
 
       -- Variable number of writing blocks
-      axiReadToCntrl          : in  AxiReadToCntrlVector(CHAN_CNT_G-1 downto 0);
-      axiReadFromCntrl        : out AxiReadFromCntrlVector(CHAN_CNT_G-1 downto 0)
+      axiReadToCntrl          : in  AxiReadToCntrlArray(CHAN_CNT_G-1 downto 0);
+      axiReadFromCntrl        : out AxiReadFromCntrlArray(CHAN_CNT_G-1 downto 0)
    );
 end AxiRceG3AxiReadCntrl;
 
@@ -58,7 +58,7 @@ architecture structure of AxiRceG3AxiReadCntrl is
    signal arbGnt           : slv(3 downto 0);
    signal arbSelect        : slv(1 downto 0);
    signal arbSelectFilt    : slv(1 downto 0);
-   signal regReadToCntrl   : AxiReadToCntrlVector(CHAN_CNT_G-1 downto 0);
+   signal regReadToCntrl   : AxiReadToCntrlArray(CHAN_CNT_G-1 downto 0);
    signal aFifoWr          : sl;
    signal aFifoRd          : sl;
    signal aFifoDin         : slv(35 downto 0);

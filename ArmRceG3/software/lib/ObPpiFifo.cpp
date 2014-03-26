@@ -57,7 +57,7 @@ void ObPpiFifo::pushEntry ( ObPpiDesc *ptr ) {
 
    // Copy header data
    memcpy(hdesc.data,ptr->data,hdesc.size*4);
-   hdesc.data[0]             = ptr->psize;
+   if ( ptr->psize != 0 ) hdesc.data[0] = ptr->psize;
    hdesc.data[hdesc.size-4]  = _dspace->getDmaBase() + addr;
    hdesc.data[hdesc.size-3]  = ptr->psize;
    hdesc.data[hdesc.size-2]  =  _count+_num;

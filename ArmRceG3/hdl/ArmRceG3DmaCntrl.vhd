@@ -42,10 +42,10 @@ entity ArmRceG3DmaCntrl is
       axiAcpSlaveReadToArm    : out AxiReadMasterType;
 
       -- AXI HP Masters
-      axiHpSlaveWriteFromArm  : in  AxiWriteSlaveVector(3 downto 0);
-      axiHpSlaveWriteToArm    : out AxiWriteMasterVector(3 downto 0);
-      axiHpSlaveReadFromArm   : in  AxiReadSlaveVector(3 downto 0);
-      axiHpSlaveReadToArm     : out AxiReadMasterVector(3 downto 0);
+      axiHpSlaveWriteFromArm  : in  AxiWriteSlaveArray(3 downto 0);
+      axiHpSlaveWriteToArm    : out AxiWriteMasterArray(3 downto 0);
+      axiHpSlaveReadFromArm   : in  AxiReadSlaveArray(3 downto 0);
+      axiHpSlaveReadToArm     : out AxiReadMasterArray(3 downto 0);
 
       -- Interrupts
       interrupt               : out slv(15 downto 0);
@@ -56,15 +56,17 @@ entity ArmRceG3DmaCntrl is
       localAxiWriteMaster     : in  AxiLiteWriteMasterArray(2 downto 0);
       localAxiWriteSlave      : out AxiLiteWriteSlaveArray(2 downto 0);
 
-      -- PPI Outbound FIFO Interface
-      obPpiClk                : in  slv(3 downto 0);
-      obPpiToFifo             : in  ObPpiToFifoVector(3 downto 0);
-      obPpiFromFifo           : out ObPpiFromFifoVector(3 downto 0);
+      -- PPI Clock and online status
+      ppiClk                  : in  slv(3 downto 0);
+      ppiOnline               : out slv(3 downto 0);
 
-      -- PPI Inbound FIFO Interface
-      ibPpiClk                : in  slv(3 downto 0);
-      ibPpiToFifo             : in  IbPpiToFifoVector(3 downto 0);
-      ibPpiFromFifo           : out IbPpiFromFifoVector(3 downto 0);
+      -- PPI Read Interface
+      ppiReadToFifo           : in  PpiReadToFifoArray(3 downto 0);
+      ppiReadFromFifo         : out PpiReadFromFifoArray(3 downto 0);
+
+      -- PPI Write Interface
+      ppiWriteToFifo          : in  PpiWriteToFifoArray(3 downto 0);
+      ppiWriteFromFifo        : out PpiWriteFromFifoArray(3 downto 0);
 
       -- PPI quad word FIFO
       bsiToFifo               : in  QWordToFifoType;
@@ -75,13 +77,13 @@ end ArmRceG3DmaCntrl;
 architecture structure of ArmRceG3DmaCntrl is
 
    -- Local signals
-   signal obFifoToFifo        : ObHeaderToFifoVector(3 downto 0);
-   signal obFifoFromFifo      : ObHeaderFromFifoVector(3 downto 0);
-   signal ibFifoToFifo        : IbHeaderToFifoVector(3 downto 0);
-   signal ibFifoFromFifo      : IbHeaderFromFifoVector(3 downto 0);
+   signal obFifoToFifo        : ObHeaderToFifoArray(3 downto 0);
+   signal obFifoFromFifo      : ObHeaderFromFifoArray(3 downto 0);
+   signal ibFifoToFifo        : IbHeaderToFifoArray(3 downto 0);
+   signal ibFifoFromFifo      : IbHeaderFromFifoArray(3 downto 0);
    signal dirtyFlag           : slv(4  downto 0);
-   signal compFromFifo        : CompFromFifoVector(7 downto 0);
-   signal compToFifo          : CompToFifoVector(7 downto 0);
+   signal compFromFifo        : CompFromFifoArray(7 downto 0);
+   signal compToFifo          : CompToFifoArray(7 downto 0);
    signal compInt             : slv(10 downto 0);
    signal axiClkRstInt        : sl := '1';
 
@@ -99,7 +101,7 @@ architecture structure of ArmRceG3DmaCntrl is
       intEnable           : slv(15  downto 0);
       ppiReadDmaCache     : slv(3 downto 0);
       ppiWriteDmaCache    : slv(3 downto 0);
-      ppiOnline           : slv(7 downto 0);
+      ppiOnline           : slv(3 downto 0);
       axiClkRstSw         : sl;
       localAxiReadSlave   : AxiLiteReadSlaveType;
       localAxiWriteSlave  : AxiLiteWriteSlaveType;
@@ -235,7 +237,7 @@ begin
 
                   -- PPI online control, 8-bits - 0x88000424 
                   when X"24" =>
-                     v.ppiOnline := localAxiWriteMaster(0).wdata(7 downto 0);
+                     v.ppiOnline := localAxiWriteMaster(0).wdata(3 downto 0);
 
                   when others => null;
                end case;
@@ -301,7 +303,7 @@ begin
 
             -- PPI online control, 8-bits - 0x88000424 
             when X"424" =>
-               v.localAxiReadSlave.rdata(7 downto 0) := r.ppiOnline;
+               v.localAxiReadSlave.rdata(3 downto 0) := r.ppiOnline;
 
             when others => null;
          end case;
@@ -344,7 +346,7 @@ begin
          fifoEnable               => r.fifoEnable(4 downto 0),
          memBaseAddress           => r.memBaseAddress,
          writeDmaCache            => r.writeDmaCache,
-         ibHeaderClk              => ibPpiClk,
+         ibHeaderClk              => ppiClk,
          ibHeaderToFifo           => ibFifoToFifo,
          ibHeaderFromFifo         => ibFifoFromFifo,
          qwordToFifo              => bsiToFifo,
@@ -378,9 +380,9 @@ begin
 
 
    --------------------------------------------------
-   -- Inbound PPI DMA Controllers
+   -- PPI DMA Controllers
    --------------------------------------------------
-   U_IbDmaGen : for i in 0 to 3 generate
+   U_DmaGen : for i in 0 to 3 generate
 
       U_IbDma: entity work.ArmRceG3IbPpi 
          generic map (
@@ -395,20 +397,12 @@ begin
             ppiPtrWrite              => r.ibPpiPtrWrite(i),
             ppiPtrData               => r.genPtrData,
             writeDmaCache            => r.ppiWriteDmaCache,
-            ppiOnline                => r.ppiOnline(i),
             compFromFifo             => compFromFifo(i),
             compToFifo               => compToFifo(i),
-            ibPpiClk                 => ibPpiClk(i),
-            ibPpiToFifo              => ibPpiToFifo(i),
-            ibPpiFromFifo            => ibPpiFromFifo(i)
+            ppiClk                   => ppiClk(i),
+            ppiWriteToFifo           => ppiWriteToFifo(i),
+            ppiWriteFromFifo         => ppiWriteFromFifo(i)
          );
-
-   end generate;
-
-   --------------------------------------------------
-   -- Outbound PPI DMA Controllers
-   --------------------------------------------------
-   U_ObDmaGen : for i in 0 to 3 generate
 
       U_ObDma: entity work.ArmRceG3ObPpi 
          generic map (
@@ -421,15 +415,29 @@ begin
             obHeaderToFifo          => obFifoToFifo(i),
             obHeaderFromFifo        => obFifoFromFifo(i),
             readDmaCache            => r.ppiReadDmaCache,
-            ppiOnline               => r.ppiOnline(i+4),
             compFromFifo            => compFromFifo(i+4),
             compToFifo              => compToFifo(i+4),
-            obPpiClk                => obPpiClk(i),
-            obPpiToFifo             => obPpiToFifo(i),
-            obPpiFromFifo           => obPpiFromFifo(i)
+            ppiClk                  => ppiClk(i),
+            ppiReadToFifo           => ppiReadToFifo(i),
+            ppiReadFromFifo         => ppiReadFromFifo(i)
+         );
+
+      -- Synchronize the online bit
+      U_OnlineGen : entity work.RstSync
+         generic map (
+            TPD_G           => TPD_G,
+            IN_POLARITY_G   => '0',
+            OUT_POLARITY_G  => '0',
+            RELEASE_DELAY_G => 16
+         )
+         port map (
+           clk      => ppiClk(i),
+           asyncRst => r.ppiOnline(i),
+           syncRst  => ppiOnline(i)
          );
 
    end generate;
+
 
    --------------------------------------------------
    -- Completion Data Mover

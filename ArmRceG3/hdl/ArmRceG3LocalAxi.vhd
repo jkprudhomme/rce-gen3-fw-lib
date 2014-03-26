@@ -31,7 +31,7 @@ use work.ArmRceG3Version.all;
 entity ArmRceG3LocalAxi is
    generic (
       TPD_G              : time := 1 ns;
-      NUM_MASTER_SLOTS_G : natural range 1 to 16 := 6
+      NUM_MASTER_SLOTS_G : natural range 2 to 16 := 6
    );
    port (
 

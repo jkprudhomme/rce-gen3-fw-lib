@@ -51,19 +51,21 @@ entity ArmRceG3Top is
       localAxiWriteMaster      : out   AxiLiteWriteMasterType;
       localAxiWriteSlave       : in    AxiLiteWriteSlaveType;
 
-      -- PPI Outbound FIFO Interface
-      obPpiClk                 : in    slv(3 downto 0);
-      obPpiToFifo              : in    ObPpiToFifoVector(3 downto 0);
-      obPpiFromFifo            : out   ObPpiFromFifoVector(3 downto 0);
+      -- PPI Clock and online
+      ppiClk                   : in    slv(3 downto 0);
+      ppiOnline                : out   slv(3 downto 0);
 
-      -- PPI Inbound FIFO Interface
-      ibPpiClk                 : in    slv(3 downto 0);
-      ibPpiToFifo              : in    IbPpiToFifoVector(3 downto 0);
-      ibPpiFromFifo            : out   IbPpiFromFifoVector(3 downto 0);
+      -- PPI Read Interface
+      ppiReadToFifo            : in    PpiReadToFifoArray(3 downto 0);
+      ppiReadFromFifo          : out   PpiReadFromFifoArray(3 downto 0);
+
+      -- PPI Write Interface
+      ppiWriteToFifo           : in    PpiWriteToFifoArray(3 downto 0);
+      ppiWriteFromFifo         : out   PpiWriteFromFifoArray(3 downto 0);
 
       -- Ethernet
-      ethFromArm               : out   EthFromArmVector(1 downto 0);
-      ethToArm                 : in    EthToArmVector(1 downto 0);
+      ethFromArm               : out   EthFromArmArray(1 downto 0);
+      ethToArm                 : in    EthToArmArray(1 downto 0);
 
       -- Programmable Clock Select
       clkSelA                  : out   slv(1 downto 0);
@@ -82,22 +84,22 @@ architecture structure of ArmRceG3Top is
    signal fclkRst2                 : sl;
    signal fclkRst1                 : sl;
    signal fclkRst0                 : sl;
-   signal axiGpMasterWriteFromArm  : AxiWriteMasterVector(1 downto 0);
-   signal axiGpMasterWriteToArm    : AxiWriteSlaveVector(1 downto 0);
-   signal axiGpMasterReadFromArm   : AxiReadMasterVector(1 downto 0);
-   signal axiGpMasterReadToArm     : AxiReadSlaveVector(1 downto 0);
-   signal axiGpSlaveWriteFromArm   : AxiWriteSlaveVector(1 downto 0);
-   signal axiGpSlaveWriteToArm     : AxiWriteMasterVector(1 downto 0);
-   signal axiGpSlaveReadFromArm    : AxiReadSlaveVector(1 downto 0);
-   signal axiGpSlaveReadToArm      : AxiReadMasterVector(1 downto 0);
+   signal axiGpMasterWriteFromArm  : AxiWriteMasterArray(1 downto 0);
+   signal axiGpMasterWriteToArm    : AxiWriteSlaveArray(1 downto 0);
+   signal axiGpMasterReadFromArm   : AxiReadMasterArray(1 downto 0);
+   signal axiGpMasterReadToArm     : AxiReadSlaveArray(1 downto 0);
+   signal axiGpSlaveWriteFromArm   : AxiWriteSlaveArray(1 downto 0);
+   signal axiGpSlaveWriteToArm     : AxiWriteMasterArray(1 downto 0);
+   signal axiGpSlaveReadFromArm    : AxiReadSlaveArray(1 downto 0);
+   signal axiGpSlaveReadToArm      : AxiReadMasterArray(1 downto 0);
    signal axiAcpSlaveWriteFromArm  : AxiWriteSlaveType;
    signal axiAcpSlaveWriteToArm    : AxiWriteMasterType;
    signal axiAcpSlaveReadFromArm   : AxiReadSlaveType;
    signal axiAcpSlaveReadToArm     : AxiReadMasterType;
-   signal axiHpSlaveWriteFromArm   : AxiWriteSlaveVector(3 downto 0);
-   signal axiHpSlaveWriteToArm     : AxiWriteMasterVector(3 downto 0);
-   signal axiHpSlaveReadFromArm    : AxiReadSlaveVector(3 downto 0);
-   signal axiHpSlaveReadToArm      : AxiReadMasterVector(3 downto 0);
+   signal axiHpSlaveWriteFromArm   : AxiWriteSlaveArray(3 downto 0);
+   signal axiHpSlaveWriteToArm     : AxiWriteMasterArray(3 downto 0);
+   signal axiHpSlaveReadFromArm    : AxiReadSlaveArray(3 downto 0);
+   signal axiHpSlaveReadToArm      : AxiReadMasterArray(3 downto 0);
    signal armInt                   : slv(15 downto 0);
    signal idmaClk                  : sl;
    signal idmaClkRst               : sl;
@@ -282,12 +284,12 @@ begin
          localAxiReadSlave        => intAxiReadSlave(3 downto 1),
          localAxiWriteMaster      => intAxiWriteMaster(3 downto 1),
          localAxiWriteSlave       => intAxiWriteSlave(3 downto 1),
-         obPpiClk                 => obPpiClk,
-         obPpiToFifo              => obPpiToFifo,
-         obPpiFromFifo            => obPpiFromFifo,
-         ibPpiClk                 => ibPpiClk,
-         ibPpiToFifo              => ibPpiToFifo,
-         ibPpiFromFifo            => ibPpiFromFifo,
+         ppiClk                   => ppiClk,
+         ppiOnline                => ppiOnline,
+         ppiReadToFifo            => ppiReadToFifo,
+         ppiReadFromFifo          => ppiReadFromFifo,
+         ppiWriteToFifo           => ppiWriteToFifo,
+         ppiWriteFromFifo         => ppiWriteFromFifo,
          bsiToFifo                => bsiToFifo,
          bsiFromFifo              => bsiFromFifo
       );

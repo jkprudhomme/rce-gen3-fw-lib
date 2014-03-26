@@ -92,8 +92,8 @@ architecture structure of ArmRceG3IbHeaderFifo is
       mgmt   => '0'
    );
 
-   -- Inbound FIFO Vector
-   type IbFifoVector is array (natural range<>) of IbFifoType;
+   -- Inbound FIFO Array
+   type IbFifoArray is array (natural range<>) of IbFifoType;
 
    -- State Types
    type States is ( ST_IDLE, ST_NEXT, ST_REQ, ST_WRITE, ST_CHECK, ST_WAIT );
@@ -105,7 +105,7 @@ architecture structure of ArmRceG3IbHeaderFifo is
    signal ibHeaderDin              : slv(71 downto 0);
    signal ibHeaderDout             : slv(71 downto 0);
    signal ibValid                  : slv(4  downto 0);
-   signal ibHeader                 : IbFifoVector(4 downto 0);
+   signal ibHeader                 : IbFifoArray(4 downto 0);
    signal fifoShift                : slv(4 downto 0);
    signal headerDone               : sl;
    signal pipeReady                : sl;

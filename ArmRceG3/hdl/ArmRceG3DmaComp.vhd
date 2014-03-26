@@ -36,8 +36,8 @@ entity ArmRceG3DmaComp is
       axiClkRst               : in  sl;
 
       -- Completion FIFOs
-      compFromFifo            : in  CompFromFifoVector(7 downto 0);
-      compToFifo              : out CompToFifoVector(7 downto 0);
+      compFromFifo            : in  CompFromFifoArray(7 downto 0);
+      compToFifo              : out CompToFifoArray(7 downto 0);
 
       -- FIFO Read 
       localAxiReadMaster      : in  AxiLiteReadMasterType;
@@ -56,7 +56,7 @@ architecture structure of ArmRceG3DmaComp is
    -- Local Signals
    signal fifoCount     : slv(2 downto 0);
    signal fifoRead      : slv(7 downto 0);
-   signal compHold      : CompFromFifoVector(7 downto 0);
+   signal compHold      : CompFromFifoArray(7 downto 0);
    signal compWrite     : Slv16Array(7 downto 0);
    signal compDest      : Slv4Array(7 downto 0);
    signal compValid     : slv(7 downto 0);

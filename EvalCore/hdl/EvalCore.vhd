@@ -40,15 +40,18 @@ entity EvalCore is
       localAxiWriteMaster     : out   AxiLiteWriteMasterType;
       localAxiWriteSlave      : in    AxiLiteWriteSlaveType;
 
+      -- PPI Clock and Reset
+      ppiClk                  : in     slv(3 downto 0);
+      ppiOnline               : out    slv(3 downto 0);
+
       -- PPI Outbound FIFO Interface
-      obPpiClk                : in    slv(3 downto 0);
-      obPpiToFifo             : in    ObPpiToFifoVector(3 downto 0);
-      obPpiFromFifo           : out   ObPpiFromFifoVector(3 downto 0);
+      ppiReadToFifo           : in     PpiReadToFifoArray(3 downto 0);
+      ppiReadFromFifo         : out    PpiReadFromFifoArray(3 downto 0);
 
       -- PPI Inbound FIFO Interface
-      ibPpiClk                : in    slv(3 downto 0);
-      ibPpiToFifo             : in    IbPpiToFifoVector(3 downto 0);
-      ibPpiFromFifo           : out   IbPpiFromFifoVector(3 downto 0)
+      ppiWriteToFifo          : in     PpiWriteToFifoArray(3 downto 0);
+      ppiWriteFromFifo        : out    PpiWriteFromFifoArray(3 downto 0)
+
    );
 end EvalCore;
 
@@ -85,12 +88,12 @@ begin
          localAxiReadSlave   => topAxiReadSlave ,
          localAxiWriteMaster => topAxiWriteMaster,
          localAxiWriteSlave  => topAxiWriteSlave ,
-         obPpiClk            => obPpiClk,
-         obPpiToFifo         => obPpiToFifo,
-         obPpiFromFifo       => obPpiFromFifo,
-         ibPpiClk            => ibPpiClk,
-         ibPpiToFifo         => ibPpiToFifo,
-         ibPpiFromFifo       => ibPpiFromFifo,
+         ppiClk              => ppiClk,
+         ppiOnline           => ppiOnline,
+         ppiReadToFifo       => ppiReadToFifo,
+         ppiReadFromFifo     => ppiReadFromFifo,
+         ppiWriteToFifo      => ppiWriteToFifo,
+         ppiWriteFromFifo    => ppiWriteFromFifo,
          ethFromArm          => open,
          ethToArm            => (others=>EthToArmInit),
          clkSelA             => open,

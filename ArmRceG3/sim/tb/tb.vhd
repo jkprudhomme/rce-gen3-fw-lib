@@ -15,17 +15,16 @@ entity tb is end tb;
 -- Define architecture
 architecture tb of tb is
 
-   signal axiClk          : sl;
-   signal i2cSda          : sl;
-   signal i2cScl          : sl;
-   signal obPpiClk        : slv(3 downto 0);
-   signal obPpiToFifo     : ObPpiToFifoVector(3 downto 0);
-   signal obPpiFromFifo   : ObPpiFromFifoVector(3 downto 0);
-   signal ibPpiClk        : slv(3 downto 0);
-   signal ibPpiToFifo     : IbPpiToFifoVector(3 downto 0);
-   signal ibPpiFromFifo   : IbPpiFromFifoVector(3 downto 0);
-   signal sysClk125       : sl;
-   signal sysClk125Rst    : sl;
+   signal axiClk           : sl;
+   signal i2cSda           : sl;
+   signal i2cScl           : sl;
+   signal ppiClk           : slv(3 downto 0);
+   signal ppiReadToFifo    : PpiReadToFifoArray(3 downto 0);
+   signal ppiReadFromFifo  : PpiReadFromFifoArray(3 downto 0);
+   signal ppiWriteToFifo   : PpiWriteToFifoArray(3 downto 0);
+   signal ppiWriteFromFifo : PpiWriteFromFifoArray(3 downto 0);
+   signal sysClk125        : sl;
+   signal sysClk125Rst     : sl;
 
 begin
 
@@ -46,12 +45,12 @@ begin
          localAxiWriteSlave   => AXI_WRITE_SLAVE_INIT_C,
          ethFromArm           => open,
          ethToArm             => (others=>EthToArmInit),
-         obPpiClk             => obPpiClk,
-         obPpiToFifo          => obPpiToFifo,
-         obPpiFromFifo        => obPpiFromFifo,
-         ibPpiClk             => ibPpiClk,
-         ibPpiToFifo          => ibPpiToFifo,
-         ibPpiFromFifo        => ibPpiFromFifo,
+         ppiClk               => ppiClk,
+         ppiOnline            => open,
+         ppiReadToFifo        => ppiReadToFifo,
+         ppiReadFromFifo      => ppiReadFromFifo,
+         ppiWriteToFifo       => ppiWriteToFifo,
+         ppiWriteFromFifo     => ppiWriteFromFifo,
          clkSelA              => open,
          clkSelB              => open
       );
@@ -62,24 +61,57 @@ begin
    --------------------------------------------------
    -- PPI Loopback
    --------------------------------------------------
-   U_LoopGen : for i in 0 to 3 generate
+   U_LoopGen : for i in 0 to 2 generate
 
-      ibPpiClk(i) <= sysCLk125;
-      obPpiClk(i) <= sysCLk125;
+      ppiClk(i) <= sysCLk125;
 
-      ibPpiToFifo(i).data    <= obPpiFromFifo(i).data;
-      ibPpiToFifo(i).size    <= obPpiFromFifo(i).size;
-      ibPpiToFifo(i).ftype   <= obPpiFromFifo(i).ftype;
-      ibPpiToFifo(i).mgmt    <= obPpiFromFifo(i).mgmt;
-      ibPpiToFifo(i).eoh     <= obPpiFromFifo(i).eoh;
-      ibPpiToFifo(i).eof     <= obPpiFromFifo(i).eof;
-      ibPpiToFifo(i).err     <= '0';
+      ppiWriteToFifo(i).data    <= ppiReadFromFifo(i).data;
+      ppiWriteToFifo(i).size    <= ppiReadFromFifo(i).size;
+      ppiWriteToFifo(i).ftype   <= ppiReadFromFifo(i).ftype;
+      ppiWriteToFifo(i).mgmt    <= ppiReadFromFifo(i).mgmt;
+      ppiWriteToFifo(i).eoh     <= ppiReadFromFifo(i).eoh;
+      ppiWriteToFifo(i).eof     <= ppiReadFromFifo(i).eof;
+      ppiWriteToFifo(i).err     <= '0';
 
-      ibPpiToFifo(i).valid   <= obPpiFromFifo(i).valid;
+      ppiWriteToFifo(i).valid   <= ppiReadFromFifo(i).valid;
 
-      obPpiToFifo(i).read    <= obPpiFromFifo(i).valid;
+      ppiReadToFifo(i).read     <= ppiReadFromFifo(i).valid;
 
    end generate;
+
+
+   --------------------------------------------------
+   -- Register Test
+   --------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+   U_RegTest: entity work.RegTest
+      generic map (
+         TPD_G        => 1 ns
+      ) port map (
+         axiClk           => sysClk125,
+         axiClkRst        => sysClk125Rst,
+         ppiClk           => sysClk125,
+         ppiClkRst        => sysClk125Rst,
+         ppiOnline        => '1',
+         ppiReadToFifo    => ppiReadToFifo(3),
+         ppiReadFromFifo  => ppiReadFromFifo(3),
+         ppiWriteToFifo   => ppiWriteToFifo(3),
+         ppiWriteFromFifo => ppiWriteFromFifo(3)
+      );
+
+      ppiClk(3) <= sysCLk125;
 
 end tb;
 

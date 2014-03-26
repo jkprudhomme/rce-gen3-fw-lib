@@ -48,16 +48,15 @@ entity ArmRceG3IbPpi is
 
       -- Configuration
       writeDmaCache           : in  slv(3  downto 0);
-      ppiOnline               : in  sl;
 
       -- Completion FIFO
       compFromFifo            : out CompFromFifoType;
       compToFifo              : in  CompToFifoType;
 
       -- PPI FIFO Interface
-      ibPpiClk                : in  sl;
-      ibPpiToFifo             : in  IbPpiToFifoType;
-      ibPpiFromFifo           : out IbPpiFromFifoType
+      ppiClk                  : in  sl;
+      ppiWriteToFifo          : in  PpiWriteToFifoType;
+      ppiWriteFromFifo        : out PpiWriteFromFifoType
    );
 end ArmRceG3IbPpi;
 
@@ -132,11 +131,10 @@ architecture structure of ArmRceG3IbPpi is
    signal currSize          : slv(7   downto 0);
    signal firstLength       : slv(3   downto 0);
    signal currLength        : slv(3   downto 0);
-   signal ppiOnlineReg      : slv(1   downto 0);
    signal currState         : States;
    signal nextState         : States;
    signal dbgState          : slv(2 downto 0);
-   signal ibPpiClkRst       : sl;
+   signal ppiClkRst         : sl;
    signal axiClkRstInt      : sl := '1';
    signal duplicate         : sl;
    signal lastData          : slv(63 downto 0);
@@ -266,7 +264,7 @@ begin
          EMPTY_THRES_G  => 1
       ) port map (
          rst                => axiClkRstInt,
-         wr_clk             => ibPpiClk,
+         wr_clk             => ppiClk,
          wr_en              => ibPpiWrite,
          din                => ibPpiDin,
          wr_data_count      => open,
@@ -288,7 +286,7 @@ begin
       );
 
    -- Sync reset
-   U_ibPpiClkRstGen : entity work.RstSync
+   U_ppiClkRstGen : entity work.RstSync
       generic map (
          TPD_G           => TPD_G,
          IN_POLARITY_G   => '1',
@@ -296,24 +294,24 @@ begin
          RELEASE_DELAY_G => 16
       )
       port map (
-        clk      => ibPpiClk,
+        clk      => ppiClk,
         asyncRst => axiClkRstInt,
-        syncRst  => ibPpiClkRst
+        syncRst  => ppiClkRst
       );
 
    -- Toggle write destination
-   process ( ibPpiClk ) begin
-      if rising_edge(ibPpiClk) then
-         if ibPpiClkRst = '1' then
+   process ( ppiClk ) begin
+      if rising_edge(ppiClk) then
+         if ppiClkRst = '1' then
             payloadEn <= '0' after TPD_G;
-         elsif ibPpiToFifo.valid = '1' then
+         elsif ppiWriteToFifo.valid = '1' then
 
             -- Go to header mode on EOF
-            if ibPpiToFifo.eof = '1' then
+            if ppiWriteToFifo.eof = '1' then
                payloadEn <= '0' after TPD_G;
 
             -- Go to payload mode on EOH (and not EOF)
-            elsif ibPpiToFifo.eoh = '1' then
+            elsif ppiWriteToFifo.eoh = '1' then
                payloadEn <= '1' after TPD_G;
             end if;
          end if;
@@ -321,25 +319,25 @@ begin
    end process;
 
    -- Local write
-   ibPpiWrite <= ibPpiToFifo.valid and payloadEn;
+   ibPpiWrite <= ppiWriteToFifo.valid and payloadEn;
 
    -- Header write
-   ibHeaderToFifo.valid <= ibPpiToFifo.valid and (not payloadEn);
-   ibHeaderToFifo.mgmt  <= ibPpiToFifo.mgmt;
-   ibHeaderToFifo.htype <= ibPpiToFifo.ftype;
-   ibHeaderToFifo.data  <= ibPpiToFifo.data;
-   ibHeaderToFifo.err   <= ibPpiToFifo.err and ibPpiToFifo.eof;
-   ibHeaderToFifo.eoh   <= ibPpiToFifo.eoh;
+   ibHeaderToFifo.valid <= ppiWriteToFifo.valid and (not payloadEn);
+   ibHeaderToFifo.mgmt  <= ppiWriteToFifo.mgmt;
+   ibHeaderToFifo.htype <= ppiWriteToFifo.ftype;
+   ibHeaderToFifo.data  <= ppiWriteToFifo.data;
+   ibHeaderToFifo.err   <= ppiWriteToFifo.err and ppiWriteToFifo.eof;
+   ibHeaderToFifo.eoh   <= ppiWriteToFifo.eoh;
 
    -- Outbound flow control
-   ibPpiFromFifo.pause <= ibPpiProgFull or ibHeaderFromFifo.progFull;
+   ppiWriteFromFifo.pause <= ibPpiProgFull or ibHeaderFromFifo.progFull;
 
    -- Input Data
-   ibPpiDin(71)           <= ibPpiToFifo.mgmt;
-   ibPpiDin(70 downto 68) <= ibPpiToFifo.ftype;
-   ibPpiDin(67)           <= ibPpiToFifo.eof;
-   ibPpiDin(66 downto 64) <= ibPpiToFifo.size;
-   ibPpiDin(63 downto  0) <= ibPpiToFifo.data;
+   ibPpiDin(71)           <= ppiWriteToFifo.mgmt;
+   ibPpiDin(70 downto 68) <= ppiWriteToFifo.ftype;
+   ibPpiDin(67)           <= ppiWriteToFifo.eof;
+   ibPpiDin(66 downto 64) <= ppiWriteToFifo.size;
+   ibPpiDin(63 downto  0) <= ppiWriteToFifo.data;
 
    -- Output Data
    ibPpiFifo.mgmt  <= ibPpiDout(71);
@@ -356,15 +354,6 @@ begin
                       "00000000";
    ibPpiFifo.data  <= ibPpiDout(63 downto  0);
 
-   -- Synchronize the online bit
-   process ( ibPpiClk ) begin
-      if rising_edge(ibPpiClk) then
-         ppiOnlineReg(0) <= ppiOnline       after TPD_G;
-         ppiOnlineReg(1) <= ppiOnlineReg(0) after TPD_G;
-      end if;
-   end process;
-
-   ibPpiFromFifo.online <= ppiOnlineReg(1);
 
    -----------------------------------------
    -- FIFO Output Byte Reordering

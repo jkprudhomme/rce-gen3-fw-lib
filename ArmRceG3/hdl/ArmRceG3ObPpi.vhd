@@ -44,16 +44,15 @@ entity ArmRceG3ObPpi is
 
       -- Configuration
       readDmaCache            : in  slv(3  downto 0);
-      ppiOnline               : in  sl;
 
       -- Completion FIFO
       compFromFifo            : out CompFromFifoType;
       compToFifo              : in  CompToFifoType;
 
       -- PPI FIFO Interface
-      obPpiClk                : in  sl;
-      obPpiToFifo             : in  ObPpiToFifoType;
-      obPpiFromFifo           : out ObPpiFromFifoType
+      ppiClk                  : in  sl;
+      ppiReadToFifo           : in  PpiReadToFifoType;
+      ppiReadFromFifo         : out PpiReadFromFifoType
    );
 end ArmRceG3ObPpi;
 
@@ -87,7 +86,7 @@ architecture structure of ArmRceG3ObPpi is
    type States is ( ST_IDLE, ST_SHIFT, ST_PAUSE, ST_READ, ST_CHECK, ST_WAIT, ST_COMP  );
 
    -- Local signals
-   signal obHeaderReg      : ObHeaderFromFifoVector(1 downto 0);
+   signal obHeaderReg      : ObHeaderFromFifoArray(1 downto 0);
    signal headerDma        : HeaderDmaType;
    signal fifoShift        : sl;
    signal fifoClear        : sl;
@@ -124,7 +123,6 @@ architecture structure of ArmRceG3ObPpi is
    signal currSize         : slv(7   downto 0);
    signal firstLength      : slv(3   downto 0);
    signal currLength       : slv(3   downto 0);
-   signal ppiOnlineReg     : slv(1   downto 0);
    signal curState         : States;
    signal nxtState         : States;
    signal dbgState         : slv(2 downto 0);
@@ -672,11 +670,11 @@ begin
          almost_full        => open,
          full               => open,
          not_full           => open,
-         rd_clk             => obPpiClk,
-         rd_en              => obPpiToFifo.read,
+         rd_clk             => ppiClk,
+         rd_en              => ppiReadToFifo.read,
          dout               => obPpiDout,
          rd_data_count      => open,
-         valid              => obPpiFromFifo.valid,
+         valid              => ppiReadFromFifo.valid,
          underflow          => open,
          prog_empty         => open,
          almost_empty       => open,
@@ -699,22 +697,14 @@ begin
    obPpiDin(63 downto  0) <= obPpiFifo.data;
 
    -- Output Data
-   obPpiFromFifo.mgmt   <= obPpiDout(71);
-   obPpiFromFifo.ftype  <= "0" & obPpiDout(70 downto 69);
-   obPpiFromFifo.eoh    <= obPpiDout(68);
-   obPpiFromFifo.eof    <= obPpiDout(67);
-   obPpiFromFifo.size   <= obPpiDout(66 downto  64);
-   obPpiFromFifo.data   <= obPpiDout(63 downto   0);
-
-   -- Synchronize the online bit
-   process ( obPpiClk ) begin
-      if rising_edge(obPpiClk) then
-         ppiOnlineReg(0) <= ppiOnline       after TPD_G;
-         ppiOnlineReg(1) <= ppiOnlineReg(0) after TPD_G;
-      end if;
-   end process;
-
-   obPpiFromFifo.online <= ppiOnlineReg(1);
+   ppiReadFromFifo.mgmt   <= obPpiDout(71);
+   ppiReadFromFifo.ftype  <= "0" & obPpiDout(70 downto 69);
+   ppiReadFromFifo.eoh    <= obPpiDout(68);
+   ppiReadFromFifo.eof    <= obPpiDout(67);
+   ppiReadFromFifo.err    <= '0';
+   ppiReadFromFifo.frame  <= '0';
+   ppiReadFromFifo.size   <= obPpiDout(66 downto  64);
+   ppiReadFromFifo.data   <= obPpiDout(63 downto   0);
 
    -----------------------------------------
    -- Completion FIFO

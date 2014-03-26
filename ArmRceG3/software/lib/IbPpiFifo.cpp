@@ -58,7 +58,8 @@ uint IbPpiFifo::popEntry ( IbPpiDesc *ptr ) {
 
    // Copy data to header
    ptr->hsize = hdesc.size * 4;
-   ptr->psize = hdesc.data[0];
+   //ptr->psize = hdesc.data[0];
+   ptr->psize = 0;
    memcpy(ptr->data,hdesc.data,hdesc.size*4);
 
    // No payload

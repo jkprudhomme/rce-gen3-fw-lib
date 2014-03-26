@@ -34,17 +34,17 @@ entity ArmRceG3Cpu is
 
       -- AXI GP Master
       axiGpMasterReset         : out    slv(1 downto 0);
-      axiGpMasterWriteFromArm  : out    AxiWriteMasterVector(1 downto 0);
-      axiGpMasterWriteToArm    : in     AxiWriteSlaveVector(1 downto 0);
-      axiGpMasterReadFromArm   : out    AxiReadMasterVector(1 downto 0);
-      axiGpMasterReadToArm     : in     AxiReadSlaveVector(1 downto 0);
+      axiGpMasterWriteFromArm  : out    AxiWriteMasterArray(1 downto 0);
+      axiGpMasterWriteToArm    : in     AxiWriteSlaveArray(1 downto 0);
+      axiGpMasterReadFromArm   : out    AxiReadMasterArray(1 downto 0);
+      axiGpMasterReadToArm     : in     AxiReadSlaveArray(1 downto 0);
 
       -- AXI GP Slave
       axiGpSlaveReset          : out    slv(1 downto 0);
-      axiGpSlaveWriteFromArm   : out    AxiWriteSlaveVector(1 downto 0);
-      axiGpSlaveWriteToArm     : in     AxiWriteMasterVector(1 downto 0);
-      axiGpSlaveReadFromArm    : out    AxiReadSlaveVector(1 downto 0);
-      axiGpSlaveReadToArm      : in     AxiReadMasterVector(1 downto 0);
+      axiGpSlaveWriteFromArm   : out    AxiWriteSlaveArray(1 downto 0);
+      axiGpSlaveWriteToArm     : in     AxiWriteMasterArray(1 downto 0);
+      axiGpSlaveReadFromArm    : out    AxiReadSlaveArray(1 downto 0);
+      axiGpSlaveReadToArm      : in     AxiReadMasterArray(1 downto 0);
 
       -- AXI ACP Slave
       axiAcpSlaveReset         : out    sl;
@@ -55,14 +55,14 @@ entity ArmRceG3Cpu is
 
       -- AXI HP Slave
       axiHpSlaveReset          : out    slv(3 downto 0);
-      axiHpSlaveWriteFromArm   : out    AxiWriteSlaveVector(3 downto 0);
-      axiHpSlaveWriteToArm     : in     AxiWriteMasterVector(3 downto 0);
-      axiHpSlaveReadFromArm    : out    AxiReadSlaveVector(3 downto 0);
-      axiHpSlaveReadToArm      : in     AxiReadMasterVector(3 downto 0);
+      axiHpSlaveWriteFromArm   : out    AxiWriteSlaveArray(3 downto 0);
+      axiHpSlaveWriteToArm     : in     AxiWriteMasterArray(3 downto 0);
+      axiHpSlaveReadFromArm    : out    AxiReadSlaveArray(3 downto 0);
+      axiHpSlaveReadToArm      : in     AxiReadMasterArray(3 downto 0);
 
       -- Ethernet
-      ethFromArm               : out    EthFromArmVector(1 downto 0);
-      ethToArm                 : in     EthToArmVector(1 downto 0)
+      ethFromArm               : out    EthFromArmArray(1 downto 0);
+      ethToArm                 : in     EthToArmArray(1 downto 0)
 
    );
 end ArmRceG3Cpu;

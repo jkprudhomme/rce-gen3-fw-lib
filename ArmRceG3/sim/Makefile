@@ -48,7 +48,13 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3DmaComp.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3DmaCntrl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3LocalAxi.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/FifoEofAsync.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiFifoAsync.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiMux.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiRouter.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiToAxi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/ArmRceG3Cpu.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/RegTest.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3Top.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/tb.vhd
 

@@ -82,8 +82,8 @@ package ArmRceG3Pkg is
       rdissuecap1_en => '0'
    );
 
-   -- Vector
-   type AxiReadMasterVector is array (natural range<>) of AxiReadMasterType;
+   -- Array
+   type AxiReadMasterArray is array (natural range<>) of AxiReadMasterType;
 
 
    --------------------------------------------------------
@@ -131,8 +131,8 @@ package ArmRceG3Pkg is
       rcount  => x"00"
    );
 
-   -- Vector
-   type AxiReadSlaveVector is array (natural range<>) of AxiReadSlaveType;
+   -- Array
+   type AxiReadSlaveArray is array (natural range<>) of AxiReadSlaveType;
 
 
    --------------------------------------------------------
@@ -217,8 +217,8 @@ package ArmRceG3Pkg is
       wrissuecap1_en => '0'
    );
 
-   -- Vector
-   type AxiWriteMasterVector is array (natural range<>) of AxiWriteMasterType;
+   -- Array
+   type AxiWriteMasterArray is array (natural range<>) of AxiWriteMasterType;
 
 
    --------------------------------------------------------
@@ -264,8 +264,8 @@ package ArmRceG3Pkg is
       wcount  => x"00"
    );
 
-   -- Vector
-   type AxiWriteSlaveVector is array (natural range<>) of AxiWriteSlaveType;
+   -- Array
+   type AxiWriteSlaveArray is array (natural range<>) of AxiWriteSlaveType;
 
    --------------------------------------------------------
    -- AXI Write To Controller Record
@@ -297,8 +297,8 @@ package ArmRceG3Pkg is
       last      => '0'
    );
 
-   -- Vector
-   type AxiWriteToCntrlVector is array (natural range<>) of AxiWriteToCntrlType;
+   -- Array
+   type AxiWriteToCntrlArray is array (natural range<>) of AxiWriteToCntrlType;
 
    --------------------------------------------------------
    -- AXI Write From Controller Record
@@ -324,8 +324,8 @@ package ArmRceG3Pkg is
       bvalid  => '0'
    );
 
-   -- Vector
-   type AxiWriteFromCntrlVector is array (natural range<>) of AxiWriteFromCntrlType;
+   -- Array
+   type AxiWriteFromCntrlArray is array (natural range<>) of AxiWriteFromCntrlType;
 
    --------------------------------------------------------
    -- AXI Read To Controller Record
@@ -351,8 +351,8 @@ package ArmRceG3Pkg is
       afull     => '0'
    );
 
-   -- Vector
-   type AxiReadToCntrlVector is array (natural range<>) of AxiReadToCntrlType;
+   -- Array
+   type AxiReadToCntrlArray is array (natural range<>) of AxiReadToCntrlType;
 
    --------------------------------------------------------
    -- AXI Read From Controller Record
@@ -382,8 +382,8 @@ package ArmRceG3Pkg is
       rresp   => "00"
    );
 
-   -- Vector
-   type AxiReadFromCntrlVector is array (natural range<>) of AxiReadFromCntrlType;
+   -- Array
+   type AxiReadFromCntrlArray is array (natural range<>) of AxiReadFromCntrlType;
 
    --------------------------------------------------------
    -- Inbound Header To FIFO Record
@@ -409,8 +409,8 @@ package ArmRceG3Pkg is
       valid => '0'
    );
 
-   -- Vector
-   type IbHeaderToFifoVector is array (natural range<>) of IbHeaderToFifoType;
+   -- Array
+   type IbHeaderToFifoArray is array (natural range<>) of IbHeaderToFifoType;
 
    --------------------------------------------------------
    -- Inbound Header From FIFO Record
@@ -430,8 +430,8 @@ package ArmRceG3Pkg is
       almostFull => '0'
    );
 
-   -- Vector
-   type IbHeaderFromFifoVector is array (natural range<>) of IbHeaderFromFifoType;
+   -- Array
+   type IbHeaderFromFifoArray is array (natural range<>) of IbHeaderFromFifoType;
 
    --------------------------------------------------------
    -- Outbound Header To FIFO Record
@@ -447,8 +447,8 @@ package ArmRceG3Pkg is
       read  => '0'
    );
 
-   -- Vector
-   type ObHeaderToFifoVector is array (natural range<>) of ObHeaderToFifoType;
+   -- Array
+   type ObHeaderToFifoArray is array (natural range<>) of ObHeaderToFifoType;
 
    --------------------------------------------------------
    -- Outbound Header From FIFO Record
@@ -472,64 +472,66 @@ package ArmRceG3Pkg is
       valid => '0'
    );
 
-   -- Vector
-   type ObHeaderFromFifoVector is array (natural range<>) of ObHeaderFromFifoType;
+   -- Array
+   type ObHeaderFromFifoArray is array (natural range<>) of ObHeaderFromFifoType;
 
    --------------------------------------------------------
-   -- Outbound PPI To FIFO Record
+   -- PPI Read To FIFO Record
    --------------------------------------------------------
 
    -- Base Record
-   type ObPpiToFifoType is record
+   type PpiReadToFifoType is record
       read    : sl;               -- Read from PPI FIFO
    end record;
 
    -- Initialization constants
-   constant ObPpiToFifoInit : ObPpiToFifoType := ( 
+   constant PpiReadToFifoInit : PpiReadToFifoType := ( 
       read    => '0'
    );
 
-   -- Vector
-   type ObPpiToFifoVector is array (natural range<>) of ObPpiToFifoType;
+   -- Array
+   type PpiReadToFifoArray is array (natural range<>) of PpiReadToFifoType;
 
    --------------------------------------------------------
-   -- Outbound PPI From FIFO Record
+   -- PPI Read From FIFO Record
    --------------------------------------------------------
 
    -- Base Record
-   type ObPpiFromFifoType is record
+   type PpiReadFromFifoType is record
       data   : slv(63 downto 0); -- PPI Data
       size   : slv(2  downto 0); -- Bytes in transfer when EOF, 0x0=1, 0x7=8
       eof    : sl;               -- End of frame indication
       eoh    : sl;               -- End of header
+      err    : sl;               -- Frame has error
       ftype  : slv(2 downto 0);  -- Frame type
       mgmt   : sl;               -- Frame is management
       valid  : sl;               -- Frame data is valid
-      online : sl;               -- PPI online indication
+      frame  : sl;               -- Frame is ready
    end record;
 
    -- Initialization constants
-   constant ObPpiFromFifoInit : ObPpiFromFifoType := ( 
+   constant PpiReadFromFifoInit : PpiReadFromFifoType := ( 
       data   => x"0000000000000000",
       size   => "000",
       eof    => '0',
       eoh    => '0',
+      err    => '0',
       ftype  => "000",
       mgmt   => '0',
       valid  => '0',
-      online => '0'
+      frame  => '0'
    );
 
-   -- Vector
-   type ObPpiFromFifoVector is array (natural range<>) of ObPpiFromFifoType;
+   -- Array
+   type PpiReadFromFifoArray is array (natural range<>) of PpiReadFromFifoType;
 
 
    --------------------------------------------------------
-   -- Inbound PPI To FIFO Record
+   -- PPI Write To FIFO Record
    --------------------------------------------------------
 
    -- Base Record
-   type IbPpiToFifoType is record
+   type PpiWriteToFifoType is record
       data    : slv(63 downto 0); -- PPI Data
       size    : slv(2  downto 0); -- Bytes in transfer when EOF, 0x0=1, 0x7=8
       eof     : sl;               -- End of frame indication
@@ -541,7 +543,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant IbPpiToFifoInit : IbPpiToFifoType := ( 
+   constant PpiWriteToFifoInit : PpiWriteToFifoType := ( 
       data    => x"0000000000000000",
       size    => "000",
       eof     => '0',
@@ -552,27 +554,25 @@ package ArmRceG3Pkg is
       valid   => '0'
    );
 
-   -- Vector
-   type IbPpiToFifoVector is array (natural range<>) of IbPpiToFifoType;
+   -- Array
+   type PpiWriteToFifoArray is array (natural range<>) of PpiWriteToFifoType;
 
    --------------------------------------------------------
-   -- Inbound PPI From FIFO Record
+   -- PPI Write From FIFO Record
    --------------------------------------------------------
 
    -- Base Record
-   type IbPpiFromFifoType is record
+   type PpiWriteFromFifoType is record
       pause  : sl;  -- PPI can not accept another frame
-      online : sl;  -- PPI online indication
    end record;
 
    -- Initialization constants
-   constant IbPpiFromFifoInit : IbPpiFromFifoType := ( 
-      pause  => '0',
-      online => '0'
+   constant PpiWriteFromFifoInit : PpiWriteFromFifoType := ( 
+      pause  => '0'
    );
 
-   -- Vector
-   type IbPpiFromFifoVector is array (natural range<>) of IbPpiFromFifoType;
+   -- Array
+   type PpiWriteFromFifoArray is array (natural range<>) of PpiWriteFromFifoType;
 
    --------------------------------------------------------
    -- Completion To FIFO Record
@@ -588,8 +588,8 @@ package ArmRceG3Pkg is
       read => '0'
    );
 
-   -- Vector
-   type CompToFifoVector is array (natural range<>) of CompToFifoType;
+   -- Array
+   type CompToFifoArray is array (natural range<>) of CompToFifoType;
 
    --------------------------------------------------------
    -- Completion From FIFO Record
@@ -609,8 +609,8 @@ package ArmRceG3Pkg is
       valid    => '0'
    );
 
-   -- Vector
-   type CompFromFifoVector is array (natural range<>) of CompFromFifoType;
+   -- Array
+   type CompFromFifoArray is array (natural range<>) of CompFromFifoType;
 
 
    --------------------------------------------------------
@@ -629,8 +629,8 @@ package ArmRceG3Pkg is
       valid => '0'
    );
 
-   -- Vector
-   type QWordToFifoVector is array (natural range<>) of QWordToFifoType;
+   -- Array
+   type QWordToFifoArray is array (natural range<>) of QWordToFifoType;
 
    --------------------------------------------------------
    -- Quad Word From FIFO Record
@@ -650,8 +650,8 @@ package ArmRceG3Pkg is
       almostFull => '0'
    );
 
-   -- Vector
-   type QWordFromFifoVector is array (natural range<>) of QWordFromFifoType;
+   -- Array
+   type QWordFromFifoArray is array (natural range<>) of QWordFromFifoType;
 
    --------------------------------------------------------
    -- Ethernet From ARM
@@ -697,8 +697,8 @@ package ArmRceG3Pkg is
       enetGmiiTxD         => (others=>'0')
    );
 
-   -- Vector
-   type EthFromArmVector is array (natural range<>) of EthFromArmType;
+   -- Array
+   type EthFromArmArray is array (natural range<>) of EthFromArmType;
 
    --------------------------------------------------------
    -- Ethernet To ARM
@@ -730,8 +730,8 @@ package ArmRceG3Pkg is
       enetGmiiRxd   => (others=>'0')
    );
 
-   -- Vector
-   type EthToArmVector is array (natural range<>) of EthToArmType;
+   -- Array
+   type EthToArmArray is array (natural range<>) of EthToArmType;
 
 end ArmRceG3Pkg;
 

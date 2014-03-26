@@ -58,8 +58,8 @@ entity ArmRceG3IbCntrl is
 
       -- Header FIFO Interface
       ibHeaderClk             : in  slv(3 downto 0);
-      ibHeaderToFifo          : in  IbHeaderToFifoVector(3 downto 0);
-      ibHeaderFromFifo        : out IbHeaderFromFifoVector(3 downto 0);
+      ibHeaderToFifo          : in  IbHeaderToFifoArray(3 downto 0);
+      ibHeaderFromFifo        : out IbHeaderFromFifoArray(3 downto 0);
 
       -- Quad Word FIFO Interface
       qwordToFifo             : in  QWordToFifoType;
@@ -76,10 +76,10 @@ architecture structure of ArmRceG3IbCntrl is
    signal qwordDmaId                : Slv3Array(4 downto 0);
    signal writeDmaBusyOut           : Slv8Array(4 downto 0);
    signal writeDmaBusyIn            : slv(7 downto 0);
-   signal axiWriteToCntrl           : AxiWriteToCntrlVector(8 downto 0);
-   signal axiWriteFromCntrl         : AxiWriteFromCntrlVector(8 downto 0);
-   signal iqwordToFifo              : QWordToFifoVector(4 downto 0);
-   signal iqwordFromFifo            : QWordFromFifoVector(4 downto 0);
+   signal axiWriteToCntrl           : AxiWriteToCntrlArray(8 downto 0);
+   signal axiWriteFromCntrl         : AxiWriteFromCntrlArray(8 downto 0);
+   signal iqwordToFifo              : QWordToFifoArray(4 downto 0);
+   signal iqwordFromFifo            : QWordFromFifoArray(4 downto 0);
    signal axiClkRstInt              : sl := '1';
 
    attribute mark_debug : string;
