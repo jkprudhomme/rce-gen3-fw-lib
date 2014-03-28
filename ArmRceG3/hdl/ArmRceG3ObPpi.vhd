@@ -26,7 +26,8 @@ use work.StdRtlPkg.all;
 
 entity ArmRceG3ObPpi is
    generic (
-      TPD_G      : time    := 1 ns
+      TPD_G             : time                   := 1 ns;
+      PPI_READY_THOLD_G : integer range 0 to 511 := 0
    );
    port (
 
@@ -129,6 +130,8 @@ architecture structure of ArmRceG3ObPpi is
    signal axiClkRstInt     : sl := '1';
    signal obPpiEofWr       : sl;
    signal obPpiEofRd       : sl;
+   signal obPpiEofValid    : sl;
+   signal ppiReadCount     : slv(8 downto 0);
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
@@ -670,7 +673,7 @@ begin
          rd_clk             => ppiClk,
          rd_en              => ppiReadToFifo.read,
          dout               => obPpiDout,
-         rd_data_count      => open,
+         rd_data_count      => ppiReadCount,
          valid              => ppiReadFromFifo.valid,
          underflow          => open,
          prog_empty         => open,
@@ -710,7 +713,7 @@ begin
          rd_en         => obPpiEofRd,
          dout          => open,
          rd_data_count => open,
-         valid         => ppiReadFromFifo.frame,
+         valid         => obPpiEofValid,
          underflow     => open,
          prog_empty    => open,
          almost_empty  => open,
@@ -741,6 +744,18 @@ begin
    ppiReadFromFifo.eof    <= obPpiDout(67);
    ppiReadFromFifo.size   <= obPpiDout(66 downto  64);
    ppiReadFromFifo.data   <= obPpiDout(63 downto   0);
+
+   -- Frame Ready
+   process (ppiClk) begin
+      if rising_edge(ppiClk) then
+         if obPpiEofValid = '1' or (PPI_READY_THOLD_G > 0 and ppiReadCount > PPI_READY_THOLD_G) then
+            ppiReadFromFifo.ready <= '1' after TPD_G;
+         else
+            ppiReadFromFifo.ready <= '0' after TPD_G;
+         end if;
+      end if;
+   end process;
+
 
    -----------------------------------------
    -- Completion FIFO

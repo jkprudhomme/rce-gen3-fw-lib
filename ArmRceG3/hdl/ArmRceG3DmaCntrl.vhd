@@ -27,7 +27,8 @@ use work.AxiLitePkg.all;
 
 entity ArmRceG3DmaCntrl is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G             : time                     := 1 ns;
+      PPI_READY_THOLD_G : IntegerArray(3 downto 0) := (others=>0)
    );
    port (
 
@@ -406,7 +407,8 @@ begin
 
       U_ObDma: entity work.ArmRceG3ObPpi 
          generic map (
-            TPD_G      => TPD_G
+            TPD_G             => TPD_G,
+            PPI_READY_THOLD_G => PPI_READY_THOLD_G(i)
          ) port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRstInt,

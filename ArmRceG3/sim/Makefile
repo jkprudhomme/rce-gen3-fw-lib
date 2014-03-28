@@ -31,6 +31,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteCrossbar.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteAsync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcPkg.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcAdapter.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../pgp2/rtl/core/Pgp2CoreTypesPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/stdlib.vhd

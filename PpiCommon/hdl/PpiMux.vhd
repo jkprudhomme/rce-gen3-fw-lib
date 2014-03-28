@@ -98,7 +98,7 @@ begin
 
       -- Format requests
       for i in 0 to NUM_READ_SLOTS_G-1 loop
-         requests(i) := ppiReadFromFifo(i).valid and ppiReadFromFifo(i).frame;
+         requests(i) := ppiReadFromFifo(i).valid and ppiReadFromFifo(i).ready;
       end loop;
 
       -- State machine

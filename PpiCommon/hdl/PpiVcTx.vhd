@@ -38,7 +38,8 @@ entity PpiVcTx is
       TPD_G              : time := 1 ns;
       VC_WIDTH_G         : integer range 1 to 4 := 1;-- 3 not allowed
       PPI_ADDR_WIDTH_G   : integer range 2 to 48      := 9;
-      PPI_PAUSE_THOLD_G  : integer range 2 to (2**24) := 255 
+      PPI_PAUSE_THOLD_G  : integer range 2 to (2**24) := 255;
+      PPI_READY_THOLD_G  : integer range 0 to (2**24) := 0
    );
    port (
 
@@ -191,6 +192,7 @@ begin
          SYNC_STAGES_G      => 3,
          ADDR_WIDTH_G       => PPI_ADDR_WIDTH_G,
          PAUSE_THOLD_G      => PPI_PAUSE_THOLD_G,
+         READY_THOLD_G      => PPI_READY_THOLD_G,
          FIFO_TYPE_EN_G     => false
       ) port map (
          ppiWrClk         => ppiClk,
@@ -303,7 +305,7 @@ begin
 
          -- Idle
          when S_IDLE =>
-            if intReadFromFifo.valid = '1' and intReadFromFifo.frame = '1' then
+            if intReadFromFifo.valid = '1' and intReadFromFifo.ready = '1' then
                v.vc                 := intReadFromFifo.data(1 downto 0);
                v.sof                := intReadFromFifo.data(16);
                v.eof                := intReadFromFifo.data(17);

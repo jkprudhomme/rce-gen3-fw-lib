@@ -501,7 +501,7 @@ package ArmRceG3Pkg is
       err    : sl;               -- Frame has error, inbound PPI only
       ftype  : slv(3 downto 0);  -- Frame type
       valid  : sl;               -- Frame data is valid
-      frame  : sl;               -- Frame is ready
+      ready  : sl;               -- Frame or bulk of data is ready
    end record;
 
    -- Initialization constants
@@ -513,7 +513,7 @@ package ArmRceG3Pkg is
       err    => '0',
       ftype  => "0000",
       valid  => '0',
-      frame  => '0'
+      ready  => '0'
    );
 
    -- Array

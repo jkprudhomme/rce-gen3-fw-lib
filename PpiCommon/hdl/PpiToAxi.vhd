@@ -156,6 +156,7 @@ begin
          SYNC_STAGES_G  => 3,
          ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
          PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G,
+         READY_THOLD_G  => 0,
          FIFO_TYPE_EN_G => false
       ) port map (
          ppiWrClk         => ppiClk,
@@ -230,7 +231,7 @@ begin
             v.count          := (others=>'0');
 
             -- Value is ready on PPI interface
-            if intReadFromFifo.valid = '1' and intReadFromFifo.frame = '1' and intWriteFromFifo.pause = '0' then
+            if intReadFromFifo.valid = '1' and intReadFromFifo.ready = '1' and intWriteFromFifo.pause = '0' then
                v.address   := intReadFromFifo.data(31 downto  0);
                v.firstStrb := intReadFromFifo.data(35 downto 32);
                v.lastStrb  := intReadFromFifo.data(39 downto 36);

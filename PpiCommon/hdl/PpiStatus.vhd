@@ -139,6 +139,7 @@ begin
          SYNC_STAGES_G  => 3,
          ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
          PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G,
+         READY_THOLD_G  => 0,
          FIFO_TYPE_EN_G => false
       ) port map (
          ppiWrClk         => statusClk,

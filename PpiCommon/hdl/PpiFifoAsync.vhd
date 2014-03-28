@@ -33,6 +33,7 @@ entity PpiFifoAsync is
       SYNC_STAGES_G   : integer range 3 to (2**24) := 3;
       ADDR_WIDTH_G    : integer range 2 to 48      := 9;
       PAUSE_THOLD_G   : integer range 1 to (2**24) := 255;
+      READY_THOLD_G   : integer range 0 to (2**24) := 0;
       FIFO_TYPE_EN_G  : boolean                    := false
    );
    port (
@@ -70,6 +71,7 @@ architecture structure of PpiFifoAsync is
    signal fifoValid        : sl;
    signal fifoPFull        : sl;
    signal fifoRst          : sl;
+   signal fifoRdCount      : slv(ADDR_WIDTH_G-1 downto 0);
 
 begin
 
@@ -137,7 +139,7 @@ begin
          rd_clk        => ppiRdClk,
          rd_en         => fifoRdEn,
          dout          => fifoDout,
-         rd_data_count => open,
+         rd_data_count => fifoRdCount,
          valid         => fifoValid,
          underflow     => open,
          prog_empty    => open,
@@ -199,10 +201,19 @@ begin
    end generate;
 
    ppiReadFromFifo.valid  <= fifoValid;
-   ppiReadFromFifo.frame  <= not fifoEofEmpty;
 
    fifoRdEof <= fifoDout(68) and ppiReadToFifo.read;
    fifoRdEn  <= ppiReadToFifo.read;
+
+   process (ppiRdClk) begin 
+      if rising_edge (ppiRdClk) then
+         if fifoEofEmpty = '0' or (READY_THOLD_G > 0 and fifoRdCount > READY_THOLD_G) then
+            ppiReadFromFifo.ready <= '1' after TPD_G;
+         else
+            ppiReadFromFifo.ready <= '0' after TPD_G;
+         end if;
+      end if;
+   end process;
 
 end architecture structure;
 
