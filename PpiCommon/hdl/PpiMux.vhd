@@ -7,7 +7,7 @@
 -- Description:
 -- PPI block to move data from one of a number of downstream FIFOs to 
 -- an upstream FIFO.
--- Source is encoded in the type/mgmt fields.
+-- Source is encoded in the type fields.
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -93,8 +93,7 @@ begin
       v.ppiWriteToFifo.eof   := ppiReadFromFifo(conv_integer(r.ackNum)).eof;
       v.ppiWriteToFifo.eoh   := ppiReadFromFifo(conv_integer(r.ackNum)).eoh;
       v.ppiWriteToFifo.err   := ppiReadFromFifo(conv_integer(r.ackNum)).err;
-      v.ppiWriteToFifo.ftype := ppiReadFromFifo(conv_integer(r.ackNum)).ftype;
-      v.ppiWriteToFifo.mgmt  := ppiReadFromFifo(conv_integer(r.ackNum)).mgmt;
+      v.ppiWriteToFifo.ftype := conv_std_logic_vector(conv_integer(r.ackNum), 4);
       v.ppiReadToFifo        := (others=>PpiReadToFifoInit);
 
       -- Format requests

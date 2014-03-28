@@ -68,7 +68,6 @@ begin
       ppiWriteToFifo(i).data    <= ppiReadFromFifo(i).data;
       ppiWriteToFifo(i).size    <= ppiReadFromFifo(i).size;
       ppiWriteToFifo(i).ftype   <= ppiReadFromFifo(i).ftype;
-      ppiWriteToFifo(i).mgmt    <= ppiReadFromFifo(i).mgmt;
       ppiWriteToFifo(i).eoh     <= ppiReadFromFifo(i).eoh;
       ppiWriteToFifo(i).eof     <= ppiReadFromFifo(i).eof;
       ppiWriteToFifo(i).err     <= '0';

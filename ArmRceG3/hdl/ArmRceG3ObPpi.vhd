@@ -77,8 +77,7 @@ architecture structure of ArmRceG3ObPpi is
       data   : slv(63 downto 0);
       eof    : sl;
       eoh    : sl;
-      ftype  : slv(2 downto 0);
-      mgmt   : sl;
+      ftype  : slv(3 downto 0);
       valid  : slv(7 downto 0);
    end record;
 
@@ -128,6 +127,8 @@ architecture structure of ArmRceG3ObPpi is
    signal dbgState         : slv(2 downto 0);
    signal ppiPFullReg      : sl;
    signal axiClkRstInt     : sl := '1';
+   signal obPpiEofWr       : sl;
+   signal obPpiEofRd       : sl;
 
    attribute mark_debug : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
@@ -386,7 +387,6 @@ begin
             obPpi.eof       <= '0'           after TPD_G;
             obPpi.eoh       <= '0'           after TPD_G;
             obPpi.ftype     <= (others=>'0') after TPD_G;
-            obPpi.mgmt      <= '0'           after TPD_G;
             obPpi.valid     <= (others=>'0') after TPD_G;
             obPpiHead       <= '0'           after TPD_G;
             obPpiFirst      <= '0'           after TPD_G;
@@ -397,7 +397,6 @@ begin
          else
 
             -- Constant data
-            obPpi.mgmt  <= obHeaderReg(1).mgmt  after TPD_G;
             obPpi.ftype <= obHeaderReg(1).htype after TPD_G;
 
             -- RX Engine disabled, writes sourced from main state machine (header data)
@@ -457,13 +456,11 @@ begin
             obPpiHold.eof     <= '0'           after TPD_G;
             obPpiHold.eoh     <= '0'           after TPD_G;
             obPpiHold.ftype   <= (others=>'0') after TPD_G;
-            obPpiHold.mgmt    <= '0'           after TPD_G;
             obPpiHold.valid   <= (others=>'0') after TPD_G;
             obPpiFifo.data    <= (others=>'0') after TPD_G;
             obPpiFifo.eof     <= '0'           after TPD_G;
             obPpiFifo.eoh     <= '0'           after TPD_G;
             obPpiFifo.ftype   <= (others=>'0') after TPD_G;
-            obPpiFifo.mgmt    <= '0'           after TPD_G;
             obPpiFifo.valid   <= (others=>'0') after TPD_G;
             obPpiWriteEn      <= '0'           after TPD_G;
          else
@@ -639,7 +636,7 @@ begin
 
    -- Control FIFO writes, write only when all bytes are valid or EOF is asserted
    obPpiFifoWr <= obPpiWriteEn when obPpiFifo.valid = "11111111" or obPpiFifo.eof = '1' else '0';
-
+   obPpiEofWr  <= obPpiFifo.eof and obPpiFifoWr;
 
    -----------------------------------------
    -- Output FIFO
@@ -681,10 +678,51 @@ begin
          empty              => open
       );
 
+   -- Frame Counter
+   U_EofFifo: entity work.FifoAsync 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         BRAM_EN_G      => true,
+         FWFT_EN_G      => true,
+         USE_DSP48_G    => "no",
+         ALTERA_SYN_G   => false,
+         ALTERA_RAM_G   => "M9K",
+         SYNC_STAGES_G  => 3,
+         DATA_WIDTH_G   => 1,
+         ADDR_WIDTH_G   => 9,
+         INIT_G         => "0",
+         FULL_THRES_G   => (511-8),
+         EMPTY_THRES_G  => 0
+      ) port map (
+         rst           => axiClkRstInt,
+         wr_clk        => axiClk,
+         wr_en         => obPpiEofWr,
+         din           => "0",
+         wr_data_count => open,
+         wr_ack        => open,
+         overflow      => open,
+         prog_full     => open,
+         almost_full   => open,
+         full          => open,
+         not_full      => open,
+         rd_clk        => ppiClk,
+         rd_en         => obPpiEofRd,
+         dout          => open,
+         rd_data_count => open,
+         valid         => ppiReadFromFifo.frame,
+         underflow     => open,
+         prog_empty    => open,
+         almost_empty  => open,
+         empty         => open
+      );
+
+   -- Read EOF
+   obPpiEofRd <= ppiReadToFifo.read and obPpiDout(67);
+
    -- Input Data
-   obPpiDin(71)           <= obPpiFifo.mgmt;
-   obPpiDin(70 downto 69) <= obPpiFifo.ftype(1 downto 0);
-   obPpiDin(68)           <= obPpiFifo.eoh;
+   obPpiDin(71)           <= obPpiFifo.eoh; -- Temp, Ftype bit 3 in real system
+   obPpiDin(70 downto 68) <= obPpiFifo.ftype(2 downto 0);
    obPpiDin(67)           <= obPpiFifo.eof;
    obPpiDin(66 downto 64) <= "111" when obPpiFifo.valid = "11111111" else
                              "110" when obPpiFifo.valid = "01111111" else
@@ -697,12 +735,10 @@ begin
    obPpiDin(63 downto  0) <= obPpiFifo.data;
 
    -- Output Data
-   ppiReadFromFifo.mgmt   <= obPpiDout(71);
-   ppiReadFromFifo.ftype  <= "0" & obPpiDout(70 downto 69);
-   ppiReadFromFifo.eoh    <= obPpiDout(68);
-   ppiReadFromFifo.eof    <= obPpiDout(67);
    ppiReadFromFifo.err    <= '0';
-   ppiReadFromFifo.frame  <= '0';
+   ppiReadFromFifo.eoh    <= obPpiDout(71); -- Temp, Ftype bit 3 in real system
+   ppiReadFromFifo.ftype  <= "0" & obPpiDout(70 downto 68);
+   ppiReadFromFifo.eof    <= obPpiDout(67);
    ppiReadFromFifo.size   <= obPpiDout(66 downto  64);
    ppiReadFromFifo.data   <= obPpiDout(63 downto   0);
 

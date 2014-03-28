@@ -213,7 +213,7 @@ begin
    
    U_GmiiToRgmiiSwitch : entity work.GmiiToRgmiiSwitch 
       generic map (
-         SELECT_CH1_G => true
+         SELECT_CH1_G => false
       ) port map (
          sysClk200    => isysClk200,
          sysClk200Rst => isysClk200Rst,

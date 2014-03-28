@@ -57,8 +57,10 @@ use work.AxiLitePkg.all;
 
 entity PpiToAxi is
    generic (
-      TPD_G                  : time                  := 1 ns;
-      NUM_AXI_MASTER_SLOTS_G : natural range 1 to 16 := 4;
+      TPD_G                  : time                       := 1 ns;
+      NUM_AXI_MASTER_SLOTS_G : natural range 1 to 16      := 4;
+      PPI_ADDR_WIDTH_G       : integer range 2 to 48      := 6;
+      PPI_PAUSE_THOLD_G      : integer range 1 to (2**24) := 32;
       AXI_MASTERS_CONFIG_G   : AxiLiteCrossbarMasterConfigArray
    );
    port (
@@ -93,6 +95,7 @@ architecture structure of PpiToAxi is
    signal intReadFromFifo  : PpiReadFromFifoType;
    signal intWriteToFifo   : PpiWriteToFifoType;
    signal intWriteFromFifo : PpiWriteFromFifoType;
+   signal intOnline        : sl;
 
    type StateType is (S_IDLE, S_START, S_WRITE, S_WRITE_AXI, S_READ, S_READ_AXI, S_STATUS, S_DUMP );
 
@@ -102,8 +105,7 @@ architecture structure of PpiToAxi is
       lastStrb       : slv(3  downto 0);
       prot           : slv(2  downto 0);
       write          : sl;
-      mgmt           : sl;
-      ftype          : slv(2  downto 0);
+      ftype          : slv(3  downto 0);
       length         : slv(7  downto 0);
       count          : slv(7  downto 0);
       state          : StateType;
@@ -123,7 +125,6 @@ architecture structure of PpiToAxi is
       lastStrb       => (others => '0'),
       prot           => (others => '0'),
       write          => '0',
-      mgmt           => '0',
       ftype          => (others => '0'),
       length         => (others => '0'),
       count          => (others => '0'),
@@ -153,15 +154,18 @@ begin
          BRAM_EN_G      => true,
          USE_DSP48_G    => "no",
          SYNC_STAGES_G  => 3,
-         ADDR_WIDTH_G   => 6,
-         FULL_THRES_G   => 32
+         ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
+         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G,
+         FIFO_TYPE_EN_G => false
       ) port map (
          ppiWrClk         => ppiClk,
          ppiWrClkRst      => ppiClkRst,
+         ppiWrOnline      => ppiOnline,
          ppiWriteToFifo   => ppiWriteToFifo,
          ppiWriteFromFifo => ppiWriteFromFifo,
          ppiRdClk         => axiClk,
          ppiRdClkRst      => axiClkRst,
+         ppiRdOnline      => intOnline,
          ppiReadToFifo    => intReadToFifo,
          ppiReadFromFifo  => intReadFromFifo
       );
@@ -172,15 +176,18 @@ begin
          BRAM_EN_G      => true,
          USE_DSP48_G    => "no",
          SYNC_STAGES_G  => 3,
-         ADDR_WIDTH_G   => 6,
-         FULL_THRES_G   => 32
+         ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
+         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G,
+         FIFO_TYPE_EN_G => false
       ) port map (
          ppiWrClk         => axiClk,
          ppiWrClkRst      => axiClkRst,
+         ppiWrOnline      => '0',
          ppiWriteToFifo   => intWriteToFifo,
          ppiWriteFromFifo => intWriteFromFifo,
          ppiRdClk         => ppiClk,
          ppiRdClkRst      => ppiClkRst,
+         ppiRdOnline      => open,
          ppiReadToFifo    => ppiReadToFifo,
          ppiReadFromFifo  => ppiReadFromFifo
       );
@@ -201,7 +208,6 @@ begin
    -- Async
    process (axiClkRst, r, intReadFromFifo, intWriteFromFifo, midReadSlave, midWriteSlave ) is
       variable v         : RegType;
-      variable axiStatus : AxiLiteStatusType;
    begin
       v := r;
 
@@ -230,7 +236,6 @@ begin
                v.lastStrb  := intReadFromFifo.data(39 downto 36);
                v.prot      := intReadFromFifo.data(42 downto 40);
                v.write     := intReadFromFifo.data(43);
-               v.mgmt      := intReadFromFifo.mgmt;
                v.ftype     := intReadFromFifo.ftype;
                v.length    := intReadFromFifo.data(63 downto 56);
                v.state     := S_START;
@@ -252,7 +257,6 @@ begin
             v.ppiWriteToFifo.eoh                := '0';
             v.ppiWriteToFifo.err                := '0';
             v.ppiWriteToFifo.ftype              := r.ftype;
-            v.ppiWriteToFifo.mgmt               := r.mgmt;
             v.ppiWriteToFifo.valid              := '1';
 
             -- Setup AXI
@@ -435,8 +439,7 @@ begin
       end case;
 
       -- Reset
-      --if axiClkRst = '1' or ppiOnline = '0' then
-      if axiClkRst = '1' then
+      if axiClkRst = '1' or intOnline = '0' then
          v := REG_INIT_C;
       end if;
 

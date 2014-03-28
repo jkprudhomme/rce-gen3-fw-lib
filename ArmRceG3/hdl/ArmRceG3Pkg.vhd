@@ -394,8 +394,7 @@ package ArmRceG3Pkg is
       data  : slv(63 downto 0); -- Header data
       err   : sl;               -- Error, asserted with EOH
       eoh   : sl;               -- End of header
-      htype : slv(2 downto 0);  -- Header type field
-      mgmt  : sl;               -- Header is management
+      htype : slv(3 downto 0);  -- Header type field
       valid : sl;               -- Header data valid
    end record;
 
@@ -404,8 +403,7 @@ package ArmRceG3Pkg is
       data  => x"0000000000000000",
       err   => '0',
       eoh   => '0',
-      htype => "000",
-      mgmt  => '0',
+      htype => "0000",
       valid => '0'
    );
 
@@ -458,8 +456,7 @@ package ArmRceG3Pkg is
    type ObHeaderFromFifoType is record
       data  : slv(63 downto 0); -- Header data
       eoh   : sl;               -- End of header indication
-      htype : slv(2 downto 0);  -- Header type
-      mgmt  : sl;               -- Header is managment
+      htype : slv(3 downto 0);  -- Header type
       valid : sl;               -- Header data is valid
    end record;
 
@@ -467,8 +464,7 @@ package ArmRceG3Pkg is
    constant ObHeaderFromFifoInit : ObHeaderFromFifoType := ( 
       data  => x"0000000000000000",
       eoh   => '0',
-      htype => "000",
-      mgmt  => '0',
+      htype => "0000",
       valid => '0'
    );
 
@@ -501,10 +497,9 @@ package ArmRceG3Pkg is
       data   : slv(63 downto 0); -- PPI Data
       size   : slv(2  downto 0); -- Bytes in transfer when EOF, 0x0=1, 0x7=8
       eof    : sl;               -- End of frame indication
-      eoh    : sl;               -- End of header
-      err    : sl;               -- Frame has error
-      ftype  : slv(2 downto 0);  -- Frame type
-      mgmt   : sl;               -- Frame is management
+      eoh    : sl;               -- End of header, inbound PPI only
+      err    : sl;               -- Frame has error, inbound PPI only
+      ftype  : slv(3 downto 0);  -- Frame type
       valid  : sl;               -- Frame data is valid
       frame  : sl;               -- Frame is ready
    end record;
@@ -516,8 +511,7 @@ package ArmRceG3Pkg is
       eof    => '0',
       eoh    => '0',
       err    => '0',
-      ftype  => "000",
-      mgmt   => '0',
+      ftype  => "0000",
       valid  => '0',
       frame  => '0'
    );
@@ -535,10 +529,9 @@ package ArmRceG3Pkg is
       data    : slv(63 downto 0); -- PPI Data
       size    : slv(2  downto 0); -- Bytes in transfer when EOF, 0x0=1, 0x7=8
       eof     : sl;               -- End of frame indication
-      eoh     : sl;               -- End of header
-      err     : sl;               -- Frame is in error
-      ftype   : slv(2 downto 0);  -- Frame type
-      mgmt    : sl;               -- Frame is management
+      eoh     : sl;               -- End of header, inbound PPI only
+      err     : sl;               -- Frame is in error, inbound PPI only
+      ftype   : slv(3 downto 0);  -- Frame type
       valid   : sl;               -- Frame data is valid
    end record;
 
@@ -549,8 +542,7 @@ package ArmRceG3Pkg is
       eof     => '0',
       eoh     => '0',
       err     => '0',
-      ftype   => "000",
-      mgmt    => '0',
+      ftype   => "0000",
       valid   => '0'
    );
 

@@ -67,8 +67,7 @@ architecture structure of ArmRceG3ObHeaderFifo is
       offset   : slv(17 downto 0);
       transfer : sl;
       length   : slv(7 downto 0);
-      htype    : slv(2 downto 0);
-      mgmt     : sl;
+      htype    : slv(3 downto 0);
       valid    : sl;
    end record;
 
@@ -153,8 +152,7 @@ begin
 
    -- Connect output
    obDesc.transfer <= headerPtrDout(30);
-   obDesc.mgmt     <= headerPtrDout(29);
-   obDesc.htype    <= headerPtrDout(28 downto 26);
+   obDesc.htype    <= headerPtrDout(29 downto 26);
    obDesc.length   <= headerPtrDout(25 downto 18);
    obDesc.offset   <= headerPtrDout(17 downto  0);
 
@@ -303,7 +301,6 @@ begin
             rxLast <= axiReadFromCntrl.rlast after TPD_G;
             
             -- Output data
-            header.mgmt  <= obDesc.mgmt            after TPD_G;
             header.htype <= obDesc.htype           after TPD_G;
             header.data  <= axiReadFromCntrl.rdata after TPD_G;
 
@@ -365,17 +362,14 @@ begin
       );
 
    -- Connect Inputs
-   headerDin(71)           <= header.mgmt;
-   headerDin(70 downto 69) <= "00";
+   headerDin(71 downto 69) <= "000";
    headerDin(68)           <= header.eoh;
-   headerDin(67)           <= '0';
-   headerDin(66 downto 64) <= header.htype;
+   headerDin(67 downto 64) <= header.htype;
    headerDin(63 downto  0) <= header.data;
 
    -- Connect Outputs
-   obHeaderFromFifo.mgmt  <= headerDout(71);
    obHeaderFromFifo.eoh   <= headerDout(68);
-   obHeaderFromFifo.htype <= headerDout(66 downto 64);
+   obHeaderFromFifo.htype <= headerDout(67 downto 64);
    obHeaderFromFifo.data  <= headerDout(63 downto  0);
 
 end architecture structure;

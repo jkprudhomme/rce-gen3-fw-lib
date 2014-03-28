@@ -78,8 +78,7 @@ architecture structure of ArmRceG3IbPpi is
    type IbPpiType is record
       data   : slv(63 downto 0);
       eof    : sl;
-      ftype  : slv(2 downto 0);
-      mgmt   : sl;
+      ftype  : slv(3 downto 0);
       valid  : slv(7 downto 0);
    end record;
 
@@ -323,7 +322,6 @@ begin
 
    -- Header write
    ibHeaderToFifo.valid <= ppiWriteToFifo.valid and (not payloadEn);
-   ibHeaderToFifo.mgmt  <= ppiWriteToFifo.mgmt;
    ibHeaderToFifo.htype <= ppiWriteToFifo.ftype;
    ibHeaderToFifo.data  <= ppiWriteToFifo.data;
    ibHeaderToFifo.err   <= ppiWriteToFifo.err and ppiWriteToFifo.eof;
@@ -333,15 +331,13 @@ begin
    ppiWriteFromFifo.pause <= ibPpiProgFull or ibHeaderFromFifo.progFull;
 
    -- Input Data
-   ibPpiDin(71)           <= ppiWriteToFifo.mgmt;
-   ibPpiDin(70 downto 68) <= ppiWriteToFifo.ftype;
+   ibPpiDin(71 downto 68) <= ppiWriteToFifo.ftype;
    ibPpiDin(67)           <= ppiWriteToFifo.eof;
    ibPpiDin(66 downto 64) <= ppiWriteToFifo.size;
    ibPpiDin(63 downto  0) <= ppiWriteToFifo.data;
 
    -- Output Data
-   ibPpiFifo.mgmt  <= ibPpiDout(71);
-   ibPpiFifo.ftype <= ibPpiDout(70 downto 68);
+   ibPpiFifo.ftype <= ibPpiDout(71 downto 68);
    ibPpiFifo.eof   <= ibPpiDout(67);
    ibPpiFifo.valid <= "11111111" when ibPpiDout(66 downto 64) = "111" and ibPpiValid = '1' else 
                       "01111111" when ibPpiDout(66 downto 64) = "110" and ibPpiValid = '1' else 
@@ -367,12 +363,10 @@ begin
             ibPpiHold.data  <= (others=>'0') after TPD_G; 
             ibPpiHold.eof   <= '0'           after TPD_G;
             ibPpiHold.ftype <= (others=>'0') after TPD_G;
-            ibPpiHold.mgmt  <= '0'           after TPD_G;
             ibPpiHold.valid <= (others=>'0') after TPD_G;
             ibPpi.data      <= (others=>'0') after TPD_G;
             ibPpi.eof       <= '0'           after TPD_G;
             ibPpi.ftype     <= (others=>'0') after TPD_G;
-            ibPpi.mgmt      <= '0'           after TPD_G;
             ibPpi.valid     <= (others=>'0') after TPD_G;
          else
 

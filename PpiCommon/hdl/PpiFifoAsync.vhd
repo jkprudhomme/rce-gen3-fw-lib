@@ -27,24 +27,27 @@ use work.StdRtlPkg.all;
 
 entity PpiFifoAsync is
    generic (
-      TPD_G          : time                       := 1 ns;
-      BRAM_EN_G      : boolean                    := true;
-      USE_DSP48_G    : string                     := "no";
-      SYNC_STAGES_G  : integer range 3 to (2**24) := 3;
-      ADDR_WIDTH_G   : integer range 2 to 48      := 4;
-      FULL_THRES_G   : integer range 1 to (2**24) := 1
+      TPD_G           : time                       := 1 ns;
+      BRAM_EN_G       : boolean                    := true;
+      USE_DSP48_G     : string                     := "no";
+      SYNC_STAGES_G   : integer range 3 to (2**24) := 3;
+      ADDR_WIDTH_G    : integer range 2 to 48      := 9;
+      PAUSE_THOLD_G   : integer range 1 to (2**24) := 255;
+      FIFO_TYPE_EN_G  : boolean                    := false
    );
    port (
 
       -- Write Interface
       ppiWrClk         : in  sl;
       ppiWrClkRst      : in  sl;
+      ppiWrOnline      : in  sl;
       ppiWriteToFifo   : in  PpiWriteToFifoType;
       ppiWriteFromFifo : out PpiWriteFromFifoType;
 
       -- Read Interface
       ppiRdClk         : in  sl;
       ppiRdClkRst      : in  sl;
+      ppiRdOnline      : out sl;
       ppiReadToFifo    : in  PpiReadToFifoType;
       ppiReadFromFifo  : out PpiReadFromFifoType
    );
@@ -52,11 +55,13 @@ end PpiFifoAsync;
 
 architecture structure of PpiFifoAsync is
 
+   constant FIFO_WIDTH_C : integer := ite(FIFO_TYPE_EN_G, 74, 70);
+
    -- Local signals
    signal intWriteFromFifo : PpiWriteFromFifoType;
    signal intReadFromFifo  : PpiReadFromFifoType;
-   signal fifoDin          : slv(73 downto 0);
-   signal fifoDout         : slv(73 downto 0);
+   signal fifoDin          : slv(FIFO_WIDTH_C-1 downto 0);
+   signal fifoDout         : slv(FIFO_WIDTH_C-1 downto 0);
    signal fifoWrEn         : sl;
    signal fifoWrEof        : sl;
    signal fifoRdEof        : sl;
@@ -68,21 +73,40 @@ architecture structure of PpiFifoAsync is
 
 begin
 
+   -- Online Sync
+   U_OnlineSync : entity work.Synchronizer 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         OUT_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 2,
+         INIT_G         => "0"
+      ) port map (
+         clk     => ppiRdClk,
+         rst     => ppiRdClkRst,
+         dataIn  => ppiWrOnline,
+         dataOut => ppiRdOnline
+      );
+
+   -- FIFO reset
    fifoRst <= ppiWrClkRst or ppiRdClkRst;
 
    fifoDin(63 downto  0)  <= ppiWriteToFifo.data;
-   fifoDin(66 downto 64)  <= ppiWriteToFifo.ftype;
-   fifoDin(67)            <= ppiWriteToFifo.mgmt;
-   fifoDin(68)            <= ppiWriteToFifo.eof;
-   fifoDin(69)            <= ppiWriteToFifo.eoh;
-   fifoDin(70)            <= ppiWriteToFifo.err;
-   fifoDin(73 downto 71)  <= ppiWriteToFifo.size;
+   fifoDin(64)            <= ppiWriteToFifo.eof;
+   fifoDin(65)            <= ppiWriteToFifo.eoh;
+   fifoDin(66)            <= ppiWriteToFifo.err;
+   fifoDin(69 downto 67)  <= ppiWriteToFifo.size;
    fifoWrEn               <= ppiWriteToFifo.valid;
-   fifoWrEof              <= ppiWriteToFifo.eof;
+   fifoWrEof              <= ppiWriteToFifo.eof and ppiWriteToFifo.valid;
+
+   U_TypeInGen : if FIFO_TYPE_EN_G = true generate
+      fifoDin(73 downto 70) <= ppiWriteToFifo.ftype;
+   end generate;
 
    ppiWriteFromFifo.pause <= fifoPFull;
 
-
+   -- Data FIFO
    U_Fifo: entity work.FifoAsync 
       generic map (
          TPD_G          => TPD_G,
@@ -93,10 +117,10 @@ begin
          ALTERA_SYN_G   => false,
          ALTERA_RAM_G   => "M9K",
          SYNC_STAGES_G  => SYNC_STAGES_G,
-         DATA_WIDTH_G   => 74,
+         DATA_WIDTH_G   => FIFO_WIDTH_C,
          ADDR_WIDTH_G   => ADDR_WIDTH_G,
          INIT_G         => "0",
-         FULL_THRES_G   => FULL_THRES_G,
+         FULL_THRES_G   => PAUSE_THOLD_G,
          EMPTY_THRES_G  => 0
       ) port map (
          rst           => fifoRst,
@@ -121,38 +145,64 @@ begin
          empty         => open
       );
 
-
-   U_EofFifo: entity work.FifoEofAsync 
+   -- Frame Counter
+   U_EofFifo: entity work.FifoAsync 
       generic map (
-         TPD_G         => TPD_G,
-         USE_DSP48_G   => USE_DSP48_G,
-         SYNC_STAGES_G => SYNC_STAGES_G,
-         ADDR_WIDTH_G  => ADDR_WIDTH_G
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         BRAM_EN_G      => BRAM_EN_G,
+         FWFT_EN_G      => true,
+         USE_DSP48_G    => USE_DSP48_G,
+         ALTERA_SYN_G   => false,
+         ALTERA_RAM_G   => "M9K",
+         SYNC_STAGES_G  => SYNC_STAGES_G,
+         DATA_WIDTH_G   => 1,
+         ADDR_WIDTH_G   => ADDR_WIDTH_G,
+         INIT_G         => "0",
+         FULL_THRES_G   => PAUSE_THOLD_G,
+         EMPTY_THRES_G  => 0
       ) port map (
          rst           => fifoRst,
          wr_clk        => ppiWrClk,
-         wr_en         => fifoWrEn,
-         wr_eof        => fifoWrEof,
+         wr_en         => fifoWrEof,
+         din           => "0",
+         wr_data_count => open,
+         wr_ack        => open,
+         overflow      => open,
+         prog_full     => open,
+         almost_full   => open,
+         full          => open,
+         not_full      => open,
          rd_clk        => ppiRdClk,
-         rd_en         => fifoRdEn,
-         rd_eof        => fifoRdEof,
+         rd_en         => fifoRdEof,
+         dout          => open,
+         rd_data_count => open,
+         valid         => open,
+         underflow     => open,
+         prog_empty    => open,
+         almost_empty  => open,
          empty         => fifoEofEmpty
       );
 
+   ppiReadFromFifo.data   <= fifoDout(63 downto  0);
+   ppiReadFromFifo.eof    <= fifoDout(64);
+   ppiReadFromFifo.eoh    <= fifoDout(65);
+   ppiReadFromFifo.err    <= fifoDout(66);
+   ppiReadFromFifo.size   <= fifoDout(69 downto 67);
 
-      ppiReadFromFifo.data   <= fifoDout(63 downto  0);
-      ppiReadFromFifo.ftype  <= fifoDout(66 downto 64);
-      ppiReadFromFifo.mgmt   <= fifoDout(67);
-      ppiReadFromFifo.eof    <= fifoDout(68);
-      ppiReadFromFifo.eoh    <= fifoDout(69);
-      ppiReadFromFifo.err    <= fifoDout(70);
-      ppiReadFromFifo.size   <= fifoDout(73 downto 71);
+   U_TypeOutEnGen : if FIFO_TYPE_EN_G = true generate
+      ppiReadFromFifo.ftype <= fifoDout(73 downto 70);
+   end generate;
 
-      ppiReadFromFifo.valid  <= fifoValid;
-      ppiReadFromFifo.frame  <= not fifoEofEmpty;
+   U_TypeOutDisGen : if FIFO_TYPE_EN_G = false generate
+      ppiReadFromFifo.ftype <= (others=>'0');
+   end generate;
 
-      fifoRdEof <= fifoDout(68);
-      fifoRdEn  <= ppiReadToFifo.read;
+   ppiReadFromFifo.valid  <= fifoValid;
+   ppiReadFromFifo.frame  <= not fifoEofEmpty;
+
+   fifoRdEof <= fifoDout(68) and ppiReadToFifo.read;
+   fifoRdEn  <= ppiReadToFifo.read;
 
 end architecture structure;
 

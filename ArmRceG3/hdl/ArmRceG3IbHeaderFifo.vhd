@@ -69,8 +69,7 @@ architecture structure of ArmRceG3IbHeaderFifo is
       offset : slv(17 downto 0);
       length : slv(7  downto 0);
       err    : sl;
-      htype  : slv(2 downto 0);
-      mgmt   : sl;
+      htype  : slv(3 downto 0);
       valid  : sl;
    end record;
 
@@ -79,8 +78,7 @@ architecture structure of ArmRceG3IbHeaderFifo is
       data   : slv(63 downto 0);
       err    : sl;
       eoh    : sl;
-      htype  : slv(2  downto 0);
-      mgmt   : sl;
+      htype  : slv(3  downto 0);
    end record;
 
    -- Inbound FIFO Init
@@ -88,8 +86,7 @@ architecture structure of ArmRceG3IbHeaderFifo is
       data   => x"0000000000000000",
       err    => '0',
       eoh    => '0',
-      htype  => "000",
-      mgmt   => '0'
+      htype  => "0000"
    );
 
    -- Inbound FIFO Array
@@ -230,18 +227,16 @@ begin
       );
 
    -- Inputs
-   ibHeaderDin(71)           <= ibHeaderToFifo.mgmt;
-   ibHeaderDin(70 downto 69) <= "00";
-   ibHeaderDin(68)           <= ibHeaderToFifo.eoh;
-   ibHeaderDin(67)           <= ibHeaderToFifo.err;
-   ibHeaderDin(66 downto 64) <= ibHeaderToFifo.htype;
+   ibHeaderDin(71 downto 70) <= "00";
+   ibHeaderDin(69)           <= ibHeaderToFifo.eoh;
+   ibHeaderDin(68)           <= ibHeaderToFifo.err;
+   ibHeaderDin(67 downto 64) <= ibHeaderToFifo.htype;
    ibHeaderDin(63 downto  0) <= ibHeaderToFifo.data;
 
    -- Outputs
-   ibHeader(4).mgmt   <= ibHeaderDout(71);
-   ibHeader(4).eoh    <= ibHeaderDout(68);
-   ibHeader(4).err    <= ibHeaderDout(67);
-   ibHeader(4).htype  <= ibHeaderDout(66 downto 64);
+   ibHeader(4).eoh    <= ibHeaderDout(69);
+   ibHeader(4).err    <= ibHeaderDout(68);
+   ibHeader(4).htype  <= ibHeaderDout(67 downto 64);
    ibHeader(4).data   <= ibHeaderDout(63 downto  0);
 
    -- Output pipeline, 4 extra registers after FIFO.
@@ -309,7 +304,6 @@ begin
             ackCount       <= (others=>'0') after TPD_G;
             fifoReq        <= '0'           after TPD_G;
             headerLength   <= (others=>'0') after TPD_G;
-            ibDesc.mgmt    <= '0'           after TPD_G;
             ibDesc.htype   <= (others=>'0') after TPD_G;
             ibDesc.offset  <= (others=>'0') after TPD_G;
             ibDesc.err     <= '0'           after TPD_G;
@@ -365,9 +359,8 @@ begin
             end if;
 
             -- Generate descriptor information
-            -- Mgmt and type fields
+            -- type field
             if fifoRd = '1' and headerLength = 0 then
-               ibDesc.mgmt  <= ibHeader(0).mgmt  after TPD_G;
                ibDesc.htype <= ibHeader(0).htype after TPD_G;
             end if;
 
@@ -487,8 +480,7 @@ begin
    qwordToFifo.data(63 downto 61) <= (others=>'0');
    qwordToFifo.data(60)           <= ibDesc.err;
    qwordToFifo.data(59 downto 52) <= (others=>'0');
-   qwordToFifo.data(51)           <= ibDesc.mgmt;
-   qwordToFifo.data(50 downto 48) <= ibDesc.htype;
+   qwordToFifo.data(51 downto 48) <= ibDesc.htype;
    qwordToFifo.data(47 downto 40) <= (others=>'0');
    qwordToFifo.data(39 downto 32) <= ibDesc.length;
    qwordToFifo.data(31 downto 18) <= (others=>'0');

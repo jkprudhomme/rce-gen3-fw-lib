@@ -6,7 +6,7 @@
 -------------------------------------------------------------------------------
 -- Description:
 -- PPI block to move data from one upstream FIFO to one of a number of 
--- downstream FIFOs. Destination is selected using the type/mgmt fields.
+-- downstream FIFOs. Destination is selected using the type field.
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -60,8 +60,7 @@ architecture structure of PpiRouter is
 
 begin
 
-   dest(3)          <= ppiReadFromFifo.mgmt;
-   dest(2 downto 0) <= ppiReadFromFifo.ftype;
+   dest <= ppiReadFromFifo.ftype;
 
    pause <= ppiWriteFromFifo(conv_integer(dest)).pause;
 
@@ -98,7 +97,6 @@ begin
                ppiWriteToFifo(i).eoh     <= ppiReadFromFifo.eoh   after TPD_G;
                ppiWriteToFifo(i).err     <= ppiReadFromFifo.err   after TPD_G;
                ppiWriteToFifo(i).ftype   <= ppiReadFromFifo.ftype after TPD_G;
-               ppiWriteToFifo(i).mgmt    <= ppiReadFromFifo.mgmt  after TPD_G;
                ppiWriteToFifo(i).valid   <= writeEnable(i)        after TPD_G;
             end loop;
          end if;
