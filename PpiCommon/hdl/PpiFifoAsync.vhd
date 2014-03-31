@@ -56,7 +56,7 @@ end PpiFifoAsync;
 
 architecture structure of PpiFifoAsync is
 
-   constant FIFO_WIDTH_C : integer := ite(FIFO_TYPE_EN_G, 74, 70);
+   constant FIFO_WIDTH_C : integer := ite(FIFO_TYPE_EN_G, 75, 71);
 
    -- Local signals
    signal intWriteFromFifo : PpiWriteFromFifoType;
@@ -98,12 +98,13 @@ begin
    fifoDin(64)            <= ppiWriteToFifo.eof;
    fifoDin(65)            <= ppiWriteToFifo.eoh;
    fifoDin(66)            <= ppiWriteToFifo.err;
-   fifoDin(69 downto 67)  <= ppiWriteToFifo.size;
+   fifoDin(67)            <= ppiWriteToFifo.eofe;
+   fifoDin(70 downto 68)  <= ppiWriteToFifo.size;
    fifoWrEn               <= ppiWriteToFifo.valid;
    fifoWrEof              <= ppiWriteToFifo.eof and ppiWriteToFifo.valid;
 
    U_TypeInGen : if FIFO_TYPE_EN_G = true generate
-      fifoDin(73 downto 70) <= ppiWriteToFifo.ftype;
+      fifoDin(74 downto 71) <= ppiWriteToFifo.ftype;
    end generate;
 
    ppiWriteFromFifo.pause <= fifoPFull;
@@ -190,10 +191,11 @@ begin
    ppiReadFromFifo.eof    <= fifoDout(64);
    ppiReadFromFifo.eoh    <= fifoDout(65);
    ppiReadFromFifo.err    <= fifoDout(66);
-   ppiReadFromFifo.size   <= fifoDout(69 downto 67);
+   ppiReadFromFifo.eofe   <= fifoDout(67);
+   ppiReadFromFifo.size   <= fifoDout(70 downto 68);
 
    U_TypeOutEnGen : if FIFO_TYPE_EN_G = true generate
-      ppiReadFromFifo.ftype <= fifoDout(73 downto 70);
+      ppiReadFromFifo.ftype <= fifoDout(74 downto 71);
    end generate;
 
    U_TypeOutDisGen : if FIFO_TYPE_EN_G = false generate
@@ -202,7 +204,7 @@ begin
 
    ppiReadFromFifo.valid  <= fifoValid;
 
-   fifoRdEof <= fifoDout(68) and ppiReadToFifo.read;
+   fifoRdEof <= fifoDout(64) and ppiReadToFifo.read;
    fifoRdEn  <= ppiReadToFifo.read;
 
    process (ppiRdClk) begin 
