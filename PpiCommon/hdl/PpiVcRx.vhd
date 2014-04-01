@@ -61,13 +61,13 @@ entity PpiVcRx is
       vcRxClk         : in  sl;
       vcRxClkRst      : in  sl;
       vcRxCommonOut   : in  VcRxCommonOutType;
-      vcRxQuadOut     : in  VcRxQuadOutType;
+      vcRxQuadOut     : in  VcRxQuadOutType;fr
 
       -- Flow control passed to PpiVcTx block
-      locBuffFull     : out sl;
-      locBuffAFull    : out sl;
-      remBuffFull     : out slv(3 downto 0);
-      remBuffAFull    : out slv(3 downto 0);
+      locBuffFull     : out sl;  -- Local buffer status
+      locBuffAFull    : out sl;  -- Local buffer status
+      remBuffFull     : out slv(3 downto 0); -- Received from vcRxQuadOut record
+      remBuffAFull    : out slv(3 downto 0); -- Received from vcRxQuadOut record
 
       -- Status
       rxFrameCntEn    : out sl;

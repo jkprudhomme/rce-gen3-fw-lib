@@ -57,10 +57,10 @@ entity PpiVcTx is
       vcTxQuadOut      : in  VcTxQuadOutType;
  
       -- Flow control from PpiVcRx block
-      locBuffFull      : in  sl;
-      locBuffAFull     : in  sl;
-      remBuffFull      : in  slv(3 downto 0);
-      remBuffAFull     : in  slv(3 downto 0);
+      locBuffFull      : in  sl; -- Routed to vcTxQuadIn record
+      locBuffAFull     : in  sl; -- Routed to vcTxQuadIn record
+      remBuffFull      : in  slv(3 downto 0); -- For local flow control
+      remBuffAFull     : in  slv(3 downto 0); -- For local flow control
 
       -- Frame Counter
       txFrameCntEn     : out sl
