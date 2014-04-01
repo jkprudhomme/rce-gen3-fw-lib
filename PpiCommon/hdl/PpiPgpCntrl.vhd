@@ -18,10 +18,13 @@
 --       Bits 0 = Tx/Rx Flush
 --    0x14 = Read/Write
 --       Bits 7:0 = Sideband data to transmit
+--    0x18 = Read/Write
+--       Bits   0 = Loopback Enable
 --    0x20 = Read Only
 --       Bits 0 = TX Link Ready
 --       Bits 1 = RX Link Ready
 --       Bits 2 = Remote Link Ready
+--       Bits 3 = Receiver dropping frames
 --    0x24 = Read Only
 --       Bits 7:0 = Sideband data received
 --    0x30 = Read Only
@@ -30,6 +33,8 @@
 --       Bits 7:0 = Rx Link Down Count
 --    0x38 = Read Only
 --       Bits 7:0 = Rx Link Error Count
+--    0x3C = Read Only
+--       Bits 7:0 = Rx Drop Count
 --    0x40 = Read Only
 --       Bits 7:0 = TX Frame Count
 --    0x44 = Read Only
@@ -40,10 +45,12 @@
 --       bits 63:32 = Tx Frame Counter
 --       bits 31:00 = Rx Frame Counter
 --    Word 0:
---       Bits 63:35 = Zeros
---       Bits 34    = Tx Link ready
---       Bits 33    = Rx Link ready
---       Bits 32    = Rx Remote Link ready
+--       Bits 63:44 = Zeros
+--       Bits 43    = RX Overflow
+--       Bits 42    = Tx Link ready
+--       Bits 41    = Rx Link ready
+--       Bits 40    = Rx Remote Link ready
+--       Bits 39:32 = Rx Drop Count
 --       Bits 31:24 = Rx Link Data
 --       Bits 23:16 = Rx Link Error Count
 --       Bits 15:8  = Rx Link Down Count
@@ -94,6 +101,9 @@ entity PpiPgpCntrl is
       pgpRxIn          : out PgpRxInType;
       pgpRxOut         : in  PgpRxOutType;
       rxFrameCntEn     : in  sl;
+      rxDropCountEn    : in  sl;
+      rxOverflow       : in  sl;
+      loopBackEn       : out sl;
      
       -- Status/Axi Clock
       axiStatClk       : in  sl;
@@ -124,6 +134,7 @@ architecture structure of PpiPgpCntrl is
       rxClkRst       : sl;
       txClkRst       : sl;
       countReset     : sl;
+      loopBackEn     : sl;
       locData        : slv(7 downto 0);
       axiWriteSlave  : AxiLiteWriteSlaveType;
       axiReadSlave   : AxiLiteReadSlaveType;
@@ -135,6 +146,7 @@ architecture structure of PpiPgpCntrl is
       rxClkRst       => '1',
       txClkRst       => '1',
       countReset     => '0',
+      loopBackEn     => '0',
       locData        => (others=>'0'),
       axiWriteSlave  => AXI_WRITE_SLAVE_INIT_C,
       axiReadSlave   => AXI_READ_SLAVE_INIT_C
@@ -152,6 +164,8 @@ architecture structure of PpiPgpCntrl is
       remLinkData    : slv(7  downto 0);
       frameCount     : slv(31 downto 0);
       statusSend     : sl;
+      dropCount      : slv(7  downto 0);
+      overflow       : sl;
    end record RxStatusType;
 
    constant RX_STATUS_INIT_C : RxStatusType := (
@@ -162,7 +176,9 @@ architecture structure of PpiPgpCntrl is
       remLinkReady   => '0',
       remLinkData    => (others=>'0'),
       frameCount     => (others=>'0'),
-      statusSend     => '0'
+      statusSend     => '0',
+      dropCount      => (others=>'0'),
+      overflow       => '0'
    );
 
    signal rxstatus     : RxStatusType := RX_STATUS_INIT_C;
@@ -229,7 +245,7 @@ begin
    end process;
 
    -- Async
-   process (pgpRxClkRst, rxStatus, pgpRxOut, rxCountReset, rxFrameCntEn ) is
+   process (pgpRxClkRst, rxStatus, pgpRxOut, rxCountReset, rxFrameCntEn, rxOverflow, rxDropCountEn ) is
       variable v  : RxStatusType;
    begin
       v := rxStatus;
@@ -237,7 +253,12 @@ begin
       v.linkReady    := pgpRxOut.linkReady;
       v.remLinkReady := pgpRxOut.remLinkReady;
       v.remLinkData  := pgpRxOut.remLinkData;
+      v.overflow     := rxOverflow;
       v.statusSend   := '0';
+
+      if rxStatus.overflow /= rxOverflow then
+         v.statusSend := '1';
+      end if;
 
       if pgpRxOut.cellError = '1' and rxStatus.cellErrorCount /= x"FF" then
          v.cellErrorCount := rxStatus.cellErrorCount + 1;
@@ -252,6 +273,11 @@ begin
       if pgpRxOut.linkError = '1' and rxStatus.linkErrorCount /= x"FF" then
          v.linkErrorCount := rxStatus.linkErrorCount + 1;
          v.statusSend     := '1';
+      end if;
+
+      if rxDropCountEn = '1' and rxStatus.dropCount /= x"FF" then
+         v.dropCount  := rxStatus.dropCount + 1;
+         v.statusSend := '1';
       end if;
 
       if v.linkReady = '1' and rxStatus.linkReady = '0' then
@@ -292,7 +318,7 @@ begin
          ALTERA_SYN_G  => false,
          ALTERA_RAM_G  => "M9K",
          SYNC_STAGES_G => 3,
-         DATA_WIDTH_G  => 66,
+         DATA_WIDTH_G  => 75,
          ADDR_WIDTH_G  => 2,
          INIT_G        => "0"
       ) port map (
@@ -306,6 +332,8 @@ begin
          din(63 downto 32)  => rxStatus.frameCount,
          din(64)            => rxStatus.linkReady,
          din(65)            => rxStatus.remLinkReady,
+         din(73 downto 66)  => rxStatus.dropCount,
+         din(74)            => rxStatus.overflow,
          rd_clk             => axiStatClk,
          rd_en              => '1',
          valid              => open,
@@ -315,7 +343,9 @@ begin
          dout(31 downto 24) => rxStatusSync.remLinkData,
          dout(63 downto 32) => rxStatusSync.frameCount,
          dout(64)           => rxStatusSync.linkReady,
-         dout(65)           => rxStatusSync.remLinkReady
+         dout(65)           => rxStatusSync.remLinkReady,
+         dout(73 downto 66) => rxStatusSync.frameCount,
+         dout(74)           => rxStatusSync.overflow
       );
 
 
@@ -399,10 +429,12 @@ begin
    statusWords(0)(15 downto  8) <= rxStatusSync.linkDownCount;
    statusWords(0)(23 downto 16) <= rxStatusSync.linkErrorCount;
    statusWords(0)(31 downto 24) <= rxStatusSync.remLinkData;
-   statusWords(0)(32)           <= rxStatusSync.remLinkReady;
-   statusWords(0)(33)           <= rxStatusSync.linkReady;
-   statusWords(0)(34)           <= txStatusSync.linkReady;
-   statusWords(0)(63 downto 35) <= (others=>'0');
+   statusWords(0)(39 downto 32) <= rxStatusSync.dropCount;
+   statusWords(0)(40)           <= rxStatusSync.remLinkReady;
+   statusWords(0)(41)           <= rxStatusSync.linkReady;
+   statusWords(0)(42)           <= txStatusSync.linkReady;
+   statusWords(0)(43)           <= rxStatusSync.overflow;
+   statusWords(0)(63 downto 44) <= (others=>'0');
    statusWords(1)(31 downto  0) <= txStatusSync.frameCount;
    statusWords(1)(63 downto 32) <= txStatusSync.frameCount;
 
@@ -549,6 +581,8 @@ begin
                v.flush      := axiWriteMaster.wdata(0);
             when X"14" =>
                v.locData    := axiWriteMaster.wdata(7 downto 0);
+            when X"18" =>
+               v.loopBackEn := axiWriteMaster.wdata(0);
             when others => null;
          end case;
 
@@ -565,29 +599,34 @@ begin
             when X"04" =>
                v.axiReadSlave.rdata(0) := r.rxClkRst;
             when X"08" =>
-               v.axireadSlave.rdata(0) := r.resetRx;
+               v.axiReadSlave.rdata(0) := r.resetRx;
             when X"0C" =>
-               v.axireadSlave.rdata(0) := r.txClkRst;
+               v.axiReadSlave.rdata(0) := r.txClkRst;
             when X"10" =>
-               v.axireadSlave.rdata(0) := r.flush;
+               v.axiReadSlave.rdata(0) := r.flush;
             when X"14" =>
-               v.axireadSlave.rdata(7 downto 0) := r.locData;
+               v.axiReadSlave.rdata(7 downto 0) := r.locData;
+            when X"18" =>
+               v.axiReadSlave.rdata(0) := r.loopBackEn;
             when X"20" =>
-               v.axireadSlave.rdata(0) := txStatusSync.linkReady;
-               v.axireadSlave.rdata(1) := rxStatusSync.linkReady;
-               v.axireadSlave.rdata(2) := rxStatusSync.remLinkReady;
+               v.axiReadSlave.rdata(0) := txStatusSync.linkReady;
+               v.axiReadSlave.rdata(1) := rxStatusSync.linkReady;
+               v.axiReadSlave.rdata(2) := rxStatusSync.remLinkReady;
+               v.axiReadSlave.rdata(3) := rxStatusSync.overflow;
             when X"24" =>
-               v.axireadSlave.rdata(7 downto 0) := rxStatusSync.remLinkData;
+               v.axiReadSlave.rdata(7 downto 0) := rxStatusSync.remLinkData;
             when X"30" =>
-               v.axireadSlave.rdata(7 downto 0) := rxStatusSync.cellErrorCount;
+               v.axiReadSlave.rdata(7 downto 0) := rxStatusSync.cellErrorCount;
             when X"34" =>
-               v.axireadSlave.rdata(7 downto 0) := rxStatusSync.linkDownCount;
+               v.axiReadSlave.rdata(7 downto 0) := rxStatusSync.linkDownCount;
             when X"38" =>
-               v.axireadSlave.rdata(7 downto 0) := rxStatusSync.linkErrorCount;
+               v.axiReadSlave.rdata(7 downto 0) := rxStatusSync.linkErrorCount;
+            when X"3C" =>
+               v.axiReadSlave.rdata(7 downto 0) := rxStatusSync.dropCount;
             when X"40" =>
-               v.axireadSlave.rdata := txStatusSync.frameCount;
+               v.axiReadSlave.rdata := txStatusSync.frameCount;
             when X"44" =>
-               v.axireadSlave.rdata := rxStatusSync.frameCount;
+               v.axiReadSlave.rdata := rxStatusSync.frameCount;
             when others => null;
          end case;
 
@@ -606,6 +645,7 @@ begin
       -- Outputs
       axiReadSlave  <= r.axiReadSlave;
       axiWriteSlave <= r.axiWriteSlave;
+      loopBackEn    <= r.loopBackEn;
       
    end process;
 
