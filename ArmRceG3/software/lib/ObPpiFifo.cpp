@@ -48,7 +48,6 @@ void ObPpiFifo::pushEntry ( ObPpiDesc *ptr ) {
    addr = _dspace->getObPpiOffset(_num,0) + ptr->boffset;
 
    // Setup header
-   hdesc.mgmt  = 0;
    hdesc.htype = 0;
    hdesc.size  = (ptr->hsize/4) + 4;
    hdesc.alloc = hdesc.size;
@@ -57,12 +56,16 @@ void ObPpiFifo::pushEntry ( ObPpiDesc *ptr ) {
 
    // Copy header data
    memcpy(hdesc.data,ptr->data,hdesc.size*4);
-   if ( ptr->psize != 0 ) hdesc.data[0] = ptr->psize;
+   if ( ptr->psize != 0 ) {
+      hdesc.data[0] = ptr->psize;
+      hdesc.code = 0x3;
+   }
+   else hdesc.code = 0x1;
+
    hdesc.data[hdesc.size-4]  = _dspace->getDmaBase() + addr;
    hdesc.data[hdesc.size-3]  = ptr->psize;
-   hdesc.data[hdesc.size-2]  =  _count+_num;
+   hdesc.data[hdesc.size-2]  =  (_count+_num) & 0xFFFFFFF0;
    hdesc.data[hdesc.size-1]  = _compIdx;
-   hdesc.data[hdesc.size-1] |= 0x10; // compEn
 
    // Empty flag
    if ( ptr->psize == 0 ) hdesc.data[hdesc.size-1] |= 0x20;
@@ -86,7 +89,7 @@ void ObPpiFifo::pushEntry ( ObPpiDesc *ptr ) {
    cout << "Got outbound completion entry: 0x" 
         << hex << setw(8) << setfill('0') << cmp << endl;
 
-   if ( cmp != ( _count+_num )) {
+   if ( cmp != ( (_count+_num) & 0xFFFFFFF0 )) {
       cout << "Bad completion value." << endl;
       exit(1);
    }

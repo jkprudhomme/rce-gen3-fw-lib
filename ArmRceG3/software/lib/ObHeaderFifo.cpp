@@ -30,7 +30,6 @@ ObHeaderFifo::ObHeaderFifo (ConfigSpace *cspace, DmaSpace *dspace, uint fifoNum)
    // Put one entry on the free list
    std::cout << "Ob Header Fifo " << std::dec << _num << " Free List Entry 0x" << std::hex << value << std::endl;
 
-   value |= 0x40000000; // Bit 30 = transfer
    _cspace->postObHeaderPtr(_num,0,value);
 }
 
@@ -80,8 +79,8 @@ void ObHeaderFifo::pushEntry ( ObHeaderDesc *ptr ) {
    // Transmit
    value  = offset             & 0x0003FFFF;
    value |= (length     << 18) & 0x03FC0000;
-   value |= (ptr->htype << 26) & 0x1C000000;
-   value |= (ptr->mgmt  << 29) & 0x20000000;
+   value |= (ptr->htype << 26) & 0x3C000000;
+   value |= (ptr->code  << 30) & 0xC0000000;
 
    _cspace->postObHeaderPtr(_num,0,value);
 }

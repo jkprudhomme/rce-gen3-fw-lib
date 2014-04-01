@@ -96,11 +96,13 @@ architecture structure of ArmRceG3ObPpi is
    signal rxLast           : sl;
    signal rxFirst          : sl;
    signal rxEnable         : sl;
+   signal currError        : sl;
+   signal nextError        : sl;
    signal headerWrite      : sl;
    signal headerEOF        : sl;
    signal headerEOH        : sl;
-   signal obPpiDin         : slv(71 downto 0);
-   signal obPpiDout        : slv(71 downto 0);
+   signal obPpiDin         : slv(72 downto 0);
+   signal obPpiDout        : slv(72 downto 0);
    signal obPpi            : ObPpiType;
    signal obPpiHead        : sl;
    signal obPpiWriteEn     : sl;
@@ -173,16 +175,17 @@ begin
    end process;
 
    -- Extract Fields, assume eoh is at obHeaderRegA
-   headerDma.preEmpty <= obHeaderFromFifo.data(37) and obHeaderFromFifo.eoh;
+   headerDma.preEmpty <= '1' when obheaderReg(1).code = "01" and obHeaderFromFifo.eoh = '1' else '0';
    headerDma.compIdx  <= obHeaderReg(0).data(35 downto 32);
-   headerDma.compEn   <= obHeaderReg(0).data(36);
-   headerDma.empty    <= obHeaderReg(0).data(37);
+   headerDma.compEn   <= '1' when obHeaderReg(1).code = "11" else '0';
+   headerDma.empty    <= '1' when obheaderReg(1).code = "01" else '0';
    headerDma.preEoh   <= obHeaderFromFifo.eoh;
    headerDma.eoh      <= obHeaderReg(0).eoh;
    headerDma.compId   <= obHeaderReg(0).data(31 downto  0);
    headerDma.length   <= obHeaderReg(1).data(63 downto 32);
    headerDma.addr     <= obHeaderReg(1).data(31 downto  0);
    headerDma.valid    <= obHeaderReg(1).valid;
+
 
    -----------------------------------------
    -- Master State Machine
@@ -215,17 +218,21 @@ begin
             curState <= nxtState after TPD_G;
 
             -- Completion Data
-            currCompData.id    <= headerDma.compId  after TPD_G;
-            currCompData.index <= headerDma.compIdx after TPD_G;
-            currCompData.valid <= nxtCompWrite      after TPD_G;
+            currCompData.id(31 downto 4) <= headerDma.compId(31 downto 4) after TPD_G;
+            currCompData.id(3  downto 2) <= (others=>'0')                 after TPD_G;
+            currCompData.id(1)           <= currError                     after TPD_G;
+            currCompData.id(0)           <= '0'                           after TPD_G;
+            currCompData.index           <= headerDma.compIdx             after TPD_G;
+            currCompData.valid           <= nxtCompWrite                  after TPD_G;
+            currError                    <= nextError                     after TPD_G;
 
             -- Reset counters
             if rxEnable = '0' then
-               readAddr(31 downto 3)  <= headerDma.addr(31 downto 3) after TPD_G;
-               readAddr(2  downto 0)  <= "000"                       after TPD_G;
-               currSize               <= firstSize                   after TPD_G;
-               currLength             <= firstLength                 after TPD_G;
-               readPending            <= (others=>'0')               after TPD_G;
+               readAddr(31 downto 3) <= headerDma.addr(31 downto 3) after TPD_G;
+               readAddr(2  downto 0) <= "000"                       after TPD_G;
+               currSize              <= firstSize                   after TPD_G;
+               currLength            <= firstLength                 after TPD_G;
+               readPending           <= (others=>'0')               after TPD_G;
 
             -- Increment pending and address, 128 bytes per read
             elsif addrValid = '1' then
@@ -239,7 +246,7 @@ begin
    end process;
 
    -- ASync states
-   process ( curState, obHeaderFromFifo, rxDone, rxLast, 
+   process ( curState, obHeaderFromFifo, rxDone, rxLast, currError,
              headerDma, axiReadFromCntrl, ppiPFullReg, readPending ) begin
 
       -- Init signals
@@ -253,12 +260,20 @@ begin
       headerEOH       <= '0';
       addrValid       <= '0';
 
+      -- Detect error
+      if axiReadFromCntrl.rvalid = '1' and axiReadFromCntrl.rlast = '1' and axiReadFromCntrl.rresp /= 0 then
+         nextError <= '1';
+      else
+         nextError <= currError;
+      end if;
+
       -- State machine
       case curState is 
 
          -- IDLE
          when ST_IDLE =>
             fifoClear <= '1';
+            nextError <= '0';
 
             -- Data is at FIFO
             if obHeaderFromFifo.valid = '1' then
@@ -288,11 +303,11 @@ begin
 
          -- Pause one clock for header data to shift in pipeline
          when ST_PAUSE =>
-            nxtState <= ST_READ;
+            nxtState  <= ST_READ;
 
          -- Issue read request, wait for ready
          when ST_READ =>
-            rxEnable <= '1';
+            rxEnable  <= '1';
 
             -- Pause on flow control
             if axiReadFromCntrl.afull = '0' then
@@ -302,7 +317,7 @@ begin
             
          -- Check if we are done with read requests
          when ST_CHECK =>
-            rxEnable <= '1';
+            rxEnable  <= '1';
           
             -- Done 
             if readPending >= headerDma.length then
@@ -415,13 +430,13 @@ begin
                obPpiFirst     <= '1'                   after TPD_G;
                rxLengthRem    <= headerDma.length      after TPD_G;
 
-            -- Read data is valid and id matches
+            -- Read data is valid
             elsif axiReadFromCntrl.rvalid = '1' then
                obPpiHead  <= '0'                    after TPD_G;
                obPpi.eoh  <= '0'                    after TPD_G;
                rxLast     <= axiReadFromCntrl.rlast after TPD_G;
                obPpiFirst <= rxFirst                after TPD_G;
-               
+
                -- Output data
                obPpi.data <= axiReadFromCntrl.rdata after TPD_G;
 
@@ -646,16 +661,19 @@ begin
    -----------------------------------------
    -- Assert pfull when FIFO has less than 2
    -- bursts (16 locations per burst = 32)
-   U_PpiFifo : entity work.FifoAsyncBuiltIn 
+   U_PpiFifo : entity work.FifoAsync
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '1',
+         BRAM_EN_G      => true,
          FWFT_EN_G      => true,
          USE_DSP48_G    => "no",
-         XIL_DEVICE_G   => "7SERIES",
+         ALTERA_SYN_G   => false,
+         ALTERA_RAM_G   => "M9K",
          SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 72,
+         DATA_WIDTH_G   => 73,
          ADDR_WIDTH_G   => 9,
+         INIT_G         => "0",
          FULL_THRES_G   => (511-8),
          EMPTY_THRES_G  => 1
       ) port map (
@@ -724,8 +742,8 @@ begin
    obPpiEofRd <= ppiReadToFifo.read and obPpiDout(67);
 
    -- Input Data
-   obPpiDin(71)           <= obPpiFifo.eoh; -- Temp, Ftype bit 3 in real system
-   obPpiDin(70 downto 68) <= obPpiFifo.ftype(2 downto 0);
+   obPpiDin(72)           <= obPpiFifo.eoh;
+   obPpiDin(71 downto 68) <= obPpiFifo.ftype;
    obPpiDin(67)           <= obPpiFifo.eof;
    obPpiDin(66 downto 64) <= "111" when obPpiFifo.valid = "11111111" else
                              "110" when obPpiFifo.valid = "01111111" else
@@ -739,8 +757,8 @@ begin
 
    -- Output Data
    ppiReadFromFifo.err    <= '0';
-   ppiReadFromFifo.eoh    <= obPpiDout(71); -- Temp, Ftype bit 3 in real system
-   ppiReadFromFifo.ftype  <= "0" & obPpiDout(70 downto 68);
+   ppiReadFromFifo.eoh    <= obPpiDout(72);
+   ppiReadFromFifo.ftype  <= obPpiDout(71 downto 68);
    ppiReadFromFifo.eof    <= obPpiDout(67);
    ppiReadFromFifo.size   <= obPpiDout(66 downto  64);
    ppiReadFromFifo.data   <= obPpiDout(63 downto   0);

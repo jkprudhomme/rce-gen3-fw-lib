@@ -233,7 +233,7 @@ begin
          v.cpuBramWr   := '1';
          v.cpuBramAddr := localAxiWriteMaster.awaddr(10 downto 2);
          v.cpuBramDin  := localAxiWriteMaster.wdata;
-         axiSlaveWriteResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+         axiSlaveWriteResponse(v.localAxiWriteSlave);
       end if;
 
       -- Read
@@ -247,7 +247,7 @@ begin
          -- Send Axi Response
          if ( r.readEnDly(1) = '1' ) then
             v.localAxiReadSlave.rdata := cpuBramDout;
-            axiSlaveReadResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+            axiSlaveReadResponse(v.localAxiReadSlave);
          end if;
       end if;
 

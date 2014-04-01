@@ -14,11 +14,11 @@ class QuadWordFifo;
 
 class ObHeaderDesc {
    public:
-      uint mgmt;
       uint htype;
       uint size;
-      uint *data;
       uint alloc;
+      uint *data;
+      uint code;
 };
 
 class ObHeaderFifo {

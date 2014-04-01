@@ -172,7 +172,7 @@ begin
          end case;
 
          -- Send Axi response
-         axiSlaveWriteResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
+         axiSlaveWriteResponse(v.axiWriteSlave);
       end if;
 
       -- Read
@@ -212,7 +212,7 @@ begin
          end if;
 
          -- Send Axi Response
-         axiSlaveReadResponse(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
+         axiSlaveReadResponse(v.axiReadSlave);
       end if;
 
       -- Reset

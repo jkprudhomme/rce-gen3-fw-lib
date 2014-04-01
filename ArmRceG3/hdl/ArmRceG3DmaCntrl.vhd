@@ -251,7 +251,7 @@ begin
          end case;
 
          -- Send Axi response
-         axiSlaveWriteResponse(localAxiWriteMaster(0), localAxiReadMaster(0), v.localAxiWriteSlave, v.localAxiReadSlave);
+         axiSlaveWriteResponse(v.localAxiWriteSlave );
       end if;
 
       -- Read
@@ -310,7 +310,7 @@ begin
          end case;
 
          -- Send Axi Response
-         axiSlaveReadResponse(localAxiWriteMaster(0), localAxiReadMaster(0), v.localAxiWriteSlave, v.localAxiReadSlave);
+         axiSlaveReadResponse(v.localAxiReadSlave);
       end if;
 
       -- Reset

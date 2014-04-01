@@ -64,13 +64,15 @@ architecture structure of ArmRceG3DmaComp is
    signal compFifoDin   : slv(35 downto 0);
    signal compFifoWrEn  : slv(10 downto 0);
    signal compFifoPFull : slv(10 downto 0);
-   signal compFifoValid : slv(10 downto 0);
+   signal compFifoValid : slv(15 downto 0);
    signal compFifoRdEn  : slv(15 downto 0);
    signal axiClkRstInt  : sl := '1';
 
    type RegType is record
       compFifoRdEn       : slv(15 downto 0);
       compInt            : slv(10 downto 0);
+      freeFifoWr         : sl;
+      freeFifoDin        : slv(35 downto 0);
       localAxiReadSlave  : AxiLiteReadSlaveType;
       localAxiWriteSlave : AxiLiteWriteSlaveType;
    end record RegType;
@@ -78,6 +80,8 @@ architecture structure of ArmRceG3DmaComp is
    constant REG_INIT_C : RegType := (
       compFifoRdEn       => (others => '0'),
       compInt            => (others => '0'),
+      freeFifoWr         => '0',
+      freeFifoDin        => (others => '0'),
       localAxiReadSlave  => AXI_READ_SLAVE_INIT_C,
       localAxiWriteSlave => AXI_WRITE_SLAVE_INIT_C
    );
@@ -202,7 +206,40 @@ begin
          );
    end generate;
 
-   compFifoDout(15 downto 11) <= (others=>(others=>'0'));
+   U_FreeFifo : entity work.FifoSyncBuiltIn 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         FWFT_EN_G      => true,
+         USE_DSP48_G    => "no",
+         XIL_DEVICE_G   => "7SERIES",
+         DATA_WIDTH_G   => 36,
+         ADDR_WIDTH_G   => 9,
+         FULL_THRES_G   => 479,
+         EMPTY_THRES_G  => 1
+      ) port map (
+         rst               => axiClkRstInt,
+         clk               => axiClk,
+         wr_en             => r.freeFifoWr,
+         din               => r.freeFifoDin,
+         data_count        => open,
+         wr_ack            => open,
+         overflow          => open,
+         prog_full         => open,
+         almost_full       => open,
+         full              => open,
+         not_full          => open,
+         rd_en             => compFifoRdEn(15),
+         dout              => compFifoDout(15),
+         valid             => compFifoValid(15),
+         underflow         => open,
+         prog_empty        => open,
+         almost_empty      => open,
+         empty             => open
+      );
+
+   compFifoDout(14 downto 11)  <= (others=>(others=>'0'));
+   compFifoValid(14 downto 11) <= (others=>'0');
 
 
    -----------------------------------------
@@ -225,25 +262,34 @@ begin
    begin
       v := r;
 
-      v.compFifoRdEn := (others=>'0');
-      v.compInt      := compFifoValid;
+      v.compFifoRdEn             := (others=>'0');
+      v.compInt                  := compFifoValid(10 downto 0);
+      v.freeFifoWr               := '0';
+      v.freeFifoDin(31 downto 0) := localAxiWriteMaster.wdata;
 
       axiSlaveWaitTxn(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave, axiStatus);
 
       -- Write
       if (axiStatus.writeEnable = '1') then
-         axiSlaveWriteResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+
+         if localAxiWriteMaster.awaddr(5 downto 2) = 15 then
+            v.freeFifoWr := '1';
+         end if;
+
+         axiSlaveWriteResponse(v.localAxiWriteSlave);
       end if;
 
       -- Read
       if (axiStatus.readEnable = '1') then
 
-         v.localAxiReadSlave.rdata := compFifoDout(conv_integer(localAxiReadMaster.araddr(5 downto 2)))(31 downto 0);
+         v.localAxiReadSlave.rdata := 
+            compFifoDout(conv_integer(localAxiReadMaster.araddr(5 downto 2)))(31 downto 1) &
+            (not compFifoValid(conv_integer(localAxiReadMaster.araddr(5 downto 2)))); -- Not valid is LSB
 
          v.compFifoRdEn(conv_integer(localAxiReadMaster.araddr(5 downto 2))) := '1';
 
          -- Send Axi Response
-         axiSlaveReadResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+         axiSlaveReadResponse(v.localAxiReadSlave);
       end if;
 
       -- Reset

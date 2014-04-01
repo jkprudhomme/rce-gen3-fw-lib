@@ -66,7 +66,7 @@ architecture structure of ArmRceG3IbPpi is
    type IbDescType is record
       addr      : slv(31 downto 0);
       drop      : sl;
-      maxLength : slv(31 downto 0);
+      length    : slv(31 downto 0);
       compId    : slv(31 downto 0);
       compEn    : sl;
       compIdx   : slv(3  downto 0);
@@ -78,6 +78,7 @@ architecture structure of ArmRceG3IbPpi is
    type IbPpiType is record
       data   : slv(63 downto 0);
       eof    : sl;
+      err    : sl;
       ftype  : slv(3 downto 0);
       valid  : slv(7 downto 0);
    end record;
@@ -101,8 +102,8 @@ architecture structure of ArmRceG3IbPpi is
    signal ibPpiShift        : sl;
    signal ibPpiShiftEn      : sl;
    signal ibPpiWrite        : sl;
-   signal ibPpiDout         : slv(71 downto 0);
-   signal ibPpiDin          : slv(71 downto 0);
+   signal ibPpiDout         : slv(72 downto 0);
+   signal ibPpiDin          : slv(72 downto 0);
    signal ibPpiProgFull     : sl;
    signal ibPpiFull         : sl;
    signal addrValid         : sl;
@@ -115,6 +116,7 @@ architecture structure of ArmRceG3IbPpi is
    signal burstCount        : slv(31 downto 0);
    signal wordCount         : slv(3  downto 0);
    signal frameLength       : slv(31 downto 0);
+   signal nextLength        : slv(31 downto 0);
    signal compFifoDin       : slv(35 downto 0);
    signal compFifoDout      : slv(35 downto 0);
    signal payloadEn         : sl;
@@ -135,8 +137,9 @@ architecture structure of ArmRceG3IbPpi is
    signal dbgState          : slv(2 downto 0);
    signal ppiClkRst         : sl;
    signal axiClkRstInt      : sl := '1';
-   signal duplicate         : sl;
-   signal lastData          : slv(63 downto 0);
+   signal nextError         : slv(3 downto 1);
+   signal currError         : slv(3 downto 1);
+   signal incrSize          : slv(3 downto 0);
 
    attribute INIT : string;
    attribute INIT of axiClkRstInt : signal is "1";
@@ -147,8 +150,6 @@ architecture structure of ArmRceG3IbPpi is
    attribute mark_debug of axiWriteToCntrl  : signal is "true";
    attribute mark_debug of ibPpiFifo        : signal is "true";
    attribute mark_debug of ibPpiFifoRead    : signal is "true";
-   attribute mark_debug of duplicate        : signal is "true";
-   attribute mark_debug of lastData         : signal is "true";
 
 begin
 
@@ -165,13 +166,13 @@ begin
    -----------------------------------------
    -- Receive Control FIFO
    -----------------------------------------
-   U_PtrFifo : entity work.FifoSyncBuiltIn 
+   U_PtrFifo : entity work.FifoSyncBuiltin
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '1',
          FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
          XIL_DEVICE_G   => "7SERIES",
+         USE_DSP48_G    => "no",
          DATA_WIDTH_G   => 36,
          ADDR_WIDTH_G   => 9,
          FULL_THRES_G   => 1,
@@ -206,7 +207,7 @@ begin
          if axiClkRstInt = '1' or ibDescClear = '1' then
             ibDesc.addr      <= (others=>'0') after TPD_G;
             ibDesc.drop      <= '0'           after TPD_G;
-            ibDesc.maxLength <= (others=>'0') after TPD_G;
+            ibDesc.length    <= (others=>'0') after TPD_G;
             ibDesc.compId    <= (others=>'0') after TPD_G;
             ibDesc.compEn    <= '0'           after TPD_G;
             ibDesc.compIdx   <= (others=>'0') after TPD_G;
@@ -226,10 +227,10 @@ begin
                   ibDesc.drop <= ppiPtrDout(32)          after TPD_G;
                   ibDesc.addr <= ppiPtrDout(31 downto 0) after TPD_G;
 
-               -- Word 1, Max Length
+               -- Word 1, Length
                when "01" => 
                   ibDesc.compEn    <= ppiPtrDout(32)          after TPD_G;
-                  ibDesc.maxLength <= ppiPtrDout(31 downto 0) after TPD_G;
+                  ibDesc.length    <= ppiPtrDout(31 downto 0) after TPD_G;
                   ibDesc.ready     <= '1'                     after TPD_G;
 
                -- Word 2, comp id and enable
@@ -249,16 +250,19 @@ begin
    -- Input FIFO
    -----------------------------------------
    -- Assert programmable full when FIFO is half full
-   U_PpiFifo : entity work.FifoAsyncBuiltIn 
+   U_PpiFifo : entity work.FifoAsync
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '1',
+         BRAM_EN_G      => true,
          FWFT_EN_G      => true,
          USE_DSP48_G    => "no",
-         XIL_DEVICE_G   => "7SERIES",
+         ALTERA_SYN_G   => false,
+         ALTERA_RAM_G   => "M9K",
          SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 72,
+         DATA_WIDTH_G   => 73,
          ADDR_WIDTH_G   => 9,
+         INIT_G         => "0",
          FULL_THRES_G   => 255,
          EMPTY_THRES_G  => 1
       ) port map (
@@ -331,14 +335,16 @@ begin
    ppiWriteFromFifo.pause <= ibPpiProgFull or ibHeaderFromFifo.progFull;
 
    -- Input Data
-   ibPpiDin(71 downto 68) <= ppiWriteToFifo.ftype;
-   ibPpiDin(67)           <= ppiWriteToFifo.eof;
+   ibPpiDin(72)           <= ppiWriteToFifo.err;
+   ibPpiDin(71)           <= ppiWriteToFifo.eof;
+   ibPpiDin(70 downto 67) <= ppiWriteToFifo.ftype;
    ibPpiDin(66 downto 64) <= ppiWriteToFifo.size;
    ibPpiDin(63 downto  0) <= ppiWriteToFifo.data;
 
    -- Output Data
-   ibPpiFifo.ftype <= ibPpiDout(71 downto 68);
-   ibPpiFifo.eof   <= ibPpiDout(67);
+   ibPpiFifo.err   <= ibPpiDout(72);
+   ibPpiFifo.eof   <= ibPpiDout(71);
+   ibPpiFifo.ftype <= ibPpiDout(70 downto 67);
    ibPpiFifo.valid <= "11111111" when ibPpiDout(66 downto 64) = "111" and ibPpiValid = '1' else 
                       "01111111" when ibPpiDout(66 downto 64) = "110" and ibPpiValid = '1' else 
                       "00111111" when ibPpiDout(66 downto 64) = "101" and ibPpiValid = '1' else 
@@ -366,6 +372,7 @@ begin
             ibPpiHold.valid <= (others=>'0') after TPD_G;
             ibPpi.data      <= (others=>'0') after TPD_G;
             ibPpi.eof       <= '0'           after TPD_G;
+            ibPpi.err       <= '0'           after TPD_G;
             ibPpi.ftype     <= (others=>'0') after TPD_G;
             ibPpi.valid     <= (others=>'0') after TPD_G;
          else
@@ -418,7 +425,7 @@ begin
                         -- EOF
                         if ibPpiFifo.eof = '1' then
                            if ibPpiFifo.valid(7) /= '0' then
-                              ibPpiHold.eof <= '1';
+                              ibPpiHold.eof  <= '1';
                            else
                               ibPpi.eof <= '1';
                            end if;
@@ -568,6 +575,25 @@ begin
       end if;
    end process;
 
+   -- Determine increment size
+   process ( ibPpi ) 
+      variable v : integer;
+   begin
+      v := 0;
+
+      for i in 0 to 7 loop
+         if ibPpi.valid(i) = '1' then
+            v := v + 1;
+         end if;
+      end loop;
+
+      incrSize <= conv_std_logic_vector(v,4);
+   end process;
+
+
+   -- Determine next length value
+   nextLength <= frameLength + incrSize;
+
    -- Control pipeline shift
    ibPpiShift <= '1' when ibPpiRead = '1' or 
                           ( ibPpiShiftEn = '1' and ibPpiValid = '1' and ibPpi.valid = 0 ) else '0';
@@ -596,38 +622,12 @@ begin
    axiWriteToCntrl.req       <= '1';
    axiWriteToCntrl.address   <= writeAddr(31 downto 3);
    axiWriteToCntrl.avalid    <= addrValid;
-   --axiWriteToCntrl.id        <= burstCount(2 downto 0);
    axiWriteToCntrl.id        <= "000";
    axiWriteToCntrl.length    <= currLength;
    axiWriteToCntrl.data      <= ibPpi.data;
    axiWriteToCntrl.dvalid    <= dataValid;
-   axiWriteToCntrl.dstrobe   <= ibPpi.valid when currDone = '0' else (others=>'0');
+   axiWriteToCntrl.dstrobe   <= ibPpi.valid when currDone = '0' and nextLength <= ibDesc.length else (others=>'0');
    axiWriteToCntrl.last      <= dataLast;
-
-
-   process ( axiClk ) begin
-      if rising_edge(axiClk) then
-         if axiClkRstInt = '1' then
-            duplicate <= '0'           after TPD_G;
-            lastData  <= (others=>'0') after TPD_G;
-         else
-
-            if axiWriteToCntrl.avalid = '1' then
-               lastData <= (others=>'0') after TPD_G;
-            elsif axiWriteToCntrl.dvalid = '1' then
-               lastData <= axiWriteToCntrl.data after TPD_G;
-
-               if lastData = axiWriteToCntrl.data and ibPpiFifo.eof = '0' then
-                  duplicate <= '1' after TPD_G;
-               else 
-                  duplicate <= '0' after TPD_G;
-               end if;
-
-            end if;
-
-         end if;
-      end if;
-   end process;
 
 
    -----------------------------------------
@@ -656,9 +656,11 @@ begin
             currCompData.id        <= (others=>'0') after TPD_G;
             currSize               <= (others=>'0') after TPD_G;
             currLength             <= (others=>'0') after TPD_G;
+            currError              <= (others=>'0') after TPD_G;
          else
             currState  <= nextState     after TPD_G;
             currDone   <= nextDone      after TPD_G;
+            currError  <= nextError     after TPD_G;
 
             -- Write address tracking
             if countReset = '1' then
@@ -667,8 +669,8 @@ begin
                currSize                <= firstSize                after TPD_G;
                currLength              <= firstLength              after TPD_G;
 
-            -- Stop incrementing address after hitting max length
-            elsif burstCountEn = '1' and frameLength /= ibDesc.maxLength then
+            -- Increment address, adjust next size
+            elsif burstCountEn = '1' then
                writeAddr  <= writeAddr + currSize after TPD_G;
                currSize   <= x"80"                after TPD_G; -- 128
                currLength <= x"F"                 after TPD_G; -- 15
@@ -696,27 +698,25 @@ begin
             end if;
 
             -- Frame length tracking
-            if countReset = '0' then
+            if countReset = '1' then
                frameLength <= (others=>'0') after TPD_G;
             elsif ibPpiRead = '1' then
-
-               -- Stop counting if exceeding max length
-               if frameLength /= ibDesc.maxLength then
-                  frameLength <= frameLength + 1 after TPD_G;
-               end if;
+               frameLength <= nextLength after TPD_G;
             end if;
 
             -- Completion 
-            currCompData.id    <= ibDesc.compId  after TPD_G;
-            currCompData.index <= ibDesc.compIdx after TPD_G;
-            currCompData.valid <= nextCompWrite  after TPD_G;
+            currCompData.id(31 downto 4) <= ibDesc.compId(31 downto 4) after TPD_G;
+            currCompData.id(3  downto 1) <= currError                  after TPD_G;
+            currCompData.id(1)           <= '0'                        after TPD_G;
+            currCompData.index           <= ibDesc.compIdx             after TPD_G;
+            currCompData.valid           <= nextCompWrite              after TPD_G;
 
          end if;
       end if;
    end process;
 
    -- ASync states
-   process ( currState, ibDesc, currDone, burstCount, ackCount, 
+   process ( currState, ibDesc, currDone, burstCount, ackCount, currError, frameLength,
              ibPpi, wordCount, axiWriteFromCntrl, currLength ) begin
 
       -- Init signals
@@ -733,12 +733,20 @@ begin
       nextCompWrite <= '0';
       addrValid     <= '0';
 
+      -- Detect error
+      if axiWriteFromCntrl.bvalid = '1' and axiWriteFromCntrl.bresp /= 0 then
+         nextError(1) <= '1'; -- Write error
+      else
+         nextError <= currError;
+      end if;
+
       -- State machine
       case currState is 
 
          -- Idle
          when ST_IDLE =>
             countReset <= '1';
+            nextError  <= (others=>'0');
 
             -- Wait for ib desc to be valid
             if ibDesc.ready = '1' then
@@ -776,7 +784,8 @@ begin
                
                -- EOF is set
                if ibPpi.eof = '1' then
-                  nextDone <= '1';
+                  nextDone     <= '1';
+                  nextError(3) <= ibPpi.err;
                end if;
 
                -- Last word
@@ -793,6 +802,11 @@ begin
 
             -- Transfer is done
             if currDone = '1' then
+
+               if frameLength /= ibDesc.length then
+                  nextError(2) <= '1'; -- Length error
+               end if;
+
                nextState <= ST_WAIT;
             else
                nextState <= ST_ADDR;
@@ -815,7 +829,8 @@ begin
 
             -- EOF
             if ibPpi.eof = '1' then
-               nextState   <= ST_CLEAR;
+               nextState    <= ST_CLEAR;
+               nextError(3) <= ibPpi.err;
             end if;
 
          -- Clear Descriptor

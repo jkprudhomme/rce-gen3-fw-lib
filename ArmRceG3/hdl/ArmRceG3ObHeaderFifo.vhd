@@ -65,9 +65,9 @@ architecture structure of ArmRceG3ObHeaderFifo is
    -- Outbound descriptor
    type ObDescType is record
       offset   : slv(17 downto 0);
-      transfer : sl;
       length   : slv(7 downto 0);
       htype    : slv(3 downto 0);
+      code     : slv(1 downto 0);
       valid    : sl;
    end record;
 
@@ -151,7 +151,7 @@ begin
       );
 
    -- Connect output
-   obDesc.transfer <= headerPtrDout(30);
+   obDesc.code     <= headerPtrDout(31 downto 30);
    obDesc.htype    <= headerPtrDout(29 downto 26);
    obDesc.length   <= headerPtrDout(25 downto 18);
    obDesc.offset   <= headerPtrDout(17 downto  0);
@@ -224,7 +224,7 @@ begin
             if obDesc.valid = '1' and fifoEnable = '1' then
 
                -- Entry is transfer type, put back into free list
-               if obDesc.transfer = '1' then
+               if obDesc.code = "00" then
                   nxtState <= ST_FREE;
 
                -- Wait until FIFO has enough room for max header size (256 bytes) 
@@ -301,6 +301,7 @@ begin
             rxLast <= axiReadFromCntrl.rlast after TPD_G;
             
             -- Output data
+            header.code  <= obDesc.code            after TPD_G;
             header.htype <= obDesc.htype           after TPD_G;
             header.data  <= axiReadFromCntrl.rdata after TPD_G;
 
@@ -362,12 +363,14 @@ begin
       );
 
    -- Connect Inputs
-   headerDin(71 downto 69) <= "000";
+   headerDin(71)           <= '0';
+   headerDin(70 downto 69) <= header.code;
    headerDin(68)           <= header.eoh;
    headerDin(67 downto 64) <= header.htype;
    headerDin(63 downto  0) <= header.data;
 
    -- Connect Outputs
+   obHeaderFromFifo.code  <= headerDout(70 downto 69);
    obHeaderFromFifo.eoh   <= headerDout(68);
    obHeaderFromFifo.htype <= headerDout(67 downto 64);
    obHeaderFromFifo.data  <= headerDout(63 downto  0);

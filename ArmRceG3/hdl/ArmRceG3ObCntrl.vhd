@@ -211,7 +211,7 @@ begin
 
       -- Write
       if (axiStatus.writeEnable = '1') then
-         axiSlaveWriteResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+         axiSlaveWriteResponse(v.localAxiWriteSlave);
       end if;
 
       -- Read
@@ -224,7 +224,7 @@ begin
          v.freePtrRead(conv_integer(localAxiReadMaster.araddr(3 downto 2))) := '1';
 
          -- Send Axi Response
-         axiSlaveReadResponse(localAxiWriteMaster, localAxiReadMaster, v.localAxiWriteSlave, v.localAxiReadSlave);
+         axiSlaveReadResponse(v.localAxiReadSlave);
       end if;
 
       -- Reset

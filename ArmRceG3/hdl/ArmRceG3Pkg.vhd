@@ -457,6 +457,7 @@ package ArmRceG3Pkg is
       data  : slv(63 downto 0); -- Header data
       eoh   : sl;               -- End of header indication
       htype : slv(3 downto 0);  -- Header type
+      code  : slv(1 downto 0);  -- Header code
       valid : sl;               -- Header data is valid
    end record;
 
@@ -465,6 +466,7 @@ package ArmRceG3Pkg is
       data  => x"0000000000000000",
       eoh   => '0',
       htype => "0000",
+      code  => "00",
       valid => '0'
    );
 

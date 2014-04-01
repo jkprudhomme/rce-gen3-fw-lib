@@ -58,8 +58,8 @@ uint IbPpiFifo::popEntry ( IbPpiDesc *ptr ) {
 
    // Copy data to header
    ptr->hsize = hdesc.size * 4;
-   //ptr->psize = hdesc.data[0];
-   ptr->psize = 0;
+   ptr->psize = hdesc.data[0];
+   //ptr->psize = 0;
    memcpy(ptr->data,hdesc.data,hdesc.size*4);
 
    // No payload
@@ -77,8 +77,8 @@ uint IbPpiFifo::popEntry ( IbPpiDesc *ptr ) {
 
    // Write to inbound desc fifo
    _cspace->postIbPpiDesc(_num, 0, _dspace->getDmaBase() + addr); // Drop flag
-   _cspace->postIbPpiDesc(_num, 1, ptr->alloc*4); // flags = compEn
-   _cspace->postIbPpiDesc(_num, _compIdx, _count + _num + 100);
+   _cspace->postIbPpiDesc(_num, 1, ptr->psize); // flags = compEn
+   _cspace->postIbPpiDesc(_num, _compIdx, (_count + _num + 100) & 0xFFFFFFF0);
 
    // Wait for completion
    if ( ! _cspace->getDirty(5 + _compIdx) ) {
@@ -94,7 +94,7 @@ uint IbPpiFifo::popEntry ( IbPpiDesc *ptr ) {
    // Copy data to buffer
    _dspace->ibCopy8((uchar *)(&(ptr->data[ptr->hsize])),addr,ptr->psize);
 
-   if ( cmp != (_count + _num + 100)) {
+   if ( cmp != ((_count + _num + 100) & 0xFFFFFFF0) ) {
       cout << "Bad completion value." << endl;
       exit(1);
    }
