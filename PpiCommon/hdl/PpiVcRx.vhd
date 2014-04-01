@@ -198,7 +198,7 @@ begin
    ------------------------------------
 
    -- Flow Control
-   locBuffFull  <= headerBuffFull  or dataBuffAFull;
+   locBuffFull  <= headerBuffFull  or dataBuffFull;
    locBuffAFull <= headerBuffAFull or dataBuffAFull;
 
    U_FcGen : for i in 0 to 3 generate
