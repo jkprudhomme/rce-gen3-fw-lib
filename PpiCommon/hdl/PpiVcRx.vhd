@@ -106,6 +106,7 @@ architecture structure of PpiVcRx is
       data  : slv(63 downto 0);
       size  : slv(2  downto 0);
       eof   : sl;
+      eofe  : sl;
       valid : sl;
    end record DataFifoType;
 
@@ -113,6 +114,7 @@ architecture structure of PpiVcRx is
       data  => (others=>'0'),
       size  => (others=>'0'),
       eof   => '0',
+      eofe  => '0',
       valid => '0'
    );
 
@@ -144,12 +146,11 @@ architecture structure of PpiVcRx is
       vc             : slv(1 downto 0);
       headerPend     : sl;
       drop           : sl;
+      dropVc         : slv(3 downto 0);
       dataIn         : DataFifoType;
       headerIn       : slv(63 downto 0);
       headerWrite    : sl;
       count          : slv(31 downto 0);
-      regRxCommonOut : VcRxCommonOutType;
-      regRxQuadOut   : VcRxQuadOutType;
       frameCountEn   : sl;
    end record RegType;
 
@@ -160,12 +161,11 @@ architecture structure of PpiVcRx is
       vc             => (others=>'0'),
       headerPend     => '0',
       drop           => '0',
+      dropVc         => (others=>'0'),
       dataIn         => DATA_FIFO_INIT_C,
       headerIn       => (others=>'0'),
       headerWrite    => '0', 
       count          => (others=>'0'),
-      regRxCommonOut => VC_RX_COMMON_OUT_INIT_C,
-      regRxQuadOut   => VC_RX_QUAD_OUT_INIT_C,
       frameCountEn   => '0'
    );
 
@@ -273,6 +273,7 @@ begin
          v.ppiWriteToFifo.data  := dataOut.data;
          v.ppiWriteToFifo.size  := dataOut.size;
          v.ppiWriteToFifo.eof   := dataOut.eof;
+         v.ppiWriteToFifo.eofe  := dataOut.eofe;
          v.ppiWriteToFifo.eoh   := '0';
          v.ppiWriteToFifo.valid := '1';
          v.dataRead             := '1';
@@ -349,7 +350,7 @@ begin
          USE_DSP48_G    => "no",
          ALTERA_SYN_G   => false,
          ALTERA_RAM_G   => "M9K",
-         DATA_WIDTH_G   => 68,
+         DATA_WIDTH_G   => 69,
          ADDR_WIDTH_G   => DATA_ADDR_WIDTH_G,
          INIT_G         => "0",
          FULL_THRES_G   => 1,
@@ -362,9 +363,11 @@ begin
          din(63 downto  0)  => dataIn.data,
          din(66 downto 64)  => dataIn.size,
          din(67)            => dataIn.eof,
+         din(68)            => dataIn.eofe,
          dout(63 downto  0) => dataOut.data,
          dout(66 downto 64) => dataOut.size,
          dout(67)           => dataOut.eof,
+         dout(68)           => dataOut.eofe,
          data_count         => dataCount,
          wr_ack             => open,
          valid              => dataOut.valid,
@@ -455,14 +458,17 @@ begin
       v := r;
 
       -- Init
-      v.frameCountEn   := '0';
-      v.headerWrite    := '0';
-      v.headerPend     := '0';
-      v.dataIn.valid   := '0';
+      v.frameCountEn := '0';
+      v.headerWrite  := '0';
+      v.headerPend   := '0';
+      v.dataIn.valid := '0';
 
-      -- Register incoming data
-      v.regRxCommonOut := vcRxCommonOut;
-      v.regRxQuadOut   := vcRxQuadOut;
+      -- Overflow potential, mark drop flags
+      if dataOverflow = '1' or headerOverflow = '1' then
+         v.drop := '1';
+      elsif dataOverflow = '0' and headerOverflow = '0' then
+         v.drop := '0';
+      end if;
 
       -- Determine data destination, size and write
       case VC_WIDTH_G is
@@ -470,19 +476,19 @@ begin
             nextInc := 2;
             case r.count(1 downto 0) is
                when "00" =>
-                  v.dataIn.data(15 downto 0) := r.regRxCommonOut.data(0);
+                  v.dataIn.data(15 downto 0) := r.vcRxCommonOut.data(0);
                   nextSize  := "001";
                   nextWrite := '0';
                when "01" =>
-                  v.dataIn.data(31 downto 16) := r.regRxCommonOut.data(0);
+                  v.dataIn.data(31 downto 16) := r.vcRxCommonOut.data(0);
                   nextSize  := "011";
                   nextWrite := '0';
                when "10" =>
-                  v.dataIn.data(47 downto 32) := r.regRxCommonOut.data(0);
+                  v.dataIn.data(47 downto 32) := r.vcRxCommonOut.data(0);
                   nextSize  := "101";
                   nextWrite := '0';
                when "11" =>
-                  v.dataIn.data(63 downto 48) := r.regRxCommonOut.data(0);
+                  v.dataIn.data(63 downto 48) := r.vcRxCommonOut.data(0);
                   nextSize  := "111";
                   nextWrite := '1';
                when others =>
@@ -492,22 +498,22 @@ begin
          when 2 =>
             nextInc := 4;
             if r.count(0) = '0' then
-               v.dataIn.data(31 downto 16) := r.regRxCommonOut.data(1);
-               v.dataIn.data(15 downto  0) := r.regRxCommonOut.data(0);
+               v.dataIn.data(31 downto 16) := r.vcRxCommonOut.data(1);
+               v.dataIn.data(15 downto  0) := r.vcRxCommonOut.data(0);
                nextSize  := "011";
                nextWrite := '0';
             else
-               v.dataIn.data(63 downto 48) := r.regRxCommonOut.data(1);
-               v.dataIn.data(47 downto 32) := r.regRxCommonOut.data(0);
+               v.dataIn.data(63 downto 48) := r.vcRxCommonOut.data(1);
+               v.dataIn.data(47 downto 32) := r.vcRxCommonOut.data(0);
                nextSize  := "111";
                nextWrite := '1';
             end if;
          when 4 =>
             nextInc := 8;
-            v.dataIn.data(63 downto 48) := r.regRxCommonOut.data(3);
-            v.dataIn.data(47 downto 32) := r.regRxCommonOut.data(2);
-            v.dataIn.data(31 downto 16) := r.regRxCommonOut.data(1);
-            v.dataIn.data(15 downto  0) := r.regRxCommonOut.data(0);
+            v.dataIn.data(63 downto 48) := r.vcRxCommonOut.data(3);
+            v.dataIn.data(47 downto 32) := r.vcRxCommonOut.data(2);
+            v.dataIn.data(31 downto 16) := r.vcRxCommonOut.data(1);
+            v.dataIn.data(15 downto  0) := r.vcRxCommonOut.data(0);
             nextSize  := "111";
             nextWrite := '1';
          when others => 
@@ -517,16 +523,16 @@ begin
       end case;
 
       -- VC is valid
-      if r.regRxQuadOut(0).valid = '1' then
+      if r.vcRxQuadOut(0).valid = '1' then
          v.vc   := "00";
          nextRx := '1';
-      elsif r.regRxQuadOut(1).valid = '1' then
+      elsif r.vcRxQuadOut(1).valid = '1' then
          v.vc   := "01";
          nextRx := '1';
-      elsif r.regRxQuadOut(2).valid = '1' then
+      elsif r.vcRxQuadOut(2).valid = '1' then
          v.vc   := "10";
          nextRx := '1';
-      elsif r.regRxQuadOut(3).valid = '1' then
+      elsif r.vcRxQuadOut(3).valid = '1' then
          v.vc   := "11";
          nextRx := '1';
       else
@@ -560,6 +566,7 @@ begin
          -- Force write of last value, look ahead one clock
          if vcRxQuadOut(conv_integer(v.vc)).valid = '0' then
             v.dataIn.eof   := '1';
+            v.dataIn.eofe  := v.eofe;
             v.dataIn.valid := '1';
          end if;
 
@@ -568,6 +575,7 @@ begin
             v.eof          := '1';
             v.eofe         := '1';
             v.dataIn.eof   := '1';
+            v.dataIn.eofe  := '1';
             v.dataIn.valid := '1';
             v.drop         := '1';
          end if;
@@ -601,10 +609,10 @@ begin
       rin <= v;
 
       -- Outputs
-      dataIn         <= r.dataIn;
-      headerIn       <= r.headerIn;
-      headerWrite    <= r.headerWrite;
-      rxFrameCntEn   <= r.frameCountEn;
+      dataIn       <= r.dataIn;
+      headerIn     <= r.headerIn;
+      headerWrite  <= r.headerWrite;
+      rxFrameCntEn <= r.frameCountEn;
 
    end process;
 
