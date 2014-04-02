@@ -67,7 +67,7 @@ entity PpiVcTx is
    );
 
 begin
-   assert (VC_WIDTH_G = 3) report "VC_WIDTH_G must not be = 3" severity failure;
+   assert (VC_WIDTH_G /= 3) report "VC_WIDTH_G must not be = 3" severity failure;
 end PpiVcTx;
 
 architecture structure of PpiVcTx is
@@ -236,7 +236,7 @@ begin
       v.txFrameCntEn       := '0';
 
       -- Init valid signals and flow control
-      for i in 0 to 4 loop
+      for i in 0 to 3 loop
          v.vcTxQuadIn(i).valid        := '0';
          v.vcTxQuadIn(i).locBuffAFull := ilocBuffAFull;
          v.vcTxQuadIn(i).locBuffFull  := ilocBuffFull;

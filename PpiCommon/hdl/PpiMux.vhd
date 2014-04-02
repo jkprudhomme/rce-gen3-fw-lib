@@ -121,6 +121,7 @@ begin
          when S_MOVE =>
             v.ppiWriteToFifo.valid                        := ppiReadFromFifo(conv_integer(r.ackNum)).valid;
             v.ppiReadToFifo(conv_integer(r.ackNum)).read  := ppiReadFromFifo(conv_integer(r.ackNum)).valid;
+            v.valid := '0';
             
             if v.ppiWriteToFifo.eof = '1' and v.ppiWriteToFifo.valid = '1' then
                v.state := S_IDLE;

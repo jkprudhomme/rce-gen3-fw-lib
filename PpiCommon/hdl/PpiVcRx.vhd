@@ -40,7 +40,7 @@ entity PpiVcRx is
       PPI_ADDR_WIDTH_G     : integer range 2 to 48      := 9;
       PPI_PAUSE_THOLD_G    : integer range 2 to (2**24) := 255;
       PPI_READY_THOLD_G    : integer range 0 to 511     := 0;
-      PPI_MAX_FRAME_G      : integer range 1 to (2**12) := 256*8; -- In bytes
+      PPI_MAX_FRAME_G      : integer range 1 to (2**12) := 511; -- In bytes
       HEADER_ADDR_WIDTH_G  : integer range 2 to 48      := 8;
       HEADER_AFULL_THOLD_G : integer range 1 to (2**24) := 100;
       HEADER_FULL_THOLD_G  : integer range 1 to (2**24) := 150;
@@ -75,7 +75,7 @@ entity PpiVcRx is
       rxOverflow      : out sl
    );
 begin
-   assert (VC_WIDTH_G = 3) report "VC_WIDTH_G must not be = 3" severity failure;
+   assert (VC_WIDTH_G /= 3) report "VC_WIDTH_G must not be = 3" severity failure;
 end PpiVcRx;
 
 architecture structure of PpiVcRx is
@@ -684,7 +684,7 @@ begin
          v.headerIn.valid    := r.dirty and (not r.dropVc(conv_integer(r.vc)));
 
          -- Mark VC as in overflow
-         if r.dirty = '1' then
+         if r.dirty = '1' and r.overflow = '1' then
             v.dropVc(conv_integer(r.vc)) := '1';
          end if;
       end if;
@@ -722,7 +722,7 @@ begin
 
       -- Byte counter
       if newFrame = true then
-         v.byteCnt := conv_std_logic_vector(BYTE_COUNT_INCR_C,32);
+         v.byteCnt := conv_std_logic_vector(BYTE_COUNT_INCR_C,12);
       elsif v.dataIn.valid = '1' then
          v.byteCnt := r.byteCnt + BYTE_COUNT_INCR_C;
       end if;
