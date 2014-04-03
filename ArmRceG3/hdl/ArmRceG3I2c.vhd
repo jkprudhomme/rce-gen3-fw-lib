@@ -79,8 +79,8 @@ architecture IMP of ArmRceG3I2c is
       cpuBramAddr        => (others=>'0'),
       cpuBramDin         => (others=>'0'),
       readEnDly          => (others=>'0'),
-      localAxiReadSlave  => AXI_READ_SLAVE_INIT_C,
-      localAxiWriteSlave => AXI_WRITE_SLAVE_INIT_C
+      localAxiReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
+      localAxiWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -182,7 +182,7 @@ begin
    process ( axiClk ) begin
       if rising_edge(axiClk) then
          if axiClkRstInt = '1' then
-            bsiToFifo <= QWordToFifoInit after TPD_G;
+            bsiToFifo <= QWORD_TO_FIFO_INIT_C after TPD_G;
          elsif i2cBramWr = '1' then
             if i2cBramAddr(1 downto 0) = 0 then
                bsiToFifo.data(7  downto  0) <= i2cBramDin after TPD_G;

@@ -95,7 +95,7 @@ begin
          ppiWriteToFifo      => ppiWriteToFifo,
          ppiWriteFromFifo    => ppiWriteFromFifo,
          ethFromArm          => open,
-         ethToArm            => (others=>EthToArmInit),
+         ethToArm            => (others=>ETH_TO_ARM_INIT_C),
          clkSelA             => open,
          clkSelB             => open
       );

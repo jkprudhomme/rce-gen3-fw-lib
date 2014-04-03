@@ -73,7 +73,7 @@ architecture structure of PpiStatus is
    constant REG_INIT_C : RegType := (
       count          => (others => '0'),
       state          => S_IDLE,
-      ppiWriteToFifo => PpiWriteToFifoInit
+      ppiWriteToFifo => PPI_WRITE_TO_FIFO_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -174,7 +174,7 @@ begin
       v := r;
 
       -- Init
-      v.ppiWriteToFifo      := PpiWriteToFifoInit;
+      v.ppiWriteToFifo      := PPI_WRITE_TO_FIFO_INIT_C;
       v.ppiWriteToFifo.size := "111";
 
       -- State Machine
@@ -182,7 +182,7 @@ begin
 
          -- Idle
          when S_IDLE =>
-            v.ppiWriteToFifo := PpiWriteToFifoInit;
+            v.ppiWriteToFifo := PPI_WRITE_TO_FIFO_INIT_C;
             v.count          := (others=>'0');
 
             -- When to send a message, transition to online, sw request or firmware request

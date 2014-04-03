@@ -82,7 +82,7 @@ architecture structure of ArmRceG3IbHeaderFifo is
    end record;
 
    -- Inbound FIFO Init
-   constant IbFifoInit : IbFifoType := ( 
+   constant IB_FIFO_INIT_C : IbFifoType := ( 
       data   => x"0000000000000000",
       err    => '0',
       eoh    => '0',
@@ -246,8 +246,8 @@ begin
       process ( axiClk ) begin
          if rising_edge(axiClk) then
             if axiClkRstInt = '1' then
-               ibHeader(i) <= IbFifoInit after TPD_G;
-               ibValid(i)  <= '0'        after TPD_G;
+               ibHeader(i) <= IB_FIFO_INIT_C after TPD_G;
+               ibValid(i)  <= '0'            after TPD_G;
             elsif fifoShift(i) = '1' then
                ibHeader(i) <= ibHeader(i+1) after TPD_G;
                ibValid(i)  <= ibValid(i+1)  after TPD_G;

@@ -92,8 +92,8 @@ architecture structure of ArmRceG3LocalAxi is
       scratchPad    => (others => '0'),
       clkSelA       => (others => '1'),
       clkSelB       => (others => '1'),
-      axiReadSlave  => AXI_READ_SLAVE_INIT_C,
-      axiWriteSlave => AXI_WRITE_SLAVE_INIT_C
+      axiReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
+      axiWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -335,7 +335,7 @@ begin
                when X"0004" =>
                   v.axiReadSlave.rdata := r.scratchPad;
                when X"0008" =>
-                  v.axiReadSlave.rdata := ArmRceG3Version;
+                  v.axiReadSlave.rdata := ARM_RCE_G3_VERSION_C;
                when X"0010" =>
                   v.axiReadSlave.rdata(0) := r.clkSelA(0);
                   v.axiReadSlave.rdata(1) := r.clkSelB(0);

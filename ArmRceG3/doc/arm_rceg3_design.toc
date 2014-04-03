@@ -1,99 +1,58 @@
-\contentsline {section}{\numberline {1}External Interfaces}{8}{section.1}
-\contentsline {subsection}{\numberline {1.1}External Clock \& Reset}{8}{subsection.1.1}
-\contentsline {subsection}{\numberline {1.2}External Local Bus}{8}{subsection.1.2}
-\contentsline {subsection}{\numberline {1.3}BSI I2C}{8}{subsection.1.3}
-\contentsline {subsection}{\numberline {1.4}Protocol Plug In (PPI)}{9}{subsection.1.4}
-\contentsline {subsubsection}{\numberline {1.4.1}Inbound Protocol Plug In (PPI)}{9}{subsubsection.1.4.1}
-\contentsline {subsubsection}{\numberline {1.4.2}Outbound Protocol Plug In (PPI)}{9}{subsubsection.1.4.2}
-\contentsline {subsection}{\numberline {1.5}Ethernet Interface}{10}{subsection.1.5}
-\contentsline {section}{\numberline {2}VHDL Module Descriptions}{12}{section.2}
-\contentsline {subsection}{\numberline {2.1}Top Level Module (ArmRceG3Top.vhd)}{12}{subsection.2.1}
-\contentsline {subsubsection}{\numberline {2.1.1}Top Level Interfaces}{12}{subsubsection.2.1.1}
-\contentsline {subsubsection}{\numberline {2.1.2}Top Level Block Diagram}{12}{subsubsection.2.1.2}
-\contentsline {subsubsection}{\numberline {2.1.3}Top Level Address Map}{13}{subsubsection.2.1.3}
-\contentsline {subsection}{\numberline {2.2}Local Bus Controller (ArmRceG3LocalBus.vhd)}{14}{subsection.2.2}
-\contentsline {subsubsection}{\numberline {2.2.1}Local Bus Interfaces}{14}{subsubsection.2.2.1}
-\contentsline {subsubsection}{\numberline {2.2.2}Local Bus Write Transactions}{14}{subsubsection.2.2.2}
-\contentsline {subsubsection}{\numberline {2.2.3}Local Bus Read Transactions}{15}{subsubsection.2.2.3}
-\contentsline {subsubsection}{\numberline {2.2.4}Address Allocations}{15}{subsubsection.2.2.4}
-\contentsline {subsection}{\numberline {2.3}Clock Generation Module (ArmRceG3Clocks.vhd)}{15}{subsection.2.3}
-\contentsline {subsubsection}{\numberline {2.3.1}Clock Generation Interfaces}{16}{subsubsection.2.3.1}
-\contentsline {subsection}{\numberline {2.4}DMA Controller (ArmRceG3DmaCntrl.vhd)}{16}{subsection.2.4}
-\contentsline {subsubsection}{\numberline {2.4.1}DMA Controller Interfaces}{16}{subsubsection.2.4.1}
-\contentsline {subsubsection}{\numberline {2.4.2}DMA Controller Block Diagram}{17}{subsubsection.2.4.2}
-\contentsline {subsubsection}{\numberline {2.4.3}DMA Controller Address Map}{18}{subsubsection.2.4.3}
-\contentsline {subsubsection}{\numberline {2.4.4}DMA Controller Interrupt Mapping}{20}{subsubsection.2.4.4}
-\contentsline {subsection}{\numberline {2.5}Inbound Controller (ArmRceG3IbCntrl.vhd)}{20}{subsection.2.5}
-\contentsline {subsubsection}{\numberline {2.5.1}Inbound Controller Interfaces}{20}{subsubsection.2.5.1}
-\contentsline {subsubsection}{\numberline {2.5.2}Inbound Controller Block Diagram}{21}{subsubsection.2.5.2}
-\contentsline {subsubsection}{\numberline {2.5.3}Quad Word FIFO Channels}{22}{subsubsection.2.5.3}
-\contentsline {subsubsection}{\numberline {2.5.4}ACP Write ID Mapping}{22}{subsubsection.2.5.4}
-\contentsline {subsection}{\numberline {2.6}Quad Word FIFO Controller (ArmRceG3IbQWordFifo.vhd)}{23}{subsection.2.6}
-\contentsline {subsubsection}{\numberline {2.6.1}Quad Word FIFO Controller Interfaces}{23}{subsubsection.2.6.1}
-\contentsline {subsubsection}{\numberline {2.6.2}Quad Word FIFO Block Diagram}{24}{subsubsection.2.6.2}
-\contentsline {subsection}{\numberline {2.7}Inbound Header FIFO (ArmRceG3IbHeaderFifo.vhd)}{24}{subsection.2.7}
-\contentsline {subsubsection}{\numberline {2.7.1}Inbound Header FIFO Interfaces}{25}{subsubsection.2.7.1}
-\contentsline {subsubsection}{\numberline {2.7.2}Inbound Header FIFO Block Diagram}{25}{subsubsection.2.7.2}
-\contentsline {subsubsection}{\numberline {2.7.3}Inbound Header Free List}{25}{subsubsection.2.7.3}
-\contentsline {subsubsection}{\numberline {2.7.4}Inbound Header Receive Descriptor}{26}{subsubsection.2.7.4}
-\contentsline {subsubsection}{\numberline {2.7.5}Inbound Header Flow Control}{26}{subsubsection.2.7.5}
-\contentsline {subsection}{\numberline {2.8}Inbound PPI Controller (ArmRceG3IbPpi.vhd)}{26}{subsection.2.8}
-\contentsline {subsubsection}{\numberline {2.8.1}Inbound PPI Controller Interfaces}{27}{subsubsection.2.8.1}
-\contentsline {subsubsection}{\numberline {2.8.2}Inbound PPI Controller Block Diagram}{27}{subsubsection.2.8.2}
-\contentsline {subsubsection}{\numberline {2.8.3}Inbound PPI Receive Control}{28}{subsubsection.2.8.3}
-\contentsline {subsubsection}{\numberline {2.8.4}Inbound PPI Receive Completion Record}{28}{subsubsection.2.8.4}
-\contentsline {subsubsection}{\numberline {2.8.5}Inbound PPI Flow Control}{29}{subsubsection.2.8.5}
-\contentsline {subsection}{\numberline {2.9}AXI Write Controller (ArmRceG3AxiWriteCntrl.vhd)}{29}{subsection.2.9}
-\contentsline {subsubsection}{\numberline {2.9.1}AXI Write Controller Interfaces}{29}{subsubsection.2.9.1}
-\contentsline {subsubsection}{\numberline {2.9.2}Axi Write Controller Block Diagram}{29}{subsubsection.2.9.2}
-\contentsline {subsection}{\numberline {2.10}Outbound Controller (ArmRceG3ObCntrl.vhd)}{30}{subsection.2.10}
-\contentsline {subsubsection}{\numberline {2.10.1}Outbound Controller Interfaces}{30}{subsubsection.2.10.1}
-\contentsline {subsubsection}{\numberline {2.10.2}Outbound Controller Block Diagram}{30}{subsubsection.2.10.2}
-\contentsline {subsection}{\numberline {2.11}Outbound Header FIFO (ArmRceG3ObHeaderFifo.vhd)}{31}{subsection.2.11}
-\contentsline {subsubsection}{\numberline {2.11.1}Outbound Header FIFO Interfaces}{31}{subsubsection.2.11.1}
-\contentsline {subsubsection}{\numberline {2.11.2}Outbound Header FIFO Block Diagram}{32}{subsubsection.2.11.2}
-\contentsline {subsubsection}{\numberline {2.11.3}Outbound Header Free List}{32}{subsubsection.2.11.3}
-\contentsline {subsubsection}{\numberline {2.11.4}Outbound Header Transmit Descriptor}{33}{subsubsection.2.11.4}
-\contentsline {subsection}{\numberline {2.12}Outbound PPI Controller (ArmRceG3ObPpi.vhd)}{33}{subsection.2.12}
-\contentsline {subsubsection}{\numberline {2.12.1}Outbound PPI Controller Interfaces}{34}{subsubsection.2.12.1}
-\contentsline {subsubsection}{\numberline {2.12.2}Outbound PPI Block Diagram}{34}{subsubsection.2.12.2}
-\contentsline {subsubsection}{\numberline {2.12.3}Outbound PPI Transmit Control}{35}{subsubsection.2.12.3}
-\contentsline {subsubsection}{\numberline {2.12.4}Outbound PPI Transmit Completion Record}{35}{subsubsection.2.12.4}
-\contentsline {subsection}{\numberline {2.13}AXI Read Controller (ArmRceG3AxiReadCntrl.vhd)}{35}{subsection.2.13}
-\contentsline {subsubsection}{\numberline {2.13.1}AXI Read Controller Interfaces}{35}{subsubsection.2.13.1}
-\contentsline {subsubsection}{\numberline {2.13.2}Axi Read Controller Block Diagram}{36}{subsubsection.2.13.2}
-\contentsline {subsection}{\numberline {2.14}DMA Completion FIFO Controller (ArmRceG3DmaComp.vhd)}{36}{subsection.2.14}
-\contentsline {subsubsection}{\numberline {2.14.1}DMA Completion Mover Interfaces}{36}{subsubsection.2.14.1}
-\contentsline {subsubsection}{\numberline {2.14.2}DMA Completion Block Diagram}{37}{subsubsection.2.14.2}
-\contentsline {subsection}{\numberline {2.15}I2C Controller (ArmRceG3I2c.vhd)}{37}{subsection.2.15}
-\contentsline {subsubsection}{\numberline {2.15.1}I2C Controller Interfaces}{37}{subsubsection.2.15.1}
-\contentsline {subsubsection}{\numberline {2.15.2}I2C Controller Block Diagram}{38}{subsubsection.2.15.2}
-\contentsline {subsubsection}{\numberline {2.15.3}Local Bus Address Space}{38}{subsubsection.2.15.3}
-\contentsline {subsubsection}{\numberline {2.15.4}I2C Bus Address Space}{38}{subsubsection.2.15.4}
-\contentsline {subsection}{\numberline {2.16}CPU Interface Module (ArmRceG3Cpu.vhd)}{38}{subsection.2.16}
-\contentsline {subsubsection}{\numberline {2.16.1}CPU Interfaces}{39}{subsubsection.2.16.1}
-\contentsline {section}{\numberline {3}VHDL Record Definitions}{40}{section.3}
-\contentsline {subsection}{\numberline {3.1}AxiReadMasterType}{40}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}AxiReadSlaveType}{41}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}AxiWriteMasterType}{41}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}AxiWriteSlaveType}{42}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}LocalBusMasterType}{43}{subsection.3.5}
-\contentsline {subsection}{\numberline {3.6}LocalBusSlaveType}{43}{subsection.3.6}
-\contentsline {subsection}{\numberline {3.7}AxiWriteToCntrlType}{43}{subsection.3.7}
-\contentsline {subsection}{\numberline {3.8}AxiWriteFromCntrlType}{44}{subsection.3.8}
-\contentsline {subsection}{\numberline {3.9}AxiReadToCntrlType}{44}{subsection.3.9}
-\contentsline {subsection}{\numberline {3.10}AxiReadFromCntrlType}{44}{subsection.3.10}
-\contentsline {subsection}{\numberline {3.11}IbHeaderToFifoType}{45}{subsection.3.11}
-\contentsline {subsection}{\numberline {3.12}IbHeaderFromFifoType}{45}{subsection.3.12}
-\contentsline {subsection}{\numberline {3.13}ObHeaderToFifoType}{45}{subsection.3.13}
-\contentsline {subsection}{\numberline {3.14}ObHeaderFromFifoType}{45}{subsection.3.14}
-\contentsline {subsection}{\numberline {3.15}ObPpiToFifoType}{46}{subsection.3.15}
-\contentsline {subsection}{\numberline {3.16}ObPpiFromFifoType}{46}{subsection.3.16}
-\contentsline {subsection}{\numberline {3.17}IbPpiToFifoType}{46}{subsection.3.17}
-\contentsline {subsection}{\numberline {3.18}IbPpiFromFifoType}{47}{subsection.3.18}
-\contentsline {subsection}{\numberline {3.19}CompToFifoType}{47}{subsection.3.19}
-\contentsline {subsection}{\numberline {3.20}CompFromFifoType}{47}{subsection.3.20}
-\contentsline {subsection}{\numberline {3.21}QWordToFifoType}{47}{subsection.3.21}
-\contentsline {subsection}{\numberline {3.22}QWordFromFifoType}{47}{subsection.3.22}
-\contentsline {subsection}{\numberline {3.23}EthFromArmType}{48}{subsection.3.23}
-\contentsline {subsection}{\numberline {3.24}EthToArmType}{48}{subsection.3.24}
+\contentsline {section}{\numberline {1}External Interfaces}{6}{section.1}
+\contentsline {subsection}{\numberline {1.1}External Clock \& Reset}{6}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}External AXI-Lite Bus}{6}{subsection.1.2}
+\contentsline {subsection}{\numberline {1.3}BSI I2C}{7}{subsection.1.3}
+\contentsline {subsection}{\numberline {1.4}Protocol Plug In (PPI)}{7}{subsection.1.4}
+\contentsline {subsubsection}{\numberline {1.4.1}Common Signals}{7}{subsubsection.1.4.1}
+\contentsline {subsubsection}{\numberline {1.4.2}Inbound Protocol Plug In (PPI)}{7}{subsubsection.1.4.2}
+\contentsline {subsubsection}{\numberline {1.4.3}Outbound Protocol Plug In (PPI)}{8}{subsubsection.1.4.3}
+\contentsline {subsection}{\numberline {1.5}Ethernet Interface}{8}{subsection.1.5}
+\contentsline {section}{\numberline {2}VHDL Module Descriptions}{10}{section.2}
+\contentsline {subsection}{\numberline {2.1}Top Level Module (ArmRceG3Top.vhd)}{10}{subsection.2.1}
+\contentsline {subsubsection}{\numberline {2.1.1}Top Level Interfaces}{10}{subsubsection.2.1.1}
+\contentsline {subsubsection}{\numberline {2.1.2}Top Level Block Diagram}{11}{subsubsection.2.1.2}
+\contentsline {subsection}{\numberline {2.2}Local AXI Controller (ArmRceG3LocalAxi.vhd)}{11}{subsection.2.2}
+\contentsline {subsubsection}{\numberline {2.2.1}RCE Core Address Space}{11}{subsubsection.2.2.1}
+\contentsline {subsubsection}{\numberline {2.2.2}Top Level Address Map}{12}{subsubsection.2.2.2}
+\contentsline {subsection}{\numberline {2.3}Clock Generation Module (ArmRceG3Clocks.vhd)}{12}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.4}DMA Controller (ArmRceG3DmaCntrl.vhd)}{12}{subsection.2.4}
+\contentsline {subsubsection}{\numberline {2.4.1}DMA Controller Block Diagram}{13}{subsubsection.2.4.1}
+\contentsline {subsubsection}{\numberline {2.4.2}DMA Controller Address Map}{13}{subsubsection.2.4.2}
+\contentsline {subsubsection}{\numberline {2.4.3}DMA Controller Interrupt Mapping}{15}{subsubsection.2.4.3}
+\contentsline {subsection}{\numberline {2.5}Inbound Controller (ArmRceG3IbCntrl.vhd)}{15}{subsection.2.5}
+\contentsline {subsubsection}{\numberline {2.5.1}Inbound Controller Block Diagram}{16}{subsubsection.2.5.1}
+\contentsline {subsubsection}{\numberline {2.5.2}Quad Word FIFO Channels}{16}{subsubsection.2.5.2}
+\contentsline {subsubsection}{\numberline {2.5.3}ACP Write ID Mapping}{16}{subsubsection.2.5.3}
+\contentsline {subsection}{\numberline {2.6}Quad Word FIFO Controller (ArmRceG3IbQWordFifo.vhd)}{17}{subsection.2.6}
+\contentsline {subsubsection}{\numberline {2.6.1}Quad Word FIFO Block Diagram}{17}{subsubsection.2.6.1}
+\contentsline {subsection}{\numberline {2.7}Inbound Header FIFO (ArmRceG3IbHeaderFifo.vhd)}{18}{subsection.2.7}
+\contentsline {subsubsection}{\numberline {2.7.1}Inbound Header FIFO Block Diagram}{18}{subsubsection.2.7.1}
+\contentsline {subsubsection}{\numberline {2.7.2}Inbound Header Free List}{19}{subsubsection.2.7.2}
+\contentsline {subsubsection}{\numberline {2.7.3}Inbound Header Receive Descriptor}{19}{subsubsection.2.7.3}
+\contentsline {subsubsection}{\numberline {2.7.4}Inbound Header Flow Control}{20}{subsubsection.2.7.4}
+\contentsline {subsection}{\numberline {2.8}Inbound PPI Controller (ArmRceG3IbPpi.vhd)}{20}{subsection.2.8}
+\contentsline {subsubsection}{\numberline {2.8.1}Inbound PPI Controller Block Diagram}{21}{subsubsection.2.8.1}
+\contentsline {subsubsection}{\numberline {2.8.2}Inbound PPI Receive Control}{21}{subsubsection.2.8.2}
+\contentsline {subsubsection}{\numberline {2.8.3}Inbound PPI Receive Completion Record}{21}{subsubsection.2.8.3}
+\contentsline {subsubsection}{\numberline {2.8.4}Inbound PPI Flow Control}{22}{subsubsection.2.8.4}
+\contentsline {subsection}{\numberline {2.9}AXI Write Controller (ArmRceG3AxiWriteCntrl.vhd)}{22}{subsection.2.9}
+\contentsline {subsubsection}{\numberline {2.9.1}Axi Write Controller Block Diagram}{22}{subsubsection.2.9.1}
+\contentsline {subsection}{\numberline {2.10}Outbound Controller (ArmRceG3ObCntrl.vhd)}{22}{subsection.2.10}
+\contentsline {subsubsection}{\numberline {2.10.1}Outbound Controller Block Diagram}{23}{subsubsection.2.10.1}
+\contentsline {subsection}{\numberline {2.11}Outbound Header FIFO (ArmRceG3ObHeaderFifo.vhd)}{23}{subsection.2.11}
+\contentsline {subsubsection}{\numberline {2.11.1}Outbound Header FIFO Block Diagram}{23}{subsubsection.2.11.1}
+\contentsline {subsubsection}{\numberline {2.11.2}Outbound Header Free List}{24}{subsubsection.2.11.2}
+\contentsline {subsubsection}{\numberline {2.11.3}Outbound Header Transmit Descriptor}{24}{subsubsection.2.11.3}
+\contentsline {subsection}{\numberline {2.12}Outbound PPI Controller (ArmRceG3ObPpi.vhd)}{25}{subsection.2.12}
+\contentsline {subsubsection}{\numberline {2.12.1}Outbound PPI Block Diagram}{25}{subsubsection.2.12.1}
+\contentsline {subsubsection}{\numberline {2.12.2}Outbound PPI Transmit Control}{26}{subsubsection.2.12.2}
+\contentsline {subsubsection}{\numberline {2.12.3}Outbound PPI Transmit Completion Record}{26}{subsubsection.2.12.3}
+\contentsline {subsection}{\numberline {2.13}AXI Read Controller (ArmRceG3AxiReadCntrl.vhd)}{27}{subsection.2.13}
+\contentsline {subsubsection}{\numberline {2.13.1}Axi Read Controller Block Diagram}{27}{subsubsection.2.13.1}
+\contentsline {subsection}{\numberline {2.14}DMA Completion FIFO Controller (ArmRceG3DmaComp.vhd)}{27}{subsection.2.14}
+\contentsline {subsubsection}{\numberline {2.14.1}DMA Completion Block Diagram}{27}{subsubsection.2.14.1}
+\contentsline {subsection}{\numberline {2.15}I2C Controller (ArmRceG3I2c.vhd)}{28}{subsection.2.15}
+\contentsline {subsubsection}{\numberline {2.15.1}I2C Controller Block Diagram}{28}{subsubsection.2.15.1}
+\contentsline {subsubsection}{\numberline {2.15.2}Local Bus Address Space}{28}{subsubsection.2.15.2}
+\contentsline {subsubsection}{\numberline {2.15.3}I2C Bus Address Space}{29}{subsubsection.2.15.3}
+\contentsline {subsection}{\numberline {2.16}CPU Interface Module (ArmRceG3Cpu.vhd)}{29}{subsection.2.16}

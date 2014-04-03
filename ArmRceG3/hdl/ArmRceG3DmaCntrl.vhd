@@ -124,8 +124,8 @@ architecture structure of ArmRceG3DmaCntrl is
       ppiWriteDmaCache    => (others=>'0'),
       ppiOnline           => (others=>'0'),
       axiClkRstSw         => '0',
-      localAxiReadSlave   => AXI_READ_SLAVE_INIT_C,
-      localAxiWriteSlave  => AXI_WRITE_SLAVE_INIT_C
+      localAxiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
+      localAxiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;

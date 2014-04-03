@@ -156,13 +156,13 @@ begin
 
    --axiGpMasterWriteFromArm(0)
    --axiGpMasterReadFromArm(0)
-   axiGpMasterWriteToArm(0)   <= AxiWriteSlaveInit;
-   axiGpMasterReadToArm(0)    <= AxiReadSlaveInit;
+   axiGpMasterWriteToArm(0)   <= AXI_WRITE_SLAVE_INIT_C;
+   axiGpMasterReadToArm(0)    <= AXI_READ_SLAVE_INIT_C;
 
    --axiGpSlaveWriteFromArm
    --axiGpSlaveReadFromArm
-   axiGpSlaveWriteToArm       <= (others=>AxiWriteMasterInit);
-   axiGpSlaveReadToArm        <= (others=>AxiReadMasterInit);
+   axiGpSlaveWriteToArm       <= (others=>AXI_WRITE_MASTER_INIT_C);
+   axiGpSlaveReadToArm        <= (others=>AXI_READ_MASTER_INIT_C);
 
    --------------------------------------------
    -- Clock Generation

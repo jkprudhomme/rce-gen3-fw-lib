@@ -71,8 +71,8 @@ architecture structure of PpiMux is
       acks             => (others=>'0'),
       ackNum           => (others=>'0'),
       valid            => '0',
-      ppiWriteToFifo   => PpiWriteToFifoInit,
-      ppiReadToFifo    => (others=>PpiReadToFifoInit)
+      ppiWriteToFifo   => PPI_WRITE_TO_FIFO_INIT_C,
+      ppiReadToFifo    => (others=>PPI_READ_TO_FIFO_INIT_C)
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -94,7 +94,7 @@ begin
       v.ppiWriteToFifo.eoh   := ppiReadFromFifo(conv_integer(r.ackNum)).eoh;
       v.ppiWriteToFifo.err   := ppiReadFromFifo(conv_integer(r.ackNum)).err;
       v.ppiWriteToFifo.ftype := conv_std_logic_vector(conv_integer(r.ackNum), 4);
-      v.ppiReadToFifo        := (others=>PpiReadToFifoInit);
+      v.ppiReadToFifo        := (others=>PPI_READ_TO_FIFO_INIT_C);
 
       -- Format requests
       for i in 0 to NUM_READ_SLOTS_G-1 loop

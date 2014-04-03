@@ -1,55 +1,29 @@
-\contentsline {table}{\numberline {1}{\ignorespaces External Clock \& Reset Signals}}{8}{table.1}
-\contentsline {table}{\numberline {2}{\ignorespaces External Local Bus Master Record}}{8}{table.2}
-\contentsline {table}{\numberline {3}{\ignorespaces External Local Bus Slave Record}}{8}{table.3}
-\contentsline {table}{\numberline {4}{\ignorespaces Inbound PPI Output Record}}{9}{table.4}
-\contentsline {table}{\numberline {5}{\ignorespaces Inbound PPI Input Record}}{9}{table.5}
-\contentsline {table}{\numberline {6}{\ignorespaces Outbound PPI Output Record}}{10}{table.6}
-\contentsline {table}{\numberline {7}{\ignorespaces Outbound PPI Input Record}}{10}{table.7}
-\contentsline {table}{\numberline {8}{\ignorespaces Ethernet Output Record}}{10}{table.8}
-\contentsline {table}{\numberline {9}{\ignorespaces Ethernet Input Record}}{11}{table.9}
-\contentsline {table}{\numberline {10}{\ignorespaces ArmRceG3Top Generics}}{12}{table.10}
-\contentsline {table}{\numberline {11}{\ignorespaces ArmRceG3Top Signals}}{12}{table.11}
-\contentsline {table}{\numberline {12}{\ignorespaces Top Level Address Map}}{13}{table.12}
-\contentsline {table}{\numberline {13}{\ignorespaces ArmRceG3LocalBus Generics}}{14}{table.13}
-\contentsline {table}{\numberline {14}{\ignorespaces ArmRceG3LocalBus Signals}}{14}{table.14}
-\contentsline {table}{\numberline {15}{\ignorespaces Local Bus Address Space }}{15}{table.15}
-\contentsline {table}{\numberline {16}{\ignorespaces ArmRceG3Clocks Generics}}{16}{table.16}
-\contentsline {table}{\numberline {17}{\ignorespaces ArmRceG3Clocks Signals}}{16}{table.17}
-\contentsline {table}{\numberline {18}{\ignorespaces ArmRceG3DmaCntrl Generics}}{16}{table.18}
-\contentsline {table}{\numberline {19}{\ignorespaces ArmRceG3DmaCntrl Signals}}{17}{table.19}
-\contentsline {table}{\numberline {20}{DMA Controller Address Map}}{19}{table.20}
-\contentsline {table}{\numberline {21}{\ignorespaces DMA Controller Interrupt Mapping}}{20}{table.21}
-\contentsline {table}{\numberline {22}{\ignorespaces ArmRceG3IbCntrl Generics}}{20}{table.22}
-\contentsline {table}{\numberline {23}{\ignorespaces ArmRceG3IbCntrl Signals}}{21}{table.23}
-\contentsline {table}{\numberline {24}{\ignorespaces Quad Word FIFO Channels}}{22}{table.24}
-\contentsline {table}{\numberline {25}{\ignorespaces ACP Write ID Mapping}}{23}{table.25}
-\contentsline {table}{\numberline {26}{\ignorespaces ArmRceG3IbQWordFifo Generics}}{23}{table.26}
-\contentsline {table}{\numberline {27}{\ignorespaces ArmRceG3IbQWordFifo Signals}}{24}{table.27}
-\contentsline {table}{\numberline {28}{\ignorespaces ArmRceG3IbHeaderFifo Generics}}{25}{table.28}
-\contentsline {table}{\numberline {29}{\ignorespaces ArmRceG3IbHeaderFifo Signals}}{25}{table.29}
-\contentsline {table}{\numberline {30}{\ignorespaces Inbound Header Free List Entry}}{26}{table.30}
-\contentsline {table}{\numberline {31}{\ignorespaces Inbound Header Receive Descriptor}}{26}{table.31}
-\contentsline {table}{\numberline {32}{\ignorespaces ArmRceG3IbPpi Generics}}{27}{table.32}
-\contentsline {table}{\numberline {33}{\ignorespaces ArmRceG3IbPpi Signals}}{27}{table.33}
-\contentsline {table}{\numberline {34}{\ignorespaces Inbound PPI Receive Descriptor}}{28}{table.34}
-\contentsline {table}{\numberline {35}{\ignorespaces Inbound PPI Receive Completion Descriptor}}{29}{table.35}
-\contentsline {table}{\numberline {36}{\ignorespaces ArmRceG3AxiWriteCntrl Generics}}{29}{table.36}
-\contentsline {table}{\numberline {37}{\ignorespaces ArmRceG3AxiWriteCntrl Signals}}{29}{table.37}
-\contentsline {table}{\numberline {38}{\ignorespaces ArmRceG3ObCntrl Generics}}{30}{table.38}
-\contentsline {table}{\numberline {39}{\ignorespaces ArmRceG3ObCntrl Signals}}{30}{table.39}
-\contentsline {table}{\numberline {40}{\ignorespaces ArmRceG3ObHeaderFifo Generics}}{31}{table.40}
-\contentsline {table}{\numberline {41}{\ignorespaces ArmRceG3ObHeaderFifo Signals}}{32}{table.41}
-\contentsline {table}{\numberline {42}{\ignorespaces Outbound Header Free List Entry}}{33}{table.42}
-\contentsline {table}{\numberline {43}{\ignorespaces Outbound Header Transmit Descriptor}}{33}{table.43}
-\contentsline {table}{\numberline {44}{\ignorespaces ArmRceG3ObPpi Generics}}{34}{table.44}
-\contentsline {table}{\numberline {45}{\ignorespaces ArmRceG3ObPpi Signals}}{34}{table.45}
-\contentsline {table}{\numberline {46}{\ignorespaces Outbound PPI Transmit Descriptor}}{35}{table.46}
-\contentsline {table}{\numberline {47}{\ignorespaces Outbound PPI Transmit Completion Descriptor}}{35}{table.47}
-\contentsline {table}{\numberline {48}{\ignorespaces ArmRceG3AxiReadCntrl Generics}}{35}{table.48}
-\contentsline {table}{\numberline {49}{\ignorespaces ArmRceG3AxiReadCntrl Signals}}{36}{table.49}
-\contentsline {table}{\numberline {50}{\ignorespaces ArmRceG3DmaComp Generics}}{36}{table.50}
-\contentsline {table}{\numberline {51}{\ignorespaces ArmRceG3DmaComp Signals}}{37}{table.51}
-\contentsline {table}{\numberline {52}{\ignorespaces ArmRceG3I2c Generics}}{37}{table.52}
-\contentsline {table}{\numberline {53}{\ignorespaces ArmRceG3I2c Signals}}{38}{table.53}
-\contentsline {table}{\numberline {54}{\ignorespaces ArmRceG3Cpu Generics}}{39}{table.54}
-\contentsline {table}{\numberline {55}{\ignorespaces ArmRceG3Cpu Signals}}{39}{table.55}
+\contentsline {table}{\numberline {1}{\ignorespaces External Clock \& Reset Signals}}{6}{table.1}
+\contentsline {table}{\numberline {2}{\ignorespaces AXI Lite Read Master Record}}{6}{table.2}
+\contentsline {table}{\numberline {3}{\ignorespaces AXI Lite Read Master Record}}{6}{table.3}
+\contentsline {table}{\numberline {4}{\ignorespaces AXI Lite Write Master Record}}{7}{table.4}
+\contentsline {table}{\numberline {5}{\ignorespaces AXI Lite Write Master Record}}{7}{table.5}
+\contentsline {table}{\numberline {6}{\ignorespaces Common PPI Signals}}{7}{table.6}
+\contentsline {table}{\numberline {7}{\ignorespaces Inbound PPI Output Record}}{8}{table.7}
+\contentsline {table}{\numberline {8}{\ignorespaces Inbound PPI Input Record}}{8}{table.8}
+\contentsline {table}{\numberline {9}{\ignorespaces Outbound PPI Input Record}}{8}{table.9}
+\contentsline {table}{\numberline {10}{\ignorespaces Outbound PPI Input Record}}{8}{table.10}
+\contentsline {table}{\numberline {11}{\ignorespaces Ethernet Output Record}}{9}{table.11}
+\contentsline {table}{\numberline {12}{\ignorespaces Ethernet Input Record}}{9}{table.12}
+\contentsline {table}{\numberline {13}{\ignorespaces ArmRceG3Top Generics}}{10}{table.13}
+\contentsline {table}{\numberline {14}{\ignorespaces ArmRceG3Top Signals}}{10}{table.14}
+\contentsline {table}{\numberline {15}{\ignorespaces RCE Core Address Space }}{11}{table.15}
+\contentsline {table}{\numberline {16}{\ignorespaces Top Level Address Map}}{12}{table.16}
+\contentsline {table}{\numberline {17}{\ignorespaces ArmRceG3Clocks Clocks}}{12}{table.17}
+\contentsline {table}{\numberline {18}{DMA Controller Address Map}}{15}{table.18}
+\contentsline {table}{\numberline {19}{\ignorespaces DMA Controller Interrupt Mapping}}{15}{table.19}
+\contentsline {table}{\numberline {20}{\ignorespaces Quad Word FIFO Channels}}{16}{table.20}
+\contentsline {table}{\numberline {21}{\ignorespaces ACP Write ID Mapping}}{17}{table.21}
+\contentsline {table}{\numberline {22}{\ignorespaces Inbound Header Free List Entry}}{19}{table.22}
+\contentsline {table}{\numberline {23}{\ignorespaces Inbound Header Receive Descriptor}}{20}{table.23}
+\contentsline {table}{\numberline {24}{\ignorespaces Inbound PPI Receive Descriptor}}{21}{table.24}
+\contentsline {table}{\numberline {25}{\ignorespaces Inbound PPI Receive Completion Descriptor}}{22}{table.25}
+\contentsline {table}{\numberline {26}{\ignorespaces Outbound Header Free List Entry}}{24}{table.26}
+\contentsline {table}{\numberline {27}{\ignorespaces Outbound Header Transmit Descriptor}}{25}{table.27}
+\contentsline {table}{\numberline {28}{\ignorespaces Outbound PPI Transmit Descriptor}}{26}{table.28}
+\contentsline {table}{\numberline {29}{\ignorespaces Outbound PPI Transmit Completion Descriptor}}{26}{table.29}

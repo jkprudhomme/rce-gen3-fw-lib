@@ -104,7 +104,7 @@ begin
       process ( axiClk ) begin
          if rising_edge(axiClk) then
             if axiClkRstInt = '1' then
-               regWriteToCntrl <= (others=>AxiWriteToCntrlInit) after TPD_G;
+               regWriteToCntrl <= (others=>AXI_WRITE_TO_CNTRL_INIT_C) after TPD_G;
             else
                regWriteToCntrl <= axiWriteToCntrl after TPD_G;
             end if;

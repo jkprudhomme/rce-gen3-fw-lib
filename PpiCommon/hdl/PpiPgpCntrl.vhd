@@ -148,8 +148,8 @@ architecture structure of PpiPgpCntrl is
       countReset     => '0',
       loopBackEn     => '0',
       locData        => (others=>'0'),
-      axiWriteSlave  => AXI_WRITE_SLAVE_INIT_C,
-      axiReadSlave   => AXI_READ_SLAVE_INIT_C
+      axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
+      axiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;

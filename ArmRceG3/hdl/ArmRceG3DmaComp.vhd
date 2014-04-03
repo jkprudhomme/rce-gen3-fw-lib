@@ -82,8 +82,8 @@ architecture structure of ArmRceG3DmaComp is
       compInt            => (others => '0'),
       freeFifoWr         => '0',
       freeFifoDin        => (others => '0'),
-      localAxiReadSlave  => AXI_READ_SLAVE_INIT_C,
-      localAxiWriteSlave => AXI_WRITE_SLAVE_INIT_C
+      localAxiReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
+      localAxiWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -112,7 +112,7 @@ begin
       process ( axiClk ) begin
          if rising_edge(axiClk) then
             if axiClkRstInt = '1' then
-               compHold(i)  <= CompFromFifoInit after TPD_G;
+               compHold(i)  <= COMP_FROM_FIFO_INIT_C after TPD_G;
                compValid(i) <= '0'              after TPD_G;
                compWrite(i) <= (others=>'0')    after TPD_G;
             else

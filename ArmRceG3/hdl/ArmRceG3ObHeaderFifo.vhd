@@ -284,7 +284,7 @@ begin
    process ( axiClk ) begin
       if rising_edge(axiClk) then
          if axiClkRstInt = '1' then
-            header          <= ObHeaderFromFifoInit after TPD_G;
+            header          <= OB_HEADER_FROM_FIFO_INIT_C after TPD_G;
             rxLengthCnt     <= (others=>'0')        after TPD_G;
             rxDone          <= '0'                  after TPD_G;
             rxLast          <= '0'                  after TPD_G;

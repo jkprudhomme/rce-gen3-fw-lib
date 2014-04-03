@@ -133,10 +133,10 @@ architecture structure of PpiToAxi is
       underflow      => '0',
       overflow       => '0',
       status         => (others => '0'),
-      axiWriteMaster => AXI_WRITE_MASTER_INIT_C,
-      axiReadMaster  => AXI_READ_MASTER_INIT_C,
-      ppiReadToFifo  => PpiReadToFifoInit,
-      ppiWriteToFifo => PpiWriteToFifoInit
+      axiWriteMaster => AXI_LITE_WRITE_MASTER_INIT_C,
+      axiReadMaster  => AXI_LITE_READ_MASTER_INIT_C,
+      ppiReadToFifo  => PPI_READ_TO_FIFO_INIT_C,
+      ppiWriteToFifo => PPI_WRITE_TO_FIFO_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -221,10 +221,10 @@ begin
 
          -- Idle
          when S_IDLE =>
-            v.axiWriteMaster := AXI_WRITE_MASTER_INIT_C;
-            v.axiReadMaster  := AXI_READ_MASTER_INIT_C;
-            v.ppiReadToFifo  := PpiReadToFifoInit;
-            v.ppiWriteToFifo := PpiWriteToFifoInit;
+            v.axiWriteMaster := AXI_LITE_WRITE_MASTER_INIT_C;
+            v.axiReadMaster  := AXI_LITE_READ_MASTER_INIT_C;
+            v.ppiReadToFifo  := PPI_READ_TO_FIFO_INIT_C;
+            v.ppiWriteToFifo := PPI_WRITE_TO_FIFO_INIT_C;
             v.result         := (others => '0');
             v.underflow      := '0';
             v.overflow       := '0';

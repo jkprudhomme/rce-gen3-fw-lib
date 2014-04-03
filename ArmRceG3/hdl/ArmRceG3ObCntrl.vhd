@@ -80,8 +80,8 @@ architecture structure of ArmRceG3ObCntrl is
 
    constant REG_INIT_C : RegType := (
       freePtrRead        => (others => '0'),
-      localAxiReadSlave  => AXI_READ_SLAVE_INIT_C,
-      localAxiWriteSlave => AXI_WRITE_SLAVE_INIT_C
+      localAxiReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
+      localAxiWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;

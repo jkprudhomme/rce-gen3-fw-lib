@@ -146,7 +146,7 @@ begin
          ethTxM             => ethTxM(0)
       );
 
-   iethToArm(1) <= EthToArmInit;
+   iethToArm(1) <= ETH_TO_ARM_INIT_C;
 
    -------------------------------------
    -- AXI Lite Crossbar

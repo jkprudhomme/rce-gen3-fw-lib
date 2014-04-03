@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
    stop    = false;
    maxLane = 1;
 
-   for ( psize = 64; psize < 72; psize++ ) {
+   for ( psize = 120; psize < 132; psize++ ) {
       for ( oboffset = 0; oboffset < 8; oboffset++ ) {
          for ( iboffset = 0; iboffset < 8; iboffset++ ) {
 

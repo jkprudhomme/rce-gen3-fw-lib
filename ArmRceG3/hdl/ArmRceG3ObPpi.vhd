@@ -123,6 +123,8 @@ architecture structure of ArmRceG3ObPpi is
    signal axiReadFromCntrl : AxiReadFromCntrlType;
    signal firstSize        : slv(7   downto 0);
    signal currSize         : slv(7   downto 0);
+   signal firstPend        : slv(7   downto 0);
+   signal currPend         : slv(7   downto 0);
    signal firstLength      : slv(3   downto 0);
    signal currLength       : slv(3   downto 0);
    signal curState         : States;
@@ -164,9 +166,9 @@ begin
    process ( axiClk ) begin
       if rising_edge(axiClk) then
          if axiClkRstInt = '1' then
-            obHeaderReg  <= (others=>ObHeaderFromFifoInit) after TPD_G;
+            obHeaderReg  <= (others=>OB_HEADER_FROM_FIFO_INIT_C) after TPD_G;
          elsif fifoClear = '1' then
-            obHeaderReg  <= (others=>ObHeaderFromFifoInit) after TPD_G;
+            obHeaderReg  <= (others=>OB_HEADER_FROM_FIFO_INIT_C) after TPD_G;
          elsif fifoShift = '1' then
             obHeaderReg(0) <= obHeaderFromFifo after TPD_G;
             obHeaderReg(1) <= obHeaderReg(0)   after TPD_G;
@@ -195,6 +197,7 @@ begin
    -- This initial alignment will ensure that we never cross a 4k boundary
    firstSize(7 downto 3) <= "10000" - headerDma.addr(6 downto 3);
    firstSize(2 downto 0) <= "000";
+   firstPend             <= x"80" - headerDma.addr(6 downto 0);
    firstLength           <= x"F"  - headerDma.addr(6 downto 3);
 
    -- Sync states
@@ -208,6 +211,7 @@ begin
             currCompData.id    <= (others=>'0') after TPD_G;
             currSize           <= (others=>'0') after TPD_G;
             currLength         <= (others=>'0') after TPD_G;
+            currPend           <= (others=>'0') after TPD_G;
             ppiPFullReg        <= '0'           after TPD_G;
          else
 
@@ -232,14 +236,16 @@ begin
                readAddr(2  downto 0) <= "000"                       after TPD_G;
                currSize              <= firstSize                   after TPD_G;
                currLength            <= firstLength                 after TPD_G;
+               currPend              <= firstPend                   after TPD_G;
                readPending           <= (others=>'0')               after TPD_G;
 
             -- Increment pending and address, 128 bytes per read
             elsif addrValid = '1' then
-               readAddr    <= readAddr + currSize after TPD_G;
-               currSize    <= x"80"               after TPD_G; -- 128
-               currLength  <= x"F"                after TPD_G; -- 15
-               readPending <= readPending + 128   after TPD_G;
+               readAddr    <= readAddr + currSize    after TPD_G;
+               currSize    <= x"80"                  after TPD_G; -- 128
+               currLength  <= x"F"                   after TPD_G; -- 15
+               currPend    <= x"80"                  after TPD_G;
+               readPending <= readPending + currPend after TPD_G;
             end if;
          end if;
       end if;

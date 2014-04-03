@@ -44,7 +44,7 @@ begin
          localAxiWriteMaster  => open,
          localAxiWriteSlave   => AXI_WRITE_SLAVE_INIT_C,
          ethFromArm           => open,
-         ethToArm             => (others=>EthToArmInit),
+         ethToArm             => (others=>ETH_TO_ARM_INIT_C),
          ppiClk               => ppiClk,
          ppiOnline            => open,
          ppiReadToFifo        => ppiReadToFifo,

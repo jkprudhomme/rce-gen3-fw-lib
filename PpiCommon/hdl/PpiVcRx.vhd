@@ -151,7 +151,7 @@ architecture structure of PpiVcRx is
       byteCnt        => (others=>'0'),
       dataRead       => '0',
       headerRead     => '0',
-      ppiWriteToFifo => PpiWriteToFifoInit
+      ppiWriteToFifo => PPI_WRITE_TO_FIFO_INIT_C
    );
 
    signal rm   : RegMoveType := REG_MOVE_INIT_C;
@@ -268,7 +268,7 @@ begin
    begin
       v := rm;
 
-      v.ppiWriteToFifo := PpiWriteToFifoInit;
+      v.ppiWriteToFifo := PPI_WRITE_TO_FIFO_INIT_C;
       v.headerRead     := '0';
       v.dataRead       := '0';
 

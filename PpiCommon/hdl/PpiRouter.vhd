@@ -78,8 +78,8 @@ begin
       if rising_edge(ppiClk) then
 
          if ppiClkRst = '1' then
-            ppiWriteToFifo <= (others=>PpiWriteToFifoInit) after TPD_G;
-            inFrame        <= '0'                          after TPD_G;
+            ppiWriteToFifo <= (others=>PPI_WRITE_TO_FIFO_INIT_C) after TPD_G;
+            inFrame        <= '0'                                after TPD_G;
          else
 
             if writeEnable /= 0 then

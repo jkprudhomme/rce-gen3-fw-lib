@@ -66,7 +66,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant AxiReadMasterInit : AxiReadMasterType := ( 
+   constant AXI_READ_MASTER_INIT_C : AxiReadMasterType := ( 
       arvalid        => '0',
       araddr         => x"00000000",
       arid           => x"000",
@@ -120,7 +120,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant AxiReadSlaveInit : AxiReadSlaveType := ( 
+   constant AXI_READ_SLAVE_INIT_C : AxiReadSlaveType := ( 
       arready => '0',
       rdata   => x"0000000000000000",
       rlast   => '0',
@@ -196,7 +196,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant AxiWriteMasterInit : AxiWriteMasterType := ( 
+   constant AXI_WRITE_MASTER_INIT_C : AxiWriteMasterType := ( 
       awvalid        => '0',
       awaddr         => x"00000000",
       awid           => x"000",
@@ -254,7 +254,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant AxiWriteSlaveInit : AxiWriteSlaveType := ( 
+   constant AXI_WRITE_SLAVE_INIT_C : AxiWriteSlaveType := ( 
       awready => '0',
       wready  => '0',
       bresp   => "00",
@@ -285,7 +285,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant AxiWriteToCntrlInit : AxiWriteToCntrlType := ( 
+   constant AXI_WRITE_TO_CNTRL_INIT_C : AxiWriteToCntrlType := ( 
       req       => '0',
       address   => x"0000000" & '0',
       avalid    => '0',
@@ -317,7 +317,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant AxiWriteFromCntrlInit : AxiWriteFromCntrlType := ( 
+   constant AXI_WRITE_FROM_CNTRL_INIT_C : AxiWriteFromCntrlType := ( 
       gnt     => '0',
       afull   => '0',
       bresp   => "00",
@@ -342,7 +342,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant AxiReadToCntrlInit : AxiReadToCntrlType := ( 
+   constant AXI_READ_TO_CNTRL_INIT_C : AxiReadToCntrlType := ( 
       req       => '0',
       address   => x"0000000" & '0',
       avalid    => '0',
@@ -373,7 +373,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant AxiReadFromCntrlInit : AxiReadFromCntrlType := ( 
+   constant AXI_READ_FROM_CNTRL_INIT_C : AxiReadFromCntrlType := ( 
       gnt     => '0',
       afull   => '0',
       rdata   => x"0000000000000000",
@@ -399,7 +399,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant IbHeaderToFifoInit : IbHeaderToFifoType := ( 
+   constant IB_HEADER_TO_FIFO_INIT_C : IbHeaderToFifoType := ( 
       data  => x"0000000000000000",
       err   => '0',
       eoh   => '0',
@@ -422,7 +422,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant IbHeaderFromFifoInit : IbHeaderFromFifoType := ( 
+   constant IB_HEADER_FROM_FIFO_INIT_C : IbHeaderFromFifoType := ( 
       full       => '0',
       progFull   => '0',
       almostFull => '0'
@@ -441,7 +441,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant ObHeaderToFifoInit : ObHeaderToFifoType := ( 
+   constant OB_HEADER_TO_FIFO_INIT_C : ObHeaderToFifoType := ( 
       read  => '0'
    );
 
@@ -462,7 +462,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant ObHeaderFromFifoInit : ObHeaderFromFifoType := ( 
+   constant OB_HEADER_FROM_FIFO_INIT_C : ObHeaderFromFifoType := ( 
       data  => x"0000000000000000",
       eoh   => '0',
       htype => "0000",
@@ -483,7 +483,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant PpiReadToFifoInit : PpiReadToFifoType := ( 
+   constant PPI_READ_TO_FIFO_INIT_C : PpiReadToFifoType := ( 
       read    => '0'
    );
 
@@ -507,7 +507,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant PpiReadFromFifoInit : PpiReadFromFifoType := ( 
+   constant PPI_READ_FROM_FIFO_INIT_C : PpiReadFromFifoType := ( 
       data   => x"0000000000000000",
       size   => "000",
       eof    => '0',
@@ -538,7 +538,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant PpiWriteToFifoInit : PpiWriteToFifoType := ( 
+   constant PPI_WRITE_TO_FIFO_INIT_C : PpiWriteToFifoType := ( 
       data    => x"0000000000000000",
       size    => "000",
       eof     => '0',
@@ -561,7 +561,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant PpiWriteFromFifoInit : PpiWriteFromFifoType := ( 
+   constant PPI_WRITE_FROM_FIFO_INIT_C : PpiWriteFromFifoType := ( 
       pause  => '0'
    );
 
@@ -578,7 +578,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant CompToFifoInit : CompToFifoType := ( 
+   constant COMP_TO_FIFO_INIT_C : CompToFifoType := ( 
       read => '0'
    );
 
@@ -597,7 +597,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant CompFromFifoInit : CompFromFifoType := ( 
+   constant COMP_FROM_FIFO_INIT_C : CompFromFifoType := ( 
       id       => x"00000000",
       index    => "0000",
       valid    => '0'
@@ -618,7 +618,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant QWordToFifoInit : QWordToFifoType := ( 
+   constant QWORD_TO_FIFO_INIT_C : QWordToFifoType := ( 
       data  => x"0000000000000000",
       valid => '0'
    );
@@ -638,7 +638,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant QWordFromFifoInit : QWordFromFifoType := ( 
+   constant QWORD_FROM_FIFO_INIT_C : QWordFromFifoType := ( 
       full       => '0',
       progFull   => '0',
       almostFull => '0'
@@ -672,7 +672,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant EthFromArmInit : EthFromArmType := ( 
+   constant ETH_FROM_ARM_INIT_C : EthFromArmType := ( 
       enetGmiiTxEn        => '0',
       enetGmiiTxEr        => '0',
       enetMdioMdc         => '0',
@@ -712,7 +712,7 @@ package ArmRceG3Pkg is
    end record;
 
    -- Initialization constants
-   constant EthToArmInit : EthToArmType := ( 
+   constant ETH_TO_ARM_INIT_C : EthToArmType := ( 
       enetGmiiCol   => '0',
       enetGmiiCrs   => '0',
       enetGmiiRxClk => '0',

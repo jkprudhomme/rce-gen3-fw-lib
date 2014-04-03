@@ -103,7 +103,7 @@ architecture structure of PpiVcTx is
       eof            => '0',
       eofe           => '0',
       txFrameCntEn   => '0',
-      ppiReadToFifo  => PpiReadToFifoInit,
+      ppiReadToFifo  => PPI_READ_TO_FIFO_INIT_C,
       vcTxQuadIn     => VC_TX_QUAD_IN_INIT_C
    );
 

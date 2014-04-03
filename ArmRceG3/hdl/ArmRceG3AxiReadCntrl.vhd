@@ -95,7 +95,7 @@ begin
       process ( axiClk ) begin
          if rising_edge(axiClk) then
             if axiClkRstInt = '1' then
-               regReadToCntrl <= (others=>AxiReadToCntrlInit) after TPD_G;
+               regReadToCntrl <= (others=>AXI_READ_TO_CNTRL_INIT_C) after TPD_G;
             else
                regReadToCntrl <= axiReadToCntrl after TPD_G;
             end if;

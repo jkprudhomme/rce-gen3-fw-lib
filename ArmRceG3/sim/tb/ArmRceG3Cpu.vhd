@@ -192,7 +192,7 @@ begin
    ---------------------------------------
    -- armInt    : in slv(15 downto 0);
    -- ethToArm  : in EthToArmType
-   ethFromArm <= (others=>EthFromArmInit);
+   ethFromArm <= (others=>ETH_FROM_ARM_INIT_C);
 
    ---------------------------------------
    -- Clock and reset generation
