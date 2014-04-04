@@ -206,16 +206,18 @@ begin
          );
    end generate;
 
-   U_FreeFifo : entity work.FifoSyncBuiltIn 
+   U_FreeFifo : entity work.FifoSync
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         BRAM_EN_G      => false,  -- Use Dist Ram
          FWFT_EN_G      => true,
          USE_DSP48_G    => "no",
-         XIL_DEVICE_G   => "7SERIES",
+         ALTERA_RAM_G   => "M512",
          DATA_WIDTH_G   => 36,
-         ADDR_WIDTH_G   => 9,
-         FULL_THRES_G   => 479,
+         ADDR_WIDTH_G   => 4,
+         FULL_THRES_G   => 15,
          EMPTY_THRES_G  => 1
       ) port map (
          rst               => axiClkRstInt,
