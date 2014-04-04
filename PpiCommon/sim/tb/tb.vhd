@@ -16,33 +16,41 @@ entity tb is end tb;
 -- Define architecture
 architecture tb of tb is
 
-   signal ppiClk           : sl;
-   signal ppiClkRst        : sl;
-   signal pgpRxClk         : sl;
-   signal pgpRxClkRst      : sl;
-   signal pgpTxClk         : sl;
-   signal pgpTxClkRst      : sl;
-   signal ppiReadToFifo    : PpiReadToFifoType;
-   signal ppiReadFromFifo  : PpiReadFromFifoType;
-   signal ppiWriteToFifo   : PpiWriteToFifoType;
-   signal ppiWriteFromFifo : PpiWriteFromFifoType;
-   signal vcRxCommonOut    : VcRxCommonOutType;
-   signal vcRxQuadOut      : VcRxQuadOutType;
-   signal locBuffFull      : sl;
-   signal locBuffAFull     : sl;
-   signal remBuffFull      : slv(3 downto 0);
-   signal remBuffAFull     : slv(3 downto 0);
-   signal rxFrameCntEn     : sl;
-   signal rxDropCountEn    : sl;
-   signal rxOverflow       : sl;
-   signal vcTxQuadIn       : VcTxQuadInType;
-   signal vcTxQuadOut      : VcTxQuadOutType;
-   signal tvcTxQuadIn      : VcTxQuadInType;
-   signal tvcTxQuadOut     : VcTxQuadOutType;
-   signal txFrameCntEn     : sl;
-   signal enable           : sl;
-   signal gapReg           : slv(3 downto 0);
-   signal gapDly           : slv(3 downto 0);
+   signal ppiClk            : sl;
+   signal ppiClkRst         : sl;
+   signal pgpClk            : sl;
+   signal pgpClkRst         : sl;
+   signal ppiReadToFifo     : PpiReadToFifoType;
+   signal ppiReadFromFifo   : PpiReadFromFifoType;
+   signal ppiWriteToFifo    : PpiWriteToFifoType;
+   signal ppiWriteFromFifo  : PpiWriteFromFifoType;
+   signal vcRxCommonOut     : VcRxCommonOutType;
+   signal vcRxQuadOut       : VcRxQuadOutType;
+   signal prbsVcRxCommonOut : VcRxCommonOutType;
+   signal prbsVcRxQuadOut   : VcRxQuadOutType;
+   signal rxFrameCntEn      : sl;
+   signal rxDropCountEn     : sl;
+   signal rxOverflow        : sl;
+   signal vcTxQuadIn        : VcTxQuadInType;
+   signal vcTxQuadOut       : VcTxQuadOutType;
+   signal prbsVcTxQuadIn    : VcTxQuadInType;
+   signal prbsVcTxQuadOut   : VcTxQuadOutType;
+   signal txFrameCntEn      : sl;
+   signal updatedResults    : slv(3 downto 0);
+   signal errMissedPacket   : slv(3 downto 0);
+   signal errLength         : slv(3 downto 0);
+   signal errEofe           : slv(3 downto 0);
+   signal errWordCnt        : Slv32Array(3 downto 0);
+   signal errbitCnt         : Slv32Array(3 downto 0);
+   signal packetRate        : Slv32Array(3 downto 0);
+   signal prbsRxBuffFull    : slv(3 downto 0);
+   signal prbsRxBuffAFull   : slv(3 downto 0);
+   signal prbsTxBuffFull    : sl;
+   signal prbsTxBuffAFull   : sl;
+   signal prbsTxVcRxOut     : VcRxOutType;
+   signal enable            : sl;
+   signal txEnable          : slv(3 downto 0);
+
 
 begin
 
@@ -61,30 +69,16 @@ begin
    end process;
 
    process begin
-      pgpRxClk <= '1';
+      pgpClk <= '1';
       wait for 5 ns;
-      pgpRxClk <= '0';
+      pgpClk <= '0';
       wait for 5 ns;
    end process;
 
    process begin
-      pgpRxClkRst <= '1';
+      pgpClkRst <= '1';
       wait for (50 ns);
-      pgpRxClkRst <= '0';
-      wait;
-   end process;
-
-   process begin
-      pgpTxClk <= '1';
-      wait for 4 ns;
-      pgpTxClk <= '0';
-      wait for 4 ns;
-   end process;
-
-   process begin
-      pgpTxClkRst <= '1';
-      wait for (50 ns);
-      pgpTxClkRst <= '0';
+      pgpClkRst <= '0';
       wait;
    end process;
 
@@ -95,6 +89,91 @@ begin
       wait;
    end process;
 
+   U_TxGen: for i in 0 to 3 generate 
+      U_VcPrbsTx : entity work.VcPrbsTx 
+         generic map (
+            TPD_G              => 1 ns,
+            --PACKET_LENGTH_G    => (2**16),
+            PACKET_LENGTH_G    => 2048,
+            RST_ASYNC_G        => false,
+            GEN_SYNC_FIFO_G    => false,
+            BRAM_EN_G          => true,
+            FIFO_ADDR_WIDTH_G  => 9,
+            USE_DSP48_G        => "no",
+            ALTERA_SYN_G       => false,
+            ALTERA_RAM_G       => "M9K",
+            USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
+            LITTLE_ENDIAN_G    => false,
+            XIL_DEVICE_G       => "7SERIES",  --Xilinx only generic parameter    
+            FIFO_SYNC_STAGES_G => 3,
+            FIFO_INIT_G        => "0",
+            FIFO_FULL_THRES_G  => 256,    -- Almost full at 1/2 capacity
+            FIFO_EMPTY_THRES_G => 0
+         ) port map (
+            trig    => txEnable(i),
+            vcTxIn  => prbsVcTxQuadIn(i),
+            vcTxOut => prbsVcTxQuadOut(i),
+            vcRxOut => prbsTxVcRxOut,
+            locClk  => pgpClk,
+            locRst  => pgpClkRst,
+            vcTxClk => pgpClk,
+            vcTxRst => pgpClkRst
+         );
+
+      --txEnable(i) <= enable when i = 0 else '0';
+      txEnable(i) <= enable;
+   end generate;
+
+   process ( prbsTxBuffFull, prbsTxBuffAFull ) begin
+      prbsTxVcRxOut              <= VC_RX_OUT_INIT_C;
+      prbsTxVcRxOut.remBuffFull  <= prbsTxBuffFull;
+      prbsTxVcRxOut.remBuffAFull <= prbsTxBuffAFull;
+   end process;
+
+   U_TxAdapt : entity work.VcAdapter 
+      generic map (
+         TPD_G => 1 ns
+      ) port map (
+         vcClk          => pgpClk,
+         vcClkRst       => pgpClkRst,
+         vcTxQuadIn     => prbsVcTxQuadIn,
+         vcTxQuadOut    => prbsVcTxQuadOut,
+         vcRxCommonOut  => vcRxCommonOut,
+         vcRxQuadOut    => vcRxQuadOut
+      );
+
+   U_VcRx: entity work.PpiVcRx 
+      generic map (
+         TPD_G                => 1 ns,
+         VC_WIDTH_G           => 1,
+         PPI_ADDR_WIDTH_G     => 9,
+         PPI_PAUSE_THOLD_G    => 255,
+         PPI_READY_THOLD_G    => 0,
+         PPI_MAX_FRAME_G      => 1023,
+         HEADER_ADDR_WIDTH_G  => 8,
+         HEADER_AFULL_THOLD_G => 100,
+         HEADER_FULL_THOLD_G  => 150,
+         DATA_ADDR_WIDTH_G    => 10,
+         DATA_AFULL_THOLD_G   => 520,
+         DATA_FULL_THOLD_G    => 750
+      ) port map (
+         ppiClk            => ppiClk,
+         ppiClkRst         => ppiClkRst,
+         ppiOnline         => '1',
+         ppiReadToFifo     => ppiReadToFifo,
+         ppiReadFromFifo   => ppiReadFromFifo,
+         vcRxClk           => pgpClk,
+         vcRxClkRst        => pgpClkRst,
+         vcRxCommonOut     => vcRxCommonOut,
+         vcRxQuadOut       => vcRxQuadOut,
+         locBuffFull       => prbsTxBuffFull,
+         locBuffAFull      => prbsTxbuffAFull,
+         remBuffFull       => open,
+         remBuffAFull      => open,
+         rxFrameCntEn      => rxFrameCntEn,
+         rxDropCountEn     => rxDropCountEn,
+         rxOverflow        => rxOverflow
+      );
 
    U_Route: entity work.PpiRouter 
       generic map (
@@ -110,39 +189,6 @@ begin
          ppiWriteFromFifo(0) => ppiWriteFromFifo
       );
 
-   U_VcRx: entity work.PpiVcRx 
-      generic map (
-         TPD_G                => 1 ns,
-         VC_WIDTH_G           => 1,
-         PPI_ADDR_WIDTH_G     => 9,
-         PPI_PAUSE_THOLD_G    => 255,
-         PPI_READY_THOLD_G    => 0,
-         PPI_MAX_FRAME_G      => 511,
-         HEADER_ADDR_WIDTH_G  => 8,
-         HEADER_AFULL_THOLD_G => 100,
-         HEADER_FULL_THOLD_G  => 150,
-         DATA_ADDR_WIDTH_G    => 9,
-         DATA_AFULL_THOLD_G   => 200,
-         DATA_FULL_THOLD_G    => 400
-      ) port map (
-         ppiClk            => ppiClk,
-         ppiClkRst         => ppiClkRst,
-         ppiOnline         => '1',
-         ppiReadToFifo     => ppiReadToFifo,
-         ppiReadFromFifo   => ppiReadFromFifo,
-         vcRxClk           => pgpRxClk,
-         vcRxClkRst        => pgpRxClkRst,
-         vcRxCommonOut     => vcRxCommonOut,
-         vcRxQuadOut       => vcRxQuadOut,
-         locBuffFull       => locBuffFull,
-         locBuffAFull      => locBuffAFull,
-         remBuffFull       => remBuffFull,
-         remBuffAFull      => remBuffAFull,
-         rxFrameCntEn      => rxFrameCntEn,
-         rxDropCountEn     => rxDropCountEn,
-         rxOverflow        => rxOverflow
-      );
-
    U_VcTx: entity work.PpiVcTx 
       generic map (
          TPD_G              => 1 ns,
@@ -156,69 +202,73 @@ begin
          ppiOnline         => '1',
          ppiWriteToFifo    => ppiWriteToFifo,
          ppiWriteFromFifo  => ppiWriteFromFifo,
-         vcTxClk           => pgpTxClk,
-         vcTxClkRst        => pgpTxClkRst,
+         vcTxClk           => pgpClk,
+         vcTxClkRst        => pgpClkRst,
          vcTxQuadIn        => vcTxQuadIn,
          vcTxQuadOut       => vcTxQuadOut,
-         locBuffFull       => locBuffFull,
-         locBuffAFull      => locBuffAFull,
-         remBuffFull       => remBuffFull,
-         remBuffAFull      => remBuffAFull,
+         locBuffFull       => '0',
+         locBuffAFull      => '0',
+         remBuffFull       => prbsRxBuffFull,
+         remBuffAFull      => prbsRxBuffAFull,
          txFrameCntEn      => txFrameCntEn
       );
 
-   -- Transmit data on VCs
-   U_LoopGen : for j in 0 to 3 generate
-      tvcTxQuadIn(j).locBuffAFull <= '0';
-      tvcTxQuadIn(j).locBuffFull  <= '0';
-      tvcTxQuadIn(j).eofe         <= '0';
-      tvcTxQuadIn(j).valid        <= '0' when gapReg(j) = '1' and gapDly(j) = '0' else enable;
-      tvcTxQuadIn(j).sof          <= '1' when tvcTxQuadIn(j).data(0) = 0    else '0';
-      tvcTxQuadIn(j).eof          <= '1' when tvcTxQuadIn(j).data(0) = 1500 else '0';
-      tvcTxQuadIn(j).data(1 to 3) <= (others=>(others=>'0'));
-      vcTxQuadOut(j).ready        <= '1';
-
-      process ( pgpRxClk ) begin
-         if rising_edge(pgpRxClk) then
-            if pgpRxClkRst = '1' then
-               tvcTxQuadIn(j).data(0)  <= (others=>'0') after 1 ns;
-               gapReg(j) <= '0' after 1 ns;
-               gapDly(j) <= '0' after 1 ns;
-            else
-
-               if tvcTxQuadIn(j).data(0)(6) = '1' then
-                  gapReg(j) <= '1';
-               else
-                  gapReg(j) <= '0';
-               end if;
-               gapDly(j) <= gapReg(j) after 1 ns;
-
-               if tvcTxQuadOut(j).ready = '1' and tvcTxQuadIn(j).valid = '1' then
-                  if tvcTxQuadIn(j).data(0) = 1500 then
-                     tvcTxQuadIn(j).data(0) <= (others=>'0') after 1 ns;
-                  else
-                     tvcTxQuadIn(j).data(0) <= tvcTxQuadIn(j).data(0)  + 1 after 1 ns;
-                  end if;
-               end if;
-       
-            end if;
-         end if;
-      end process;
-   end generate;
-
-   U_Adapt : entity work.VcAdapter 
+   U_RxAdapt : entity work.VcAdapter 
       generic map (
          TPD_G => 1 ns
       ) port map (
-         vcClk          => pgpRxClk,
-         vcClkRst       => pgpRxClkRst,
-         vcTxQuadIn     => tvcTxQuadIn,
-         vcTxQuadOut    => tvcTxQuadOut,
-         vcRxCommonOut  => vcRxCommonOut,
-         vcRxQuadOut    => vcRxQuadOut
+         vcClk          => pgpClk,
+         vcClkRst       => pgpClkRst,
+         vcTxQuadIn     => vcTxQuadIn,
+         vcTxQuadOut    => VcTxQuadOut,
+         vcRxCommonOut  => prbsVcRxCommonOut,
+         vcRxQuadOut    => prbsVcRxQuadOut
       );
 
-
+   U_RxGen: for i in 0 to 3 generate 
+      U_VcPrbsRx: entity work.VcPrbsRx 
+         generic map (
+            TPD_G              => 1 ns,
+            LANE_NUMBER_G      => 0,
+            VC_NUMBER_G        => i,
+            --PACKET_LENGTH_G    => (2**16),
+            PACKET_LENGTH_G    => 2048,
+            RST_ASYNC_G        => false,
+            GEN_SYNC_FIFO_G    => false,
+            BRAM_EN_G          => true,
+            FIFO_ADDR_WIDTH_G  => 9,
+            USE_DSP48_G        => "no",
+            ALTERA_SYN_G       => false,
+            ALTERA_RAM_G       => "M9K",
+            USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
+            LITTLE_ENDIAN_G    => false,
+            XIL_DEVICE_G       => "7SERIES",  --Xilinx only generic parameter    
+            FIFO_SYNC_STAGES_G => 3,
+            FIFO_INIT_G        => "0",
+            FIFO_FULL_THRES_G  => 256,    -- Almost full at 1/2 capacity
+            FIFO_EMPTY_THRES_G => 0
+         ) port map (
+            vcRxOut              => prbsVcRxQuadOut(i),
+            vcRxCommonOut        => prbsVcRxCommonOut,
+            vcTxIn_locBuffAFull  => prbsRxBuffAFull(i),
+            vcTxIn_locBuffFull   => prbsRxBuffFull(i),
+            vcTxIn               => open,
+            vcTxOut              => (others => '1'),
+            vcRxOut_remBuffAFull => '0',
+            vcRxOut_remBuffFull  => '0',
+            updatedResults       => updatedResults(i),
+            errMissedPacket      => errMissedPacket(i),
+            errLength            => errLength(i),
+            errEofe              => errEofe(i),
+            errWordCnt           => errWordCnt(i),
+            errbitCnt            => errbitCnt(i),
+            packetRate           => packetRate(i),
+            vcRxClk              => pgpClk,
+            vcRxRst              => pgpClkRst,
+            vcTxClk              => pgpClk,
+            vcTxRst              => pgpClkRst
+         ); 
+   end generate;
 
 end tb;
 

@@ -22,15 +22,22 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoAsync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoSync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/Fifo.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/fifo/rtl/FifoMux.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/SynchronizerFifo.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/ArbiterPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/Arbiter.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/PrbsPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLitePkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/xilinx7/rtl/DeviceDna.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteCrossbar.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteAsync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcAdapter.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcDsBuff16.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcUsBuff16.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcUsBuff32.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcPrbsRx.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcPrbsTx.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../pgp2/rtl/core/Pgp2CoreTypesPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../ArmRceG3/hdl/ArmRceG3Pkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiFifoAsync.vhd

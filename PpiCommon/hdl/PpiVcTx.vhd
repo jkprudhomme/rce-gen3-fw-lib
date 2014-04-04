@@ -8,11 +8,10 @@
 -- PPI block to transmit VC Frames.
 -- First word of PPI frame contains control data:
 --    Bits 07:00 = VC
---    Bits 15:08 = Lane (ignored)
---    Bits 16    = SOF
---    Bits 17    = EOF
---    Bits 18    = EOFE
---    Bits 63:19 = Ignored
+--    Bits 8     = SOF
+--    Bits 9     = EOF
+--    Bits 10    = EOFE
+--    Bits 63:11 = Ignored
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -36,9 +35,9 @@ use work.VcPkg.all;
 entity PpiVcTx is
    generic (
       TPD_G              : time := 1 ns;
-      VC_WIDTH_G         : integer range 1 to 4 := 1;-- 3 not allowed
-      PPI_ADDR_WIDTH_G   : integer range 2 to 48      := 9;
-      PPI_PAUSE_THOLD_G  : integer range 2 to (2**24) := 255;
+      VC_WIDTH_G         : integer range 1 to 4       := 1;   -- 2Bytes
+      PPI_ADDR_WIDTH_G   : integer range 2 to 48      := 9;   -- 4Kbytes
+      PPI_PAUSE_THOLD_G  : integer range 2 to (2**24) := 255; -- 2kbytes
       PPI_READY_THOLD_G  : integer range 0 to 511     := 0
    );
    port (
@@ -307,9 +306,9 @@ begin
          when S_IDLE =>
             if intReadFromFifo.valid = '1' and intReadFromFifo.ready = '1' then
                v.vc                 := intReadFromFifo.data(1 downto 0);
-               v.sof                := intReadFromFifo.data(16);
-               v.eof                := intReadFromFifo.data(17);
-               v.eofe               := intReadFromFifo.data(18);
+               v.sof                := intReadFromFifo.data(8);
+               v.eof                := intReadFromFifo.data(9);
+               v.eofe               := intReadFromFifo.data(10);
                v.ppiReadToFifo.read := '1';
                v.pos                := "00";
 
