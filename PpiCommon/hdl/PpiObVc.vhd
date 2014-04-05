@@ -1,13 +1,13 @@
 -------------------------------------------------------------------------------
--- Title         : PPI To VC Block, Data Transmit
--- File          : PpiVcTx.vhd
+-- Title         : PPI To VC Block, Outbound Transmit.
+-- File          : PpiObVc.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 03/21/2014
 -------------------------------------------------------------------------------
 -- Description:
--- PPI block to transmit VC Frames.
+-- PPI block to transmit outbound VC Frames.
 -- First word of PPI frame contains control data:
---    Bits 07:00 = VC
+--    Bits 03:00 = VC
 --    Bits 8     = SOF
 --    Bits 9     = EOF
 --    Bits 10    = EOFE
@@ -32,13 +32,14 @@ use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.VcPkg.all;
 
-entity PpiVcTx is
+entity PpiObVc is
    generic (
       TPD_G              : time := 1 ns;
-      VC_WIDTH_G         : integer range 1 to 4       := 1;   -- 2Bytes
-      PPI_ADDR_WIDTH_G   : integer range 2 to 48      := 9;   -- 4Kbytes
-      PPI_PAUSE_THOLD_G  : integer range 2 to (2**24) := 255; -- 2kbytes
-      PPI_READY_THOLD_G  : integer range 0 to 511     := 0
+      VC_WIDTH_G         : integer range 16 to 64     := 16;  -- 16, 32 or 64
+      VC_COUNT_G         : integer range 1  to 16     := 4;   -- Number of VCs
+      PPI_ADDR_WIDTH_G   : integer range 2 to 48      := 9;   -- (2**9) * 64 bits = 4096 bytes
+      PPI_PAUSE_THOLD_G  : integer range 2 to (2**24) := 256; -- 256 * 64 bits = 2048 bytes
+      PPI_READY_THOLD_G  : integer range 0 to 511     := 0    -- 0 * 64 bits = 0 bytes
    );
    port (
 
@@ -50,16 +51,10 @@ entity PpiVcTx is
       ppiWriteFromFifo : out PpiWriteFromFifoType;
 
       -- TX VC Interface
-      vcTxClk          : in  sl;
-      vcTxClkRst       : in  sl;
-      vcTxQuadIn       : out VcTxQuadInType;
-      vcTxQuadOut      : in  VcTxQuadOutType;
- 
-      -- Flow control from PpiVcRx block
-      locBuffFull      : in  sl; -- Routed to vcTxQuadIn record
-      locBuffAFull     : in  sl; -- Routed to vcTxQuadIn record
-      remBuffFull      : in  slv(3 downto 0); -- For local flow control
-      remBuffAFull     : in  slv(3 downto 0); -- For local flow control
+      obVcClk          : in  sl;
+      obVcClkRst       : in  sl;
+      obVcData         : out VcStreamDataType;
+      obVcCtrl         : in  VcStreamCtrlArray(VC_COUNT_G-1 downto 0);
 
       -- Frame Counter
       txFrameCntEn     : out sl
@@ -67,18 +62,15 @@ entity PpiVcTx is
 
 begin
    assert (VC_WIDTH_G /= 3) report "VC_WIDTH_G must not be = 3" severity failure;
-end PpiVcTx;
+end PpiObVc;
 
-architecture structure of PpiVcTx is
+architecture structure of PpiObVc is
 
    -- Local signals
    signal intReadToFifo    : PpiReadToFifoType;
    signal intReadFromFifo  : PpiReadFromFifoType;
    signal intOnline        : sl;
-   signal ilocBuffFull     : sl;
-   signal ilocBuffAFull    : sl;
-   signal iremBuffFull     : slv(3 downto 0);
-   signal iremBuffAFull    : slv(3 downto 0);
+   signal intVcCtrl        : VcStreamCtrlArray(15 downto 0);
 
    type StateType is (S_IDLE, S_FIRST, S_DATA, S_LAST);
 
@@ -91,7 +83,7 @@ architecture structure of PpiVcTx is
       eofe           : sl;
       txFrameCntEn   : sl;
       ppiReadToFifo  : PpiReadToFifoType;
-      vcTxQuadIn     : VcTxQuadInType;
+      obVcData       : VcTxQuadInType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -103,7 +95,7 @@ architecture structure of PpiVcTx is
       eofe           => '0',
       txFrameCntEn   => '0',
       ppiReadToFifo  => PPI_READ_TO_FIFO_INIT_C,
-      vcTxQuadIn     => VC_TX_QUAD_IN_INIT_C
+      obVcData       => VC_STREAM_DATA_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -112,70 +104,18 @@ architecture structure of PpiVcTx is
 begin
 
    ------------------------------------
-   -- Sync Flow Control
+   -- Connect VC control
    ------------------------------------
+   intVcCtrl(VC_COUNT_G-1 downto 0) <= obVcCtrl;
 
-   U_FcSyncA : entity work.Synchronizer 
-      generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         OUT_POLARITY_G => '1',
-         RST_ASYNC_G    => false,
-         STAGES_G       => 2,
-         INIT_G         => "0"
-      ) port map (
-         clk     => vcTxClk,
-         rst     => vcTxClkRst,
-         dataIn  => locBuffFull,
-         dataOut => ilocBuffFull
-      );
-
-   U_FcSyncB : entity work.Synchronizer 
-      generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         OUT_POLARITY_G => '1',
-         RST_ASYNC_G    => false,
-         STAGES_G       => 2,
-         INIT_G         => "0"
-      ) port map (
-         clk     => vcTxClk,
-         rst     => vcTxClkRst,
-         dataIn  => locBuffAFull,
-         dataOut => ilocBuffAFull
-      );
-
-   U_RxSyncGen : for i in 0 to 3 generate
-
-      U_FcSyncC : entity work.Synchronizer 
-         generic map (
-            TPD_G          => TPD_G,
-            RST_POLARITY_G => '1',
-            OUT_POLARITY_G => '1',
-            RST_ASYNC_G    => false,
-            STAGES_G       => 2,
-            INIT_G         => "0"
-         ) port map (
-            clk     => vcTxClk,
-            rst     => vcTxClkRst,
-            dataIn  => remBuffFull(i),
-            dataOut => iremBuffFull(i)
-         );
-
-      U_FcSyncD : entity work.Synchronizer 
-         generic map (
-            TPD_G          => TPD_G,
-            RST_POLARITY_G => '1',
-            OUT_POLARITY_G => '1',
-            RST_ASYNC_G    => false,
-            STAGES_G       => 2,
-            INIT_G         => "0"
-         ) port map (
-            clk     => vcTxClk,
-            rst     => vcTxClkRst,
-            dataIn  => remBuffFull(i),
-            dataOut => iremBuffAFull(i)
-         );
+   U_CtrlGen: if VC_COUNT_G /= 16 generate
+      process ( obVcCtrl ) begin
+         for i in VC_COUNT_G to VC_COUNT_G-1 loop
+            intVcCtrl(i).full       <= '0';
+            intVcCtrl(i).almostFull <= '0';
+            intVcCtrl(i).ready      <= '1';
+         end loop;
+      end process;
    end generate;
 
 
@@ -199,8 +139,8 @@ begin
          ppiWrOnline      => ppiOnline,
          ppiWriteToFifo   => ppiWriteToFifo,
          ppiWriteFromFifo => ppiWriteFromFifo,
-         ppiRdClk         => vcTxClk,
-         ppiRdClkRst      => vcTxClkRst,
+         ppiRdClk         => obVcClk,
+         ppiRdClkRst      => obVcClkRst,
          ppiRdOnline      => intOnline,
          ppiReadToFifo    => intReadToFifo,
          ppiReadFromFifo  => intReadFromFifo
@@ -212,16 +152,15 @@ begin
    ------------------------------------
 
    -- Sync
-   process (vcTxClk) is
+   process (obVcClk) is
    begin
-      if (rising_edge(vcTxClk)) then
+      if (rising_edge(obVcClk)) then
          r <= rin after TPD_G;
       end if;
    end process;
 
    -- Async
-   process (vcTxClkRst, r, intReadFromFifo, vcTxQuadOut, ilocBuffAFull, ilocBuffFull, 
-            iremBuffAFull, iremBuffFull, intOnline ) is
+   process (obVcClkRst, r, intReadFromFifo, intVcCtrl, intOnline ) is
       variable v         : RegType;
       variable nextData  : slv(63 downto 0);
       variable nextEof   : sl;
@@ -234,12 +173,8 @@ begin
       v.ppiReadToFifo.read := '0';
       v.txFrameCntEn       := '0';
 
-      -- Init valid signals and flow control
-      for i in 0 to 3 loop
-         v.vcTxQuadIn(i).valid        := '0';
-         v.vcTxQuadIn(i).locBuffAFull := ilocBuffAFull;
-         v.vcTxQuadIn(i).locBuffFull  := ilocBuffFull;
-      end loop;
+      -- Init valid signal
+      v.obVcData.valid := '0';
 
       -- Determine data alignment and EOF
       nextData := (others=>'0');
@@ -305,7 +240,7 @@ begin
          -- Idle
          when S_IDLE =>
             if intReadFromFifo.valid = '1' and intReadFromFifo.ready = '1' then
-               v.vc                 := intReadFromFifo.data(1 downto 0);
+               v.vc                 := intReadFromFifo.data(3 downto 0);
                v.sof                := intReadFromFifo.data(8);
                v.eof                := intReadFromFifo.data(9);
                v.eofe               := intReadFromFifo.data(10);
@@ -320,62 +255,46 @@ begin
 
          -- First, put data onto interface
          when S_FIRST =>
-
-            v.vcTxQuadIn(conv_integer(r.vc)).sof     := r.sof;
-            v.vcTxQuadIn(conv_integer(r.vc)).data(0) := nextData(15 downto  0);
-            v.vcTxQuadIn(conv_integer(r.vc)).data(1) := nextData(31 downto 16);
-            v.vcTxQuadIn(conv_integer(r.vc)).data(2) := nextData(47 downto 32);
-            v.vcTxQuadIn(conv_integer(r.vc)).data(3) := nextData(63 downto 48);
-
-            v.vcTxQuadIn(conv_integer(r.vc)).valid := (not iremBuffAFull(conv_integer(r.vc)));
-
+            v.obVcData.sof       := r.sof;
+            v.obVcData.data      := nextData;
+            v.obVcData.valid     := (not intVcCtrl(conv_integer(r.vc)).almostFull);
+            v.obVcData.vc        := r.vc;
             v.ppireadToFifo.read := nextRead;
-            v.pos := nextPos;
+            v.pos                := nextPos;
 
             if nextEof = '1' then
-               v.vcTxQuadIn(conv_integer(r.vc)).eof  := r.eof;
-               v.vcTxQuadIn(conv_integer(r.vc)).eofe := r.eofe;
-               v.state := S_LAST;
+               v.obVcData.eof  := r.eof;
+               v.obVcData.eofe := r.eofe;
+               v.state         := S_LAST;
             else
-               v.vcTxQuadIn(conv_integer(r.vc)).eof  := '0';
-               v.vcTxQuadIn(conv_integer(r.vc)).eofe := '0';
-               v.state := S_DATA;
+               v.obVcData.eof  := '0';
+               v.obVcData.eofe := '0';
+               v.state         := S_DATA;
             end if;
 
          -- Normal Data
          when S_DATA =>
-            v.vcTxQuadIn(conv_integer(r.vc)).valid := (not iremBuffFull(conv_integer(r.vc)));
+            v.obVcData.valid := (not intVcCtrl(conv_integer(r.vc)).full);
 
-            if vcTxQuadOut(conv_integer(r.vc)).ready = '1' and r.vcTxQuadIn(conv_integer(r.vc)).valid = '1' then
-               v.vcTxQuadIn(conv_integer(r.vc)).sof     := '0';
-               v.vcTxQuadIn(conv_integer(r.vc)).data(0) := nextData(15 downto  0);
-               v.vcTxQuadIn(conv_integer(r.vc)).data(1) := nextData(31 downto 16);
-               v.vcTxQuadIn(conv_integer(r.vc)).data(2) := nextData(47 downto 32);
-               v.vcTxQuadIn(conv_integer(r.vc)).data(3) := nextData(63 downto 48);
-
+            if intVcCtrl(conv_integer(r.vc)).ready = '1' and r.obVcData.valid = '1' then
+               v.obVcData.sof       := '0';
+               v.obVcData.data      := nextData;
                v.ppireadToFifo.read := nextRead;
-               v.pos := nextPos;
+               v.pos                := nextPos;
 
                if nextEof = '1' then
-                  v.vcTxQuadIn(conv_integer(r.vc)).eof  := r.eof;
-                  v.vcTxQuadIn(conv_integer(r.vc)).eofe := r.eofe;
-                  v.state := S_LAST;
+                  v.obVcData.eof  := r.eof;
+                  v.obVcData.eofe := r.eofe;
+                  v.state         := S_LAST;
                end if;
             end if;
 
          -- Last Transfer
          when S_LAST =>
-            if vcTxQuadOut(conv_integer(r.vc)).ready = '1' then
-
-               if r.vcTxQuadIn(conv_integer(r.vc)).eof = '1' then
-                  v.txFrameCntEn := '1';
-               end if;
-
-               v.vcTxQuadIn(conv_integer(r.vc)).valid := '0';
-
-               v.state := S_IDLE;
-            else
-               v.vcTxQuadIn(conv_integer(r.vc)).valid := '1';
+            if intVcCtrl(conv_integer(r.vc)).ready = '1' then
+               v.txFrameCntEn   := r.obVcDdata.eof;
+               v.obVcData.valid := '0';
+               v.state          := S_IDLE;
             end if;
 
          when others =>
@@ -384,7 +303,7 @@ begin
       end case;
 
       -- Reset
-      if vcTxClkRst = '1' or intOnline = '0' then
+      if obVcClkRst = '1' or intOnline = '0' then
          v := REG_INIT_C;
       end if;
 
@@ -393,7 +312,7 @@ begin
 
       -- Outputs
       intReadToFifo <= v.ppiReadToFifo;
-      vcTxQuadIn    <= r.vcTxQuadIn;
+      obVcData      <= r.obVcData;
       txFrameCntEn  <= r.txFrameCntEn;
 
    end process;

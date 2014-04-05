@@ -31,17 +31,17 @@ use work.Pgp2CoreTypesPkg.all;
 entity PpiPgpLane is
    generic (
       TPD_G                : time                       := 1 ns;
-      VC_WIDTH_G           : integer range 1 to 4       := 1; -- 3 not allowed
-      PPI_ADDR_WIDTH_G     : integer range 2 to 48      := 9;
-      PPI_PAUSE_THOLD_G    : integer range 2 to (2**24) := 255;
-      PPI_READY_THOLD_G    : integer range 0 to 511     := 0;
-      PPI_MAX_FRAME_G      : integer range 1 to (2**12) := 511;
-      HEADER_ADDR_WIDTH_G  : integer range 2 to 48      := 8;
-      HEADER_AFULL_THOLD_G : integer range 1 to (2**24) := 100;
-      HEADER_FULL_THOLD_G  : integer range 1 to (2**24) := 150;
-      DATA_ADDR_WIDTH_G    : integer range 1 to 48      := 9;
-      DATA_AFULL_THOLD_G   : integer range 1 to (2**24) := 200;
-      DATA_FULL_THOLD_G    : integer range 1 to (2**24) := 400
+      VC_WIDTH_G           : integer range 16 to 64     := 16;   -- Bits: 16, 32 or 64
+      PPI_ADDR_WIDTH_G     : integer range 2 to 48      := 9;    -- (2**9) * 64bits = 4096 bytes
+      PPI_PAUSE_THOLD_G    : integer range 2 to (2**24) := 256;  -- 256 * 64bits = 2048 bytes
+      PPI_READY_THOLD_G    : integer range 0 to 511     := 0;    -- 0 * 64bits = 0 bytes
+      PPI_MAX_FRAME_G      : integer range 1 to (2**12) := 1024; -- 1024 bytes
+      HEADER_ADDR_WIDTH_G  : integer range 2 to 48      := 8;    -- (2**8) = 256 headers
+      HEADER_AFULL_THOLD_G : integer range 1 to (2**24) := 100;  -- 100 headers
+      HEADER_FULL_THOLD_G  : integer range 1 to (2**24) := 150;  -- 150 headers
+      DATA_ADDR_WIDTH_G    : integer range 1 to 48      := 10;   -- (2**10) * 16bits(VC_WIDTH_G) = 2048 bytes
+      DATA_AFULL_THOLD_G   : integer range 1 to (2**24) := 520;  -- 520 * 16bits(VC_WIDTH_G) = 1040 Bytes
+      DATA_FULL_THOLD_G    : integer range 1 to (2**24) := 750   -- 750 * 16bits(VC_WIDTH_G) = 1500 Bytes
    );
    port (
 
@@ -58,20 +58,16 @@ entity PpiPgpLane is
       pgpTxClk         : in  sl;
       pgpTxClkRst      : in  sl;
       pgpTxSwRst       : out sl;
-      pgpTxIn          : out PgpTxInType;
-      pgpTxOut         : in  PgpTxOutType;
-      pgpVcTxQuadIn    : out VcTxQuadInType;
-      pgpVcTxQuadOut   : in  VcTxQuadOutType;
+      pgpTxData        : out VcStreamDataType;
+      pgpTxCtrl        : in  VcStreamCtrlType;
 
       -- RX PGP Interface
       pgpRxClk         : in  sl;
       pgpRxClkRst      : in  sl;
       pgpRxSwRst       : out sl;
-      pgpRxIn          : out PgpRxInType;
-      pgpRxOut         : in  PgpRxOutType;
-      pgpVcRxCommonOut : in  VcRxCommonOutType;
-      pgpVcRxQuadOut   : in  VcRxQuadOutType;
-     
+      pgpRxData        : in  VcStreamDataType;
+      pgpRxCtrl        : out VcStreamCtrlType;
+
       -- AXI/Status Clocks Interface
       axiStatClk       : in  sl;
       axiStatClkRst    : in  sl;
@@ -93,10 +89,6 @@ architecture structure of PpiPgpLane is
    -- Local Signals
    signal rxFrameCntEn  : sl;
    signal txFrameCntEn  : sl;
-   signal locBuffFull   : sl;
-   signal locBuffAFull  : sl;
-   signal remBuffFull   : slv(3 downto 0);
-   signal remBuffAFull  : slv(3 downto 0);
    signal rxDropCountEn : sl;
    signal rxOverflow    : sl;
 
@@ -134,10 +126,11 @@ begin
 
 
    -- Transmit Data
-   U_PgpTx : entity work.PpiVcTx
+   U_PgpTx : entity work.PpiObVc
       generic map (
          TPD_G              => TPD_G,
          VC_WIDTH_G         => VC_WIDTH_G,
+         VC_COUNT_G         => 4,
          PPI_ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
          PPI_PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G,
          PPI_READY_THOLD_G  => PPI_READY_THOLD_G
@@ -147,20 +140,16 @@ begin
          ppiOnline         => ppiOnline,
          ppiWriteToFifo    => ppiWriteToFifo,
          ppiWriteFromFifo  => ppiWriteFromFifo,
-         vcTxClk           => pgpTxClk,
-         vcTxClkRst        => pgpTxClkRst,
-         vcTxQuadIn        => pgpVcTxQuadIn,
-         vcTxQuadOut       => pgpVcTxQuadOut,
-         locBuffFull       => locBuffFull,
-         locBuffAFull      => locBuffAFull,
-         remBuffFull       => remBuffFull,
-         remBuffAFull      => remBuffAFull,
+         obVcClk           => pgpTxClk,
+         obVcClkRst        => pgpTxClkRst,
+         obVcData          => pgpTxData,
+         obVcCtrl          => pgpTxCtrl,
          txFrameCntEn      => txFrameCntEn
       );
 
 
    -- Receive Data
-   U_PgpRx : entity work.PpiVcRx 
+   U_PgpRx : entity work.PpiIbVc 
       generic map (
          TPD_G                 => TPD_G,
          VC_WIDTH_G            => VC_WIDTH_G,
@@ -180,14 +169,10 @@ begin
          ppiOnline        => ppiOnline,
          ppiReadToFifo    => ppiReadToFifo,
          ppiReadFromFifo  => ppiReadFromFifo,
-         vcRxClk          => pgpRxClk,
-         vcRxClkRst       => pgpRxClkRst,
-         vcRxCommonOut    => pgpVcRxCommonOut,
-         vcRxQuadOut      => pgpVcRxQuadOut,
-         locBuffFull      => locBuffFull,
-         locBuffAFull     => locBuffAFull,
-         remBuffFull      => remBuffFull,
-         remBuffAFull     => remBuffAFull,
+         ibVcClk          => pgpRxClk,
+         ibVcClkRst       => pgpRxClkRst,
+         ibVcData         => pgpRxData,
+         ibVcCtrl         => pgpRxCtrl,
          rxFrameCntEn     => rxFrameCntEn,
          rxDropCountEn    => rxDropCountEn,
          rxOverflow       => rxOverflow

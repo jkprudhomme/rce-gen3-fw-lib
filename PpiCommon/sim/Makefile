@@ -5,7 +5,7 @@ SIM_DIR=$(PWD)/out
 
 all: syn_setup rtl_src sim_gen
 
-EN64=-full64
+EN64=-full64 -xlrm
 
 # RTL Files
 rtl_src:

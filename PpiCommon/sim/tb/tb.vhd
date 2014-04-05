@@ -43,14 +43,16 @@ architecture tb of tb is
    signal errWordCnt        : Slv32Array(3 downto 0);
    signal errbitCnt         : Slv32Array(3 downto 0);
    signal packetRate        : Slv32Array(3 downto 0);
+   signal packetLength      : Slv32Array(3 downto 0);
    signal prbsRxBuffFull    : slv(3 downto 0);
    signal prbsRxBuffAFull   : slv(3 downto 0);
    signal prbsTxBuffFull    : sl;
    signal prbsTxBuffAFull   : sl;
    signal prbsTxVcRxOut     : VcRxOutType;
    signal enable            : sl;
-   signal txEnable          : slv(3 downto 0);
-
+   signal txEnable          : slv(3  downto 0);
+   signal txBusy            : slv(3  downto 0);
+   signal txLength          : Slv32Array(3 downto 0);
 
 begin
 
@@ -93,8 +95,6 @@ begin
       U_VcPrbsTx : entity work.VcPrbsTx 
          generic map (
             TPD_G              => 1 ns,
-            --PACKET_LENGTH_G    => (2**16),
-            PACKET_LENGTH_G    => 2048,
             RST_ASYNC_G        => false,
             GEN_SYNC_FIFO_G    => false,
             BRAM_EN_G          => true,
@@ -110,18 +110,45 @@ begin
             FIFO_FULL_THRES_G  => 256,    -- Almost full at 1/2 capacity
             FIFO_EMPTY_THRES_G => 0
          ) port map (
-            trig    => txEnable(i),
-            vcTxIn  => prbsVcTxQuadIn(i),
-            vcTxOut => prbsVcTxQuadOut(i),
-            vcRxOut => prbsTxVcRxOut,
-            locClk  => pgpClk,
-            locRst  => pgpClkRst,
-            vcTxClk => pgpClk,
-            vcTxRst => pgpClkRst
+            trig         => txEnable(i),
+            packetLength => txLength(i),
+            busy         => txBusy(i),
+            vcTxIn       => prbsVcTxQuadIn(i),
+            vcTxOut      => prbsVcTxQuadOut(i),
+            vcRxOut      => prbsTxVcRxOut,
+            locClk       => pgpClk,
+            locRst       => pgpClkRst,
+            vcTxClk      => pgpClk,
+            vcTxRst      => pgpClkRst
          );
 
-      --txEnable(i) <= enable when i = 0 else '0';
-      txEnable(i) <= enable;
+
+      process ( pgpClk ) begin
+         if rising_edge(pgpClk) then
+            if pgpClkRst = '1' then
+               txEnable(i) <= '0' after 1 ns;
+
+               case i is 
+                  when 0      => txLength(i) <= x"00000700" after 1 ns;
+                  when 1      => txLength(i) <= x"00000800" after 1 ns;
+                  when 2      => txLength(i) <= x"00000900" after 1 ns;
+                  when 3      => txLength(i) <= x"00000A00" after 1 ns;
+                  when others => txLength(i) <= x"00000001" after 1 ns;
+               end case;
+            else
+               if txBusy(i) = '0' and enable = '1' and txEnable(i) = '0' then
+                  txEnable(i) <= '1' after 1 ns;
+               else
+                  txEnable(i) <= '0' after 1 ns;
+               end if;
+
+               if txEnable(i) = '1' then
+                  txLength(i) <= txLength(i) + 1 after 1 ns;
+               end if;
+
+            end if;
+         end if;
+      end process;
    end generate;
 
    process ( prbsTxBuffFull, prbsTxBuffAFull ) begin
@@ -231,8 +258,6 @@ begin
             TPD_G              => 1 ns,
             LANE_NUMBER_G      => 0,
             VC_NUMBER_G        => i,
-            --PACKET_LENGTH_G    => (2**16),
-            PACKET_LENGTH_G    => 2048,
             RST_ASYNC_G        => false,
             GEN_SYNC_FIFO_G    => false,
             BRAM_EN_G          => true,
@@ -257,12 +282,14 @@ begin
             vcRxOut_remBuffAFull => '0',
             vcRxOut_remBuffFull  => '0',
             updatedResults       => updatedResults(i),
+            busy                 => open,
             errMissedPacket      => errMissedPacket(i),
             errLength            => errLength(i),
             errEofe              => errEofe(i),
             errWordCnt           => errWordCnt(i),
             errbitCnt            => errbitCnt(i),
             packetRate           => packetRate(i),
+            packetLength         => packetLength(i),
             vcRxClk              => pgpClk,
             vcRxRst              => pgpClkRst,
             vcTxClk              => pgpClk,
