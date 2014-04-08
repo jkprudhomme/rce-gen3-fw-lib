@@ -25,8 +25,8 @@ use unisim.vcomponents.all;
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
-use work.VcPkg.all;
-use work.Pgp2CoreTypesPkg.all;
+use work.Vc64Pkg.all;
+use work.Pgp2bPkg.all;
 
 entity PpiPgpLane is
    generic (
@@ -38,10 +38,8 @@ entity PpiPgpLane is
       PPI_MAX_FRAME_G      : integer range 1 to (2**12) := 1024; -- 1024 bytes
       HEADER_ADDR_WIDTH_G  : integer range 2 to 48      := 8;    -- (2**8) = 256 headers
       HEADER_AFULL_THOLD_G : integer range 1 to (2**24) := 100;  -- 100 headers
-      HEADER_FULL_THOLD_G  : integer range 1 to (2**24) := 150;  -- 150 headers
       DATA_ADDR_WIDTH_G    : integer range 1 to 48      := 10;   -- (2**10) * 16bits(VC_WIDTH_G) = 2048 bytes
-      DATA_AFULL_THOLD_G   : integer range 1 to (2**24) := 520;  -- 520 * 16bits(VC_WIDTH_G) = 1040 Bytes
-      DATA_FULL_THOLD_G    : integer range 1 to (2**24) := 750   -- 750 * 16bits(VC_WIDTH_G) = 1500 Bytes
+      DATA_AFULL_THOLD_G   : integer range 1 to (2**24) := 520   -- 520 * 16bits(VC_WIDTH_G) = 1040 Bytes
    );
    port (
 
@@ -58,15 +56,19 @@ entity PpiPgpLane is
       pgpTxClk         : in  sl;
       pgpTxClkRst      : in  sl;
       pgpTxSwRst       : out sl;
-      pgpTxData        : out VcStreamDataType;
-      pgpTxCtrl        : in  VcStreamCtrlType;
+      pgpTxIn          : out PgpTxInType;
+      pgpTxOut         : in  PgpTxOutType;
+      pgpTxData        : out Vc64DataType;
+      pgpTxCtrl        : in  Vc64CtrlArray(3 downto 0);
 
       -- RX PGP Interface
       pgpRxClk         : in  sl;
       pgpRxClkRst      : in  sl;
       pgpRxSwRst       : out sl;
-      pgpRxData        : in  VcStreamDataType;
-      pgpRxCtrl        : out VcStreamCtrlType;
+      pgpRxIn          : out PgpRxInType;
+      pgpRxOut         : in  PgpRxOutType;
+      pgpRxData        : in  Vc64DataType;
+      pgpRxCtrl        : out Vc64CtrlType;
 
       -- AXI/Status Clocks Interface
       axiStatClk       : in  sl;
@@ -159,10 +161,8 @@ begin
          PPI_MAX_FRAME_G       => PPI_MAX_FRAME_G,
          HEADER_ADDR_WIDTH_G   => HEADER_ADDR_WIDTH_G,
          HEADER_AFULL_THOLD_G  => HEADER_AFULL_THOLD_G,
-         HEADER_FULL_THOLD_G   => HEADER_FULL_THOLD_G,
          DATA_ADDR_WIDTH_G     => DATA_ADDR_WIDTH_G,
-         DATA_AFULL_THOLD_G    => DATA_AFULL_THOLD_G,
-         DATA_FULL_THOLD_G     => DATA_FULL_THOLD_G
+         DATA_AFULL_THOLD_G    => DATA_AFULL_THOLD_G
       ) port map (
          ppiClk           => ppiClk,
          ppiClkRst        => ppiClkRst,

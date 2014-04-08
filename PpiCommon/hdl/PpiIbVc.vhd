@@ -31,22 +31,20 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
-use work.VcPkg.all;
+use work.Vc64Pkg.all;
 
 entity PpiIbVc is
    generic (
       TPD_G                : time := 1 ns;
-      VC_WIDTH_G           : integer range 16 to 64     := 16;   -- Bits: 16, 32 or 64
-      PPI_ADDR_WIDTH_G     : integer range 2 to 48      := 9;    -- (2**9) * 64bits = 4096 bytes
-      PPI_PAUSE_THOLD_G    : integer range 2 to (2**24) := 256;  -- 256 * 64bits = 2048 bytes
-      PPI_READY_THOLD_G    : integer range 0 to 511     := 0;    -- 0 * 64bits = 0 bytes
-      PPI_MAX_FRAME_G      : integer range 1 to (2**12) := 1024; -- 1024 bytes
-      HEADER_ADDR_WIDTH_G  : integer range 2 to 48      := 8;    -- (2**8) = 256 headers
-      HEADER_AFULL_THOLD_G : integer range 1 to (2**24) := 100;  -- 100 headers
-      HEADER_FULL_THOLD_G  : integer range 1 to (2**24) := 150;  -- 150 headers
-      DATA_ADDR_WIDTH_G    : integer range 1 to 48      := 10;   -- (2**10) * 16bits(VC_WIDTH_G) = 2048 bytes
-      DATA_AFULL_THOLD_G   : integer range 1 to (2**24) := 520;  -- 520 * 16bits(VC_WIDTH_G) = 1040 Bytes
-      DATA_FULL_THOLD_G    : integer range 1 to (2**24) := 750   -- 750 * 16bits(VC_WIDTH_G) = 1500 Bytes
+      VC_WIDTH_G           : integer range 16 to 64     := 16;    -- Bits: 16, 32 or 64
+      PPI_ADDR_WIDTH_G     : integer range 2 to 48      := 9;     -- (2**9) * 64bits = 4096 bytes
+      PPI_PAUSE_THOLD_G    : integer range 2 to (2**24) := 256;   -- 256 * 64bits = 2048 bytes
+      PPI_READY_THOLD_G    : integer range 0 to 511     := 0;     -- 0 * 64bits = 0 bytes
+      PPI_MAX_FRAME_G      : integer range 1 to (2**12) := 1024;  -- 1024 bytes
+      HEADER_ADDR_WIDTH_G  : integer range 2 to 48      := 8;     -- (2**8) = 256 headers
+      HEADER_AFULL_THOLD_G : integer range 1 to (2**24) := 100;   -- 100 headers
+      DATA_ADDR_WIDTH_G    : integer range 1 to 48      := 10;    -- (2**10) * 16bits(VC_WIDTH_G) = 2048 bytes
+      DATA_AFULL_THOLD_G   : integer range 1 to (2**24) := 520    -- 520 * 16bits(VC_WIDTH_G) = 1040 Bytes
    );
    port (
 
@@ -57,11 +55,12 @@ entity PpiIbVc is
       ppiReadToFifo    : in  PpiReadToFifoType;
       ppiReadFromFifo  : out PpiReadFromFifoType;
 
-      -- Inbound VC Interface
+      -- Inbound VC Interface, almostFull asserted
+      -- Ready is always '1'
       ibVcClk         : in  sl;
       ibVcClkRst      : in  sl;
-      ibVcData        : in  VcStreamDataType;
-      ibVcCtrl        : out VcStreamCtrlType;
+      ibVcData        : in  Vc64DataType;
+      ibVcCtrl        : out Vc64CtrlType;
 
       -- Status
       rxFrameCntEn    : out sl;
@@ -86,15 +85,18 @@ architecture structure of PpiIbVc is
    signal intWriteFromFifo : PpiWriteFromFifoType;
    signal intOnline        : sl;
    signal headerCount      : slv(HEADER_ADDR_WIDTH_G-1 downto 0);
-   signal headerBuffFull   : sl;
-   signal headerBuffAFull  : sl;
-   signal headerOverflow   : sl;
+   signal headerPFull      : sl;
+   signal headerAFull      : sl;
+   signal headerFull       : sl;
    signal dataCount        : slv(DATA_ADDR_WIDTH_G-1 downto 0);
-   signal dataBuffFull     : sl;
-   signal dataBuffAFull    : sl;
-   signal dataOverflow     : sl;
+   signal dataPFull        : sl;
+   signal dataAFull        : sl;
+   signal dataFull         : sl;
    signal headerRead       : sl;
    signal dataRead         : sl;
+   signal overflow   : sl;
+   signal dfifoDin         : slv(DATA_FIFO_WIDTH_C-1 downto 0);
+   signal dfifoDout        : slv(DATA_FIFO_WIDTH_C-1 downto 0);
 
    type DataFifoType is record
       data  : slv(63 downto 0);
@@ -117,7 +119,7 @@ architecture structure of PpiIbVc is
       eof      : sl;
       eofe     : sl;
       valid    : sl;
-      overflow : sl;
+      dropped  : sl;
       byteCnt  : slv(11 downto 0);
    end record HeaderFifoType;
 
@@ -127,7 +129,7 @@ architecture structure of PpiIbVc is
       eof      => '0',
       eofe     => '0',
       valid    => '0',
-      overflow => '0',
+      dropped  => '0',
       byteCnt  => (others=>'0')
    );
 
@@ -159,10 +161,10 @@ architecture structure of PpiIbVc is
       sof             : sl;
       eof             : sl;
       eofe            : sl;
-      vc              : slv(1 downto 0);
+      vc              : slv(3 downto 0);
       dirty           : sl;
       overflow        : sl;
-      dropVc          : slv(15 downto 0);
+      droppedVc       : slv(15 downto 0);
       dropCountEn     : sl;
       dataIn          : DataFifoType;
       headerIn        : HeaderFifoType;  
@@ -177,7 +179,7 @@ architecture structure of PpiIbVc is
       vc              => (others=>'0'),
       dirty           => '0',
       overflow        => '0',
-      dropVc          => (others=>'0'),
+      droppedVc       => (others=>'0'),
       dropCountEn     => '0',
       dataIn          => DATA_FIFO_INIT_C,
       headerIn        => HEADER_FIFO_INIT_C,
@@ -196,8 +198,8 @@ begin
    ------------------------------------
 
    -- Flow Control
-   ibVcCtrl.full       <= headerBuffFull  or dataBuffFull;
-   ibVcCtrl.almostFull <= headerBuffAFull or dataBuffAFull;
+   ibVcCtrl.overflow   <= r.overflow;
+   ibVcCtrl.almostFull <= (headerPFull or dataPFull);
    ibVcCtrl.ready      <= '1';
 
 
@@ -277,11 +279,11 @@ begin
             -- Header is valid and no flow control
             if headerOut.valid = '1' and intWriteFromFifo.pause = '0' and ppiOnline = '1' then
                v.ppiWriteToFifo.data(43 downto 32) := headerOut.byteCnt;
-               v.ppiWriteToFifo.data(11)           := headerOut.overflow;
+               v.ppiWriteToFifo.data(11)           := headerOut.dropped;
                v.ppiWriteToFifo.data(10)           := headerOut.eofe;
                v.ppiWriteToFifo.data(9)            := headerOut.eof;
                v.ppiWriteToFifo.data(8)            := headerOut.sof;
-               v.ppiWriteToFifo.data(1 downto 0)   := headerOut.vc;
+               v.ppiWriteToFifo.data(3 downto 0)   := headerOut.vc;
                v.ppiWriteToFifo.size               := "111";
                v.ppiWriteToFifo.eof                := '0';
                v.ppiWriteToFifo.eoh                := '1';
@@ -311,7 +313,7 @@ begin
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.valid := '1';
                v.ppiWriteToFifo.eof   := '1';
-               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.overflow;
+               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
             end if;
@@ -331,7 +333,7 @@ begin
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.valid := '1';
                v.ppiWriteToFifo.eof   := '1';
-               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.overflow;
+               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
             end if;
@@ -351,7 +353,7 @@ begin
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.valid := '1';
                v.ppiWriteToFifo.eof   := '1';
-               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.overflow;
+               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
             end if;
@@ -371,7 +373,7 @@ begin
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.eof   := '1';
-               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.overflow;
+               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
             end if;
@@ -391,7 +393,7 @@ begin
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.valid := '1';
                v.ppiWriteToFifo.eof   := '1';
-               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.overflow;
+               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
             end if;
@@ -411,7 +413,7 @@ begin
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.eof   := '1';
-               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.overflow;
+               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
             end if;
@@ -430,7 +432,7 @@ begin
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.eof   := '1';
-               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.overflow;
+               v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
             end if;
@@ -470,30 +472,30 @@ begin
          DATA_WIDTH_G   => 20,
          ADDR_WIDTH_G   => HEADER_ADDR_WIDTH_G,
          INIT_G         => "0",
-         FULL_THRES_G   => 1,
-         EMPTY_THRES_G  => 0
+         FULL_THRES_G   => HEADER_AFULL_THOLD_G,
+         EMPTY_THRES_G  => 1
       ) port map (
          rst                => ppiClkRst,
          wr_clk             => ibVcClk,
          wr_en              => headerIn.valid,
          din(11 downto  0)  => headerIn.byteCnt,
          din(15 downto 12)  => headerIn.vc,
-         din(16)            => headerIn.overflow,
+         din(16)            => headerIn.dropped,
          din(17)            => headerIn.eofe,
          din(18)            => headerIn.eof,
          din(19)            => headerIn.sof,
          wr_data_count      => headerCount,
          wr_ack             => open,
          overflow           => open,
-         prog_full          => open,
-         almost_full        => open,
-         full               => open,
+         prog_full          => headerPFull,
+         almost_full        => headerAFull,
+         full               => headerFull,
          not_full           => open,
          rd_clk             => ppiClk,
          rd_en              => headerRead,
          dout(11 downto  0) => headerOut.byteCnt,
          dout(15 downto 12) => headerOut.vc,
-         dout(16)           => headerOut.overflow,
+         dout(16)           => headerOut.dropped,
          dout(17)           => headerOut.eofe,
          dout(18)           => headerOut.eof,
          dout(19)           => headerOut.sof,
@@ -520,89 +522,55 @@ begin
          DATA_WIDTH_G   => DATA_FIFO_WIDTH_C,
          ADDR_WIDTH_G   => DATA_ADDR_WIDTH_G,
          INIT_G         => "0",
-         FULL_THRES_G   => 1,
-         EMPTY_THRES_G  => 0
+         FULL_THRES_G   => DATA_AFULL_THOLD_G,
+         EMPTY_THRES_G  => 1
       ) port map (
-         rst                              => ppiClkRst,
-         wr_clk                           => ibVcClk,
-         wr_en                            => dataIn.valid,
-         din(DATA_FIFO_WIDTH-2 downto 0)  => dataIn.data(DATA_FIFO_WIDTH_C-2 downto 0),
-         din(DATA_FIFO_WIDTH-1)           => dataIn.size,
-         wr_data_count                    => dataCount,
-         wr_ack                           => open,
-         overflow                         => open,
-         prog_full                        => open,
-         almost_full                      => open,
-         full                             => open,
-         not_full                         => open,
-         rd_clk                           => ppiClk,
-         rd_en                            => dataRead,
-         dout(DATA_FIFO_WIDTH-2 downto 0) => dataOut.data(DATA_FIFO_WIDTH_C-2 downto 0),
-         dout(DATA_FIFO_WIDTH-1)          => dataOut.size,
-         rd_data_count                    => open,
-         valid                            => dataOut.valid,
-         underflow                        => open,
-         prog_empty                       => open,
-         almost_empty                     => open,
-         empty                            => open
+         rst           => ppiClkRst,
+         wr_clk        => ibVcClk,
+         wr_en         => dataIn.valid,
+         din           => dFifoDin,
+         wr_data_count => dataCount,
+         wr_ack        => open,
+         overflow      => open,
+         prog_full     => dataPFull,
+         almost_full   => dataAFull,
+         full          => dataFull,
+         not_full      => open,
+         rd_clk        => ppiClk,
+         rd_en         => dataRead,
+         dout          => dFifoDout,
+         rd_data_count => open,
+         valid         => dataOut.valid,
+         underflow     => open,
+         prog_empty    => open,
+         almost_empty  => open,
+         empty         => open
       );
+
+   dFifoDin(DATA_FIFO_WIDTH_C-2 downto 0) <= dataIn.data(DATA_FIFO_WIDTH_C-2 downto 0);
+   dFifoDin(DATA_FIFO_WIDTH_C-1)          <= dataIn.size;
+
+   dataOut.data(DATA_FIFO_WIDTH_C-2 downto 0) <= dFifoDout(DATA_FIFO_WIDTH_C-2 downto 0);
+   dataOut.size                               <= dFifoDout(DATA_FIFO_WIDTH_C-1);
 
    U_FDATA_GEN : if DATA_FIFO_WIDTH_C /= 65 generate
       dataOut.data(63 downto DATA_FIFO_WIDTH_C-1) <= (others=>'0');
    end generate;
 
-   -- Flow control
-   process (ibVcClk) begin
-      if (rising_edge(ibVcClk)) then
+   -- Overflow tracking
+   process ( ibVcClk ) begin
+      if rising_edge (ibVcClk) then
          if ibVcClkRst = '1' then
-            headerBuffAFull <= '0' after TPD_G;
-            headerBuffFull  <= '0' after TPD_G;
-            headerOverflow  <= '0' after TPD_G;
-            dataBuffAFull   <= '0' after TPD_G;
-            dataBuffAFull   <= '0' after TPD_G;
-            dataOverflow    <= '0' after TPD_G;
-         else
-
-            if headerCount > HEADER_OVERFLOW_THOLD_C then
-               headerOverflow  <= '1' after TPD_G;
-               headerBuffAFull <= '1' after TPD_G;
-               headerBuffFull  <= '1' after TPD_G;
-            elsif headerCount > HEADER_FULL_THOLD_G then
-               headerOverflow  <= '0' after TPD_G;
-               headerBuffAFull <= '1' after TPD_G;
-               headerBuffFull  <= '1' after TPD_G;
-            elsif headerCount > HEADER_AFULL_THOLD_G then
-               headerOverflow  <= '0' after TPD_G;
-               headerBuffAFull <= '1' after TPD_G;
-               headerBuffFull  <= '0' after TPD_G;
-            else
-               headerOverflow  <= '0' after TPD_G;
-               headerBuffAFull <= '0' after TPD_G;
-               headerBuffFull  <= '0' after TPD_G;
-            end if;
-
-            if dataCount > DATA_OVERFLOW_THOLD_C then
-               dataOverflow  <= '1' after TPD_G;
-               dataBuffAFull <= '1' after TPD_G;
-               dataBuffFull  <= '1' after TPD_G;
-            elsif dataCount > DATA_FULL_THOLD_G then
-               dataOverflow  <= '0' after TPD_G;
-               dataBuffAFull <= '1' after TPD_G;
-               dataBuffFull  <= '1' after TPD_G;
-            elsif dataCount > DATA_AFULL_THOLD_G then
-               dataOverflow  <= '0' after TPD_G;
-               dataBuffAFull <= '1' after TPD_G;
-               dataBuffFull  <= '0' after TPD_G;
-            else
-               dataOverflow  <= '0' after TPD_G;
-               dataBuffAFull <= '0' after TPD_G;
-               dataBuffFull  <= '0' after TPD_G;
-            end if;
-
+            overflow <= '0' after TPD_G;
+         elsif headerCount > HEADER_OVERFLOW_THOLD_C or dataCount > DATA_OVERFLOW_THOLD_C then
+            overflow <= '1' after TPD_G;
+         elsif headerCount = 0 and dataCount = 0 then
+            overflow <= '0' after TPD_G;
          end if;
       end if;
    end process;
 
+   rxOverflow <= overflow;
 
    ------------------------------------
    -- Frame Receiver
@@ -617,7 +585,7 @@ begin
    end process;
 
    -- Async
-   process (ibVcClkRst, r, ibVcData, dataOverflow, headerOverflow, intOnline ) is
+   process (ibVcClkRst, r, ibVcData, overflow, intOnline ) is
       variable v          : RegType;
       variable newFrame   : boolean;
       variable byteSize   : slv(3 downto 0);
@@ -631,33 +599,30 @@ begin
       v.dataIn.valid   := '0';
       newFrame         := false;
 
-      -- Overflow potential, mark overflow flag
-      if dataOverflow = '1' or headerOverflow = '1' then
-         v.overflow := '1';
-      elsif dataOverflow = '0' and headerOverflow = '0' then
-         v.overflow := '0';
-      end if;
-
       -- Pass data
       v.dataIn.data := ibVcData.data;
       v.dataIn.size := ibVcData.size or not(ibVcData.eof); -- always 1 unless eof
 
       -- Determine increment
       case VC_WIDTH_G is
-         when 16 => byteSize <= "0010"; -- 2 bytes
-         when 32 => byteSize <= "0100"; -- 4 bytes
+         when 16 => byteSize := "0010"; -- 2 bytes
+         when 32 => byteSize := "0100"; -- 4 bytes
          when 64 => 
             if ibVcData.size = '1' then
-               byteSize <= "1000"; -- 8 bytes
+               byteSize := "1000"; -- 8 bytes
             else
-               byteSize <= "0111"; -- 7 bytes
+               byteSize := "0111"; -- 7 bytes
             end if;
+         when others => 
+            byteSize := "1111"; -- 7 bytes
       end case;
 
-      -- VC has changed, last EOF, max ppi frame size or in overflow
-      if (ibVcData.vc /= r.vc and ibVcData.valid = '1') or r.eof = '1' or r.byteCnt >= PPI_MAX_FRAME_G or r.overflow = '1' then
+      -- EOF was seen, valid data and vc change or max size, or in overflow
+      if overflow = '1' or 
+         (r.dirty = '1' and r.eof = '1') or 
+         (ibVcData.valid = '1' and (ibVcData.vc /= r.vc or r.byteCnt >= PPI_MAX_FRAME_G)) then
 
-         -- Init Tracking
+         -- Init Tracking, new frame
          v.sof      := '0';
          v.eof      := '0';
          v.eofe     := '0';
@@ -669,23 +634,25 @@ begin
          v.headerIn.sof      := r.sof;
          v.headerIn.eof      := r.eof;
          v.headerIn.eofe     := r.eofe;
-         v.headerIn.overflow := r.overflow;
+         v.headerIn.dropped  := r.droppedVc(conv_integer(r.vc));
          v.headerIn.byteCnt  := r.byteCnt;
-         v.headerIn.valid    := r.dirty and (not r.dropVc(conv_integer(r.vc)));
+         v.headerIn.valid    := r.dirty;
 
-         -- Mark VC as in overflow
-         if r.dirty = '1' and r.overflow = '1' then
-            v.dropVc(conv_integer(r.vc)) := '1';
+         -- Clear vc dropped flag after finishing a frame
+         if v.headerIn.valid = '1' and v.headerIn.eof = '1' then
+            v.droppedVc(conv_integer(r.vc)) := '0';
          end if;
+
       end if;
 
-      -- Count drops
-      if ibVcData.valid = '1' and r.dropVc(conv_integer(ibVcData.vc)) = '1' and ibVcData.eof = '1' then
-         v.dropCountEn := '1';
+      -- Track drops
+      if ibVcData.valid = '1' and overflow = '1' then
+         v.droppedVc(conv_integer(ibVcData.vc)) := '1';
+         v.dropCountEn                          := ibVcData.eof;
       end if;
 
       -- Valid frame that is not being dropped
-      if ibVcData.valid = '1' and r.dropVc(conv_integer(ibVcData.vc)) = '0' then
+      if ibVcData.valid = '1' and overflow = '0' then
          if ibVcData.sof = '1' then
             v.sof := '1';
          end if;
@@ -702,12 +669,8 @@ begin
          -- Data
          v.dataIn.valid := '1';
          v.dirty        := '1';
+         v.vc           := ibVcData.vc;
 
-      end if;
-
-      -- Clear vc drop when overflow is clear and vc eof is seen
-      if ibVcdata.valid = '1' and v.overflow = '0' and ibVcData.eof = '1' then
-         v.dropVc(conv_integer(ibVcData.valid)) := '0';
       end if;
 
       -- Byte counter
@@ -734,7 +697,6 @@ begin
       headerIn      <= r.headerIn;
       rxFrameCntEn  <= r.frameCountEn;
       rxDropCountEn <= r.dropCountEn;
-      rxOverflow    <= r.overflow;
 
    end process;
 

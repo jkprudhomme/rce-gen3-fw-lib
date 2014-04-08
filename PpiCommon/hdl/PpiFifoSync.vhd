@@ -100,7 +100,7 @@ begin
          ADDR_WIDTH_G   => ADDR_WIDTH_G,
          INIT_G         => "0",
          FULL_THRES_G   => PAUSE_THOLD_G,
-         EMPTY_THRES_G  => 0
+         EMPTY_THRES_G  => 1
       ) port map (
          rst           => ppiClkRst,
          clk           => ppiClk,
@@ -137,7 +137,7 @@ begin
          ADDR_WIDTH_G   => ADDR_WIDTH_G,
          INIT_G         => "0",
          FULL_THRES_G   => PAUSE_THOLD_G,
-         EMPTY_THRES_G  => 0
+         EMPTY_THRES_G  => 1
       ) port map (
          rst           => ppiClkRst,
          clk           => ppiClk,

@@ -9,7 +9,7 @@ use unisim.vcomponents.all;
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
-use work.VcPkg.all;
+use work.Vc64Pkg.all;
 
 entity tb is end tb;
 
@@ -24,17 +24,9 @@ architecture tb of tb is
    signal ppiReadFromFifo   : PpiReadFromFifoType;
    signal ppiWriteToFifo    : PpiWriteToFifoType;
    signal ppiWriteFromFifo  : PpiWriteFromFifoType;
-   signal vcRxCommonOut     : VcRxCommonOutType;
-   signal vcRxQuadOut       : VcRxQuadOutType;
-   signal prbsVcRxCommonOut : VcRxCommonOutType;
-   signal prbsVcRxQuadOut   : VcRxQuadOutType;
    signal rxFrameCntEn      : sl;
    signal rxDropCountEn     : sl;
    signal rxOverflow        : sl;
-   signal vcTxQuadIn        : VcTxQuadInType;
-   signal vcTxQuadOut       : VcTxQuadOutType;
-   signal prbsVcTxQuadIn    : VcTxQuadInType;
-   signal prbsVcTxQuadOut   : VcTxQuadOutType;
    signal txFrameCntEn      : sl;
    signal updatedResults    : slv(3 downto 0);
    signal errMissedPacket   : slv(3 downto 0);
@@ -44,15 +36,17 @@ architecture tb of tb is
    signal errbitCnt         : Slv32Array(3 downto 0);
    signal packetRate        : Slv32Array(3 downto 0);
    signal packetLength      : Slv32Array(3 downto 0);
-   signal prbsRxBuffFull    : slv(3 downto 0);
-   signal prbsRxBuffAFull   : slv(3 downto 0);
-   signal prbsTxBuffFull    : sl;
-   signal prbsTxBuffAFull   : sl;
-   signal prbsTxVcRxOut     : VcRxOutType;
    signal enable            : sl;
    signal txEnable          : slv(3  downto 0);
    signal txBusy            : slv(3  downto 0);
    signal txLength          : Slv32Array(3 downto 0);
+   signal prbsTxCtrl        : Vc64CtrlArray(3 downto 0);
+   signal prbsTxData        : Vc64DataArray(3 downto 0);
+   signal prbsTxMuxCtrl     : Vc64CtrlType;
+   signal prbsTxMuxData     : Vc64DataType;
+   signal prbsRxDataCommon  : Vc64DataType;
+   signal prbsRxCtrl        : Vc64CtrlArray(3 downto 0);
+   signal prbsRxData        : Vc64DataArray(3 downto 0);
 
 begin
 
@@ -92,36 +86,6 @@ begin
    end process;
 
    U_TxGen: for i in 0 to 3 generate 
-      U_VcPrbsTx : entity work.VcPrbsTx 
-         generic map (
-            TPD_G              => 1 ns,
-            RST_ASYNC_G        => false,
-            GEN_SYNC_FIFO_G    => false,
-            BRAM_EN_G          => true,
-            FIFO_ADDR_WIDTH_G  => 9,
-            USE_DSP48_G        => "no",
-            ALTERA_SYN_G       => false,
-            ALTERA_RAM_G       => "M9K",
-            USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
-            LITTLE_ENDIAN_G    => false,
-            XIL_DEVICE_G       => "7SERIES",  --Xilinx only generic parameter    
-            FIFO_SYNC_STAGES_G => 3,
-            FIFO_INIT_G        => "0",
-            FIFO_FULL_THRES_G  => 256,    -- Almost full at 1/2 capacity
-            FIFO_EMPTY_THRES_G => 0
-         ) port map (
-            trig         => txEnable(i),
-            packetLength => txLength(i),
-            busy         => txBusy(i),
-            vcTxIn       => prbsVcTxQuadIn(i),
-            vcTxOut      => prbsVcTxQuadOut(i),
-            vcRxOut      => prbsTxVcRxOut,
-            locClk       => pgpClk,
-            locRst       => pgpClkRst,
-            vcTxClk      => pgpClk,
-            vcTxRst      => pgpClkRst
-         );
-
 
       process ( pgpClk ) begin
          if rising_edge(pgpClk) then
@@ -149,54 +113,72 @@ begin
             end if;
          end if;
       end process;
+
+      U_Vc64PrbsTx : entity work.Vc64PrbsTx
+         generic map (
+            TPD_G              => 1 ns,
+            RST_ASYNC_G        => false,
+            GEN_SYNC_FIFO_G    => false,
+            BRAM_EN_G          => true,
+            BYPASS_FIFO_G      => false,
+            PIPE_STAGES_G      => 0,
+            FIFO_ADDR_WIDTH_G  => 9,
+            ALTERA_SYN_G       => false,
+            ALTERA_RAM_G       => "M9K",
+            USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
+            XIL_DEVICE_G       => "7SERIES",  --Xilinx only generic parameter    
+            FIFO_SYNC_STAGES_G => 3,
+            FIFO_AFULL_THRES_G => 256     -- Almost full at 1/2 capacity
+         ) port map (
+            vcTxCtrl     => prbsTxCtrl(i), -- In
+            vcTxData     => prbsTxData(i), -- Out
+            vcTxClk      => pgpClk,
+            vcTxRst      => pgpClkRst,
+            trig         => txEnable(i),
+            packetLength => txLength(i),
+            busy         => txBusy(i),
+            locClk       => pgpClk,
+            locRst       => pgpClkRst 
+         );
+
    end generate;
 
-   process ( prbsTxBuffFull, prbsTxBuffAFull ) begin
-      prbsTxVcRxOut              <= VC_RX_OUT_INIT_C;
-      prbsTxVcRxOut.remBuffFull  <= prbsTxBuffFull;
-      prbsTxVcRxOut.remBuffAFull <= prbsTxBuffAFull;
-   end process;
-
-   U_TxAdapt : entity work.VcAdapter 
+   -- Add Mux Here
+   U_Mux : entity work.Vc64Mux
       generic map (
-         TPD_G => 1 ns
+         TPD_G         => 1 ns,
+         IB_VC_COUNT_G => 4
       ) port map (
-         vcClk          => pgpClk,
-         vcClkRst       => pgpClkRst,
-         vcTxQuadIn     => prbsVcTxQuadIn,
-         vcTxQuadOut    => prbsVcTxQuadOut,
-         vcRxCommonOut  => vcRxCommonOut,
-         vcRxQuadOut    => vcRxQuadOut
+         vcClk        => pgpClk,
+         vcClkRst     => pgpClkRst,
+         ibVcData     => prbsTxData,
+         ibVcCtrl     => prbsTxCtrl,
+         obVcData     => prbsTxMuxData,
+         obVcCtrl     => prbsTxMuxCtrl
       );
 
-   U_VcRx: entity work.PpiVcRx 
+   U_VcRx: entity work.PpiIbVc 
       generic map (
          TPD_G                => 1 ns,
-         VC_WIDTH_G           => 1,
+         VC_WIDTH_G           => 16,
          PPI_ADDR_WIDTH_G     => 9,
          PPI_PAUSE_THOLD_G    => 255,
          PPI_READY_THOLD_G    => 0,
          PPI_MAX_FRAME_G      => 1023,
          HEADER_ADDR_WIDTH_G  => 8,
          HEADER_AFULL_THOLD_G => 100,
-         HEADER_FULL_THOLD_G  => 150,
          DATA_ADDR_WIDTH_G    => 10,
-         DATA_AFULL_THOLD_G   => 520,
-         DATA_FULL_THOLD_G    => 750
+         DATA_AFULL_THOLD_G   => 520
       ) port map (
          ppiClk            => ppiClk,
          ppiClkRst         => ppiClkRst,
          ppiOnline         => '1',
          ppiReadToFifo     => ppiReadToFifo,
          ppiReadFromFifo   => ppiReadFromFifo,
-         vcRxClk           => pgpClk,
-         vcRxClkRst        => pgpClkRst,
-         vcRxCommonOut     => vcRxCommonOut,
-         vcRxQuadOut       => vcRxQuadOut,
-         locBuffFull       => prbsTxBuffFull,
-         locBuffAFull      => prbsTxbuffAFull,
-         remBuffFull       => open,
-         remBuffAFull      => open,
+         ibVcClk           => pgpClk,
+         ibVcClkRst        => pgpClkRst,
+         ibVcData          => prbsTxMuxData,
+         ibVcCtrl          => prbsTxMuxCtrl,
          rxFrameCntEn      => rxFrameCntEn,
          rxDropCountEn     => rxDropCountEn,
          rxOverflow        => rxOverflow
@@ -216,10 +198,11 @@ begin
          ppiWriteFromFifo(0) => ppiWriteFromFifo
       );
 
-   U_VcTx: entity work.PpiVcTx 
+   U_VcTx: entity work.PpiObVc 
       generic map (
          TPD_G              => 1 ns,
-         VC_WIDTH_G         => 1,
+         VC_WIDTH_G         => 16,
+         VC_COUNT_G         => 4,
          PPI_ADDR_WIDTH_G   => 9,
          PPI_PAUSE_THOLD_G  => 255,
          PPI_READY_THOLD_G  => 0
@@ -229,58 +212,47 @@ begin
          ppiOnline         => '1',
          ppiWriteToFifo    => ppiWriteToFifo,
          ppiWriteFromFifo  => ppiWriteFromFifo,
-         vcTxClk           => pgpClk,
-         vcTxClkRst        => pgpClkRst,
-         vcTxQuadIn        => vcTxQuadIn,
-         vcTxQuadOut       => vcTxQuadOut,
-         locBuffFull       => '0',
-         locBuffAFull      => '0',
-         remBuffFull       => prbsRxBuffFull,
-         remBuffAFull      => prbsRxBuffAFull,
+         obVcClk           => pgpClk,
+         obVcClkRst        => pgpClkRst,
+         obVcData          => prbsRxDataCommon,
+         obVcCtrl          => prbsRxCtrl,
          txFrameCntEn      => txFrameCntEn
       );
 
-   U_RxAdapt : entity work.VcAdapter 
-      generic map (
-         TPD_G => 1 ns
-      ) port map (
-         vcClk          => pgpClk,
-         vcClkRst       => pgpClkRst,
-         vcTxQuadIn     => vcTxQuadIn,
-         vcTxQuadOut    => VcTxQuadOut,
-         vcRxCommonOut  => prbsVcRxCommonOut,
-         vcRxQuadOut    => prbsVcRxQuadOut
-      );
 
+   -- Decode common VC
+   process ( prbsRxDataCommon ) begin
+      prbsRxData <= vc64DeMux(prbsRxDataCommon,4);
+   end process;
+
+   -- PRBS receiver
    U_RxGen: for i in 0 to 3 generate 
-      U_VcPrbsRx: entity work.VcPrbsRx 
+      U_Vc64PrbsRx: entity work.Vc64PrbsRx 
          generic map (
             TPD_G              => 1 ns,
             LANE_NUMBER_G      => 0,
             VC_NUMBER_G        => i,
             RST_ASYNC_G        => false,
-            GEN_SYNC_FIFO_G    => false,
-            BRAM_EN_G          => true,
-            FIFO_ADDR_WIDTH_G  => 9,
-            USE_DSP48_G        => "no",
             ALTERA_SYN_G       => false,
             ALTERA_RAM_G       => "M9K",
-            USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
-            LITTLE_ENDIAN_G    => false,
             XIL_DEVICE_G       => "7SERIES",  --Xilinx only generic parameter    
+            BRAM_EN_G          => true,
+            USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
+            GEN_SYNC_FIFO_G    => false,
+            BYPASS_FIFO_G      => false,
+            PIPE_STAGES_G      => 0,
             FIFO_SYNC_STAGES_G => 3,
-            FIFO_INIT_G        => "0",
-            FIFO_FULL_THRES_G  => 256,    -- Almost full at 1/2 capacity
-            FIFO_EMPTY_THRES_G => 0
+            FIFO_ADDR_WIDTH_G  => 9,
+            FIFO_AFULL_THRES_G => 256     -- Almost full at 1/2 capacity
          ) port map (
-            vcRxOut              => prbsVcRxQuadOut(i),
-            vcRxCommonOut        => prbsVcRxCommonOut,
-            vcTxIn_locBuffAFull  => prbsRxBuffAFull(i),
-            vcTxIn_locBuffFull   => prbsRxBuffFull(i),
-            vcTxIn               => open,
-            vcTxOut              => (others => '1'),
-            vcRxOut_remBuffAFull => '0',
-            vcRxOut_remBuffFull  => '0',
+            vcRxData             => prbsRxData(i),
+            vcRxCtrl             => prbsRxCtrl(i),
+            vcRxClk              => pgpClk,
+            vcRxRst              => pgpClkRst,
+            vcTxCtrl             => VC64_CTRL_FORCE_C,
+            vcTxData             => open,
+            vcTxClk              => pgpClk,
+            vcTxRst              => pgpClkRst,
             updatedResults       => updatedResults(i),
             busy                 => open,
             errMissedPacket      => errMissedPacket(i),
@@ -289,11 +261,7 @@ begin
             errWordCnt           => errWordCnt(i),
             errbitCnt            => errbitCnt(i),
             packetRate           => packetRate(i),
-            packetLength         => packetLength(i),
-            vcRxClk              => pgpClk,
-            vcRxRst              => pgpClkRst,
-            vcTxClk              => pgpClk,
-            vcTxRst              => pgpClkRst
+            packetLength         => packetLength(i)
          ); 
    end generate;
 

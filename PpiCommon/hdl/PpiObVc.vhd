@@ -30,7 +30,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
-use work.VcPkg.all;
+use work.Vc64Pkg.all;
 
 entity PpiObVc is
    generic (
@@ -50,18 +50,19 @@ entity PpiObVc is
       ppiWriteToFifo   : in  PpiWriteToFifoType;
       ppiWriteFromFifo : out PpiWriteFromFifoType;
 
-      -- TX VC Interface
+      -- Outbound VC Interface, ready is used for handshake
       obVcClk          : in  sl;
       obVcClkRst       : in  sl;
-      obVcData         : out VcStreamDataType;
-      obVcCtrl         : in  VcStreamCtrlArray(VC_COUNT_G-1 downto 0);
+      obVcData         : out Vc64DataType;
+      obVcCtrl         : in  Vc64CtrlArray(VC_COUNT_G-1 downto 0);
 
       -- Frame Counter
       txFrameCntEn     : out sl
    );
 
 begin
-   assert (VC_WIDTH_G /= 3) report "VC_WIDTH_G must not be = 3" severity failure;
+   assert (VC_WIDTH_G = 16 or VC_WIDTH_G = 32 or VC_WIDTH_G = 64 ) 
+      report "VC_WIDTH_G must not be = 16, 32 or 64" severity failure;
 end PpiObVc;
 
 architecture structure of PpiObVc is
@@ -70,20 +71,20 @@ architecture structure of PpiObVc is
    signal intReadToFifo    : PpiReadToFifoType;
    signal intReadFromFifo  : PpiReadFromFifoType;
    signal intOnline        : sl;
-   signal intVcCtrl        : VcStreamCtrlArray(15 downto 0);
+   signal intVcCtrl        : Vc64CtrlArray(15 downto 0);
 
    type StateType is (S_IDLE, S_FIRST, S_DATA, S_LAST);
 
    type RegType is record
       state          : StateType;
       pos            : slv(1 downto 0);
-      vc             : slv(1 downto 0);
+      vc             : slv(3 downto 0);
       sof            : sl;
       eof            : sl;
       eofe           : sl;
       txFrameCntEn   : sl;
       ppiReadToFifo  : PpiReadToFifoType;
-      obVcData       : VcTxQuadInType;
+      obVcData       : Vc64DataType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -95,7 +96,7 @@ architecture structure of PpiObVc is
       eofe           => '0',
       txFrameCntEn   => '0',
       ppiReadToFifo  => PPI_READ_TO_FIFO_INIT_C,
-      obVcData       => VC_STREAM_DATA_INIT_C
+      obVcData       => VC64_DATA_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -106,17 +107,10 @@ begin
    ------------------------------------
    -- Connect VC control
    ------------------------------------
-   intVcCtrl(VC_COUNT_G-1 downto 0) <= obVcCtrl;
-
-   U_CtrlGen: if VC_COUNT_G /= 16 generate
-      process ( obVcCtrl ) begin
-         for i in VC_COUNT_G to VC_COUNT_G-1 loop
-            intVcCtrl(i).full       <= '0';
-            intVcCtrl(i).almostFull <= '0';
-            intVcCtrl(i).ready      <= '1';
-         end loop;
-      end process;
-   end generate;
+   process (obVcCtrl) begin
+      intVcCtrl                        <= (others=>VC64_CTRL_FORCE_C);
+      intVcCtrl(VC_COUNT_G-1 downto 0) <= obVcCtrl;
+   end process;
 
 
    ------------------------------------
@@ -164,6 +158,7 @@ begin
       variable v         : RegType;
       variable nextData  : slv(63 downto 0);
       variable nextEof   : sl;
+      variable nextSize  : sl;
       variable nextPos   : slv(1 downto 0);
       variable nextRead  : sl;
    begin
@@ -181,11 +176,12 @@ begin
       nextEof  := '0';
       nextPos  := "00";
       nextRead := '0';
+      nextSize := '0';
 
       case VC_WIDTH_G is
 
          -- 16 bit VC
-         when 1 =>
+         when 16 =>
             case r.pos is
                when "00" =>
                   nextData := x"000000000000" & intReadFromFifo.data(15 downto 0); -- 0/1
@@ -211,7 +207,7 @@ begin
             end case;
 
          -- 32 bit VC
-         when 2 =>
+         when 32 =>
             case r.pos is
                when "00" =>
                   nextData := x"00000000" & intReadFromFifo.data(31 downto 0); -- 0/1/2/3
@@ -227,9 +223,10 @@ begin
             end case;
 
          -- 64 bit VC
-         when 4 =>
+         when 64 =>
             nextData := intReadFromFifo.data;
             nextEof  := intReadFromFifo.eof;
+            nextSize := intReadFromFifo.size(0);
             nextRead := '1';
          when others => null;
       end case;
@@ -259,6 +256,7 @@ begin
             v.obVcData.data      := nextData;
             v.obVcData.valid     := (not intVcCtrl(conv_integer(r.vc)).almostFull);
             v.obVcData.vc        := r.vc;
+            v.obVcData.size      := nextSize;
             v.ppireadToFifo.read := nextRead;
             v.pos                := nextPos;
 
@@ -274,7 +272,7 @@ begin
 
          -- Normal Data
          when S_DATA =>
-            v.obVcData.valid := (not intVcCtrl(conv_integer(r.vc)).full);
+            v.obVcData.valid := (not intVcCtrl(conv_integer(r.vc)).almostFull);
 
             if intVcCtrl(conv_integer(r.vc)).ready = '1' and r.obVcData.valid = '1' then
                v.obVcData.sof       := '0';
@@ -291,8 +289,10 @@ begin
 
          -- Last Transfer
          when S_LAST =>
-            if intVcCtrl(conv_integer(r.vc)).ready = '1' then
-               v.txFrameCntEn   := r.obVcDdata.eof;
+            v.obVcData.valid := (not intVcCtrl(conv_integer(r.vc)).almostFull);
+
+            if intVcCtrl(conv_integer(r.vc)).ready = '1' and r.obVcData.valid = '1' then
+               v.txFrameCntEn   := r.obVcData.eof;
                v.obVcData.valid := '0';
                v.state          := S_IDLE;
             end if;

@@ -31,14 +31,13 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/xilinx7/rtl/DeviceDna.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteCrossbar.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteAsync.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcPkg.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcAdapter.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcDsBuff16.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcUsBuff16.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcUsBuff32.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcPrbsRx.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcPrbsTx.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../pgp2/rtl/core/Pgp2CoreTypesPkg.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64Pkg.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64Mux.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64Fifo.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64FifoMux.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64PrbsRx.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64PrbsTx.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../pgp2b/core/rtl/Pgp2bPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../ArmRceG3/hdl/ArmRceG3Pkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiFifoAsync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiFifoSync.vhd
@@ -47,8 +46,8 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiToAxi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiStatus.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiPgpCntrl.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiVcTx.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiVcRx.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiIbVc.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiObVc.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiPgpLane.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/tb.vhd
 

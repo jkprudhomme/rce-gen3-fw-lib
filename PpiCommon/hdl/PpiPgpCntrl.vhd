@@ -74,8 +74,7 @@ use unisim.vcomponents.all;
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
-use work.VcPkg.all;
-use work.Pgp2CoreTypesPkg.all;
+use work.Pgp2bPkg.all;
 
 entity PpiPgpCntrl is
    generic (
