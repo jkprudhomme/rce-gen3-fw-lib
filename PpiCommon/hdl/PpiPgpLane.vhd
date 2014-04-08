@@ -69,6 +69,7 @@ entity PpiPgpLane is
       pgpRxOut         : in  PgpRxOutType;
       pgpRxData        : in  Vc64DataType;
       pgpRxCtrl        : out Vc64CtrlType;
+      loopBackEn       : out sl;
 
       -- AXI/Status Clocks Interface
       axiStatClk       : in  sl;
@@ -93,6 +94,7 @@ architecture structure of PpiPgpLane is
    signal txFrameCntEn  : sl;
    signal rxDropCountEn : sl;
    signal rxOverflow    : sl;
+   signal remOverflow   : sl;
 
 begin
 
@@ -107,6 +109,7 @@ begin
          pgpTxSwRst        => pgpTxSwRst,
          pgpTxIn           => pgpTxIn,
          pgpTxOut          => pgpTxOut,
+         remOverflow       => remOverflow,
          txFrameCntEn      => txFrameCntEn,
          pgpRxClk          => pgpRxClk,
          pgpRxClkRst       => pgpRxClkRst,
@@ -116,6 +119,7 @@ begin
          rxFrameCntEn      => rxFrameCntEn,
          rxDropCountEn     => rxDropCountEn,
          rxOverflow        => rxOverflow,
+         loopBackEn        => loopBackEn,
          axiStatClk        => axiStatClk,
          axiStatClkRst     => axiStatClkRst,
          axiWriteMaster    => axiWriteMaster,
@@ -146,6 +150,7 @@ begin
          obVcClkRst        => pgpTxClkRst,
          obVcData          => pgpTxData,
          obVcCtrl          => pgpTxCtrl,
+         remOverflow       => remOverflow,
          txFrameCntEn      => txFrameCntEn
       );
 

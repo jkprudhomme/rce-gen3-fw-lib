@@ -57,6 +57,7 @@ entity PpiObVc is
       obVcCtrl         : in  Vc64CtrlArray(VC_COUNT_G-1 downto 0);
 
       -- Frame Counter
+      remOverflow      : out sl;
       txFrameCntEn     : out sl
    );
 
@@ -110,6 +111,15 @@ begin
    process (obVcCtrl) begin
       intVcCtrl                        <= (others=>VC64_CTRL_FORCE_C);
       intVcCtrl(VC_COUNT_G-1 downto 0) <= obVcCtrl;
+
+      remOverflow <= '0';
+
+      for i in 0 to VC_COUNT_G-1 loop
+         if obVcCtrl(i).overflow = '1' then
+            remOverflow <= '1';
+         end if;
+      end loop;
+
    end process;
 
 

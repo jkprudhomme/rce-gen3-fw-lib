@@ -163,7 +163,6 @@ architecture structure of PpiIbVc is
       eofe            : sl;
       vc              : slv(3 downto 0);
       dirty           : sl;
-      overflow        : sl;
       droppedVc       : slv(15 downto 0);
       dropCountEn     : sl;
       dataIn          : DataFifoType;
@@ -178,7 +177,6 @@ architecture structure of PpiIbVc is
       eofe            => '0',
       vc              => (others=>'0'),
       dirty           => '0',
-      overflow        => '0',
       droppedVc       => (others=>'0'),
       dropCountEn     => '0',
       dataIn          => DATA_FIFO_INIT_C,
@@ -198,7 +196,7 @@ begin
    ------------------------------------
 
    -- Flow Control
-   ibVcCtrl.overflow   <= r.overflow;
+   ibVcCtrl.overflow   <= overflow;
    ibVcCtrl.almostFull <= (headerPFull or dataPFull);
    ibVcCtrl.ready      <= '1';
 

@@ -216,6 +216,7 @@ begin
          obVcClkRst        => pgpClkRst,
          obVcData          => prbsRxDataCommon,
          obVcCtrl          => prbsRxCtrl,
+         remOverflow       => open,
          txFrameCntEn      => txFrameCntEn
       );
 
