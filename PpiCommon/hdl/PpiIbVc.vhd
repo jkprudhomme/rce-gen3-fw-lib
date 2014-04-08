@@ -55,7 +55,7 @@ entity PpiIbVc is
       ppiReadToFifo    : in  PpiReadToFifoType;
       ppiReadFromFifo  : out PpiReadFromFifoType;
 
-      -- Inbound VC Interface, almostFull asserted
+      -- Inbound VC Interface
       -- Ready is always '1'
       ibVcClk         : in  sl;
       ibVcClkRst      : in  sl;
