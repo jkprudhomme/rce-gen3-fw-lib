@@ -1,8 +1,6 @@
 hdl/PpiFifoAsync.vhd
 hdl/PpiFifoSync.vhd
 hdl/PpiMux.vhd
-hdl/PpiPgpCntrl.vhd
-hdl/PpiPgpLane.vhd
 hdl/PpiRouter.vhd
 hdl/PpiStatus.vhd
 hdl/PpiToAxi.vhd
