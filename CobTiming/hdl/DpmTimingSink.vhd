@@ -273,7 +273,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, axiReadMaster, axiWriteMaster, r, statusErrorCnt, statusIdleCnt, ocFifoValid, ocFifoData ) is
+   process (axiClkRst, axiReadMaster, axiWriteMaster, r, statusErrorCnt, statusIdleCnt, ocFifoValid, ocFifoData, ledCountA ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
