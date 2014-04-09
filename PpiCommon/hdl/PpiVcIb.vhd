@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title         : PPI To VC Block, Inbound receiver.
--- File          : PpiIbVc.vhd
+-- File          : PpiVcIb.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 03/21/2014
 -------------------------------------------------------------------------------
@@ -11,7 +11,7 @@
 --    Bits 8     = SOF
 --    Bits 9     = EOF
 --    Bits 10    = EOFE
---    Bits 11    = Frame dropped
+--    Bits 11    = VC data was dropped
 --    Bits 47:32 = Length in bytes
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
@@ -33,7 +33,7 @@ use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.Vc64Pkg.all;
 
-entity PpiIbVc is
+entity PpiVcIb is
    generic (
       TPD_G                : time := 1 ns;
       VC_WIDTH_G           : integer range 16 to 64     := 16;    -- Bits: 16, 32 or 64
@@ -72,9 +72,9 @@ begin
       report "VC_WIDTH_G must not be = 16, 32 or 64" severity failure;
    assert (DATA_AFULL_THOLD_G*(VC_WIDTH_G/8) > PPI_MAX_FRAME_G) 
       report "Max frame size is less than data almost full thold" severity failure;
-end PpiIbVc;
+end PpiVcIb;
 
-architecture structure of PpiIbVc is
+architecture structure of PpiVcIb is
 
    constant HEADER_OVERFLOW_THOLD_C : integer := (2**HEADER_ADDR_WIDTH_G) - 10;
    constant DATA_OVERFLOW_THOLD_C   : integer := (2**DATA_ADDR_WIDTH_G) - 10;

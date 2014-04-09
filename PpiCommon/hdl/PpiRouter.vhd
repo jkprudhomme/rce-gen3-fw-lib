@@ -66,7 +66,7 @@ begin
 
    readEnable <= ppiReadFromFifo.valid and ((not pause) or inFrame);
 
-   process ( readEnable ) begin
+   process ( readEnable, dest ) begin
       writeEnable                     <= (others=>'0');
 
       if dest < NUM_WRITE_SLOTS_G then

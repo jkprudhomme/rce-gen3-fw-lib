@@ -48,6 +48,9 @@ architecture tb of tb is
    signal prbsRxCtrl        : Vc64CtrlArray(3 downto 0);
    signal prbsRxData        : Vc64DataArray(3 downto 0);
 
+   constant AXI_CROSSBAR_MASTERS_CONFIG_C : 
+      AxiLiteCrossbarMasterConfigArray(11 downto 0) := genAxiLiteConfig ( 12, x"F0000000", 4 );
+
 begin
 
    process begin
@@ -156,7 +159,7 @@ begin
          obVcCtrl     => prbsTxMuxCtrl
       );
 
-   U_VcRx: entity work.PpiIbVc 
+   U_VcRx: entity work.PpiVcIb 
       generic map (
          TPD_G                => 1 ns,
          VC_WIDTH_G           => 16,
@@ -197,7 +200,7 @@ begin
          ppiWriteFromFifo(0) => ppiWriteFromFifo
       );
 
-   U_VcTx: entity work.PpiObVc 
+   U_VcTx: entity work.PpiVcOb 
       generic map (
          TPD_G              => 1 ns,
          VC_WIDTH_G         => 16,

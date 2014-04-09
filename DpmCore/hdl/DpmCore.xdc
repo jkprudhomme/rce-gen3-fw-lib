@@ -22,20 +22,15 @@ set sysClk200Group [get_clocks -of_objects \
    [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT1]]
 set sysClk125Group [get_clocks -of_objects \
    [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT2]]
+create_clock -name ethRefClk -period 6.4 [get_ports ethRefClkP]
 
 # Local 1G Ethernet Clocks
 create_clock -name eth_txoutclk -period 16 \
-   [get_pins U_DpmCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
+   [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
 set intEthClk0Group [get_clocks -of_objects \
-   [get_pins U_DpmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]]
+   [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]]
 set intEthClk1Group [get_clocks -of_objects \
-   [get_pins U_DpmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]]
-
-# Set Asynchronous Paths
-set_clock_groups -asynchronous -group [get_clocks {fclkClk0}] \
-                               -group ${dmaClkGroup} \
-                               -group ${sysClk200Group} \
-                               -group ${sysClk125Group} 
+   [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]]
 
 set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk0Group}
 set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk1Group}
@@ -46,13 +41,22 @@ set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk1Group
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk0Group}
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk1Group}
 
+# Local 10G Ethernet Clocks
+create_clock -name eth_txoutclk -period 6.4 \
+   [get_pins U_DpmCore/U_Eth10gGen.U_ZynqEthernet10G/U_ZynqXaui/U0/xaui_block_i/gt_wrapper_i/gt0_zynq_10g_xaui_gt_wrapper_i/gtxe2_i/TXOUTCLK]
+
+set_clock_groups -asynchronous -group ${dmaClkGroup}    -group [get_clocks {eth_txoutclk}]
+set_clock_groups -asynchronous -group ${sysClk125Group} -group [get_clocks {eth_txoutclk}]
+set_clock_groups -asynchronous -group ${sysClk200Group} -group [get_clocks {eth_txoutclk}]
+
+# Set Asynchronous Paths
+set_clock_groups -asynchronous -group [get_clocks {fclkClk0}] \
+                               -group ${dmaClkGroup} \
+                               -group ${sysClk200Group} \
+                               -group ${sysClk125Group} 
+
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
-
-# Reset Fanout
-set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/dmaClkRst]
-set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/sysClk200Rst]
-set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/sysClk125Rst]
 
 #########################################################
 # Pin Locations. All Defined Here
@@ -80,12 +84,9 @@ set_property PACKAGE_PIN AE7  [get_ports ethRxM[3]]
 set_property PACKAGE_PIN AK2  [get_ports ethTxP[3]]
 set_property PACKAGE_PIN AK1  [get_ports ethTxM[3]]
 
-set_property PACKAGE_PIN AA8 [get_ports locRefClkP[0]]
-#set_property PACKAGE_PIN AA7 [get_ports locRefClkM[0]]
-set_property PACKAGE_PIN U8  [get_ports locRefClkP[1]]
-set_property PACKAGE_PIN U7  [get_ports locRefClkM[1]]
+set_property PACKAGE_PIN AA8 [get_ports ethRefClkP]
+set_property PACKAGE_PIN U8  [get_ports locRefClkP]
 set_property PACKAGE_PIN W8  [get_ports dtmRefClkP]
-#set_property PACKAGE_PIN W7  [get_ports dtmRefClkM]
 
 set_property PACKAGE_PIN AE28 [get_ports dtmClkP[0]]
 set_property PACKAGE_PIN AF28 [get_ports dtmClkM[0]]

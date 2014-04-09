@@ -720,7 +720,7 @@ begin
          ADDR_WIDTH_G   => 9,
          INIT_G         => "0",
          FULL_THRES_G   => (511-8),
-         EMPTY_THRES_G  => 0
+         EMPTY_THRES_G  => 1
       ) port map (
          rst           => axiClkRstInt,
          wr_clk        => axiClk,

@@ -37,16 +37,20 @@
 --    0x3C = Read Only
 --       Bits 7:0 = Rx Drop Count
 --    0x40 = Read Only
---       Bits 7:0 = TX Frame Count
+--       Bits 31:0 = TX Frame Count
 --    0x44 = Read Only
---       Bits 7:0 = RX Frame Count
+--       Bits 31:0 = RX Frame Count
+--    0x48 = Read Only
+--       Bits 7:0 = RX Overflow Count
 --
 -- Status vector:
 --    Word 1:
 --       bits 63:32 = Tx Frame Counter
 --       bits 31:00 = Rx Frame Counter
 --    Word 0:
---       Bits 63:44 = Zeros
+--       Bits 63:56 = Zeros
+--       Bits 55:48 = Remote Overflow Count
+--       Bits 47:45 = Zeros
 --       Bits 44    = Remote Overflow
 --       Bits 43    = RX Overflow
 --       Bits 42    = Tx Link ready
@@ -167,7 +171,6 @@ architecture structure of PpiPgpCntrl is
       frameCount     : slv(31 downto 0);
       statusSend     : sl;
       dropCount      : slv(7  downto 0);
-      remOverflow    : sl;
       rxOverflow     : sl;
    end record RxStatusType;
 
@@ -181,7 +184,6 @@ architecture structure of PpiPgpCntrl is
       frameCount     => (others=>'0'),
       statusSend     => '0',
       dropCount      => (others=>'0'),
-      remOverflow    => '0',
       rxOverflow     => '0'
    );
 
@@ -192,13 +194,14 @@ architecture structure of PpiPgpCntrl is
    type TxStatusType is record
       linkReady      : sl;
       remOverflow    : sl;
+      remOverflowCnt : slv(7 downto 0);
       statusSend     : sl;
       frameCount     : slv(31 downto 0);
    end record TxStatusType;
 
    constant TX_STATUS_INIT_C : TxStatusType := (
       linkReady      => '0',
-      remOverflow    => '0',
+      remOverflowCnt => (others=>'0'),
       statusSend     => '0',
       frameCount     => (others=>'0')
    );
@@ -390,9 +393,19 @@ begin
       v.linkReady   := pgpTxOut.linkReady;
       v.remOverflow := remOverflow;
 
-      if txStatus.remOverflow /= remOverflow then
+      if txStatus.remOverflow = '0' and remOverflow = '1' then
          v.statusSend := '1';
+
+         if txStatus.remOverflowCnt /= x"FF" then
+            v.remOverflowCnt := txStatus.remOverflowCnt + 1;
+         end if;
       end if;
+
+      if pgpRxOut.cellError = '1' and rxStatus.cellErrorCount /= x"FF" then
+         v.cellErrorCount := rxStatus.cellErrorCount + 1;
+         v.statusSend     := '1';
+      end if;
+
 
       if txFrameCntEn = '1' then
          v.frameCount := txstatus.frameCount + 1;
@@ -428,7 +441,7 @@ begin
          ALTERA_SYN_G  => false,
          ALTERA_RAM_G  => "M9K",
          SYNC_STAGES_G => 3,
-         DATA_WIDTH_G  => 34,
+         DATA_WIDTH_G  => 42,
          ADDR_WIDTH_G  => 2,
          INIT_G        => "0"
       ) port map (
@@ -438,12 +451,14 @@ begin
          din(31 downto  0)  => txStatus.frameCount,
          din(32)            => txStatus.linkReady,
          din(33)            => txStatus.remOverflow,
+         din(41 downto 34)  => txStatus.remOverflowCnt,
          rd_clk             => axiStatClk,
          rd_en              => '1',
          valid              => open,
          dout(31 downto  0) => txStatusSync.frameCount,
          dout(32)           => txStatusSync.linkReady,
-         dout(33)           => txStatusSync.remOverflow
+         dout(33)           => txStatusSync.remOverflow,
+         dout(41 downto 34) => txStatusSync.remOverflowCnt
       );
 
 
@@ -462,7 +477,9 @@ begin
    statusWords(0)(42)           <= txStatusSync.linkReady;
    statusWords(0)(43)           <= rxStatusSync.rxOverflow;
    statusWords(0)(44)           <= txStatusSync.remOverflow;
-   statusWords(0)(63 downto 45) <= (others=>'0');
+   statusWords(0)(47 downto 45) <= (others=>'0');
+   statusWords(0)(55 downto 48) <= txStatusSync.remOverflowCnt;
+   statusWords(0)(63 downto 56) <= (others=>'0');
    statusWords(1)(31 downto  0) <= txStatusSync.frameCount;
    statusWords(1)(63 downto 32) <= txStatusSync.frameCount;
 
@@ -656,6 +673,8 @@ begin
                v.axiReadSlave.rdata := txStatusSync.frameCount;
             when X"44" =>
                v.axiReadSlave.rdata := rxStatusSync.frameCount;
+            when X"48" =>
+               v.axiReadSlave.rdata(7 downto 0) := txStatusSync.remOverflowCnt;
             when others => null;
          end case;
 

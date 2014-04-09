@@ -59,8 +59,8 @@ entity PpiToAxi is
    generic (
       TPD_G                  : time                       := 1 ns;
       NUM_AXI_MASTER_SLOTS_G : natural range 1 to 16      := 4;
-      PPI_ADDR_WIDTH_G       : integer range 2 to 48      := 6;
-      PPI_PAUSE_THOLD_G      : integer range 1 to (2**24) := 32;
+      PPI_ADDR_WIDTH_G       : integer range 2 to 48      := 6;  -- 64 entries
+      PPI_PAUSE_THOLD_G      : integer range 1 to (2**24) := 32; -- 32 entries
       AXI_MASTERS_CONFIG_G   : AxiLiteCrossbarMasterConfigArray
    );
    port (
@@ -208,7 +208,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, r, intReadFromFifo, intWriteFromFifo, midReadSlave, midWriteSlave ) is
+   process (axiClkRst, r, intReadFromFifo, intWriteFromFifo, midReadSlave, midWriteSlave, intOnline ) is
       variable v         : RegType;
    begin
       v := r;

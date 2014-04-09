@@ -168,7 +168,7 @@ begin
    end process;
 
    -- Async
-   process (statusClkRst, r, intWriteFromFifo, swReqEdge, statusSendEdge, intOnline, intOnlineEdge ) is
+   process (statusClkRst, r, intWriteFromFifo, swReqEdge, statusSendEdge, intOnline, intOnlineEdge, statusWords ) is
       variable v         : RegType;
    begin
       v := r;

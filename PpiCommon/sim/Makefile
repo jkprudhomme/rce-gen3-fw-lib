@@ -46,8 +46,9 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiRouter.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiToAxi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiStatus.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiIbVc.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiObVc.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiCrossbar.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiVcIb.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiVcOb.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/tb.vhd
 
 sim_gen:

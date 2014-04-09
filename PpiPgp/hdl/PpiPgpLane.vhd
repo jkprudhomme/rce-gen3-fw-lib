@@ -132,7 +132,7 @@ begin
 
 
    -- Transmit Data
-   U_PgpTx : entity work.PpiObVc
+   U_PgpTx : entity work.PpiVcOb
       generic map (
          TPD_G              => TPD_G,
          VC_WIDTH_G         => VC_WIDTH_G,
@@ -156,7 +156,7 @@ begin
 
 
    -- Receive Data
-   U_PgpRx : entity work.PpiIbVc 
+   U_PgpRx : entity work.PpiVcIb 
       generic map (
          TPD_G                 => TPD_G,
          VC_WIDTH_G            => VC_WIDTH_G,

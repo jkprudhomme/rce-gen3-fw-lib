@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title         : PPI To VC Block, Outbound Transmit.
--- File          : PpiObVc.vhd
+-- File          : PpiVcOb.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 03/21/2014
 -------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.Vc64Pkg.all;
 
-entity PpiObVc is
+entity PpiVcOb is
    generic (
       TPD_G              : time := 1 ns;
       VC_WIDTH_G         : integer range 16 to 64     := 16;  -- 16, 32 or 64
@@ -64,9 +64,9 @@ entity PpiObVc is
 begin
    assert (VC_WIDTH_G = 16 or VC_WIDTH_G = 32 or VC_WIDTH_G = 64 ) 
       report "VC_WIDTH_G must not be = 16, 32 or 64" severity failure;
-end PpiObVc;
+end PpiVcOb;
 
-architecture structure of PpiObVc is
+architecture structure of PpiVcOb is
 
    -- Local signals
    signal intReadToFifo    : PpiReadToFifoType;

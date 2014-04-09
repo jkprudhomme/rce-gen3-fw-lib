@@ -22,6 +22,7 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
+use work.AxiLitePkg.all;
 use work.StdRtlPkg.all;
 
 entity ZynqEthernet10G is
@@ -31,14 +32,22 @@ entity ZynqEthernet10G is
    port (
 
       -- Clocks
-      ponReset                : in  sl;
-      ethRefClk               : in  sl;
+      sysClk200               : in  sl;
+      sysClk200Rst            : in  sl;
+      sysClk125               : in  sl;
+      sysClk125Rst            : in  sl;
 
-      -- Local Bus
-      axiClk                  : in  sl;
-      axiClkRst               : in  sl;
-      localBusMaster          : in  LocalBusMasterType;
-      localBusSlave           : out LocalBusSlaveType;
+      -- PPI Interface
+      ppiClk                  : out sl;
+      ppiOnline               : in  sl;
+      ppiReadToFifo           : out PpiReadToFifoType;
+      ppiReadFromFifo         : in  PpiReadFromFifoType;
+      ppiWriteToFifo          : out PpiWriteToFifoType;
+      ppiWriteFromFifo        : in  PpiWriteFromFifoType;
+
+      -- Ref Clock
+      ethRefClkP              : in  sl;
+      ethRefClkM              : in  sl;
 
       -- Ethernet Lines
       ethRxP                  : in  slv(3 downto 0);
@@ -50,180 +59,299 @@ end ZynqEthernet10G;
 
 architecture structure of ZynqEthernet10G is
 
-   -- Local signals
-   signal ethEnable              : sl;
-   signal ethReset               : sl;
-   signal clk156RstR1            : sl;
-   signal clk156RstR2            : sl;
-   signal clk156Rst              : sl;
-   signal clk156                 : sl;
-   signal txoutclk               : sl;
-   signal xauiTxd                : slv(63 downto 0);
-   signal xauiTxc                : slv(7  downto 0);
-   signal xauiRxd                : slv(63 downto 0);
-   signal xauiRxc                : slv(7  downto 0);
-   signal txlock                 : sl;
-   signal signal_detect          : slv(3  downto 0);
-   signal align_status           : sl;
-   signal sync_status            : slv(3  downto 0);
-   signal mgt_tx_ready           : sl;
-   signal configuration_vector   : slv(6  downto 0);
-   signal status_vector          : slv(7  downto 0);
+   COMPONENT zynq_10g_xaui
+      PORT (
+         dclk                 : in sl;
+         reset                : in sl;
+         clk156_out           : out sl;
+         refclk_p             : in sl;
+         refclk_n             : in sl;
+         clk156_lock          : out sl;
+         xgmii_txd            : in slv(63 downto 0);
+         xgmii_txc            : in slv(7 downto 0);
+         xgmii_rxd            : out slv(63 downto 0);
+         xgmii_rxc            : out slv(7 downto 0);
+         xaui_tx_l0_p         : out sl;
+         xaui_tx_l0_n         : out sl;
+         xaui_tx_l1_p         : out sl;
+         xaui_tx_l1_n         : out sl;
+         xaui_tx_l2_p         : out sl;
+         xaui_tx_l2_n         : out sl;
+         xaui_tx_l3_p         : out sl;
+         xaui_tx_l3_n         : out sl;
+         xaui_rx_l0_p         : in sl;
+         xaui_rx_l0_n         : in sl;
+         xaui_rx_l1_p         : in sl;
+         xaui_rx_l1_n         : in sl;
+         xaui_rx_l2_p         : in sl;
+         xaui_rx_l2_n         : in sl;
+         xaui_rx_l3_p         : in sl;
+         xaui_rx_l3_n         : in sl;
+         signal_detect        : in slv(3 downto 0);
+         debug                : out slv(5 downto 0);
+         configuration_vector : in slv(6 downto 0);
+         status_vector        : out slv(7 downto 0)
+      );
+   END COMPONENT;
+
+   signal xauiRxd          : slv(63 downto 0);
+   signal xauiRxc          : slv(7  downto 0);
+   signal xauiTxd          : slv(63 downto 0);
+   signal xauiTxc          : slv(7  downto 0);
+   signal status           : slv(7  downto 0);
+   signal config           : slv(6  downto 0);
+   signal intReadToFifo    : PpiReadToFifoType;
+   signal intReadFromFifo  : PpiReadFromFifoType;
+   signal intWriteToFifo   : PpiWriteToFifoType;
+   signal intWriteFromFifo : PpiWriteFromFifoType;
+   signal axiWriteMaster   : AxiLiteWriteMasterType;
+   signal axiWriteSlave    : AxiLiteWriteSlaveType;
+   signal axiReadMaster    : AxiLiteReadMasterType;
+   signal axiReadSlave     : AxiLiteReadSlaveType;
+   signal statusWords      : Slv64Array(1 downto 0);
+   signal statusSend       : sl;
+   signal ethReadToFifo    : PpiReadToFifoType;
+   signal ethReadFromFifo  : PpiReadFromFifoType;
+   signal ethWriteToFifo   : PpiWriteToFifoType;
+   signal ethWriteFromFifo : PpiWriteFromFifoType;
+   signal ethOnline        : sl;
+   signal ethClk           : sl;
+   signal ethClkRst        : sl;
+   signal ethClkLock       : sl;
+
+   type RegType is record
+      config            : slv(6  downto 0);
+      axiReadSlave      : AxiLiteReadSlaveType;
+      axiWriteSlave     : AxiLiteWriteSlaveType;
+   end record RegType;
+
+   constant REG_INIT_C : RegType := (
+      config            => (others=>'0'),
+      axiReadSlave      => AXI_LITE_READ_SLAVE_INIT_C,
+      axiWriteSlave     => AXI_LITE_WRITE_SLAVE_INIT_C
+   );
+
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
 
 begin
 
-   --------------------------------------------
-   -- Registers: 0xB800_0000 - 0xBBFF_FFFF
-   --------------------------------------------
-   process ( axiClk, axiClkRst ) begin
-      if axiClkRst = '1' then
-         localBusSlave        <= LocalBusSlaveInit      after TPD_G;
-         ethEnable            <= '0'                    after TPD_G;
-         xauiTxd              <= (others=>'0')          after TPD_G;
-         xauiTxc              <= (others=>'0')          after TPD_G;
-         configuration_vector <= (others=>'0')          after TPD_G;
-      elsif rising_edge(axiClk) then
-         localBusSlave.readValid <= localBusMaster.readEnable after TPD_G;
-         localBusSlave.readData  <= (others=>'0')             after TPD_G;
+   ppiClk <= sysClk200;
 
-         -- Write Low Data - 0xB800_1000
-         if localBusMaster.addr(23 downto 0) = x"001000" then
-            if localBusMaster.writeEnable = '1' then
-               xauiTxd(31 downto 0) <= localBusMaster.writeData after TPD_G;
-            end if;
-            localBusSlave.readData  <= xauiTxd(31 downto 0)     after TPD_G;
-
-         -- Write High Data - 0xB800_1004
-         elsif localBusMaster.addr(23 downto 0) = x"001004" then
-            if localBusMaster.writeEnable = '1' then
-               xauiTxd(63 downto 32) <= localBusMaster.writeData after TPD_G;
-            end if;
-            localBusSlave.readData  <= xauiTxd(63 downto 32)     after TPD_G;
-
-         -- Write Control - 0xB800_1008
-         elsif localBusMaster.addr(23 downto 0) = x"001008" then
-            if localBusMaster.writeEnable = '1' then
-               xauiTxc <= localBusMaster.writeData(7 downto 0) after TPD_G;
-            end if;
-            localBusSlave.readData(7 downto 0) <= xauiTxc after TPD_G;
-
-         -- Read Low Data - 0xB800_100C
-         elsif localBusMaster.addr(23 downto 0) = x"00100C" then
-            localBusSlave.readData  <= xauiRxd(31 downto 0)     after TPD_G;
-
-         -- Read High Data - 0xB800_1010
-         elsif localBusMaster.addr(23 downto 0) = x"001010" then
-            localBusSlave.readData  <= xauiRxd(63 downto 32)     after TPD_G;
-
-         -- Read Control - 0xB800_1014
-         elsif localBusMaster.addr(23 downto 0) = x"001014" then
-            localBusSlave.readData(7 downto 0) <= xauiRxc after TPD_G;
-
-         -- Config Vector - 0xB800_1018
-         elsif localBusMaster.addr(23 downto 0) = x"001018" then
-            if localBusMaster.writeEnable = '1' then
-               configuration_vector <= localBusMaster.writeData(6 downto 0) after TPD_G;
-            end if;
-            localBusSlave.readData(6 downto 0) <= configuration_vector after TPD_G;
-
-         -- Status Vector - 0xB800_101C
-         elsif localBusMaster.addr(23 downto 0) = x"00101C" then
-            localBusSlave.readData(7 downto 0) <= status_vector after TPD_G;
-
-         -- Others status - 0xB800_1020
-         elsif localBusMaster.addr(23 downto 0) = x"001020" then
-            localBusSlave.readData(3 downto 0) <= signal_detect after TPD_G;
-            localBusSlave.readData(7 downto 4) <= sync_status   after TPD_G;
-            localBusSlave.readData(8)          <= align_status  after TPD_G;
-            localBusSlave.readData(9)          <= mgt_tx_ready  after TPD_G;
-            localBusSlave.readData(10)         <= txlock        after TPD_G;
-
-         -- Enable Register - 0xB800_1024
-         elsif localBusMaster.addr(23 downto 0) = x"001024" then
-            if localBusMaster.writeEnable = '1' then
-               ethEnable <= localBusMaster.writeData(0) after TPD_G;
-            end if;
-            localBusSlave.readData(0) <= ethEnable after TPD_G;
-
-         end if;
-      end if;  
-   end process;         
-
-
-   -----------------------------------------
-   -- XAUI Interface
-   -----------------------------------------
-
-   -- Reset
-   ethReset <= ponReset or not ethEnable;
-
-   -- Core, copied from example design
-   -- Modified reset timing for 200mhz dclk
-   U_ZynqXaui : entity work.zynq_xaui_block
+   -- PPI Crossbar
+   U_PpiCrossbar : entity work.PpiCrossbar
       generic map (
-         WRAPPER_SIM_GTRESET_SPEEDUP => "TRUE" --Does not affect hardware
+         TPD_G              => TPD_G,
+         NUM_PPI_SLOTS_G    => 1,
+         NUM_AXI_SLOTS_G    => 1,
+         NUM_STATUS_WORDS_G => 2
       ) port map (
-         reset156              => clk156Rst,
-         reset                 => ethReset,
-         dclk                  => axiClk,
-         clk156                => clk156,
-         refclk                => ethRefClk,
-         txoutclk              => txoutclk,
+         ppiClk             => sysClk200,
+         ppiClkRst          => sysClk200Rst,
+         ppiOnline          => ppiOnline,
+         ibWriteToFifo      => ppiWriteToFifo,
+         ibWriteFromFifo    => ppiWriteFromFifo,
+         obReadToFifo       => ppiReadToFifo,
+         obReadFromFifo     => ppiReadFromFifo,
+         ibReadToFifo(0)    => intReadToFifo,
+         ibReadFromFifo(0)  => intReadFromFifo,
+         obWriteToFifo(0)   => intWriteToFifo,
+         obWriteFromFifo(0) => intWriteFromFifo,
+         axiClk             => sysClk125,
+         axiClkRst          => sysClk125Rst,
+         axiWriteMasters(0) => axiWriteMaster,
+         axiWriteSlaves(0)  => axiWriteSlave,
+         axiReadMasters(0)  => axiReadMaster,
+         axiReadSlaves(0)   => axiReadSlave,
+         statusClk          => sysClk125,
+         statusClkRst       => sysClk125Rst,
+         statusWords        => statusWords,
+         statusSend         => statusSend
+      );
+
+
+   statusWords(0)(63 downto 8) <= (others=>'0');
+   statusWords(0)(7  downto 0) <= status;
+   statusWords(1)(63 downto 0) <= (others=>'0');
+   statusSend                  <= '0';
+
+
+   -------------------------------------------
+   -- Local Registers
+   -------------------------------------------
+
+   -- Sync
+   process (sysClk125) is
+   begin
+      if (rising_edge(sysClk125)) then
+         r <= rin after TPD_G;
+      end if;
+   end process;
+
+   -- Async
+   process (sysClk125Rst, axiReadMaster, axiWriteMaster, r, status ) is
+      variable v         : RegType;
+      variable axiStatus : AxiLiteStatusType;
+   begin
+      v := r;
+
+      axiSlaveWaitTxn(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave, axiStatus);
+
+      -- Write
+      if (axiStatus.writeEnable = '1') then
+
+         case (axiWriteMaster.awaddr(15 downto 0)) is
+
+            when x"0010" => 
+               v.config := axiWriteMaster.wdata(6 downto 0);
+
+            when others => null;
+         end case;
+
+         -- Send Axi response
+         axiSlaveWriteResponse(v.axiWriteSlave);
+
+      end if;
+
+      -- Read
+      if (axiStatus.readEnable = '1') then
+         v.axiReadSlave.rdata := (others => '0');
+
+         case axiReadMaster.araddr(15 downto 0) is
+
+            when X"0000" =>
+               v.axiReadSlave.rdata(7 downto 0) := status;
+
+            when X"0010" =>
+               v.axiReadSlave.rdata(6 downto 0) := r.config;
+
+            when others => null;
+         end case;
+
+         -- Send Axi Response
+         axiSlaveReadResponse(v.axiReadSlave);
+      end if;
+
+      -- Reset
+      if (sysClk125Rst = '1') then
+         v := REG_INIT_C;
+      end if;
+
+      -- Next register assignment
+      rin <= v;
+
+      -- Outputs
+      axiReadSlave  <= r.axiReadSlave;
+      axiWriteSlave <= r.axiWriteSlave;
+      config        <= r.config;
+      
+   end process;
+
+
+   -------------------------------------------
+   -- XAUI
+   -------------------------------------------
+
+   U_ZynqXaui: zynq_10g_xaui
+      PORT map (
+         dclk                  => sysClk125,
+         reset                 => sysClk125Rst,
+         clk156_out            => ethClk,
+         refclk_p              => ethRefClkP,
+         refclk_n              => ethRefClkM,
+         clk156_lock           => ethClkLock,
          xgmii_txd             => xauiTxd,
          xgmii_txc             => xauiTxc,
          xgmii_rxd             => xauiRxd,
          xgmii_rxc             => xauiRxc,
-         xaui_tx_l0_p          => ethTxP(0),
-         xaui_tx_l0_n          => ethTxM(0),
-         xaui_tx_l1_p          => ethTxP(1),
-         xaui_tx_l1_n          => ethTxM(1),
-         xaui_tx_l2_p          => ethTxP(2),
-         xaui_tx_l2_n          => ethTxM(2),
-         xaui_tx_l3_p          => ethTxP(3),
-         xaui_tx_l3_n          => ethTxM(3),
-         xaui_rx_l0_p          => ethRxP(0),
-         xaui_rx_l0_n          => ethRxM(0),
-         xaui_rx_l1_p          => ethRxP(1),
-         xaui_rx_l1_n          => ethRxM(1),
-         xaui_rx_l2_p          => ethRxP(2),
-         xaui_rx_l2_n          => ethRxM(2),
-         xaui_rx_l3_p          => ethRxP(3),
-         xaui_rx_l3_n          => ethRxM(3),
-         txlock                => txlock,
-         mmcm_lock             => txlock,
-         signal_detect         => signal_detect,
-         align_status          => align_status,
-         sync_status           => sync_status,
-         drp_addr              => (others=>'0'),
-         drp_en                => (others=>'0'),
-         drp_i                 => (others=>'0'),
-         drp_o                 => open,
-         drp_rdy               => open,
-         drp_we                => (others=>'0'),
-         mgt_tx_ready          => mgt_tx_ready,
-         configuration_vector  => configuration_vector,
-         status_vector         => status_vector
+         xaui_tx_l0_p          => ethTxP(0), 
+         xaui_tx_l0_n          => ethTxM(0), 
+         xaui_tx_l1_p          => ethTxP(1), 
+         xaui_tx_l1_n          => ethTxM(1), 
+         xaui_tx_l2_p          => ethTxP(2), 
+         xaui_tx_l2_n          => ethTxM(2), 
+         xaui_tx_l3_p          => ethTxP(3), 
+         xaui_tx_l3_n          => ethTxM(3), 
+         xaui_rx_l0_p          => ethRxP(0), 
+         xaui_rx_l0_n          => ethRxM(0), 
+         xaui_rx_l1_p          => ethRxP(1), 
+         xaui_rx_l1_n          => ethRxM(1), 
+         xaui_rx_l2_p          => ethRxP(2), 
+         xaui_rx_l2_n          => ethRxM(2), 
+         xaui_rx_l3_p          => ethRxP(3), 
+         xaui_rx_l3_n          => ethRxM(3), 
+         signal_detect         => (others=>'1'),
+         debug                 => open,
+         configuration_vector  => config,
+         status_vector         => status
       );
 
-   -- Clock buffer
-   clk156_bufg : BUFG
-      port map ( 
-         O => clk156,
-         I => txoutclk
+   U_EthClkRst : entity work.RstSync
+      generic map (
+         TPD_G           => TPD_G,
+         IN_POLARITY_G   => '0',
+         OUT_POLARITY_G  => '1',
+         RELEASE_DELAY_G => 3
+      ) port map (
+         clk      => ethClk,
+         asyncRst => ethClkLock,
+         syncRst  => ethClkRst
       );
 
-   -- Generate reset
-   p_reset : process (clk156, txlock) begin
-      if txlock = '0' then
-         clk156RstR1  <= '1' after TPD_G;
-         clk156RstR2  <= '1' after TPD_G;
-         clk156Rst    <= '1' after TPD_G;
-      elsif rising_edge(clk156) then
-         clk156RstR1  <= '0'         after TPD_G;
-         clk156RstR2  <= clk156RstR1 after TPD_G;
-         clk156Rst    <= clk156RstR2 after TPD_G;
-      end if;
-   end process;
+   -------------------------------------------
+   -- MAC
+   -------------------------------------------
+
+
+
+   -------------------------------------------
+   -- PPI To MAC
+   -------------------------------------------
+   U_ObFifo : entity work.PpiFifoAsync
+      port map (
+         ppiWrClk          => sysClk200,
+         ppiWrClkRst       => sysClk200Rst,
+         ppiWrOnline       => ppiOnline,
+         ppiWriteToFifo    => intWriteToFifo,
+         ppiWriteFromFifo  => intWriteFromFifo,
+         ppiRdClk          => ethClk,
+         ppiRdClkRst       => ethClkRst,
+         ppiRdOnline       => ethOnline,
+         ppiReadToFifo     => ethReadToFifo,
+         ppiReadFromFifo   => ethReadFromFifo
+      );
+
+   xauiTxd              <= ethReadFromFifo.data     when ethOnline = '1' else (others=>'0');
+   xauiTxc(2 downto 0)  <= ethReadFromFifo.size     when ethOnline = '1' else (others=>'0');
+   xauiTxc(3)           <= ethReadFromFifo.eof      when ethOnline = '1' else '0';
+   xauiTxc(4)           <= ethReadFromFifo.eoh      when ethOnline = '1' else '0';
+   xauiTxc(5)           <= ethReadFromFifo.ftype(0) when ethOnline = '1' else '0';
+   xauiTxc(6)           <= ethReadFromFifo.valid    when ethOnline = '1' else '0';
+   xauiTxc(7)           <= ethReadFromFifo.ready    when ethOnline = '1' else '0';
+
+   ethReadToFifo.read   <= ethReadFromFifo.valid;
+
+   ethWriteToFifo.data  <= xauiRxd;
+   ethWriteToFifo.size  <= xauiRxc(2 downto 0);
+   ethWriteToFifo.eof   <= xauiRxc(3);
+   ethWriteToFifo.eoh   <= xauiRxc(4);
+   ethWriteToFifo.err   <= '0';
+   ethWriteToFifo.ftype <= xauiRxc(5) & "000";
+   ethWriteToFifo.valid <= xauiRxc(6) when ethOnline = '1' else '0';
+
+   U_IbFifo : entity work.PpiFifoAsync
+      port map (
+         ppiWrClk          => ethClk,
+         ppiWrClkRst       => ethClkRst,
+         ppiWrOnline       => '0',
+         ppiWriteToFifo    => ethWriteToFifo,
+         ppiWriteFromFifo  => ethWriteFromFifo,
+         ppiRdClk          => sysClk200,
+         ppiRdClkRst       => sysClk200Rst,
+         ppiRdOnline       => open,
+         ppiReadToFifo     => intReadToFifo,
+         ppiReadFromFifo   => intReadFromFifo
+      );
 
 end architecture structure;
 
