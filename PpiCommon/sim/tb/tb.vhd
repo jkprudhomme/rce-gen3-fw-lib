@@ -118,16 +118,15 @@ begin
          generic map (
             TPD_G              => 1 ns,
             RST_ASYNC_G        => false,
-            GEN_SYNC_FIFO_G    => false,
-            BRAM_EN_G          => true,
-            BYPASS_FIFO_G      => false,
-            PIPE_STAGES_G      => 0,
-            FIFO_ADDR_WIDTH_G  => 9,
             ALTERA_SYN_G       => false,
             ALTERA_RAM_G       => "M9K",
-            USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
             XIL_DEVICE_G       => "7SERIES",  --Xilinx only generic parameter    
+            BRAM_EN_G          => true,
+            USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
+            GEN_SYNC_FIFO_G    => false,
+            PIPE_STAGES_G      => 0,
             FIFO_SYNC_STAGES_G => 3,
+            FIFO_ADDR_WIDTH_G  => 9,
             FIFO_AFULL_THRES_G => 256     -- Almost full at 1/2 capacity
          ) port map (
             vcTxCtrl     => prbsTxCtrl(i), -- In
@@ -240,7 +239,6 @@ begin
             BRAM_EN_G          => true,
             USE_BUILT_IN_G     => false,  --if set to true, this module is only Xilinx compatible only!!!
             GEN_SYNC_FIFO_G    => false,
-            BYPASS_FIFO_G      => false,
             PIPE_STAGES_G      => 0,
             FIFO_SYNC_STAGES_G => 3,
             FIFO_ADDR_WIDTH_G  => 9,

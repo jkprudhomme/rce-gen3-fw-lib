@@ -33,7 +33,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteAsync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64Pkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64Mux.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64FifoRdCtrl.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64Sync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64Fifo.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64FifoMux.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../Vc64Lib/rtl/Vc64PrbsRx.vhd
