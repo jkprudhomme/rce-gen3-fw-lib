@@ -569,6 +569,31 @@ package ArmRceG3Pkg is
    type PpiWriteFromFifoArray is array (natural range<>) of PpiWriteFromFifoType;
 
    --------------------------------------------------------
+   -- PPI Configuration Record
+   --------------------------------------------------------
+   type PpiConfigType is record
+      obHeaderAddrWidth  : integer range 4 to 48;
+      obDataAddrWidth    : integer range 4 to 48;
+      obReadyThold       : integer range 0 to (2**24);
+      ibHeaderAddrWidth  : integer range 4 to 48;
+      ibHeaderPauseThold : integer range 1 to (2**24);
+      ibDataAddrWidth    : integer range 4 to 48;
+      ibDataPauseThold   : integer range 1 to (2**24);
+   end record;
+
+   type PpiConfigArray is array (natural range <>) of PpiConfigType;
+
+   constant PPI_CONFIG_INIT_C : PpiConfigType := ( 
+      obHeaderAddrWidth  => 9,
+      obDataAddrWidth    => 9,
+      obReadyThold       => 1,
+      ibHeaderAddrWidth  => 9,
+      ibHeaderPauseThold => 256,
+      ibDataAddrWidth    => 9,
+      ibDataPauseThold   => 256
+   );
+
+   --------------------------------------------------------
    -- Completion To FIFO Record
    --------------------------------------------------------
 

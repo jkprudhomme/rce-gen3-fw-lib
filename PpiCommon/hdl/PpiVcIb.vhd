@@ -12,6 +12,7 @@
 --    Bits 9     = EOF
 --    Bits 10    = EOFE
 --    Bits 11    = VC data was dropped
+--    Bits 12    = Header only frame
 --    Bits 47:32 = Length in bytes
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
@@ -79,6 +80,7 @@ architecture structure of PpiVcIb is
    constant HEADER_OVERFLOW_THOLD_C : integer := (2**HEADER_ADDR_WIDTH_G) - 10;
    constant DATA_OVERFLOW_THOLD_C   : integer := (2**DATA_ADDR_WIDTH_G) - 10;
    constant DATA_FIFO_WIDTH_C       : integer := VC_WIDTH_G + 1;
+   constant HEADER_ONLY_THOLD_C     : integer := 31*4; -- Max header = 32 x 4 = 256 bytes
 
    -- Local signals
    signal intWriteToFifo   : PpiWriteToFifoType;
@@ -120,7 +122,7 @@ architecture structure of PpiVcIb is
       eofe     : sl;
       valid    : sl;
       dropped  : sl;
-      byteCnt  : slv(11 downto 0);
+      byteCnt  : slv(15 downto 0);
    end record HeaderFifoType;
 
    constant HEADER_FIFO_INIT_C : HeaderFifoType := (
@@ -140,9 +142,10 @@ architecture structure of PpiVcIb is
 
    type RegMoveType is record
       state          : MoveStateType;
-      byteCnt        : slv(11 downto 0);
+      byteCnt        : slv(15 downto 0);
       dataRead       : sl;
       headerRead     : sl;
+      headerOnly     : sl;
       ppiWriteToFifo : PpiWriteToFifoType;
    end record RegMoveType;
 
@@ -151,6 +154,7 @@ architecture structure of PpiVcIb is
       byteCnt        => (others=>'0'),
       dataRead       => '0',
       headerRead     => '0',
+      headerOnly     => '0',
       ppiWriteToFifo => PPI_WRITE_TO_FIFO_INIT_C
    );
 
@@ -167,7 +171,7 @@ architecture structure of PpiVcIb is
       dropCountEn     : sl;
       dataIn          : DataFifoType;
       headerIn        : HeaderFifoType;  
-      byteCnt         : slv(11 downto 0);
+      byteCnt         : slv(15 downto 0);
       frameCountEn    : sl;
    end record RegType;
 
@@ -272,11 +276,11 @@ begin
             v := REG_MOVE_INIT_C;
 
             -- Init counter
-            v.byteCnt := conv_std_logic_vector(VC_WIDTH_G/8,12);
+            v.byteCnt := conv_std_logic_vector(VC_WIDTH_G/8,16);
 
             -- Header is valid and no flow control
             if headerOut.valid = '1' and intWriteFromFifo.pause = '0' and ppiOnline = '1' then
-               v.ppiWriteToFifo.data(43 downto 32) := headerOut.byteCnt;
+               v.ppiWriteToFifo.data(47 downto 32) := headerOut.byteCnt;
                v.ppiWriteToFifo.data(11)           := headerOut.dropped;
                v.ppiWriteToFifo.data(10)           := headerOut.eofe;
                v.ppiWriteToFifo.data(9)            := headerOut.eof;
@@ -284,9 +288,19 @@ begin
                v.ppiWriteToFifo.data(3 downto 0)   := headerOut.vc;
                v.ppiWriteToFifo.size               := "111";
                v.ppiWriteToFifo.eof                := '0';
-               v.ppiWriteToFifo.eoh                := '1';
                v.ppiWriteToFifo.err                := '0';
                v.ppiWriteToFifo.valid              := '1';
+
+               -- Determine if entire frame will fit into header
+               if headerOut.sof = '1' and headerOut.eof = '1' and headerOut.byteCnt <= HEADER_ONLY_THOLD_C then
+                  v.ppiWriteToFifo.eoh      := '0';
+                  v.headerOnly              := '1';
+                  v.ppiWriteToFifo.data(12) := '1'; -- header only bit
+               else
+                  v.ppiWriteToFifo.eoh      := '1';
+                  v.headerOnly              := '0';
+                  v.ppiWriteToFifo.data(12) := '0'; -- header only bit
+               end if;
 
                case VC_WIDTH_G is
                  when 16     => v.state := S_VC16_0;
@@ -311,6 +325,7 @@ begin
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.valid := '1';
                v.ppiWriteToFifo.eof   := '1';
+               v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
@@ -331,6 +346,7 @@ begin
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.valid := '1';
                v.ppiWriteToFifo.eof   := '1';
+               v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
@@ -351,6 +367,7 @@ begin
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.valid := '1';
                v.ppiWriteToFifo.eof   := '1';
+               v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
@@ -371,6 +388,7 @@ begin
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.eof   := '1';
+               v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
@@ -391,6 +409,7 @@ begin
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.valid := '1';
                v.ppiWriteToFifo.eof   := '1';
+               v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
@@ -411,6 +430,7 @@ begin
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.eof   := '1';
+               v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
@@ -430,6 +450,7 @@ begin
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
                v.ppiWriteToFifo.eof   := '1';
+               v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
                v.state                := S_IDLE;
@@ -467,7 +488,7 @@ begin
          ALTERA_SYN_G   => false,
          ALTERA_RAM_G   => "M9K",
          SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 20,
+         DATA_WIDTH_G   => 24,
          ADDR_WIDTH_G   => HEADER_ADDR_WIDTH_G,
          INIT_G         => "0",
          FULL_THRES_G   => HEADER_AFULL_THOLD_G,
@@ -476,12 +497,12 @@ begin
          rst                => ppiClkRst,
          wr_clk             => ibVcClk,
          wr_en              => headerIn.valid,
-         din(11 downto  0)  => headerIn.byteCnt,
-         din(15 downto 12)  => headerIn.vc,
-         din(16)            => headerIn.dropped,
-         din(17)            => headerIn.eofe,
-         din(18)            => headerIn.eof,
-         din(19)            => headerIn.sof,
+         din(15 downto  0)  => headerIn.byteCnt,
+         din(19 downto 16)  => headerIn.vc,
+         din(20)            => headerIn.dropped,
+         din(21)            => headerIn.eofe,
+         din(22)            => headerIn.eof,
+         din(23)            => headerIn.sof,
          wr_data_count      => headerCount,
          wr_ack             => open,
          overflow           => open,
@@ -491,12 +512,12 @@ begin
          not_full           => open,
          rd_clk             => ppiClk,
          rd_en              => headerRead,
-         dout(11 downto  0) => headerOut.byteCnt,
-         dout(15 downto 12) => headerOut.vc,
-         dout(16)           => headerOut.dropped,
-         dout(17)           => headerOut.eofe,
-         dout(18)           => headerOut.eof,
-         dout(19)           => headerOut.sof,
+         dout(15 downto  0) => headerOut.byteCnt,
+         dout(19 downto 16) => headerOut.vc,
+         dout(20)           => headerOut.dropped,
+         dout(21)           => headerOut.eofe,
+         dout(22)           => headerOut.eof,
+         dout(23)           => headerOut.sof,
          rd_data_count      => open,
          valid              => headerOut.valid,
          underflow          => open,
@@ -674,7 +695,7 @@ begin
       -- Byte counter
       if newFrame = true then
          if v.dataIn.valid = '1' then
-            v.byteCnt := x"00" & byteSize;
+            v.byteCnt := x"000" & byteSize;
          else
             v.byteCnt := (others=>'0');
          end if;

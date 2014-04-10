@@ -6,7 +6,7 @@
 -------------------------------------------------------------------------------
 -- Description:
 -- PPI block to manage the PGP interface.
--- Address map:
+-- Address map (offset from base):
 --    0x00 = Write Only, Count Reset On Write
 --    0x04 = Read/Write
 --       Bits 0 = Rx Clock Reset
@@ -44,10 +44,10 @@
 --       Bits 7:0 = RX Overflow Count
 --
 -- Status vector:
---    Word 1:
+--    Word (lane * 12 + 1):
 --       bits 63:32 = Tx Frame Counter
 --       bits 31:00 = Rx Frame Counter
---    Word 0:
+--    Word 0 (lane * 12 + 2)
 --       Bits 63:56 = Zeros
 --       Bits 55:48 = Remote Overflow Count
 --       Bits 47:45 = Zeros

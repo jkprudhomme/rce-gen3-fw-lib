@@ -26,7 +26,8 @@ use unisim.vcomponents.all;
 
 entity DtmCore is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G        : time                       := 1 ns;
+      PPI_CONFIG_G : PpiConfigArray(2 downto 0) := (others=>PPI_CONFIG_INIT_C)
    );
    port (
 
@@ -89,21 +90,40 @@ entity DtmCore is
       localAxiWriteSlave      : in    AxiLiteWriteSlaveType;
 
       -- PPI Clock and Reset
-      ppiClk                  : in     slv(3 downto 0);
-      ppiOnline               : out    slv(3 downto 0);
+      ppiClk                  : in     slv(2 downto 0);
+      ppiOnline               : out    slv(2 downto 0);
 
       -- PPI Outbound FIFO Interface
-      ppiReadToFifo           : in     PpiReadToFifoArray(3 downto 0);
-      ppiReadFromFifo         : out    PpiReadFromFifoArray(3 downto 0);
+      ppiReadToFifo           : in     PpiReadToFifoArray(2 downto 0);
+      ppiReadFromFifo         : out    PpiReadFromFifoArray(2 downto 0);
 
       -- PPI Inbound FIFO Interface
-      ppiWriteToFifo          : in     PpiWriteToFifoArray(3 downto 0);
-      ppiWriteFromFifo        : out    PpiWriteFromFifoArray(3 downto 0)
+      ppiWriteToFifo          : in     PpiWriteToFifoArray(2 downto 0);
+      ppiWriteFromFifo        : out    PpiWriteFromFifoArray(2 downto 0)
 
    );
 end DtmCore;
 
 architecture STRUCTURE of DtmCore is
+
+   -- Local Ethernet Config
+   constant ETH_PPI_CONFIG_C : PpiConfigType := ( 
+      obHeaderAddrWidth  => 9,
+      obDataAddrWidth    => 9,
+      obReadyThold       => 1,
+      ibHeaderAddrWidth  => 9,
+      ibHeaderPauseThold => 255,
+      ibDataAddrWidth    => 9,
+      ibDataPauseThold   => 255
+   );
+
+   -- PPI Configuration
+   constant INT_PPI_CONFIG_C : PpiConfigArray(3 downto 0) := (
+      0 =>  PPI_CONFIG_G(0),
+      1 =>  PPI_CONFIG_G(1),
+      2 =>  PPI_CONFIG_G(2),
+      3 =>  ETH_PPI_CONFIG_C
+   );
 
    -- Local Signals
    signal iaxiClk           : sl;
@@ -124,6 +144,13 @@ architecture STRUCTURE of DtmCore is
    signal topAxiReadSlave   : AxiLiteReadSlaveType;
    signal topAxiWriteMaster : AxiLiteWriteMasterType;
    signal topAxiWriteSlave  : AxiLiteWriteSlaveType;
+   signal intReadToFifo     : PpiReadToFifoArray(3 downto 0);
+   signal intReadFromFifo   : PpiReadFromFifoArray(3 downto 0);
+   signal intWriteToFifo    : PpiWriteToFifoArray(3 downto 0);
+   signal intWriteFromFifo  : PpiWriteFromFifoArray(3 downto 0);
+   signal ippiClk           : slv(3 downto 0);
+   signal ippiOnline        : slv(3 downto 0);
+
 
 begin
 
@@ -139,12 +166,21 @@ begin
    sysClk200       <= isysClk200;
    sysClk200Rst    <= isysClk200Rst;
 
+   intReadToFifo(2 downto 0)  <= ppiReadToFifo;
+   ppiReadFromFifo            <= intReadFromFifo(2 downto 0);
+   intWriteToFifo(2 downto 0) <= ppiWriteToFifo;
+   ppiWriteFromFifo           <= intWriteFromFifo(2 downto 0);
+   ippiClk(2 downto 0)        <= ppiClk;
+   ppiOnline                  <= ippiOnline(2 downto 0);
+
+
    --------------------------------------------------
    -- RCE Core
    --------------------------------------------------
    U_ArmRceG3Top: entity work.ArmRceG3Top
       generic map (
-         AXI_CLKDIV_G => 5.0
+         AXI_CLKDIV_G => 5.0,
+         PPI_CONFIG_G => INT_PPI_CONFIG_C
       ) port map (
          i2cSda              => i2cSda,
          i2cScl              => i2cScl,
@@ -158,12 +194,12 @@ begin
          localAxiReadSlave   => topAxiReadSlave ,
          localAxiWriteMaster => topAxiWriteMaster,
          localAxiWriteSlave  => topAxiWriteSlave ,
-         ppiClk              => ppiClk,
-         ppiOnline           => ppiOnline,
-         ppiReadToFifo       => ppiReadToFifo,
-         ppiReadFromFifo     => ppiReadFromFifo,
-         ppiWriteToFifo      => ppiWriteToFifo,
-         ppiWriteFromFifo    => ppiWriteFromFifo,
+         ppiClk              => ippiClk,
+         ppiOnline           => ippiOnline,
+         ppiReadToFifo       => intReadToFifo,
+         ppiReadFromFifo     => intReadFromFifo,
+         ppiWriteToFifo      => intWriteToFifo,
+         ppiWriteFromFifo    => intWriteFromFifo,
          ethFromArm          => iethFromArm,
          ethToArm            => iethToArm,
          clkSelA             => iclkSelA,
@@ -185,6 +221,11 @@ begin
          ethTxP             => ethTxP,
          ethTxM             => ethTxM
       );
+
+   ippiClk(3)         <= isysClk125;
+   intReadToFifo(3)   <= PPI_READ_TO_FIFO_INIT_C;
+   intWriteToFifo(3)  <= PPI_WRITE_TO_FIFO_INIT_C;
+
 
    --------------------------------------------------
    -- PCI Express : 0xBC00_0000 - 0xBC00_FFFF

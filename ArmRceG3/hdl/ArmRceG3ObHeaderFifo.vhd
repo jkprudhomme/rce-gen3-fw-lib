@@ -29,7 +29,8 @@ use work.StdRtlPkg.all;
 
 entity ArmRceG3ObHeaderFifo is
    generic (
-      TPD_G        : time    := 1 ns
+      TPD_G        : time          := 1 ns;
+      PPI_CONFIG_G : PpiConfigType := PPI_CONFIG_INIT_C
    );
    port (
 
@@ -62,6 +63,10 @@ end ArmRceG3ObHeaderFifo;
 
 architecture structure of ArmRceG3ObHeaderFifo is
 
+   -- FIFO is program full when less than 40 locations are available
+   -- Max header size is 256 bytes (32 locations)
+   constant OB_HEADER_FULL_THRESH_C : integer := (2**PPI_CONFIG_G.obHeaderAddrWidth) - 40;
+
    -- Outbound descriptor
    type ObDescType is record
       offset   : slv(17 downto 0);
@@ -85,7 +90,6 @@ architecture structure of ArmRceG3ObHeaderFifo is
    signal rxDone                   : sl;
    signal rxLast                   : sl;
    signal rxInit                   : sl;
-   signal obHeaderAFull            : sl;
    signal obHeaderPFull            : sl;
    signal addrValid                : sl;
    signal readAddr                 : slv(31 downto 0);
@@ -116,7 +120,7 @@ begin
    dbgState <= conv_std_logic_vector(States'POS(curState), 3);
 
    -----------------------------------------
-   -- Transmit FIFO
+   -- Transmit Descriptor FIFO
    -----------------------------------------
    U_TxFifo : entity work.FifoSyncBuiltIn 
       generic map (
@@ -285,16 +289,16 @@ begin
       if rising_edge(axiClk) then
          if axiClkRstInt = '1' then
             header          <= OB_HEADER_FROM_FIFO_INIT_C after TPD_G;
-            rxLengthCnt     <= (others=>'0')        after TPD_G;
-            rxDone          <= '0'                  after TPD_G;
-            rxLast          <= '0'                  after TPD_G;
+            rxLengthCnt     <= (others=>'0')              after TPD_G;
+            rxDone          <= '0'                        after TPD_G;
+            rxLast          <= '0'                        after TPD_G;
 
          -- Receiver Init
          elsif rxInit = '1' then
-            header.valid    <= '0'           after TPD_G;
-            rxDone          <= '0'           after TPD_G;
-            rxLast          <= '0'           after TPD_G;
-            rxLengthCnt     <= x"01"         after TPD_G;
+            header.valid    <= '0'   after TPD_G;
+            rxDone          <= '0'   after TPD_G;
+            rxLast          <= '0'   after TPD_G;
+            rxLengthCnt     <= x"01" after TPD_G;
 
          -- Read data is valid
          elsif axiReadFromCntrl.rvalid = '1' then
@@ -328,8 +332,6 @@ begin
    -----------------------------------------
    -- Output FIFO
    -----------------------------------------
-   -- FIFO is program full when less than 40 locations are available
-   -- Max header size is 256 bytes (32 locations)
    U_HdrFifo : entity work.FifoSyncBuiltIn 
       generic map (
          TPD_G          => TPD_G,
@@ -338,8 +340,8 @@ begin
          USE_DSP48_G    => "no",
          XIL_DEVICE_G   => "7SERIES",
          DATA_WIDTH_G   => 72,
-         ADDR_WIDTH_G   => 9,
-         FULL_THRES_G   => (511 - 40),
+         ADDR_WIDTH_G   => PPI_CONFIG_G.obHeaderAddrWidth,
+         FULL_THRES_G   => OB_HEADER_FULL_THRESH_C,
          EMPTY_THRES_G  => 1
       ) port map (
          rst                => axiClkRstInt,
@@ -350,7 +352,7 @@ begin
          wr_ack             => open,
          overflow           => open,
          prog_full          => obHeaderPFull,
-         almost_full        => obHeaderAFull,
+         almost_full        => open,
          full               => open,
          not_full           => open,
          rd_en              => obHeaderToFifo.read,

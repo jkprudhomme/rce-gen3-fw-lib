@@ -27,7 +27,8 @@ use work.AxiLitePkg.all;
 
 entity ArmRceG3ObCntrl is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G        : time                       := 1 ns;
+      PPI_CONFIG_G : PpiConfigArray(3 downto 0) := (others=>PPI_CONFIG_INIT_C)
    );
    port (
 
@@ -126,7 +127,8 @@ begin
 
       U_ObHeaderFifo: entity work.ArmRceG3ObHeaderFifo 
          generic map (
-            TPD_G      => TPD_G
+            TPD_G        => TPD_G,
+            PPI_CONFIG_G => PPI_CONFIG_G(i)
          ) port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRstInt,

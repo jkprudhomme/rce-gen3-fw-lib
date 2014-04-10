@@ -26,7 +26,8 @@ use work.StdRtlPkg.all;
 
 entity ArmRceG3IbPpi is
    generic (
-      TPD_G      : time    := 1 ns
+      TPD_G        : time          := 1 ns;
+      PPI_CONFIG_G : PpiConfigType := PPI_CONFIG_INIT_C
    );
    port (
 
@@ -105,7 +106,6 @@ architecture structure of ArmRceG3IbPpi is
    signal ibPpiDout         : slv(72 downto 0);
    signal ibPpiDin          : slv(72 downto 0);
    signal ibPpiProgFull     : sl;
-   signal ibPpiFull         : sl;
    signal addrValid         : sl;
    signal dataValid         : sl;
    signal dataLast          : sl;
@@ -249,7 +249,6 @@ begin
    -----------------------------------------
    -- Input FIFO
    -----------------------------------------
-   -- Assert programmable full when FIFO is half full
    U_PpiFifo : entity work.FifoAsync
       generic map (
          TPD_G          => TPD_G,
@@ -261,9 +260,9 @@ begin
          ALTERA_RAM_G   => "M9K",
          SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 73,
-         ADDR_WIDTH_G   => 9,
+         ADDR_WIDTH_G   => PPI_CONFIG_G.ibDataAddrWidth,
+         FULL_THRES_G   => PPI_CONFIG_G.ibDataPauseThold,
          INIT_G         => "0",
-         FULL_THRES_G   => 255,
          EMPTY_THRES_G  => 1
       ) port map (
          rst                => axiClkRstInt,
@@ -275,7 +274,7 @@ begin
          overflow           => open,
          prog_full          => ibPpiProgFull,
          almost_full        => open,
-         full               => ibPpiFull,
+         full               => open,
          not_full           => open,
          rd_clk             => axiClk,
          rd_en              => ibPpiFifoRead,
@@ -329,7 +328,7 @@ begin
    ibHeaderToFifo.htype <= ppiWriteToFifo.ftype;
    ibHeaderToFifo.data  <= ppiWriteToFifo.data;
    ibHeaderToFifo.err   <= ppiWriteToFifo.err and ppiWriteToFifo.eof;
-   ibHeaderToFifo.eoh   <= ppiWriteToFifo.eoh;
+   ibHeaderToFifo.eoh   <= ppiWriteToFifo.eoh or ppiWriteToFifo.eof;
 
    -- Outbound flow control
    ppiWriteFromFifo.pause <= ibPpiProgFull or ibHeaderFromFifo.progFull;

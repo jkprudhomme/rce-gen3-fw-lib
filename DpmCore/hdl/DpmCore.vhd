@@ -23,7 +23,9 @@ use work.AxiLitePkg.all;
 
 entity DpmCore is
    generic (
-      ETH_10G_EN_G : boolean := false
+      TPD_G        : time                       := 1 ns;
+      ETH_10G_EN_G : boolean                    := false;
+      PPI_CONFIG_G : PpiConfigArray(2 downto 0) := (others=>PPI_CONFIG_INIT_C)
    );
    port (
 
@@ -65,6 +67,8 @@ entity DpmCore is
       ppiWriteToFifo          : in     PpiWriteToFifoArray(2 downto 0);
       ppiWriteFromFifo        : out    PpiWriteFromFifoArray(2 downto 0);
 
+      dbgStatus               : out    slv(7  downto 0);
+
       -- Clock Select
       clkSelA                 : out    slv(1 downto 0);
       clkSelB                 : out    slv(1 downto 0)
@@ -72,6 +76,25 @@ entity DpmCore is
 end DpmCore;
 
 architecture STRUCTURE of DpmCore is
+
+   -- Local Ethernet Config
+   constant ETH_PPI_CONFIG_C : PpiConfigType := ( 
+      obHeaderAddrWidth  => 9,
+      obDataAddrWidth    => 9,
+      obReadyThold       => 1,
+      ibHeaderAddrWidth  => 9,
+      ibHeaderPauseThold => 255,
+      ibDataAddrWidth    => 9,
+      ibDataPauseThold   => 255
+   );
+
+   -- PPI Configuration
+   constant INT_PPI_CONFIG_C : PpiConfigArray(3 downto 0) := (
+      0 =>  PPI_CONFIG_G(0),
+      1 =>  PPI_CONFIG_G(1),
+      2 =>  PPI_CONFIG_G(2),
+      3 =>  ETH_PPI_CONFIG_C
+   );
 
    -- Local Signals
    signal iaxiClk            : sl;
@@ -122,7 +145,8 @@ begin
    --------------------------------------------------
    U_ArmRceG3Top: entity work.ArmRceG3Top
       generic map (
-         AXI_CLKDIV_G => 5.0
+         AXI_CLKDIV_G => 5.0,
+         PPI_CONFIG_G => INT_PPI_CONFIG_C
       ) port map (
          i2cSda              => i2cSda,
          i2cScl              => i2cScl,
@@ -186,6 +210,7 @@ begin
             ppiReadFromFifo          => intReadFromFifo(3),
             ppiWriteToFifo           => intWriteToFifo(3),
             ppiWriteFromFifo         => intWriteFromFifo(3),
+            dbgStatus                => dbgStatus,
             ethRefClkP               => ethRefClkP,
             ethRefClkM               => ethRefClkM,
             ethRxP                   => ethRxP,

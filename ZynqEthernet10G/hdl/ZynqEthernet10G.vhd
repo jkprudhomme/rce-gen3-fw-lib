@@ -45,6 +45,9 @@ entity ZynqEthernet10G is
       ppiWriteToFifo          : out PpiWriteToFifoType;
       ppiWriteFromFifo        : in  PpiWriteFromFifoType;
 
+      -- Temp status output
+      dbgStatus               : out slv(7  downto 0);
+
       -- Ref Clock
       ethRefClkP              : in  sl;
       ethRefClkM              : in  sl;
@@ -135,8 +138,9 @@ architecture structure of ZynqEthernet10G is
    signal rin : RegType;
 
 begin
-
-   ppiClk <= sysClk200;
+ 
+   dbgStatus <= status;
+   ppiClk    <= sysClk200;
 
    -- PPI Crossbar
    U_PpiCrossbar : entity work.PpiCrossbar

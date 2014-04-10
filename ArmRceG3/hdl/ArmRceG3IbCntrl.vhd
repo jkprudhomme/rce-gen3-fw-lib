@@ -30,7 +30,8 @@ use work.StdRtlPkg.all;
 
 entity ArmRceG3IbCntrl is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G        : time                       := 1 ns;
+      PPI_CONFIG_G : PpiConfigArray(3 downto 0) := (others=>PPI_CONFIG_INIT_C)
    );
    port (
 
@@ -160,7 +161,8 @@ begin
 
       U_IbHeaderFifo: entity work.ArmRceG3IbHeaderFifo 
          generic map (
-            TPD_G => TPD_G
+            TPD_G        => TPD_G,
+            PPI_CONFIG_G => PPI_CONFIG_G(i)
          ) port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRstInt,

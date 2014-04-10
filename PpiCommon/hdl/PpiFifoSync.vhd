@@ -180,7 +180,7 @@ begin
 
    process (ppiClk) begin 
       if rising_edge (ppiClk) then
-         if fifoEofEmpty = '0' or (READY_THOLD_G > 0 and fifoRdCount > READY_THOLD_G) then
+         if fifoEofEmpty = '0' or (READY_THOLD_G > 0 and fifoRdCount >= READY_THOLD_G) then
             ppiReadFromFifo.ready <= '1' after TPD_G;
          else
             ppiReadFromFifo.ready <= '0' after TPD_G;

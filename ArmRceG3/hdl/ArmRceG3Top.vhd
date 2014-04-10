@@ -28,9 +28,9 @@ use work.AxiLitePkg.all;
 
 entity ArmRceG3Top is
    generic (
-      TPD_G             : time                     := 1 ns;
-      AXI_CLKDIV_G      : real                     := 4.7;
-      PPI_READY_THOLD_G : IntegerArray(3 downto 0) := (others=>0)
+      TPD_G        : time                       := 1 ns;
+      AXI_CLKDIV_G : real                       := 4.7;
+      PPI_CONFIG_G : PpiConfigArray(3 downto 0) := (others=>PPI_CONFIG_INIT_C)
    );
    port (
 
@@ -268,8 +268,8 @@ begin
    --------------------------------------------
    U_ArmRceG3DmaCntrl : entity work.ArmRceG3DmaCntrl 
       generic map (
-         TPD_G             => TPD_G,
-         PPI_READY_THOLD_G => PPI_READY_THOLD_G 
+         TPD_G        => TPD_G,
+         PPI_CONFIG_G => PPI_CONFIG_G
       ) port map (
          axiClk                   => idmaClk,
          axiClkRst                => idmaClkRst,

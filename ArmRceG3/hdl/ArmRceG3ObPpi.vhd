@@ -26,8 +26,8 @@ use work.StdRtlPkg.all;
 
 entity ArmRceG3ObPpi is
    generic (
-      TPD_G             : time                   := 1 ns;
-      PPI_READY_THOLD_G : integer range 0 to 511 := 0
+      TPD_G        : time          := 1 ns;
+      PPI_CONFIG_G : PpiConfigType := PPI_CONFIG_INIT_C
    );
    port (
 
@@ -58,6 +58,10 @@ entity ArmRceG3ObPpi is
 end ArmRceG3ObPpi;
 
 architecture structure of ArmRceG3ObPpi is
+
+   -- Assert pfull when FIFO has less than 2
+   -- bursts (16 locations per burst = 32)
+   constant OB_DATA_FULL_THRESH_C : integer := (2**PPI_CONFIG_G.obDataAddrWidth) - 40;
 
    -- Header dma info
    type HeaderDmaType is record 
@@ -665,8 +669,6 @@ begin
    -----------------------------------------
    -- Output FIFO
    -----------------------------------------
-   -- Assert pfull when FIFO has less than 2
-   -- bursts (16 locations per burst = 32)
    U_PpiFifo : entity work.FifoAsync
       generic map (
          TPD_G          => TPD_G,
@@ -678,9 +680,9 @@ begin
          ALTERA_RAM_G   => "M9K",
          SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 73,
-         ADDR_WIDTH_G   => 9,
+         ADDR_WIDTH_G   => PPI_CONFIG_G.obDataAddrWidth,
+         FULL_THRES_G   => OB_DATA_FULL_THRESH_C,
          INIT_G         => "0",
-         FULL_THRES_G   => (511-8),
          EMPTY_THRES_G  => 1
       ) port map (
          rst                => axiClkRstInt,
@@ -717,9 +719,9 @@ begin
          ALTERA_RAM_G   => "M9K",
          SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 1,
-         ADDR_WIDTH_G   => 9,
+         ADDR_WIDTH_G   => PPI_CONFIG_G.obDataAddrWidth,
          INIT_G         => "0",
-         FULL_THRES_G   => (511-8),
+         FULL_THRES_G   => 1,
          EMPTY_THRES_G  => 1
       ) port map (
          rst           => axiClkRstInt,
@@ -772,7 +774,8 @@ begin
    -- Frame Ready
    process (ppiClk) begin
       if rising_edge(ppiClk) then
-         if obPpiEofValid = '1' or (PPI_READY_THOLD_G > 0 and ppiReadCount > PPI_READY_THOLD_G) then
+         if obPpiEofValid = '1' or 
+            (PPI_CONFIG_G.obReadyThold > 0 and ppiReadCount >= PPI_CONFIG_G.obReadyThold) then
             ppiReadFromFifo.ready <= '1' after TPD_G;
          else
             ppiReadFromFifo.ready <= '0' after TPD_G;

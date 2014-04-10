@@ -30,7 +30,8 @@ use work.StdRtlPkg.all;
 
 entity ArmRceG3IbHeaderFifo is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G        : time          := 1 ns;
+      PPI_CONFIG_G : PpiConfigType := PPI_CONFIG_INIT_C
    );
    port (
 
@@ -63,6 +64,9 @@ entity ArmRceG3IbHeaderFifo is
 end ArmRceG3IbHeaderFifo;
 
 architecture structure of ArmRceG3IbHeaderFifo is
+
+   -- Max header size
+   constant MAX_HEADER_C : integer := 32;
 
    -- Inbound Descriptor Data
    type IbDescType is record
@@ -190,7 +194,6 @@ begin
    -----------------------------------------
    -- Header FIFO
    -----------------------------------------
-   -- Assert progammable full when FIFO is half full
    U_HdrFifo : entity work.FifoASyncBuiltIn 
       generic map (
          TPD_G          => TPD_G,
@@ -200,8 +203,8 @@ begin
          XIL_DEVICE_G   => "7SERIES",
          SYNC_STAGES_G  => 3,
          DATA_WIDTH_G   => 72,
-         ADDR_WIDTH_G   => 9,
-         FULL_THRES_G   => 255,
+         ADDR_WIDTH_G   => PPI_CONFIG_G.ibHeaderAddrWidth,
+         FULL_THRES_G   => PPI_CONFIG_G.ibHeaderPauseThold,
          EMPTY_THRES_G  => 1
       ) port map (
          rst               => axiClkRstInt,
@@ -320,7 +323,7 @@ begin
                writeAddr <=  memBaseAddress & headerPtrOffset after TPD_G;
 
             -- Stop incrementing address after hitting max length
-            elsif burstCountEn = '1' and headerLength /= 32 then
+            elsif burstCountEn = '1' and headerLength /= MAX_HEADER_C then
                writeAddr <= writeAddr + 32 after TPD_G;
             end if;
 
@@ -351,7 +354,7 @@ begin
             elsif fifoRd = '1' then
 
                -- Mark frame in error if exceeding max length
-               if headerLength = 32 then
+               if headerLength = MAX_HEADER_C then
                   curError <= '1' after TPD_G;
                else
                   headerLength <= headerLength + 1 after TPD_G;

@@ -27,8 +27,8 @@ use work.AxiLitePkg.all;
 
 entity ArmRceG3DmaCntrl is
    generic (
-      TPD_G             : time                     := 1 ns;
-      PPI_READY_THOLD_G : IntegerArray(3 downto 0) := (others=>0)
+      TPD_G        : time                       := 1 ns;
+      PPI_CONFIG_G : PpiConfigArray(3 downto 0) := (others=>PPI_CONFIG_INIT_C)
    );
    port (
 
@@ -333,7 +333,8 @@ begin
    -----------------------------------------
    U_IbCntrl : entity work.ArmRceG3IbCntrl
       generic map (
-         TPD_G => TPD_G
+         TPD_G        => TPD_G,
+         PPI_CONFIG_G => PPI_CONFIG_G
       ) port map (
          axiClk                   => axiClk,
          axiClkRst                => axiClkRstInt,
@@ -360,7 +361,8 @@ begin
    -----------------------------------------
    U_ObCntrl : entity work.ArmRceG3ObCntrl
       generic map (
-         TPD_G => TPD_G
+         TPD_G        => TPD_G,
+         PPI_CONFIG_G => PPI_CONFIG_G
       ) port map (
          axiClk                  => axiClk,
          axiClkRst               => axiClkRstInt,
@@ -387,7 +389,8 @@ begin
 
       U_IbDma: entity work.ArmRceG3IbPpi 
          generic map (
-            TPD_G      => TPD_G
+            TPD_G        => TPD_G,
+            PPI_CONFIG_G => PPI_CONFIG_G(i)
          ) port map (
             axiClk                   => axiClk,
             axiClkRst                => axiClkRstInt,
@@ -407,8 +410,8 @@ begin
 
       U_ObDma: entity work.ArmRceG3ObPpi 
          generic map (
-            TPD_G             => TPD_G,
-            PPI_READY_THOLD_G => PPI_READY_THOLD_G(i)
+            TPD_G        => TPD_G,
+            PPI_CONFIG_G => PPI_CONFIG_G(i)
          ) port map (
             axiClk                  => axiClk,
             axiClkRst               => axiClkRstInt,

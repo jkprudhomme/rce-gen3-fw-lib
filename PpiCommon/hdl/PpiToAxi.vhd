@@ -8,33 +8,35 @@
 -- PPI block to receive and transmit AXI bus frames. Supports a local 
 -- multi-port AXI4-Lite bus.
 --
--- Downstream AXI Message Format
+-- Outbound PPI Message Format
 --    Word 0:
 --       31:00 = Base Address
 --       35:32 = First Word Byte Enables (write)
 --       39:36 = Last  Word Byte Enables (write) (ignored for length = 0)
---       42:40 = Prot Value
---          43 = Write Bit (set to 1) 
---       63:56 = Burst length, 0 = 1x32, 1 = 2x32, ...
+--       42:40 = Prot Value (usually not used)
+--          43 = Write Bit (set to 1 for writes) 
+--       63:56 = Burst length, 0 = 1x32, 1 = 2x32, ... (up to 256)
 --    Word 1:
 --       31:00 = Value 0 (if write)
 --       63:32 = Value 1 (if write)
+--    (data continues for writes depending on burst length)
 --
--- Upstream AXI Message Format
---    Word 0:
---       31:00 = Base Address, Echo
+-- Inbound PPI Message Format
+--    Word 0: (echoed from outbound frame)
+--       31:00 = Base Address
 --       35:32 = First Word Byte Enables (write)
---       39:36 = Last  Word Byte Enables (write) (ignored for length = 0)
+--       39:36 = Last  Word Byte Enables (write)
 --       42:40 = Prot Value
---          43 = Write Bit (set to 1)
+--          43 = Write Bit (set to 1 for writes) (echoed)
 --       63:56 = Burst length, Echo, 0 = 1x32, 1 = 2x32, ...
 --    Word 1:
 --       31:00 = Value 0 (if read)
 --       63:32 = Value 1 (if read)
---    Word n (last):
---          00 = UnderFlow Error
---          01 = OverFlow Error
---       05:04 = Result Value
+--    (data continues for reads depending on burst length)
+--    Word n (last 64-bit word sent):
+--          00 = UnderFlow Error (too few words for write length)
+--          01 = OverFlow Error (too many words fro write length or read)
+--       05:04 = Result Value from AXI transaction
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
