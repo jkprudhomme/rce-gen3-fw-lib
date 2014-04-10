@@ -29,6 +29,8 @@ int main(int argc, char **argv) {
    uint      maxLane;
    bool      err;
    bool      stop;
+   void  *   cfg;
+   uint  *   f;
 
    for (i=0; i < 4; i++) {
       ob[i].alloc = 1024;
@@ -47,6 +49,22 @@ int main(int argc, char **argv) {
 
    // Dma space
    DmaSpace dspace(&mspace); 
+
+   cfg = mspace.getConfigSpace();
+   f   = (uint *)(cfg + 0x103C);
+
+   // Testing writes
+   i = 0;
+   for (x=0; x < 11; x++) {
+      *f = i;
+      //i+=0x10;
+   }
+
+   while (cspace.getCompFree(&val)) {
+      printf("Read %x\n",val);
+   }
+
+   exit(1);
 
    // Reset everything
    cspace.setReset(true);

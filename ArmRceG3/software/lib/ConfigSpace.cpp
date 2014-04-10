@@ -20,6 +20,21 @@ uint ConfigSpace::getCompFifoData ( uint fifo ) {
    return(0);
 }
 
+
+// Read from free lsit FIFO
+bool ConfigSpace::getCompFree ( uint *data ) {
+   uint val;
+   val = _mspace->readConfig(0x1000,15);
+   if ( val & 0x1 ) return(false);
+   *data = val;
+   return(true);
+}
+
+// Write to free lsit FIFO
+void ConfigSpace::setCompFree ( uint data ) {
+   _mspace->writeConfig(0x1000,15,data);
+}
+
 // Read from free list FIFOs 0 - 3
 uint ConfigSpace::getObFreeFifoData ( uint fifo ) {
    if ( fifo < 4 ) return(_mspace->readConfig(0x1100,fifo));

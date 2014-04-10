@@ -18,6 +18,10 @@ MemorySpaceMap::~MemorySpaceMap () {
    this->close();
 }
 
+void * MemorySpaceMap::getConfigSpace() {
+   return(_cfgMappedBase);
+}
+
 // Open the port
 bool MemorySpaceMap::open () {
 

@@ -23,6 +23,12 @@ class ConfigSpace {
       // Read from completion FIFOs 0 - 10
       uint getCompFifoData ( uint fifo );
 
+      // Write to completion free list
+      void setCompFree ( uint value );
+
+      // Read from completion free list
+      bool getCompFree ( uint *value );
+
       // Read from free list FIFOs, 0 - 3
       uint getObFreeFifoData ( uint fifo );
 

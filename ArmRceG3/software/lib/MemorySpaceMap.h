@@ -29,6 +29,9 @@ class MemorySpaceMap : public MemorySpace {
 
       ~MemorySpaceMap ();
 
+      // Get a pointer to config space 
+      void * getConfigSpace();
+
       // Open the port
       bool open ();
 
