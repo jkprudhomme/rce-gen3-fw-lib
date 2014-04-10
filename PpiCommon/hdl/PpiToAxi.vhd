@@ -60,10 +60,8 @@ use work.AxiLitePkg.all;
 entity PpiToAxi is
    generic (
       TPD_G                  : time                       := 1 ns;
-      NUM_AXI_MASTER_SLOTS_G : natural range 1 to 16      := 4;
       PPI_ADDR_WIDTH_G       : integer range 2 to 48      := 6;  -- 64 entries
-      PPI_PAUSE_THOLD_G      : integer range 1 to (2**24) := 32; -- 32 entries
-      AXI_MASTERS_CONFIG_G   : AxiLiteCrossbarMasterConfigArray
+      PPI_PAUSE_THOLD_G      : integer range 1 to (2**24) := 32  -- 32 entries
    );
    port (
 
@@ -79,20 +77,16 @@ entity PpiToAxi is
       -- AXI Lite Busses
       axiClk           : in  sl;
       axiClkRst        : in  sl;
-      axiWriteMasters  : out AxiLiteWriteMasterArray(NUM_AXI_MASTER_SLOTS_G-1 downto 0);
-      axiWriteSlaves   : in  AxiLiteWriteSlaveArray(NUM_AXI_MASTER_SLOTS_G-1 downto 0);
-      axiReadMasters   : out AxiLiteReadMasterArray(NUM_AXI_MASTER_SLOTS_G-1 downto 0);
-      axiReadSlaves    : in  AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_G-1 downto 0)
+      axiWriteMaster   : out AxiLiteWriteMasterType;
+      axiWriteSlave    : in  AxiLiteWriteSlaveType;
+      axiReadMaster    : out AxiLiteReadMasterType;
+      axiReadSlave     : in  AxiLiteReadSlaveType
    );
 end PpiToAxi;
 
 architecture structure of PpiToAxi is
 
    -- Local signals
-   signal midWriteMaster   : AxiLiteWriteMasterType;
-   signal midWriteSlave    : AxiLiteWriteSlaveType;
-   signal midReadMaster    : AxiLiteReadMasterType;
-   signal midReadSlave     : AxiLiteReadSlaveType;
    signal intReadToFifo    : PpiReadToFifoType;
    signal intReadFromFifo  : PpiReadFromFifoType;
    signal intWriteToFifo   : PpiWriteToFifoType;
@@ -130,7 +124,7 @@ architecture structure of PpiToAxi is
       ftype          => (others => '0'),
       length         => (others => '0'),
       count          => (others => '0'),
-      state          => S_IDLE,
+      state          => S_IDLE_C,
       result         => (others => '0'),
       underflow      => '0',
       overflow       => '0',
@@ -210,7 +204,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, r, intReadFromFifo, intWriteFromFifo, midReadSlave, midWriteSlave, intOnline ) is
+   process (axiClkRst, r, intReadFromFifo, intWriteFromFifo, axiReadSlave, axiWriteSlave, intOnline ) is
       variable v         : RegType;
    begin
       v := r;
@@ -338,18 +332,16 @@ begin
          when S_WRITE_AXI_C =>
 
             -- Clear control signals on ack
-            if midWriteSlave.awready = '1' then
+            if axiWriteSlave.awready = '1' then
                v.axiWriteMaster.awvalid := '0';
             end if;
-            if midWriteSlave.wready = '1' then
+            if axiWriteSlave.wready = '1' then
                v.axiWriteMaster.wvalid := '0';
             end if;
-            if midWriteSlave.bvalid = '1' then
+            if axiWriteSlave.bvalid = '1' then
                v.axiWriteMaster.bready := '0';
+               v.status := axiWriteSlave.bresp;
             end if;
-
-            -- Store status
-            v.status := midWriteSlave.bresp;
 
             -- Transaction is done
             if v.axiWriteMaster.awvalid = '0' and v.axiWriteMaster.wvalid = '0' and v.axiWriteMaster.bready = '0' then
@@ -375,22 +367,22 @@ begin
          when S_READ_AXI_C =>
 
             -- Clear control signals on ack
-            if midReadSlave.arready = '1' then
+            if axiReadSlave.arready = '1' then
                v.axiReadMaster.arvalid := '0';
             end if;
-            if midReadSlave.rvalid = '1' then
+            if axiReadSlave.rvalid = '1' then
                v.axiReadMaster.rready := '0';
             end if;
 
             -- Store data
             if r.count(0) = '0' then
-               v.ppiWriteToFifo.data(31 downto 00) := midReadSlave.rdata;
+               v.ppiWriteToFifo.data(31 downto 00) := axiReadSlave.rdata;
             else
-               v.ppiWriteToFifo.data(63 downto 32) := midReadSlave.rdata;
+               v.ppiWriteToFifo.data(63 downto 32) := axiReadSlave.rdata;
             end if;
 
             -- Store Status
-            v.status := midReadSlave.rresp;
+            v.status := axiReadSlave.rresp;
 
             -- Transaction is done
             if v.axiReadMaster.arvalid = '0' and v.axiReadMaster.rready = '0' then
@@ -451,36 +443,12 @@ begin
       rin <= v;
 
       -- Outputs
-      midReadMaster  <= r.axiReadMaster;
-      midWriteMaster <= r.axiWriteMaster;
+      axiReadMaster  <= r.axiReadMaster;
+      axiWriteMaster <= r.axiWriteMaster;
       intReadToFifo  <= v.ppiReadToFifo;
       intWriteToFifo <= r.ppiWriteToFifo;  
 
    end process;
-
-
-   ------------------------------------
-   -- AXI Crossbar
-   ------------------------------------
-   U_AxiCrossbar : entity work.AxiLiteCrossbar 
-      generic map (
-         TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_G,
-         DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
-         MASTERS_CONFIG_G   => AXI_MASTERS_CONFIG_G
-      ) port map (
-         axiClk              => axiClk,
-         axiClkRst           => axiClkRst,
-         sAxiWriteMasters(0) => midWriteMaster,
-         sAxiWriteSlaves(0)  => midWriteSlave,
-         sAxiReadMasters(0)  => midReadMaster,
-         sAxiReadSlaves(0)   => midReadSlave,
-         mAxiWriteMasters    => axiWriteMasters,
-         mAxiWriteSlaves     => axiWriteSlaves,
-         mAxiReadMasters     => axiReadMasters,
-         mAxiReadSlaves      => axiReadSlaves
-      );
 
 end architecture structure;
 

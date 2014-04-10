@@ -77,6 +77,10 @@ architecture structure of PpiCrossbar is
    signal locReadFromFifo   : PpiReadFromFifoArray(NUM_INT_SLOTS_C-1 downto 0);
    signal locWriteToFifo    : PpiWriteToFifoArray(NUM_INT_SLOTS_C-1 downto 0);
    signal locWriteFromFifo  : PpiWriteFromFifoArray(NUM_INT_SLOTS_C-1 downto 0);
+   signal iaxiWriteMaster   : AxiLiteWriteMasterType;
+   signal iaxiWriteSlave    : AxiLiteWriteSlaveType;
+   signal iaxiReadMaster    : AxiLiteReadMasterType;
+   signal iaxiReadSlave     : AxiLiteReadSlaveType;
 
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : 
       AxiLiteCrossbarMasterConfigArray(NUM_AXI_SLOTS_G-1 downto 0) := genAxiLiteConfig (NUM_AXI_SLOTS_G, x"00000000", 0);
@@ -125,9 +129,7 @@ begin
    -- AXI Bridge
    U_PpiToAxi : entity work.PpiToAxi
       generic map (
-         TPD_G                  => TPD_G,
-         NUM_AXI_MASTER_SLOTS_G => NUM_AXI_SLOTS_G,
-         AXI_MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C
+         TPD_G  => TPD_G 
       ) port map (
          ppiClk            => ppiClk,
          ppiClkRst         => ppiClkRst,
@@ -138,10 +140,31 @@ begin
          ppiReadFromFifo   => locReadFromFifo(NUM_INT_SLOTS_C-2),
          axiClk            => axiClk,
          axiClkRst         => axiClkRst,
-         axiWriteMasters   => axiWriteMasters,
-         axiWriteSlaves    => axiWriteSlaves,
-         axiReadMasters    => axiReadMasters,
-         axiReadSlaves     => axiReadSlaves
+         axiWriteMaster    => iaxiWriteMaster,
+         axiWriteSlave     => iaxiWriteSlave,
+         axiReadMaster     => iaxiReadMaster,
+         axiReadSlave      => iaxiReadSlave
+      );
+
+   -- AXI Crossbar
+   U_AxiCrossbar : entity work.AxiLiteCrossbar 
+      generic map (
+         TPD_G              => TPD_G,
+         NUM_SLAVE_SLOTS_G  => 1,
+         NUM_MASTER_SLOTS_G => NUM_AXI_SLOTS_G,
+         DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
+         MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C
+      ) port map (
+         axiClk              => axiClk,
+         axiClkRst           => axiClkRst,
+         sAxiWriteMasters(0) => iaxiWriteMaster,
+         sAxiWriteSlaves(0)  => iaxiWriteSlave,
+         sAxiReadMasters(0)  => iaxiReadMaster,
+         sAxiReadSlaves(0)   => iaxiReadSlave,
+         mAxiWriteMasters    => axiWriteMasters,
+         mAxiWriteSlaves     => axiWriteSlaves,
+         mAxiReadMasters     => axiReadMasters,
+         mAxiReadSlaves      => axiReadSlaves
       );
 
    -- Status Bridge
