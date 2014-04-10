@@ -44,10 +44,10 @@
 --       Bits 7:0 = RX Overflow Count
 --
 -- Status vector:
---    Word (lane * 12 + 1):
+--    Word 0 (lane * 2 + 1):
 --       bits 63:32 = Tx Frame Counter
 --       bits 31:00 = Rx Frame Counter
---    Word 0 (lane * 12 + 2)
+--    Word 1 (lane * 2 + 2)
 --       Bits 63:56 = Zeros
 --       Bits 55:48 = Remote Overflow Count
 --       Bits 47:45 = Zeros
