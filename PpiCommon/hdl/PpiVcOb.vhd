@@ -74,7 +74,7 @@ architecture structure of PpiVcOb is
    signal intOnline        : sl;
    signal intVcCtrl        : Vc64CtrlArray(15 downto 0);
 
-   type StateType is (S_IDLE, S_FIRST, S_DATA, S_LAST);
+   type StateType is (S_IDLE_C, S_FIRST_C, S_DATA_C, S_LAST_C);
 
    type RegType is record
       state          : StateType;
@@ -89,7 +89,7 @@ architecture structure of PpiVcOb is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      state          => S_IDLE,
+      state          => S_IDLE_C,
       pos            => (others=>'0'),
       vc             => (others=>'0'),
       sof            => '0',
@@ -245,7 +245,7 @@ begin
       case r.state is
 
          -- Idle
-         when S_IDLE =>
+         when S_IDLE_C =>
             if intReadFromFifo.valid = '1' and intReadFromFifo.ready = '1' then
                v.vc                 := intReadFromFifo.data(3 downto 0);
                v.sof                := intReadFromFifo.data(8);
@@ -256,12 +256,12 @@ begin
 
                -- Not Bad frame, otherwise skip
                if intReadFromFifo.eof /= '1' then
-                  v.state := S_FIRST;
+                  v.state := S_FIRST_C;
                end if;
             end if;
 
          -- First, put data onto interface
-         when S_FIRST =>
+         when S_FIRST_C =>
             v.obVcData.sof       := r.sof;
             v.obVcData.data      := nextData;
             v.obVcData.valid     := (not intVcCtrl(conv_integer(r.vc)).almostFull);
@@ -273,15 +273,15 @@ begin
             if nextEof = '1' then
                v.obVcData.eof  := r.eof;
                v.obVcData.eofe := r.eofe;
-               v.state         := S_LAST;
+               v.state         := S_LAST_C;
             else
                v.obVcData.eof  := '0';
                v.obVcData.eofe := '0';
-               v.state         := S_DATA;
+               v.state         := S_DATA_C;
             end if;
 
          -- Normal Data
-         when S_DATA =>
+         when S_DATA_C =>
             v.obVcData.valid := (not intVcCtrl(conv_integer(r.vc)).almostFull);
 
             if intVcCtrl(conv_integer(r.vc)).ready = '1' and r.obVcData.valid = '1' then
@@ -293,22 +293,22 @@ begin
                if nextEof = '1' then
                   v.obVcData.eof  := r.eof;
                   v.obVcData.eofe := r.eofe;
-                  v.state         := S_LAST;
+                  v.state         := S_LAST_C;
                end if;
             end if;
 
          -- Last Transfer
-         when S_LAST =>
+         when S_LAST_C =>
             v.obVcData.valid := (not intVcCtrl(conv_integer(r.vc)).almostFull);
 
             if intVcCtrl(conv_integer(r.vc)).ready = '1' and r.obVcData.valid = '1' then
                v.txFrameCntEn   := r.obVcData.eof;
                v.obVcData.valid := '0';
-               v.state          := S_IDLE;
+               v.state          := S_IDLE_C;
             end if;
 
          when others =>
-            v.state := S_IDLE;
+            v.state := S_IDLE_C;
 
       end case;
 

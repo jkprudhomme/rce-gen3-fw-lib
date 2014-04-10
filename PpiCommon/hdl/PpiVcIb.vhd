@@ -138,7 +138,7 @@ architecture structure of PpiVcIb is
    signal headerOut : HeaderFifoType;
    signal headerIn  : HeaderFifoType;
 
-   type MoveStateType is (S_IDLE, S_VC16_0, S_VC16_1, S_VC16_2, S_VC16_3, S_VC32_0, S_VC32_1, S_VC64);
+   type MoveStateType is (S_IDLE_C, S_VC16_0_C, S_VC16_1_C, S_VC16_2_C, S_VC16_3_C, S_VC32_0_C, S_VC32_1_C, S_VC64_C);
 
    type RegMoveType is record
       state          : MoveStateType;
@@ -150,7 +150,7 @@ architecture structure of PpiVcIb is
    end record RegMoveType;
 
    constant REG_MOVE_INIT_C : RegMoveType := (
-      state          => S_IDLE,
+      state          => S_IDLE_C,
       byteCnt        => (others=>'0'),
       dataRead       => '0',
       headerRead     => '0',
@@ -272,7 +272,7 @@ begin
 
       case rm.state is
 
-         when S_IDLE =>
+         when S_IDLE_C =>
             v := REG_MOVE_INIT_C;
 
             -- Init counter
@@ -303,14 +303,14 @@ begin
                end if;
 
                case VC_WIDTH_G is
-                 when 16     => v.state := S_VC16_0;
-                 when 32     => v.state := S_VC32_0;
-                 when 64     => v.state := S_VC64;
-                 when others => v.state := S_IDLE;
+                 when 16     => v.state := S_VC16_0_C;
+                 when 32     => v.state := S_VC32_0_C;
+                 when 64     => v.state := S_VC64_C;
+                 when others => v.state := S_IDLE_C;
                end case;
             end if;
 
-         when S_VC16_0 =>
+         when S_VC16_0_C =>
             v.ppiWriteToFifo.data(15 downto 0) := dataOut.data(15 downto 0);
             v.ppiWriteToFifo.size              := "001";
             v.ppiWriteToFifo.eof               := '0';
@@ -319,7 +319,7 @@ begin
 
             v.byteCnt  := rm.byteCnt + 2;
             v.dataRead := '1';
-            v.state    := S_VC16_1;
+            v.state    := S_VC16_1_C;
 
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
@@ -328,10 +328,10 @@ begin
                v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
-               v.state                := S_IDLE;
+               v.state                := S_IDLE_C;
             end if;
 
-         when S_VC16_1 =>
+         when S_VC16_1_C =>
             v.ppiWriteToFifo.data(31 downto 16) := dataOut.data(15 downto 0);
             v.ppiWriteToFifo.size               := "011";
             v.ppiWriteToFifo.eof                := '0';
@@ -340,7 +340,7 @@ begin
 
             v.byteCnt  := rm.byteCnt + 2;
             v.dataRead := '1';
-            v.state    := S_VC16_2;
+            v.state    := S_VC16_2_C;
 
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
@@ -349,10 +349,10 @@ begin
                v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
-               v.state                := S_IDLE;
+               v.state                := S_IDLE_C;
             end if;
 
-         when S_VC16_2 =>
+         when S_VC16_2_C =>
             v.ppiWriteToFifo.data(47 downto 32) := dataOut.data(15 downto 0);
             v.ppiWriteToFifo.size               := "101";
             v.ppiWriteToFifo.eof                := '0';
@@ -361,7 +361,7 @@ begin
 
             v.byteCnt  := rm.byteCnt + 2;
             v.dataRead := '1';
-            v.state    := S_VC16_3;
+            v.state    := S_VC16_3_C;
 
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
@@ -370,10 +370,10 @@ begin
                v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
-               v.state                := S_IDLE;
+               v.state                := S_IDLE_C;
             end if;
 
-         when S_VC16_3 =>
+         when S_VC16_3_C =>
             v.ppiWriteToFifo.data(63 downto 48) := dataOut.data(15 downto 0);
             v.ppiWriteToFifo.size               := "111";
             v.ppiWriteToFifo.eof                := '0';
@@ -383,7 +383,7 @@ begin
 
             v.byteCnt  := rm.byteCnt + 2;
             v.dataRead := '1';
-            v.state    := S_VC16_0;
+            v.state    := S_VC16_0_C;
 
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
@@ -391,10 +391,10 @@ begin
                v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
-               v.state                := S_IDLE;
+               v.state                := S_IDLE_C;
             end if;
 
-         when S_VC32_0 =>
+         when S_VC32_0_C =>
             v.ppiWriteToFifo.data(31 downto  0) := dataOut.data(31 downto 0);
             v.ppiWriteToFifo.size               := "011";
             v.ppiWriteToFifo.eof                := '0';
@@ -403,7 +403,7 @@ begin
 
             v.byteCnt  := rm.byteCnt + 4;
             v.dataRead := '1';
-            v.state    := S_VC32_1;
+            v.state    := S_VC32_1_C;
 
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
@@ -412,10 +412,10 @@ begin
                v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
-               v.state                := S_IDLE;
+               v.state                := S_IDLE_C;
             end if;
 
-         when S_VC32_1 =>
+         when S_VC32_1_C =>
             v.ppiWriteToFifo.data(63 downto 32) := dataOut.data(31 downto 0);
             v.ppiWriteToFifo.size               := "111";
             v.ppiWriteToFifo.eof                := '0';
@@ -425,7 +425,7 @@ begin
 
             v.byteCnt  := rm.byteCnt + 4;
             v.dataRead := '1';
-            v.state    := S_VC32_0;
+            v.state    := S_VC32_0_C;
 
             -- Last value
             if rm.byteCnt >= headerOut.byteCnt then
@@ -433,10 +433,10 @@ begin
                v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
-               v.state                := S_IDLE;
+               v.state                := S_IDLE_C;
             end if;
 
-         when S_VC64 =>
+         when S_VC64_C =>
             v.ppiWriteToFifo.data  := dataOut.data;
             v.ppiWriteToFifo.size  := dataOut.size & "11";
             v.ppiWriteToFifo.eof   := '0';
@@ -453,7 +453,7 @@ begin
                v.ppiWriteToFifo.eoh   := r.headerOnly;
                v.ppiWriteToFifo.err   := headerOut.eofe or headerOut.dropped;
                v.headerRead           := '1';
-               v.state                := S_IDLE;
+               v.state                := S_IDLE_C;
             end if;
 
       end case;

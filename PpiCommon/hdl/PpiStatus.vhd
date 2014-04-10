@@ -62,7 +62,7 @@ architecture structure of PpiStatus is
    signal intOnline        : sl;
    signal intOnlineEdge    : sl;
 
-   type StateType is (S_IDLE, S_FIRST, S_MESSAGE, S_LAST );
+   type StateType is (S_IDLE_C, S_FIRST_C, S_MESSAGE_C, S_LAST_C );
 
    type RegType is record
       count          : slv(7  downto 0);
@@ -72,7 +72,7 @@ architecture structure of PpiStatus is
 
    constant REG_INIT_C : RegType := (
       count          => (others => '0'),
-      state          => S_IDLE,
+      state          => S_IDLE_C,
       ppiWriteToFifo => PPI_WRITE_TO_FIFO_INIT_C
    );
 
@@ -181,44 +181,45 @@ begin
       case r.state is
 
          -- Idle
-         when S_IDLE =>
+         when S_IDLE_C =>
             v.ppiWriteToFifo := PPI_WRITE_TO_FIFO_INIT_C;
             v.count          := (others=>'0');
 
             -- When to send a message, transition to online, sw request or firmware request
             if intOnlineEdge = '1' or swReqEdge = '1' or statusSendEdge = '1' then
-               v.state := S_FIRST;
+               v.state := S_FIRST_C;
             end if;
 
          -- First Word
-         when S_FIRST =>
+         when S_FIRST_C =>
 
             -- Proceeed when pause is de-asserted
             if intWriteFromFifo.pause = '0' then
                v.ppiWriteToFifo.data  := (others=>'0');
                v.ppiWriteToFifo.valid := '1';
+               v.state                := S_MESSAGE_C;
             end if;
 
          -- Status message
-         when S_MESSAGE =>
+         when S_MESSAGE_C =>
             v.ppiWriteToFifo.data  := statusWords(conv_integer(r.count));
             v.ppiWriteToFifo.valid := '1';
             v.count                := r.count + 1;
 
             if r.count = (NUM_STATUS_WORDS_G - 1) then
-               v.state := S_LAST;
+               v.state := S_LAST_C;
             end if;
 
          -- Last Word
-         when S_LAST =>
+         when S_LAST_C =>
             v.ppiWriteToFifo.data  := (others=>'0');
             v.ppiWriteToFifo.eof   := '1';
             v.ppiWriteToFifo.eoh   := '1';
             v.ppiWriteToFifo.valid := '1';
-            v.state                := S_IDLE;
+            v.state                := S_IDLE_C;
 
          when others =>
-            v.state := S_IDLE;
+            v.state := S_IDLE_C;
 
       end case;
 

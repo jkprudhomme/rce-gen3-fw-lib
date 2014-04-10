@@ -99,7 +99,7 @@ architecture structure of PpiToAxi is
    signal intWriteFromFifo : PpiWriteFromFifoType;
    signal intOnline        : sl;
 
-   type StateType is (S_IDLE, S_START, S_WRITE, S_WRITE_AXI, S_READ, S_READ_AXI, S_STATUS, S_DUMP );
+   type StateType is (S_IDLE_C, S_START_C, S_WRITE_C, S_WRITE_AXI_C, S_READ_C, S_READ_AXI_C, S_STATUS_C, S_DUMP_C );
 
    type RegType is record
       address        : slv(31 downto 0);
@@ -223,7 +223,7 @@ begin
       case r.state is
 
          -- Idle
-         when S_IDLE =>
+         when S_IDLE_C =>
             v.axiWriteMaster := AXI_LITE_WRITE_MASTER_INIT_C;
             v.axiReadMaster  := AXI_LITE_READ_MASTER_INIT_C;
             v.ppiReadToFifo  := PPI_READ_TO_FIFO_INIT_C;
@@ -242,11 +242,11 @@ begin
                v.write     := intReadFromFifo.data(43);
                v.ftype     := intReadFromFifo.ftype;
                v.length    := intReadFromFifo.data(63 downto 56);
-               v.state     := S_START;
+               v.state     := S_START_C;
             end if;
 
          -- Start Transaction
-         when S_START =>
+         when S_START_C =>
 
             -- Echo Transaction Data
             v.ppiWriteToFifo.data(31 downto  0) := r.address;
@@ -275,9 +275,9 @@ begin
                -- Should not be EOF
                if intReadFromFifo.eof = '1' then
                   v.underflow := '1';
-                  v.state     := S_STATUS;
+                  v.state     := S_STATUS_C;
                else
-                  v.state     := S_WRITE;
+                  v.state     := S_WRITE_C;
                end if;
 
             -- Read transaction
@@ -288,14 +288,14 @@ begin
                   v.overflow := '1';
                end if;
 
-               v.state := S_READ;
+               v.state := S_READ_C;
             end if;
 
             -- Advance FIFO
             v.ppiReadToFifo.read := '1';
 
          -- Write Transaction
-         when S_WRITE =>
+         when S_WRITE_C =>
 
             -- Determine write strobe
             if r.count = 0 then
@@ -332,10 +332,10 @@ begin
             v.axiWriteMaster.awvalid := '1';
             v.axiWriteMaster.wvalid  := '1';
             v.axiWriteMaster.bready  := '1';
-            v.state                  := S_WRITE_AXI;
+            v.state                  := S_WRITE_AXI_C;
 
          -- Write Transaction, AXI
-         when S_WRITE_AXI =>
+         when S_WRITE_AXI_C =>
 
             -- Clear control signals on ack
             if midWriteSlave.awready = '1' then
@@ -357,22 +357,22 @@ begin
                v.count                 := r.count + 1;
 
                if r.underflow = '1' or r.count = r.length then
-                  v.state := S_STATUS;
+                  v.state := S_STATUS_C;
                else
-                  v.state := S_WRITE;
+                  v.state := S_WRITE_C;
                end if;
             end if;
 
          -- Read transaction
-         when S_READ =>
+         when S_READ_C =>
 
             -- Start AXI transaction
             v.axiReadMaster.arvalid := '1';
             v.axiReadMaster.rready  := '1';
-            v.state                 := S_READ_AXI;
+            v.state                 := S_READ_AXI_C;
 
          -- Read AXI
-         when S_READ_AXI =>
+         when S_READ_AXI_C =>
 
             -- Clear control signals on ack
             if midReadSlave.arready = '1' then
@@ -400,9 +400,9 @@ begin
                -- Completed
                if r.count = r.length then
                   v.ppiWriteToFifo.valid := '1';
-                  v.state                := S_STATUS;
+                  v.state                := S_STATUS_C;
                else
-                  v.state := S_READ;
+                  v.state := S_READ_C;
                end if;
 
                -- Even word
@@ -412,7 +412,7 @@ begin
             end if;
 
          -- Send Status and complete frame
-         when S_STATUS =>
+         when S_STATUS_C =>
             v.ppiWriteToFifo.data(00)           := r.underflow;
             v.ppiWriteToFifo.data(01)           := r.overflow;
             v.ppiWriteToFifo.data(03 downto 02) := (others=>'0');
@@ -424,21 +424,21 @@ begin
 
             -- Dump if overflow
             if r.overflow = '1' then
-               v.state := S_DUMP;
+               v.state := S_DUMP_C;
             else
-               v.state := S_IDLE;
+               v.state := S_IDLE_C;
             end if;
 
          -- Dump until EOF
-         when S_DUMP =>
+         when S_DUMP_C =>
             v.ppiReadToFifo.read := '1';
 
             if intReadFromFifo.eof = '1' then
-               v.state := S_IDLE;
+               v.state := S_IDLE_C;
             end if;
 
          when others =>
-            v.state := S_IDLE;
+            v.state := S_IDLE_C;
 
       end case;
 

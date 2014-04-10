@@ -55,7 +55,7 @@ architecture structure of PpiMux is
 
    constant ACK_NUM_SIZE_C : integer := bitSize(NUM_READ_SLOTS_G-1);
 
-   type StateType is ( S_IDLE, S_MOVE );
+   type StateType is ( S_IDLE_C, S_MOVE_C );
 
    type RegType is record
       state            : StateType;
@@ -67,7 +67,7 @@ architecture structure of PpiMux is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      state            => S_IDLE,
+      state            => S_IDLE_C,
       acks             => (others=>'0'),
       ackNum           => (others=>'0'),
       valid            => '0',
@@ -105,7 +105,7 @@ begin
       case r.state is
 
          -- IDLE
-         when S_IDLE =>
+         when S_IDLE_C =>
 
             -- Aribrate between requesters
             if ppiWriteFromFifo.pause = '0' and r.valid = '0' then
@@ -114,17 +114,17 @@ begin
 
             -- Valid request and pause is not asserted
             if ppiWriteFromFifo.pause = '0' and r.valid = '1' then
-               v.state := S_MOVE;
+               v.state := S_MOVE_C;
             end if;
 
          -- Read a frame until EOF
-         when S_MOVE =>
+         when S_MOVE_C =>
             v.ppiWriteToFifo.valid                        := ppiReadFromFifo(conv_integer(r.ackNum)).valid;
             v.ppiReadToFifo(conv_integer(r.ackNum)).read  := ppiReadFromFifo(conv_integer(r.ackNum)).valid;
             v.valid := '0';
             
             if v.ppiWriteToFifo.eof = '1' and v.ppiWriteToFifo.valid = '1' then
-               v.state := S_IDLE;
+               v.state := S_IDLE_C;
             end if;
 
       end case;
