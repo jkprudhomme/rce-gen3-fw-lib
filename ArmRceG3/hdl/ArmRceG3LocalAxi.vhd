@@ -90,7 +90,7 @@ architecture structure of ArmRceG3LocalAxi is
 
    constant REG_INIT_C : RegType := (
       scratchPad    => (others => '0'),
-      clkSelA       => (others => '1'),
+      clkSelA       => (others => '0'),
       clkSelB       => (others => '1'),
       axiReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C

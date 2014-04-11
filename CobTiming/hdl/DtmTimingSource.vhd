@@ -394,8 +394,12 @@ begin
       if (axiStatus.readEnable = '1') then
          v.axiReadSlave.rdata := (others => '0');
 
-         -- Decode address and assign read data
-         if axiReadMaster.araddr(11 downto 8)  = x"2" then
+         -- FB Fifo Write Enable, one per FIFO
+         if axiReadMaster.araddr(11 downto 0)  = x"000" then
+            v.axiReadSlave.rdata(7 downto 0) := r.fbFifoWrEn;
+
+         -- Feedback FIFO read
+         elsif axiReadMaster.araddr(11 downto 8)  = x"2" then
             v.axiReadSlave.rdata(31 downto 16) := fbStatusErrorCnt(conv_integer(axiReadMaster.araddr(5 downto 2)));
             v.axiReadSlave.rdata(15 downto  0) := fbStatusIdleCnt(conv_integer(axiReadMaster.araddr(5 downto 2)));
 

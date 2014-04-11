@@ -134,8 +134,6 @@ architecture STRUCTURE of DtmCore is
    signal isysClk200Rst     : sl;
    signal iethFromArm       : EthFromArmArray(1 downto 0);
    signal iethToArm         : EthToArmArray(1 downto 0);
-   signal iclkSelA          : slv(1 downto 0);
-   signal iclkSelB          : slv(1 downto 0);
    signal intAxiReadMaster  : AxiLiteReadMasterArray(1 downto 0);
    signal intAxiReadSlave   : AxiLiteReadSlaveArray(1 downto 0);
    signal intAxiWriteMaster : AxiLiteWriteMasterArray(1 downto 0);
@@ -157,8 +155,6 @@ begin
    --------------------------------------------------
    -- Outputs
    --------------------------------------------------
-   clkSelA         <= iclkSelA(0);
-   clkSelB         <= iclkSelB(0);
    axiClk          <= iaxiClk;
    axiClkRst       <= iaxiClkRst;
    sysClk125       <= isysClk125;
@@ -202,9 +198,13 @@ begin
          ppiWriteFromFifo    => intWriteFromFifo,
          ethFromArm          => iethFromArm,
          ethToArm            => iethToArm,
-         clkSelA             => iclkSelA,
-         clkSelB             => iclkSelB
+         clkSelA             => open,
+         clkSelB             => open
       );
+
+   -- Hard code to 250Mhz
+   clkSelA <= '1';
+   clkSelB <= '1';
 
    --------------------------------------------------
    -- Ethernet

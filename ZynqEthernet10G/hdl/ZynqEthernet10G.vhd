@@ -46,7 +46,10 @@ entity ZynqEthernet10G is
       ppiWriteFromFifo        : in  PpiWriteFromFifoType;
 
       -- Temp status output
-      dbgStatus               : out slv(7  downto 0);
+      ethStatus               : out slv(7  downto 0);
+      ethConfig               : in  slv(6  downto 0);
+      ethDebug                : out slv(5  downto 0);
+      ethClkOut               : out sl;
 
       -- Ref Clock
       ethRefClkP              : in  sl;
@@ -102,7 +105,8 @@ architecture structure of ZynqEthernet10G is
    signal xauiTxd          : slv(63 downto 0);
    signal xauiTxc          : slv(7  downto 0);
    signal status           : slv(7  downto 0);
-   signal config           : slv(6  downto 0);
+   signal swConfig         : slv(6  downto 0);
+   signal intConfig        : slv(6  downto 0);
    signal intReadToFifo    : PpiReadToFifoType;
    signal intReadFromFifo  : PpiReadFromFifoType;
    signal intWriteToFifo   : PpiWriteToFifoType;
@@ -121,6 +125,10 @@ architecture structure of ZynqEthernet10G is
    signal ethClk           : sl;
    signal ethClkRst        : sl;
    signal ethClkLock       : sl;
+   signal rstRxLink        : sl;
+   signal rstRxLinkReg     : sl;
+   signal rstFault         : sl;
+   signal rstFaultReg      : sl;
 
    type RegType is record
       config            : slv(6  downto 0);
@@ -139,8 +147,9 @@ architecture structure of ZynqEthernet10G is
 
 begin
  
-   dbgStatus <= status;
+   ethStatus <= status;
    ppiClk    <= sysClk200;
+   ethClkOut <= ethClk;
 
    -- PPI Crossbar
    U_PpiCrossbar : entity work.PpiCrossbar
@@ -247,7 +256,7 @@ begin
       -- Outputs
       axiReadSlave  <= r.axiReadSlave;
       axiWriteSlave <= r.axiWriteSlave;
-      config        <= r.config;
+      swConfig      <= r.config;
       
    end process;
 
@@ -285,10 +294,32 @@ begin
          xaui_rx_l3_p          => ethRxP(3), 
          xaui_rx_l3_n          => ethRxM(3), 
          signal_detect         => (others=>'1'),
-         debug                 => open,
-         configuration_vector  => config,
+         debug                 => ethDebug,
+         --configuration_vector  => config,
+         configuration_vector  => intConfig,
          status_vector         => status
       );
+
+   process (ethConfig,swConfig) begin
+      intConfig <= ethConfig or swConfig;
+
+      if rstRxLink = '1' then
+         intConfig(3) <= '1';
+      end if;
+
+      if rstFault = '1' then
+         intConfig(2) <= '1';
+      end if;
+   end process;
+
+   process (ethClk) begin
+      if (rising_edge(ethClk)) then
+         rstRxLink    <= (not status(7)) and (not rstRxLinkReg) after TPD_G;
+         rstRxLinkReg <= rstRxLink after TPD_G;
+         rstFault     <= (status(0) or status(1)) and (not rstFaultReg) after TPD_G;
+         rstFaultReg  <= rstFault after TPD_G;
+      end if;
+   end process;
 
    U_EthClkRst : entity work.RstSync
       generic map (
@@ -325,13 +356,13 @@ begin
          ppiReadFromFifo   => ethReadFromFifo
       );
 
-   xauiTxd              <= ethReadFromFifo.data     when ethOnline = '1' else (others=>'0');
-   xauiTxc(2 downto 0)  <= ethReadFromFifo.size     when ethOnline = '1' else (others=>'0');
-   xauiTxc(3)           <= ethReadFromFifo.eof      when ethOnline = '1' else '0';
-   xauiTxc(4)           <= ethReadFromFifo.eoh      when ethOnline = '1' else '0';
-   xauiTxc(5)           <= ethReadFromFifo.ftype(0) when ethOnline = '1' else '0';
-   xauiTxc(6)           <= ethReadFromFifo.valid    when ethOnline = '1' else '0';
-   xauiTxc(7)           <= ethReadFromFifo.ready    when ethOnline = '1' else '0';
+   xauiTxd              <= ethReadFromFifo.data     when ethOnline = '1' else x"0707070707070707";
+   xauiTxc(2 downto 0)  <= ethReadFromFifo.size     when ethOnline = '1' else (others=>'1');
+   xauiTxc(3)           <= ethReadFromFifo.eof      when ethOnline = '1' else '1';
+   xauiTxc(4)           <= ethReadFromFifo.eoh      when ethOnline = '1' else '1';
+   xauiTxc(5)           <= ethReadFromFifo.ftype(0) when ethOnline = '1' else '1';
+   xauiTxc(6)           <= ethReadFromFifo.valid    when ethOnline = '1' else '1';
+   xauiTxc(7)           <= ethReadFromFifo.ready    when ethOnline = '1' else '1';
 
    ethReadToFifo.read   <= ethReadFromFifo.valid;
 

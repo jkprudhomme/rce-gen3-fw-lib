@@ -67,7 +67,10 @@ entity DpmCore is
       ppiWriteToFifo          : in     PpiWriteToFifoArray(2 downto 0);
       ppiWriteFromFifo        : out    PpiWriteFromFifoArray(2 downto 0);
 
-      dbgStatus               : out    slv(7  downto 0);
+      ethStatus               : out    slv(7  downto 0);
+      ethClkOut               : out    sl;
+      ethConfig               : in     slv(6  downto 0) := (others=>'0');
+      ethDebug                : out    slv(5  downto 0);
 
       -- Clock Select
       clkSelA                 : out    slv(1 downto 0);
@@ -168,9 +171,18 @@ begin
          ppiWriteFromFifo    => intWriteFromFifo,
          ethFromArm          => iethFromArm,
          ethToArm            => iethToArm,
-         clkSelA             => clkSelA,
-         clkSelB             => clkSelB
+         clkSelA             => open,
+         clkSelB             => open
       );
+
+   -- Osc 0 = 156.25
+   clkSelA(0) <= '0';
+   clkSelB(0) <= '0';
+
+   -- Osc 1 = 250
+   clkSelA(1) <= '1';
+   clkSelB(1) <= '1';
+
 
    --------------------------------------------------
    -- Ethernet
@@ -210,7 +222,10 @@ begin
             ppiReadFromFifo          => intReadFromFifo(3),
             ppiWriteToFifo           => intWriteToFifo(3),
             ppiWriteFromFifo         => intWriteFromFifo(3),
-            dbgStatus                => dbgStatus,
+            ethStatus                => ethStatus,
+            ethConfig                => ethConfig,
+            ethDebug                 => ethDebug,
+            ethClkOut                => ethClkOut,
             ethRefClkP               => ethRefClkP,
             ethRefClkM               => ethRefClkM,
             ethRxP                   => ethRxP,
