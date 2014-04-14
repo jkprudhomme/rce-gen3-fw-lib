@@ -29,8 +29,8 @@ entity PpiStatus is
    generic (
       TPD_G                  : time                       := 1 ns;
       PPI_ADDR_WIDTH_G       : integer range 2 to 48      := 6;
-      PPI_PAUSE_THOLD_G      : integer range 1 to (2**24) := 32;
-      NUM_STATUS_WORDS_G     : natural range 1 to 32      := 1
+      PPI_PAUSE_THOLD_G      : integer range 1 to (2**24) := 50;
+      NUM_STATUS_WORDS_G     : natural range 1 to 8       := 8
    );
    port (
 
@@ -62,18 +62,20 @@ architecture structure of PpiStatus is
    signal intOnline        : sl;
    signal intOnlineEdge    : sl;
 
-   type StateType is (S_IDLE_C, S_FIRST_C, S_MESSAGE_C, S_LAST_C );
+   type StateType is (S_IDLE_C, S_WAIT_C, S_MESSAGE_C, S_LAST_C );
 
    type RegType is record
-      count          : slv(7  downto 0);
-      state          : StateType;
-      ppiWriteToFifo : ppiWriteToFifoType;
+      statusWords     : Slv64Array(NUM_STATUS_WORDS_G-1 downto 0);
+      count           : slv(2 downto 0);
+      state           : StateType;
+      ppiWriteToFifo  : ppiWriteToFifoType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      count          => (others => '0'),
-      state          => S_IDLE_C,
-      ppiWriteToFifo => PPI_WRITE_TO_FIFO_INIT_C
+      statusWords     => (others=>(others=>'0')),
+      count           => (others=>'0'),
+      state           => S_IDLE_C,
+      ppiWriteToFifo  => PPI_WRITE_TO_FIFO_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -131,16 +133,11 @@ begin
    ------------------------------------
    -- FIFO
    ------------------------------------
-   U_OutFifo : entity work.PpiFifoAsync
+   U_OutFifo : entity work.PpiFifo
       generic map (
          TPD_G          => TPD_G,
-         BRAM_EN_G      => true,
-         USE_DSP48_G    => "no",
-         SYNC_STAGES_G  => 3,
          ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
-         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G,
-         READY_THOLD_G  => 0,
-         FIFO_TYPE_EN_G => false
+         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G
       ) port map (
          ppiWrClk         => statusClk,
          ppiWrClkRst      => statusClkRst,
@@ -169,7 +166,7 @@ begin
 
    -- Async
    process (statusClkRst, r, intWriteFromFifo, swReqEdge, statusSendEdge, intOnline, intOnlineEdge, statusWords ) is
-      variable v         : RegType;
+      variable v : RegType;
    begin
       v := r;
 
@@ -184,25 +181,24 @@ begin
          when S_IDLE_C =>
             v.ppiWriteToFifo := PPI_WRITE_TO_FIFO_INIT_C;
             v.count          := (others=>'0');
+            v.statusWords    := statusWords;
 
             -- When to send a message, transition to online, sw request or firmware request
             if intOnlineEdge = '1' or swReqEdge = '1' or statusSendEdge = '1' then
-               v.state := S_FIRST_C;
+               v.state := S_WAIT_C;
             end if;
 
-         -- First Word
-         when S_FIRST_C =>
+         -- Latch Status
+         when S_WAIT_C =>
 
             -- Proceeed when pause is de-asserted
             if intWriteFromFifo.pause = '0' then
-               v.ppiWriteToFifo.data  := (others=>'0');
-               v.ppiWriteToFifo.valid := '1';
-               v.state                := S_MESSAGE_C;
+               v.state := S_MESSAGE_C;
             end if;
 
          -- Status message
          when S_MESSAGE_C =>
-            v.ppiWriteToFifo.data  := statusWords(conv_integer(r.count));
+            v.ppiWriteToFifo.data  := r.statusWords(conv_integer(r.count));
             v.ppiWriteToFifo.valid := '1';
             v.count                := r.count + 1;
 

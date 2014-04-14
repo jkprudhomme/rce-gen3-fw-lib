@@ -229,15 +229,12 @@ begin
    -- PPI FIFO
    ------------------------------------
 
-   U_InFifo : entity work.PpiFifoSync
+   U_InFifo : entity work.PpiFifo
       generic map (
          TPD_G              => TPD_G,
-         BRAM_EN_G          => true,
-         USE_DSP48_G        => "no",
          ADDR_WIDTH_G       => PPI_ADDR_WIDTH_G,
          PAUSE_THOLD_G      => PPI_PAUSE_THOLD_G,
-         READY_THOLD_G      => PPI_READY_THOLD_G,
-         FIFO_TYPE_EN_G     => false
+         READY_THOLD_G      => PPI_READY_THOLD_G
       ) port map (
          ppiClk           => ppiClk,
          ppiClkRst        => ppiClkRst,
@@ -478,21 +475,23 @@ begin
    ------------------------------------
 
    -- Header FIFO
-   U_HeadFifo : entity work.FifoASync 
+   U_HeadFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         BRAM_EN_G      => true,
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         ALTERA_SYN_G   => false,
-         ALTERA_RAM_G   => "M9K",
-         SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 24,
-         ADDR_WIDTH_G   => HEADER_ADDR_WIDTH_G,
-         INIT_G         => "0",
-         FULL_THRES_G   => HEADER_AFULL_THOLD_G,
-         EMPTY_THRES_G  => 1
+         TPD_G              => TPD_G,
+         RST_POLARITY_G     => '1',
+         RST_ASYNC_G        => true,
+         GEN_SYNC_FIFO_G    => false, -- ASYNC
+         BRAM_EN_G          => true,
+         FWFT_EN_G          => true,
+         USE_DSP48_G        => "no",
+         USE_BUILT_IN_G     => true,
+         XIL_DEVICE_G       => "7SERIES",
+         SYNC_STAGES_G      => 3,
+         DATA_WIDTH_G       => 24,
+         ADDR_WIDTH_G       => HEADER_ADDR_WIDTH_G,
+         INIT_G             => "0",
+         FULL_THRES_G       => HEADER_AFULL_THOLD_G,
+         EMPTY_THRES_G      => 1
       ) port map (
          rst                => ppiClkRst,
          wr_clk             => ibVcClk,
@@ -528,21 +527,23 @@ begin
 
 
    -- Data FIFO
-   U_DataFifo : entity work.FifoASync 
+   U_DataFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         BRAM_EN_G      => true,
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         ALTERA_SYN_G   => false,
-         ALTERA_RAM_G   => "M9K",
-         SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => DATA_FIFO_WIDTH_C,
-         ADDR_WIDTH_G   => DATA_ADDR_WIDTH_G,
-         INIT_G         => "0",
-         FULL_THRES_G   => DATA_AFULL_THOLD_G,
-         EMPTY_THRES_G  => 1
+         TPD_G              => TPD_G,
+         RST_POLARITY_G     => '1',
+         RST_ASYNC_G        => true,
+         GEN_SYNC_FIFO_G    => false, -- ASYNC
+         BRAM_EN_G          => true,
+         FWFT_EN_G          => true,
+         USE_DSP48_G        => "no",
+         USE_BUILT_IN_G     => true,
+         XIL_DEVICE_G       => "7SERIES",
+         SYNC_STAGES_G      => 3,
+         DATA_WIDTH_G       => DATA_FIFO_WIDTH_C,
+         ADDR_WIDTH_G       => DATA_ADDR_WIDTH_G,
+         INIT_G             => "0",
+         FULL_THRES_G       => DATA_AFULL_THOLD_G,
+         EMPTY_THRES_G      => 1
       ) port map (
          rst           => ppiClkRst,
          wr_clk        => ibVcClk,

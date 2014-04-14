@@ -144,16 +144,11 @@ begin
    -- FIFOs
    ------------------------------------
 
-   U_InFifo : entity work.PpiFifoAsync
+   U_InFifo : entity work.PpiFifo
       generic map (
          TPD_G          => TPD_G,
-         BRAM_EN_G      => true,
-         USE_DSP48_G    => "no",
-         SYNC_STAGES_G  => 3,
          ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
-         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G,
-         READY_THOLD_G  => 0,
-         FIFO_TYPE_EN_G => false
+         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G
       ) port map (
          ppiWrClk         => ppiClk,
          ppiWrClkRst      => ppiClkRst,
@@ -167,16 +162,11 @@ begin
          ppiReadFromFifo  => intReadFromFifo
       );
 
-   U_OutFifo : entity work.PpiFifoAsync
+   U_OutFifo : entity work.PpiFifo
       generic map (
          TPD_G          => TPD_G,
-         BRAM_EN_G      => true,
-         USE_DSP48_G    => "no",
-         SYNC_STAGES_G  => 3,
          ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
-         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G,
-         READY_THOLD_G  => 0,
-         FIFO_TYPE_EN_G => false
+         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G
       ) port map (
          ppiWrClk         => axiClk,
          ppiWrClkRst      => axiClkRst,

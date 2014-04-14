@@ -1,5 +1,4 @@
-vhdl work hdl/PpiFifoAsync.vhd
-vhdl work hdl/PpiFifoSync.vhd
+vhdl work hdl/PpiFifo.vhd
 vhdl work hdl/PpiMux.vhd
 vhdl work hdl/PpiRouter.vhd
 vhdl work hdl/PpiStatus.vhd
