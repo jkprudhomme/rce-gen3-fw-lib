@@ -20,6 +20,8 @@
 --       Bits 7:0 = Sideband data to transmit
 --    0x18 = Read/Write
 --       Bits   0 = Loopback Enable
+--    0x1C = Read/Write
+--       Bits   0 = Auto status send enable
 --    0x20 = Read Only
 --       Bits 0 = TX Link Ready
 --       Bits 1 = RX Link Ready
@@ -44,23 +46,14 @@
 --       Bits 7:0 = RX Overflow Count
 --
 -- Status vector:
---    Word 0 (lane * 2 + 1):
---       bits 63:32 = Tx Frame Counter
---       bits 31:00 = Rx Frame Counter
---    Word 1 (lane * 2 + 2)
---       Bits 63:56 = Zeros
---       Bits 55:48 = Remote Overflow Count
---       Bits 47:45 = Zeros
---       Bits 44    = Remote Overflow
---       Bits 43    = RX Overflow
---       Bits 42    = Tx Link ready
---       Bits 41    = Rx Link ready
---       Bits 40    = Rx Remote Link ready
---       Bits 39:32 = Rx Drop Count
---       Bits 31:24 = Rx Link Data
---       Bits 23:16 = Rx Link Error Count
---       Bits 15:8  = Rx Link Down Count
---       Bits  7:0  = Rx Cell Error Count
+--       Bits 31:24 = Rx Link Down Count
+--       Bits 23:16 = Rx Drop Count
+--       Bits 15:8  = Rx Cell Error Count
+--       Bits  7:4  = Zeros
+--       Bits    3  = Remote Overflow
+--       Bits    2  = RX Overflow
+--       Bits    1  = Rx Remote Link ready
+--       Bits    0  = Rx Link ready
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -122,7 +115,7 @@ entity PpiPgpCntrl is
       axiReadSlave     : out AxiLiteReadSlaveType;
 
       -- Status Bus
-      statusWords      : out Slv64Array(1 downto 0);
+      statusWord       : out slv(31 downto 0);
       statusSend       : out sl
    );
 end PpiPgpCntrl;
@@ -130,9 +123,9 @@ end PpiPgpCntrl;
 architecture structure of PpiPgpCntrl is
 
    -- Local signals
-   signal rxCountReset : sl;
-   signal txCountReset : sl;
    signal intOnline    : sl;
+   signal rxStatusSend : sl;
+   signal txStatusSend : sl;
 
    type RegType is record
       flush          : sl;
@@ -141,6 +134,7 @@ architecture structure of PpiPgpCntrl is
       txClkRst       : sl;
       countReset     : sl;
       loopBackEn     : sl;
+      autoStatus     : sl;
       locData        : slv(7 downto 0);
       axiWriteSlave  : AxiLiteWriteSlaveType;
       axiReadSlave   : AxiLiteReadSlaveType;
@@ -152,6 +146,7 @@ architecture structure of PpiPgpCntrl is
       rxClkRst       => '1',
       txClkRst       => '1',
       countReset     => '0',
+      autoStatus     => '0',
       loopBackEn     => '0',
       locData        => (others=>'0'),
       axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
@@ -169,46 +164,20 @@ architecture structure of PpiPgpCntrl is
       remLinkReady   : sl;
       remLinkData    : slv(7  downto 0);
       frameCount     : slv(31 downto 0);
-      statusSend     : sl;
       dropCount      : slv(7  downto 0);
       rxOverflow     : sl;
    end record RxStatusType;
 
-   constant RX_STATUS_INIT_C : RxStatusType := (
-      linkReady      => '0',
-      cellErrorCount => (others=>'0'),
-      linkDownCount  => (others=>'0'),
-      linkErrorCount => (others=>'0'),
-      remLinkReady   => '0',
-      remLinkData    => (others=>'0'),
-      frameCount     => (others=>'0'),
-      statusSend     => '0',
-      dropCount      => (others=>'0'),
-      rxOverflow     => '0'
-   );
-
-   signal rxstatus     : RxStatusType := RX_STATUS_INIT_C;
-   signal rxStatusIn   : RxStatusType;
-   signal rxStatusSync : RxStatusType;
+   signal rxstatusSync : RxStatusType;
 
    type TxStatusType is record
       linkReady      : sl;
       remOverflow    : sl;
       remOverflowCnt : slv(7 downto 0);
-      statusSend     : sl;
       frameCount     : slv(31 downto 0);
    end record TxStatusType;
 
-   constant TX_STATUS_INIT_C : TxStatusType := (
-      linkReady      => '0',
-      remOverflowCnt => (others=>'0'),
-      statusSend     => '0',
-      frameCount     => (others=>'0')
-   );
-
-   signal txstatus     : TxStatusType := TX_STATUS_INIT_C;
-   signal txStatusIn   : TxStatusType;
-   signal txStatusSync : TxStatusType;
+   signal txstatusSync : TxStatusType;
 
 begin
 
@@ -235,128 +204,93 @@ begin
    -- Receive Status
    ---------------------------------------
 
-   -- Sync counter reset
-   U_RxCountReset : entity work.SynchronizerOneShot 
-      generic map (
-         TPD_G          => TPD_G,
-         IN_POLARITY_G  => '1',
-         OUT_POLARITY_G => '1'
-      ) port map (
-         clk     => pgpRxClk,
-         dataIn  => r.countReset,
-         dataOut => rxCountReset
-      );
-
-   -- Sync
-   process (pgpRxClk) is
-   begin
-      if (rising_edge(pgpRxClk)) then
-         rxStatus <= rxStatusIn after TPD_G;
-      end if;
-   end process;
-
-   -- Async
-   process (pgpRxClkRst, rxStatus, pgpRxOut, rxCountReset, rxFrameCntEn, rxOverflow, rxDropCountEn ) is
-      variable v  : RxStatusType;
-   begin
-      v := rxStatus;
-
-      v.linkReady    := pgpRxOut.linkReady;
-      v.remLinkReady := pgpRxOut.remLinkReady;
-      v.remLinkData  := pgpRxOut.remLinkData;
-      v.rxOverflow   := rxOverflow;
-      v.statusSend   := '0';
-
-      if rxStatus.rxOverflow /= rxOverflow then
-         v.statusSend := '1';
-      end if;
-
-      if pgpRxOut.cellError = '1' and rxStatus.cellErrorCount /= x"FF" then
-         v.cellErrorCount := rxStatus.cellErrorCount + 1;
-         v.statusSend     := '1';
-      end if;
-
-      if pgpRxOut.linkDown = '1' and rxStatus.linkDownCount /= x"FF" then
-         v.linkDownCount := rxStatus.linkDownCount + 1;
-         v.statusSend    := '1';
-      end if;
-
-      if pgpRxOut.linkError = '1' and rxStatus.linkErrorCount /= x"FF" then
-         v.linkErrorCount := rxStatus.linkErrorCount + 1;
-         v.statusSend     := '1';
-      end if;
-
-      if rxDropCountEn = '1' and rxStatus.dropCount /= x"FF" then
-         v.dropCount  := rxStatus.dropCount + 1;
-         v.statusSend := '1';
-      end if;
-
-      if v.linkReady = '1' and rxStatus.linkReady = '0' then
-         v.statusSend := '1';
-      end if;
-
-      if rxFrameCntEn = '1' then
-         v.frameCount := rxstatus.frameCount + 1;
-      end if;
-
-      -- Reset
-      if pgpRxClkRst = '1' or rxCountReset = '1' then
-         v := RX_STATUS_INIT_C;
-      end if;
-
-      -- Next register assignment
-      rxStatusIn <= v;
-
-   end process;
-
-   -- Sync status Send
-   U_RxSyncStatusSend : entity work.SynchronizerOneShot 
-      generic map (
-         TPD_G          => TPD_G,
-         IN_POLARITY_G  => '1',
-         OUT_POLARITY_G => '1'
-      ) port map (
-         clk     => axiStatClk,
-         dataIn  => rxStatus.statusSend,
-         dataOut => rxStatusSync.statusSend
-      );
-
-   -- Sync Status
-   U_RxSyncStatus : entity work.SynchronizerFifo 
+   -- Sync remote data
+   U_RxDataSync : entity work.SyncStatusVector 
       generic map (
          TPD_G         => TPD_G,
          BRAM_EN_G     => false,
          ALTERA_SYN_G  => false,
          ALTERA_RAM_G  => "M9K",
          SYNC_STAGES_G => 3,
-         DATA_WIDTH_G  => 75,
+         DATA_WIDTH_G  => 8,
          ADDR_WIDTH_G  => 2,
          INIT_G        => "0"
       ) port map (
-         rst                => axiStatClkRst,
-         wr_clk             => pgpRxClk,
-         wr_en              => '1',
-         din(7  downto  0)  => rxStatus.cellErrorCount,
-         din(15 downto  8)  => rxStatus.linkDownCount,
-         din(23 downto 16)  => rxStatus.linkErrorCount,
-         din(31 downto 24)  => rxStatus.remLinkData,
-         din(63 downto 32)  => rxStatus.frameCount,
-         din(64)            => rxStatus.linkReady,
-         din(65)            => rxStatus.remLinkReady,
-         din(73 downto 66)  => rxStatus.dropCount,
-         din(74)            => rxStatus.rxOverflow,
-         rd_clk             => axiStatClk,
-         rd_en              => '1',
-         valid              => open,
-         dout(7  downto  0) => rxStatusSync.cellErrorCount,
-         dout(15 downto  8) => rxStatusSync.linkDownCount,
-         dout(23 downto 16) => rxStatusSync.linkErrorCount,
-         dout(31 downto 24) => rxStatusSync.remLinkData,
-         dout(63 downto 32) => rxStatusSync.frameCount,
-         dout(64)           => rxStatusSync.linkReady,
-         dout(65)           => rxStatusSync.remLinkReady,
-         dout(73 downto 66) => rxStatusSync.frameCount,
-         dout(74)           => rxStatusSync.rxOverflow
+         rst           => axiStatClkRst,
+         wr_clk        => pgpRxClk,
+         wr_en         => '1',
+         din           => pgpRxOut.remLinkData,
+         rd_clk        => axiStatClk,
+         rd_en         => '1',
+         valid         => open,
+         dout          => rxStatusSync.remLinkData
+      );
+
+   -- 8 bit status counters and non counted values
+   U_RxStatus8Bit : entity work.SyncStatusVector 
+      generic map (
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  : sl       := '1';  -- '1' for active HIGH reset, '0' for active LOW reset
+         COMMON_CLK_G    => false,
+         RELEASE_DELAY_G => 3,
+         IN_POLARITY_G   => "1",
+         OUT_POLARITY_G  => '1',
+         USE_DSP48_G     => "no",
+         SYNTH_CNT_G     => "1111000",
+         CNT_RST_EDGE_G  : boolean  := true; -- true if counter reset should be edge detected, else level detected
+         CNT_WIDTH_G     => 8,
+         WIDTH_G         => 7
+      ) port map (
+         statusIn(0)           => pgpRxOut.linkReady,
+         statusIn(1)           => pgpRxOut.remLinkReady,
+         statusIn(2)           => rxOverflow,
+         statusIn(3)           => pgpRxOut.cellError,
+         statusIn(4)           => pgpRxOut.linkDown,
+         statusIn(5)           => pgpRxOut.linkError,
+         statusIn(6)           => rxDropCountEn,
+         statusOut(0)          => rxStatusSync.linkReady,
+         statusOut(1)          => rxStatusSync.remLinkReady,
+         statusOut(2)          => rxStatusSync.rxOverflow,
+         statusOut(6 downto 3) => open,
+         cntRstIn              => r.countReset,
+         rollOverEnIn          => (others=>'0'),
+         cntOut(2 downto 0)    => open,
+         cntOut(3)             => rxStatusSync.cellErrorCount,
+         cntOut(4)             => rxStatusSync.linkDownCount,
+         cntOut(5)             => rxStatusSync.linkErrorCount,
+         cntOut(6)             => rxStatusSync.dropCount,
+         irqEnIn               => (others=>r.autoStatus),
+         irqOut                => rxStatusSend,
+         wrClk                 => pgpRxClk,
+         wrRst                 => pgpRxClkRst,
+         rdClk                 => axiStatClk,
+         rdRst                 => axiStatClkRst
+      );
+
+   -- 32 bit status counters
+   U_RxStatus4Bit : entity work.SyncStatusVector 
+      generic map (
+         TPD_G           => TPD_G,
+         COMMON_CLK_G    => false,
+         RELEASE_DELAY_G => 3,
+         IN_POLARITY_G   => "111",
+         OUT_POLARITY_G  => '1',
+         USE_DSP48_G     => "no",
+         SYNTH_CNT_G     => "1",
+         CNT_WIDTH_G     => 32,
+         WIDTH_G         => 1
+      ) port map (
+         statusIn(0)     => rxFrameCntEn,
+         statusOut       => open,
+         cntRstIn        => r.countReset,
+         rollOverEnIn    => (others=>'1'),
+         cntOut(0)       => rxStatusSync.frameCount,
+         irqEnIn         => (others=>'0'),
+         irqOut          => open,
+         wrClk           => pgpRxClk,
+         wrRst           => pgpRxClkRst,
+         rdClk           => axiStatClk,
+         rdRst           => axiStatClkRst
       );
 
 
@@ -364,124 +298,75 @@ begin
    -- Transmit Status
    ---------------------------------------
 
-   -- Sync counter reset
-   U_TxCountReset : entity work.SynchronizerOneShot 
+   -- 8 bit status counters and non counted values
+   U_TxStatus8Bit : entity work.SyncStatusVector 
       generic map (
-         TPD_G          => TPD_G,
-         IN_POLARITY_G  => '1',
-         OUT_POLARITY_G => '1'
+         TPD_G           => TPD_G,
+         COMMON_CLK_G    => false,
+         RELEASE_DELAY_G => 3,
+         IN_POLARITY_G   => "1",
+         OUT_POLARITY_G  => '1',
+         USE_DSP48_G     => "no",
+         SYNTH_CNT_G     => "10",
+         CNT_WIDTH_G     => 8,
+         WIDTH_G         => 2
       ) port map (
-         clk     => pgpTxClk,
-         dataIn  => r.countReset,
-         dataOut => txCountReset
+         statusIn(0)           => pgpTxOut.linkReady,
+         statusIn(1)           => remOverflow,
+         statusOut(0)          => txStatusSync.linkReady,
+         statusOut(1)          => txStatusSync.remOverflow,
+         cntRstIn              => r.countReset,
+         rollOverEnIn          => (others=>'0'),
+         cntOut(0)             => open,
+         cntOut(1)             => txStatusSync.remOverflowCnt,
+         irqEnIn               => (others=>r.autoStatus),
+         irqOut                => txStatusSend,
+         wrClk                 => pgpTxClk,
+         wrRst                 => pgpTxClkRst,
+         rdClk                 => axiStatClk,
+         rdRst                 => axiStatClkRst
       );
 
-   -- Sync
-   process (pgpTxClk) is
-   begin
-      if (rising_edge(pgpTxClk)) then
-         txStatus <= txStatusIn after TPD_G;
-      end if;
-   end process;
-
-   -- Async
-   process (pgpTxClkRst, txStatus, pgpTxOut, txCountReset, txFrameCntEn ) is
-      variable v  : TxStatusType;
-   begin
-      v := txStatus;
-
-      v.linkReady   := pgpTxOut.linkReady;
-      v.remOverflow := remOverflow;
-
-      if txStatus.remOverflow = '0' and remOverflow = '1' then
-         v.statusSend := '1';
-
-         if txStatus.remOverflowCnt /= x"FF" then
-            v.remOverflowCnt := txStatus.remOverflowCnt + 1;
-         end if;
-      end if;
-
-      if pgpRxOut.cellError = '1' and rxStatus.cellErrorCount /= x"FF" then
-         v.cellErrorCount := rxStatus.cellErrorCount + 1;
-         v.statusSend     := '1';
-      end if;
-
-
-      if txFrameCntEn = '1' then
-         v.frameCount := txstatus.frameCount + 1;
-      end if;
-
-      -- Reset
-      if pgpTxClkRst = '1' or txCountReset = '1' then
-         v := TX_STATUS_INIT_C;
-      end if;
-
-      -- Next register assignment
-      txStatusIn <= v;
-
-   end process;
-
-   -- Sync status Send
-   U_TxSyncStatusSend : entity work.SynchronizerOneShot 
+   -- 32 bit status counters
+   U_TxStatus4Bit : entity work.SyncStatusVector 
       generic map (
-         TPD_G          => TPD_G,
-         IN_POLARITY_G  => '1',
-         OUT_POLARITY_G => '1'
+         TPD_G           => TPD_G,
+         COMMON_CLK_G    => false,
+         RELEASE_DELAY_G => 3,
+         IN_POLARITY_G   => "111",
+         OUT_POLARITY_G  => '1',
+         USE_DSP48_G     => "no",
+         SYNTH_CNT_G     => "1",
+         CNT_WIDTH_G     => 32,
+         WIDTH_G         => 1
       ) port map (
-         clk     => axiStatClk,
-         dataIn  => txStatus.statusSend,
-         dataOut => txStatusSync.statusSend
-      );
-
-   -- Sync Status
-   U_TxSyncStatus : entity work.SynchronizerFifo
-      generic map (
-         TPD_G         => TPD_G,
-         BRAM_EN_G     => false,
-         ALTERA_SYN_G  => false,
-         ALTERA_RAM_G  => "M9K",
-         SYNC_STAGES_G => 3,
-         DATA_WIDTH_G  => 42,
-         ADDR_WIDTH_G  => 2,
-         INIT_G        => "0"
-      ) port map (
-         rst                => axiStatClkRst,
-         wr_clk             => pgpTxClk,
-         wr_en              => '1',
-         din(31 downto  0)  => txStatus.frameCount,
-         din(32)            => txStatus.linkReady,
-         din(33)            => txStatus.remOverflow,
-         din(41 downto 34)  => txStatus.remOverflowCnt,
-         rd_clk             => axiStatClk,
-         rd_en              => '1',
-         valid              => open,
-         dout(31 downto  0) => txStatusSync.frameCount,
-         dout(32)           => txStatusSync.linkReady,
-         dout(33)           => txStatusSync.remOverflow,
-         dout(41 downto 34) => txStatusSync.remOverflowCnt
+         statusIn(0)     => txFrameCntEn,
+         statusOut       => open,
+         cntRstIn        => r.countReset,
+         rollOverEnIn    => (others=>'1'),
+         cntOut(0)       => txStatusSync.frameCount,
+         irqEnIn         => (others=>'0'),
+         irqOut          => open,
+         wrClk           => pgpTxClk,
+         wrRst           => pgpTxClkRst,
+         rdClk           => axiStatClk,
+         rdRst           => axiStatClkRst
       );
 
 
    ---------------------------------------
    -- Status Vector
    ---------------------------------------
-   statusSend <= rxStatusSync.statusSend or txStatusSync.statusSend;
+   statusSend <= rxStatusSend or txStatusSend;
 
-   statusWords(0)(7  downto  0) <= rxStatusSync.cellErrorCount;
-   statusWords(0)(15 downto  8) <= rxStatusSync.linkDownCount;
-   statusWords(0)(23 downto 16) <= rxStatusSync.linkErrorCount;
-   statusWords(0)(31 downto 24) <= rxStatusSync.remLinkData;
-   statusWords(0)(39 downto 32) <= rxStatusSync.dropCount;
-   statusWords(0)(40)           <= rxStatusSync.remLinkReady;
-   statusWords(0)(41)           <= rxStatusSync.linkReady;
-   statusWords(0)(42)           <= txStatusSync.linkReady;
-   statusWords(0)(43)           <= rxStatusSync.rxOverflow;
-   statusWords(0)(44)           <= txStatusSync.remOverflow;
-   statusWords(0)(47 downto 45) <= (others=>'0');
-   statusWords(0)(55 downto 48) <= txStatusSync.remOverflowCnt;
-   statusWords(0)(63 downto 56) <= (others=>'0');
-   statusWords(1)(31 downto  0) <= txStatusSync.frameCount;
-   statusWords(1)(63 downto 32) <= txStatusSync.frameCount;
+   statusWord(31 downto 24) <= rxStatusSync.linkDownCount;
+   statusWord(23 downto 16) <= rxStatusSync.dropCount;
+   statusWord(15 downto  8) <= rxStatusSync.cellErrorCount;
+   statusWord(7  downto  4) <= (others=>'0');
+   statusWord(3)            <= rxStatusSync.remOverflow;
+   statusWord(2)            <= rxStatusSync.rxOverflow;
+   statusWord(1)            <= rxStatusSync.remLinkReady;
+   statusWord(0)            <= rxStatusSync.linkReady;
 
 
    -------------------------------------
@@ -628,6 +513,8 @@ begin
                v.locData    := axiWriteMaster.wdata(7 downto 0);
             when X"18" =>
                v.loopBackEn := axiWriteMaster.wdata(0);
+            when X"1C" =>
+               v.autoStatus := axiWriteMaster.wdata(0);
             when others => null;
          end case;
 
@@ -653,6 +540,8 @@ begin
                v.axiReadSlave.rdata(7 downto 0) := r.locData;
             when X"18" =>
                v.axiReadSlave.rdata(0) := r.loopBackEn;
+            when X"1C" =>
+               v.axiReadSlave.rdata(0) := r.autoStatus;
             when X"20" =>
                v.axiReadSlave.rdata(0) := txStatusSync.linkReady;
                v.axiReadSlave.rdata(1) := rxStatusSync.linkReady;

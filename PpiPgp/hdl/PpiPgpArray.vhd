@@ -89,8 +89,10 @@ architecture structure of PpiPgpArray is
    signal axiWriteSlave    : AxiLiteWriteSlaveArray(NUM_LANES_G-1 downto 0);
    signal axiReadMaster    : AxiLiteReadMasterArray(NUM_LANES_G-1 downto 0);
    signal axiReadSlave     : AxiLiteReadSlaveArray(NUM_LANES_G-1 downto 0);
-   signal statusWords      : Slv64Array(NUM_LANES_G*2-1 downto 0);
-   signal statusSend       : slv(NUM_LANES_G-1 downto 0);
+   signal statusWords      : Slv64Array(7 downto 0);
+   signal statusSend       : sl;
+   signal pgpStatus        : Slv32Array(NUM_LANES_G-1 downto 0);
+   signal pgpStatusSend    : slv(NUM_LANES_G-1 downto 0);
    signal intTxData        : Vc64DataArray(NUM_LANES_G-1 downto 0);
    signal intRxCtrl        : Vc64CtrlArray(NUM_LANES_G-1 downto 0);
 
@@ -127,6 +129,20 @@ begin
          statusSend         => statusSend
       );
 
+   -- Combine status send
+   statusSend <= uor(pgpStatusSend);
+
+   -- Pack status words
+   process ( pgpStatus ) begin
+      statusWords <= (others=>(others=>'0'));
+
+      -- Process each lane
+      for i in 0 to NUM_LANES_G-1 loop
+         if pgpStatusSend(i) = '1' then
+            statusWords(i/2)((i rem 2)*32+31 downto (i rem 2)*32) <= pgpStatus(i);
+         end if;
+      end loop;
+   end if;
 
    -- PGP Lane Controllers
    U_LaneGen : for i in 0 to NUM_LANES_G-1 generate 
@@ -171,8 +187,8 @@ begin
             axiWriteSlave     => axiWriteSlave(i),
             axiReadMaster     => axiReadMaster(i),
             axiReadSlave      => axiReadSlave(i),
-            statusWords       => statusWords(i*2+1 downto i*2),
-            statusSend        => statusSend(i),
+            statusWord        => pgpStatus(i),
+            statusSend        => pgpStatusSend(i),
          );
 
       -- Demux tx channels, replicate rx channels

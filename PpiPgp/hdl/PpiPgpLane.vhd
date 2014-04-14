@@ -82,7 +82,7 @@ entity PpiPgpLane is
       axiReadSlave     : out AxiLiteReadSlaveType;
 
       -- Status Bus
-      statusWords      : out Slv64Array(1 downto 0);
+      statusWord      : out slv(31 downto 0);
       statusSend       : out sl
    );
 end PpiPgpLane;
@@ -126,7 +126,7 @@ begin
          axiWriteSlave     => axiWriteSlave,
          axiReadMaster     => axiReadMaster,
          axiReadSlave      => axiReadSlave,
-         statusWords       => statusWords,
+         statusWord        => statusWord,
          statusSend        => statusSend
       );
 
