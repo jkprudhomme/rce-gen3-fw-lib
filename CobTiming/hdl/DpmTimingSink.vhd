@@ -194,21 +194,23 @@ begin
       );
 
    -- Input FIFO
-   U_OcFifo : entity work.FifoASync
+   U_OcFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         BRAM_EN_G      => false,  -- Use Dist Ram
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         ALTERA_SYN_G   => false,
-         ALTERA_RAM_G   => "M9K",
-         SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 8,
-         ADDR_WIDTH_G   => 6,
-         INIT_G         => "0",
-         FULL_THRES_G   => 63,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => false, -- Async
+         BRAM_EN_G       => false, -- Dist ram
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         USE_BUILT_IN_G  => false,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 8,
+         ADDR_WIDTH_G    => 6,
+         INIT_G          => "0",
+         FULL_THRES_G    => 63,
+         EMPTY_THRES_G   => 1
       ) port map (
          rst                => axiClkRst,
          wr_clk             => intClk,

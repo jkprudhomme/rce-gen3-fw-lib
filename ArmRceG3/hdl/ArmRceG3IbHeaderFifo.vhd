@@ -156,36 +156,44 @@ begin
    -----------------------------------------
    -- Free list FIFO
    -----------------------------------------
-   U_PtrFifo : entity work.FifoSyncBuiltIn 
+   U_PtrFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         XIL_DEVICE_G   => "7SERIES",
-         DATA_WIDTH_G   => 36,
-         ADDR_WIDTH_G   => 9,
-         FULL_THRES_G   => 1,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => true,
+         BRAM_EN_G       => true,
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         USE_BUILT_IN_G  => true,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 36,
+         ADDR_WIDTH_G    => 9,
+         INIT_G          => "0",
+         FULL_THRES_G    => 1,
+         EMPTY_THRES_G   => 1
       ) port map (
-         rst          => axiClkRstInt,
-         clk          => axiClk,
-         wr_en        => headerPtrWrite,
-         rd_en        => headerDone,
-         din          => headerPtrData,
-         dout         => headerPtrDout,
-         data_count   => open,
-         wr_ack       => open,
-         valid        => headerPtrValid,
-         overflow     => open,
-         underflow    => open,
-         prog_full    => open,
-         prog_empty   => open,
-         almost_full  => open,
-         almost_empty => open,
-         not_full     => open,
-         full         => open,
-         empty        => open
+         rst           => axiClkRstInt,
+         wr_clk        => axiClk,
+         wr_en         => headerPtrWrite,
+         din           => headerPtrData,
+         wr_data_count => open,
+         wr_ack        => open,
+         overflow      => open,
+         prog_full     => open,
+         almost_full   => open,
+         full          => open,
+         not_full      => open,
+         rd_clk        => axiClk,
+         rd_en         => headerDone,
+         dout          => headerPtrDout,
+         rd_data_count => open,
+         valid         => headerPtrValid,
+         underflow     => open,
+         prog_empty    => open,
+         almost_empty  => open,
+         empty         => open
       );
 
    -- Extract data
@@ -194,18 +202,23 @@ begin
    -----------------------------------------
    -- Header FIFO
    -----------------------------------------
-   U_HdrFifo : entity work.FifoASyncBuiltIn 
+   U_HdrFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         XIL_DEVICE_G   => "7SERIES",
-         SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 72,
-         ADDR_WIDTH_G   => PPI_CONFIG_G.ibHeaderAddrWidth,
-         FULL_THRES_G   => PPI_CONFIG_G.ibHeaderPauseThold,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => false, -- Async
+         BRAM_EN_G       => true,
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         USE_BUILT_IN_G  => true,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 72,
+         ADDR_WIDTH_G    => PPI_CONFIG_G.ibHeaderAddrWidth,
+         INIT_G          => "0",
+         FULL_THRES_G    => PPI_CONFIG_G.ibHeaderPauseThold,
+         EMPTY_THRES_G   => 1
       ) port map (
          rst               => axiClkRstInt,
          wr_clk            => ibHeaderClk,

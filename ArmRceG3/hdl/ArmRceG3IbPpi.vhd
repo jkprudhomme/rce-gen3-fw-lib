@@ -139,7 +139,6 @@ architecture structure of ArmRceG3IbPpi is
    signal axiClkRstInt      : sl := '1';
    signal nextError         : slv(3 downto 1);
    signal currError         : slv(3 downto 1);
-   signal incrSize          : slv(3 downto 0);
 
    attribute INIT : string;
    attribute INIT of axiClkRstInt : signal is "1";
@@ -166,36 +165,44 @@ begin
    -----------------------------------------
    -- Receive Control FIFO
    -----------------------------------------
-   U_PtrFifo : entity work.FifoSyncBuiltin
+   U_PtrFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         FWFT_EN_G      => true,
-         XIL_DEVICE_G   => "7SERIES",
-         USE_DSP48_G    => "no",
-         DATA_WIDTH_G   => 36,
-         ADDR_WIDTH_G   => 9,
-         FULL_THRES_G   => 1,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => true,
+         BRAM_EN_G       => true,
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         USE_BUILT_IN_G  => true,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 36,
+         ADDR_WIDTH_G    => 9,
+         INIT_G          => "0",
+         FULL_THRES_G    => 1,
+         EMPTY_THRES_G   => 1
       ) port map (
-         rst          => axiClkRstInt,
-         clk          => axiClk,
-         wr_en        => ppiPtrWrite,
-         rd_en        => ppiPtrRead,
-         din          => ppiPtrData,
-         dout         => ppiPtrDout,
-         data_count   => open,
-         wr_ack       => open,
-         valid        => ppiPtrValid,
-         overflow     => open,
-         underflow    => open,
-         prog_full    => open,
-         prog_empty   => open,
-         almost_full  => open,
-         almost_empty => open,
-         not_full     => open,
-         full         => open,
-         empty        => open
+         rst           => axiClkRstInt,
+         wr_clk        => axiClk,
+         wr_en         => ppiPtrWrite,
+         din           => ppiPtrData,
+         wr_data_count => open,
+         wr_ack        => open,
+         overflow      => open,
+         prog_full     => open,
+         almost_full   => open,
+         full          => open,
+         not_full      => open,
+         rd_clk        => axiClk,
+         rd_en         => ppiPtrRead,
+         dout          => ppiPtrDout,
+         rd_data_count => open,
+         valid         => ppiPtrValid,
+         underflow     => open,
+         prog_empty    => open,
+         almost_empty  => open,
+         empty         => open
       );
 
    -- Read control
@@ -249,21 +256,23 @@ begin
    -----------------------------------------
    -- Input FIFO
    -----------------------------------------
-   U_PpiFifo : entity work.FifoAsync
+   U_PpiFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         BRAM_EN_G      => true,
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         ALTERA_SYN_G   => false,
-         ALTERA_RAM_G   => "M9K",
-         SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 73,
-         ADDR_WIDTH_G   => PPI_CONFIG_G.ibDataAddrWidth,
-         FULL_THRES_G   => PPI_CONFIG_G.ibDataPauseThold,
-         INIT_G         => "0",
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => false, -- Async
+         BRAM_EN_G       => true,
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         USE_BUILT_IN_G  => false,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 73,
+         ADDR_WIDTH_G    => PPI_CONFIG_G.ibDataAddrWidth,
+         INIT_G          => "0",
+         FULL_THRES_G    => PPI_CONFIG_G.ibDataPauseThold,
+         EMPTY_THRES_G   => 1
       ) port map (
          rst                => axiClkRstInt,
          wr_clk             => ppiClk,
@@ -574,24 +583,8 @@ begin
       end if;
    end process;
 
-   -- Determine increment size
-   process ( ibPpi ) 
-      variable v : integer;
-   begin
-      v := 0;
-
-      for i in 0 to 7 loop
-         if ibPpi.valid(i) = '1' then
-            v := v + 1;
-         end if;
-      end loop;
-
-      incrSize <= conv_std_logic_vector(v,4);
-   end process;
-
-
    -- Determine next length value
-   nextLength <= frameLength + incrSize;
+   nextLength <= frameLength + onesCount(ibPpi.valid);
 
    -- Control pipeline shift
    ibPpiShift <= '1' when ibPpiRead = '1' or 
@@ -846,33 +839,39 @@ begin
    -----------------------------------------
    -- Completion FIFO
    -----------------------------------------
-   U_CompFifo : entity work.FifoSync
+   U_CompFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         RST_ASYNC_G    => false,
-         BRAM_EN_G      => false,  -- Use Dist Ram
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         ALTERA_RAM_G   => "M512",
-         DATA_WIDTH_G   => 36,
-         ADDR_WIDTH_G   => 4,
-         FULL_THRES_G   => 15,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => true,
+         BRAM_EN_G       => false, -- Use dist ram
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         USE_BUILT_IN_G  => false,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 36,
+         ADDR_WIDTH_G    => 4,
+         INIT_G          => "0",
+         FULL_THRES_G    => 15,
+         EMPTY_THRES_G   => 1
       ) port map (
          rst                => axiClkRstInt,
-         clk                => axiClk,
+         wr_clk             => axiClk,
          wr_en              => currCompData.valid,
          din                => compFifoDin,
-         data_count         => open,
+         wr_data_count      => open,
          wr_ack             => open,
          overflow           => open,
          prog_full          => open,
          almost_full        => open,
          full               => open,
          not_full           => open,
+         rd_clk             => axiClk,
          rd_en              => compToFifo.read,
          dout               => compFifoDout,
+         rd_data_count      => open,
          valid              => compFromFifo.valid,
          underflow          => open,
          prog_empty         => open,

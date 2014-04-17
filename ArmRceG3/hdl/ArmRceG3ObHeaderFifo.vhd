@@ -122,35 +122,43 @@ begin
    -----------------------------------------
    -- Transmit Descriptor FIFO
    -----------------------------------------
-   U_TxFifo : entity work.FifoSyncBuiltIn 
+   U_TxFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         XIL_DEVICE_G   => "7SERIES",
-         DATA_WIDTH_G   => 36,
-         ADDR_WIDTH_G   => 9,
-         FULL_THRES_G   => 1,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => true,
+         BRAM_EN_G       => true,
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         USE_BUILT_IN_G  => true,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 36,
+         ADDR_WIDTH_G    => 9,
+         INIT_G          => "0",
+         FULL_THRES_G    => 1,
+         EMPTY_THRES_G   => 1
       ) port map (
          rst                => axiClkRstInt,
-         clk                => axiClk,
+         wr_clk             => axiClk,
          wr_en              => headerPtrWrite,
-         rd_en              => nextFreeWrite,
          din                => headerPtrData,
-         dout               => headerPtrDout,
-         data_count         => open,
+         wr_data_count      => open,
          wr_ack             => open,
-         valid              => obDesc.valid,
          overflow           => open,
-         underflow          => open,
          prog_full          => open,
-         prog_empty         => open,
          almost_full        => open,
-         almost_empty       => open,
-         not_full           => open,
          full               => open,
+         not_full           => open,
+         rd_clk             => axiClk,
+         rd_en              => nextFreeWrite,
+         dout               => headerPtrDout,
+         rd_data_count      => open,
+         valid              => obDesc.valid,
+         underflow          => open,
+         prog_empty         => open,
+         almost_empty       => open,
          empty              => open
       );
 
@@ -332,31 +340,39 @@ begin
    -----------------------------------------
    -- Output FIFO
    -----------------------------------------
-   U_HdrFifo : entity work.FifoSyncBuiltIn 
+   U_HdrFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         XIL_DEVICE_G   => "7SERIES",
-         DATA_WIDTH_G   => 72,
-         ADDR_WIDTH_G   => PPI_CONFIG_G.obHeaderAddrWidth,
-         FULL_THRES_G   => OB_HEADER_FULL_THRESH_C,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => true,
+         BRAM_EN_G       => true,
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         USE_BUILT_IN_G  => true,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 72,
+         ADDR_WIDTH_G    => PPI_CONFIG_G.obHeaderAddrWidth,
+         INIT_G          => "0",
+         FULL_THRES_G    => OB_HEADER_FULL_THRESH_C,
+         EMPTY_THRES_G   => 1
       ) port map (
          rst                => axiClkRstInt,
-         clk                => axiClk,
+         wr_clk             => axiClk,
          wr_en              => header.valid,
          din                => headerDin,
-         data_count         => open,
+         wr_data_count      => open,
          wr_ack             => open,
          overflow           => open,
          prog_full          => obHeaderPFull,
          almost_full        => open,
          full               => open,
          not_full           => open,
+         rd_clk             => axiClk,
          rd_en              => obHeaderToFifo.read,
          dout               => headerDout,
+         rd_data_count      => open,
          valid              => obHeaderFromFifo.valid,
          underflow          => open,
          prog_empty         => open,

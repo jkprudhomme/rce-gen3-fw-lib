@@ -154,31 +154,39 @@ begin
    -- Free List FIFOs
    ------------------------------------------------------
    U_FifoGen: for i in 0 to 3 generate
-      U_CompFifo : entity work.FifoSyncBuiltIn 
+      U_CompFifo : entity work.Fifo
          generic map (
-            TPD_G          => TPD_G,
-            RST_POLARITY_G => '1',
-            FWFT_EN_G      => true,
-            USE_DSP48_G    => "no",
-            XIL_DEVICE_G   => "7SERIES",
-            DATA_WIDTH_G   => 18,
-            ADDR_WIDTH_G   => 11,
-            FULL_THRES_G   => 479,
-            EMPTY_THRES_G  => 1
+            TPD_G           => TPD_G,
+            RST_POLARITY_G  => '1',
+            RST_ASYNC_G     => false,
+            GEN_SYNC_FIFO_G => true,
+            BRAM_EN_G       => true,
+            FWFT_EN_G       => true,
+            USE_DSP48_G     => "no",
+            USE_BUILT_IN_G  => true,
+            XIL_DEVICE_G    => "7SERIES",
+            SYNC_STAGES_G   => 3,
+            DATA_WIDTH_G    => 18,
+            ADDR_WIDTH_G    => 11,
+            INIT_G          => "0",
+            FULL_THRES_G    => 479,
+            EMPTY_THRES_G   => 1
          ) port map (
             rst               => axiClkRstInt,
-            clk               => axiClk,
+            wr_clk            => axiClk,
             wr_en             => freePtrWrite(i),
             din               => freePtrDin(i),
-            data_count        => open,
+            wr_data_count     => open,
             wr_ack            => open,
             overflow          => open,
             prog_full         => open,
             almost_full       => open,
             full              => open,
             not_full          => open,
+            rd_clk            => axiClk,
             rd_en             => rin.freePtrRead(i),
             dout              => freePtrDout(i),
+            rd_data_count     => open,
             valid             => freePtrValid(i),
             underflow         => open,
             prog_empty        => open,

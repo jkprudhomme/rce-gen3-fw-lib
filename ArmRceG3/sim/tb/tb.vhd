@@ -31,7 +31,7 @@ begin
    -- Core
    U_ArmRceG3Top: entity work.ArmRceG3Top
       port map (
-         i2cSda             => i2cSda,
+         i2cSda               => i2cSda,
          i2cScl               => i2cScl,
          axiClk               => axiClk,
          axiClkRst            => open,
@@ -40,9 +40,9 @@ begin
          sysClk200            => open,
          sysClk200Rst         => open,
          localAxiReadMaster   => open,
-         localAxiReadSlave    => AXI_READ_SLAVE_INIT_C, 
+         localAxiReadSlave    => AXI_LITE_READ_SLAVE_INIT_C, 
          localAxiWriteMaster  => open,
-         localAxiWriteSlave   => AXI_WRITE_SLAVE_INIT_C,
+         localAxiWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
          ethFromArm           => open,
          ethToArm             => (others=>ETH_TO_ARM_INIT_C),
          ppiClk               => ppiClk,
@@ -61,7 +61,7 @@ begin
    --------------------------------------------------
    -- PPI Loopback
    --------------------------------------------------
-   U_LoopGen : for i in 0 to 2 generate
+   U_LoopGen : for i in 0 to 3 generate
 
       ppiClk(i) <= sysCLk125;
 
@@ -95,22 +95,22 @@ begin
 
 
 
-   U_RegTest: entity work.RegTest
-      generic map (
-         TPD_G        => 1 ns
-      ) port map (
-         axiClk           => sysClk125,
-         axiClkRst        => sysClk125Rst,
-         ppiClk           => sysClk125,
-         ppiClkRst        => sysClk125Rst,
-         ppiOnline        => '1',
-         ppiReadToFifo    => ppiReadToFifo(3),
-         ppiReadFromFifo  => ppiReadFromFifo(3),
-         ppiWriteToFifo   => ppiWriteToFifo(3),
-         ppiWriteFromFifo => ppiWriteFromFifo(3)
-      );
-
-      ppiClk(3) <= sysCLk125;
+--   U_RegTest: entity work.RegTest
+--      generic map (
+--         TPD_G        => 1 ns
+--      ) port map (
+--         axiClk           => sysClk125,
+--         axiClkRst        => sysClk125Rst,
+--         ppiClk           => sysClk125,
+--         ppiClkRst        => sysClk125Rst,
+--         ppiOnline        => '1',
+--         ppiReadToFifo    => ppiReadToFifo(3),
+--         ppiReadFromFifo  => ppiReadFromFifo(3),
+--         ppiWriteToFifo   => ppiWriteToFifo(3),
+--         ppiWriteFromFifo => ppiWriteFromFifo(3)
+--      );
+--
+--      ppiClk(3) <= sysCLk125;
 
 end tb;
 

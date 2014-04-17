@@ -30,9 +30,6 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/xilinx7/rtl/DeviceDna.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteCrossbar.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/rtl/AxiLiteAsync.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcPkg.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../VcLib/rtl/VcAdapter.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../pgp2/rtl/core/Pgp2CoreTypesPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/stdlib.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cSlave.vhd
@@ -53,18 +50,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3DmaComp.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3DmaCntrl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3LocalAxi.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiFifoAsync.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiFifoSync.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiMux.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiRouter.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiToAxi.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiStatus.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiPgpCntrl.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiVcTx.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiVcRx.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiPgpLane.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/ArmRceG3Cpu.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/RegTest.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ArmRceG3Top.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/tb/tb.vhd
 
