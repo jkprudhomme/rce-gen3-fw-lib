@@ -129,6 +129,8 @@ architecture structure of ZynqEthernet10G is
    signal rstRxLinkReg     : sl;
    signal rstFault         : sl;
    signal rstFaultReg      : sl;
+   signal rstCounter       : slv(31 downto 0);
+   signal coreReset        : sl;
 
    type RegType is record
       config            : slv(6  downto 0);
@@ -268,7 +270,7 @@ begin
    U_ZynqXaui: zynq_10g_xaui
       PORT map (
          dclk                  => sysClk125,
-         reset                 => sysClk125Rst,
+         reset                 => coreReset,
          clk156_out            => ethClk,
          refclk_p              => ethRefClkP,
          refclk_n              => ethRefClkM,
@@ -299,6 +301,26 @@ begin
          configuration_vector  => intConfig,
          status_vector         => status
       );
+
+   process (sysClk125) begin
+      if (rising_edge(sysClk125)) then
+         if sysClk125Rst = '1' then
+            rstCounter <= (others=>'1') after TPD_G;
+            coreReset  <= '1'           after TPD_G;
+         elsif status(7) = '1' then
+            rstCounter <= (others=>'1') after TPD_G;
+            coreReset  <= '0'           after TPD_G;
+         else
+            rstCounter <= rstCounter - 1 after TPD_G;
+
+            if rstCounter < 10 then
+               coreReset <= '1' after TPD_G;
+            else
+               coreReset <= '0' after TPD_G;
+            end if;
+         end if;
+      end if;
+   end process;
 
    process (ethConfig,swConfig) begin
       intConfig <= ethConfig or swConfig;
@@ -342,7 +364,7 @@ begin
    -------------------------------------------
    -- PPI To MAC
    -------------------------------------------
-   U_ObFifo : entity work.PpiFifoAsync
+   U_ObFifo : entity work.PpiFifo
       port map (
          ppiWrClk          => sysClk200,
          ppiWrClkRst       => sysClk200Rst,
@@ -374,7 +396,7 @@ begin
    ethWriteToFifo.ftype <= xauiRxc(5) & "000";
    ethWriteToFifo.valid <= xauiRxc(6) when ethOnline = '1' else '0';
 
-   U_IbFifo : entity work.PpiFifoAsync
+   U_IbFifo : entity work.PpiFifo
       port map (
          ppiWrClk          => ethClk,
          ppiWrClkRst       => ethClkRst,
