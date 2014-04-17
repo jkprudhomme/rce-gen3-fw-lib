@@ -327,21 +327,25 @@ begin
    -----------------------------------------
    -- FIFOs, Dist Ram
    -----------------------------------------
-   U_WriteFifo : entity work.FifoASync
+   U_WriteFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         BRAM_EN_G      => false,  -- Use Dist Ram
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         ALTERA_SYN_G   => false,
-         ALTERA_RAM_G   => "M512",
-         SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 95,
-         ADDR_WIDTH_G   => 4,
-         INIT_G         => "0",
-         FULL_THRES_G   => 15,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => false,  -- Async FIFO
+         BRAM_EN_G       => false,  -- Use Dist Ram
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         ALTERA_SYN_G    => false,
+         ALTERA_RAM_G    => "M512",
+         USE_BUILT_IN_G  => false,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 95,
+         ADDR_WIDTH_G    => 4,
+         INIT_G          => "0",
+         FULL_THRES_G    => 15,
+         EMPTY_THRES_G   => 1
       ) port map (
          rst                => axiClkRstInt,
          wr_clk             => axiClk,
@@ -356,8 +360,8 @@ begin
          not_full           => open,
          rd_clk             => pciClk,
          rd_en              => wrFifoRdEn,
-         rd_data_count      => open,
          dout               => wrFifoDout,
+         rd_data_count      => open,
          valid              => wrFifoValid,
          underflow          => open,
          prog_empty         => open,
@@ -368,21 +372,25 @@ begin
    wrFifoRdEn <= txReady and txValid;
    txValid    <= wrFifoValid when txBufAv > 1 else '0';
 
-   U_ReadFifo : entity work.FifoASync
+   U_ReadFifo : entity work.Fifo
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         BRAM_EN_G      => false,  -- Use Dist Ram
-         FWFT_EN_G      => true,
-         USE_DSP48_G    => "no",
-         ALTERA_SYN_G   => false,
-         ALTERA_RAM_G   => "M512",
-         SYNC_STAGES_G  => 3,
-         DATA_WIDTH_G   => 95,
-         ADDR_WIDTH_G   => 4,
-         INIT_G         => "0",
-         FULL_THRES_G   => 15,
-         EMPTY_THRES_G  => 1
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         GEN_SYNC_FIFO_G => false,  -- Async FIFO
+         BRAM_EN_G       => false,  -- Use Dist Ram
+         FWFT_EN_G       => true,
+         USE_DSP48_G     => "no",
+         ALTERA_SYN_G    => false,
+         ALTERA_RAM_G    => "M512",
+         USE_BUILT_IN_G  => false,
+         XIL_DEVICE_G    => "7SERIES",
+         SYNC_STAGES_G   => 3,
+         DATA_WIDTH_G    => 95,
+         ADDR_WIDTH_G    => 4,
+         INIT_G          => "0",
+         FULL_THRES_G    => 15,
+         EMPTY_THRES_G   => 1
       ) port map (
          rst                => axiClkRstInt,
          wr_clk             => pciClk,
@@ -397,8 +405,8 @@ begin
          not_full           => open,
          rd_clk             => axiClk,
          rd_en              => r.rdFifoRdEn,
-         rd_data_count      => open,
          dout               => rdFifoDout,
+         rd_data_count      => open,
          valid              => rdFifoValid,
          underflow          => open,
          prog_empty         => open,
