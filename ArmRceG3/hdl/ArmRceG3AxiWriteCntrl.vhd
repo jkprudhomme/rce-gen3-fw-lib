@@ -26,6 +26,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiPkg.all;
 
 entity AxiRceG3AxiWriteCntrl is
    generic (
@@ -294,11 +295,8 @@ begin
    axiSlaveWriteToArm.awsize         <= "011";
    axiSlaveWriteToArm.awburst        <= "01";
    axiSlaveWriteToArm.awcache        <= writeDmaCache;
-   axiSlaveWriteToArm.awuser         <= "00011";
    axiSlaveWriteToArm.awlock         <= "00";
    axiSlaveWriteToArm.awprot         <= "000";
-   axiSlaveWriteToArm.awqos          <= "0000";
-   axiSlaveWriteToArm.wrissuecap1_en <= '0';
 
    -----------------------------------------
    -- Data Buffer

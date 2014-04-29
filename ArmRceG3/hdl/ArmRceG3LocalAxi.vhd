@@ -25,6 +25,7 @@ use unisim.vcomponents.all;
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
+use work.AxiPkg.all;
 use work.Version.all;
 use work.ArmRceG3Version.all;
 
@@ -181,8 +182,6 @@ begin
    axiGpMasterWriteToArm.bresp   <= midWriteSlave.bresp;
    axiGpMasterWriteToArm.bvalid  <= midWriteSlave.bvalid;
    axiGpMasterWriteToArm.wready  <= midWriteSlave.wready;
-   axiGpMasterWriteToArm.wacount <= (others=>'0');
-   axiGpMasterWriteToArm.wcount  <= (others=>'0');
 
    midReadMaster.araddr  <= axiGpMasterReadFromArm.araddr;
    midReadMaster.arprot  <= axiGpMasterReadFromArm.arprot;
@@ -195,8 +194,6 @@ begin
    axiGpMasterReadToArm.rresp               <= midReadSlave.rresp;
    axiGpMasterReadToArm.rlast               <= '1';
    axiGpMasterReadToArm.rvalid              <= midReadSlave.rvalid;
-   axiGpMasterReadToArm.racount             <= (others=>'0');
-   axiGpMasterReadToArm.rcount              <= (others=>'0');
 
    -- ID Tracking
    process ( axiClk ) begin

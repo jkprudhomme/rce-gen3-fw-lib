@@ -55,7 +55,10 @@ entity PpiFifo is
       ppiRdClkRst      : in  sl := '0';
       ppiRdOnline      : out sl;
       ppiReadToFifo    : in  PpiReadToFifoType;
-      ppiReadFromFifo  : out PpiReadFromFifoType
+      ppiReadFromFifo  : out PpiReadFromFifoType;
+
+      -- Error
+      overFlow         : out sl
    );
 end PpiFifo;
 
@@ -146,7 +149,7 @@ begin
          din           => fifoDin,
          wr_data_count => open,
          wr_ack        => open,
-         overflow      => open,
+         overflow      => overFlow,
          prog_full     => fifoPFull,
          almost_full   => open,
          full          => open,

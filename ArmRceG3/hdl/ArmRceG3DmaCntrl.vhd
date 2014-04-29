@@ -24,6 +24,7 @@ use unisim.vcomponents.all;
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
+use work.AxiPkg.all;
 
 entity ArmRceG3DmaCntrl is
    generic (

@@ -24,6 +24,7 @@ use work.ArmRceG3Pkg.all;
 use work.i2cPkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
+use work.AxiPkg.all;
 
 entity ArmRceG3I2c is
    generic (

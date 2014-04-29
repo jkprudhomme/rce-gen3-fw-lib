@@ -24,6 +24,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiPkg.all;
 
 entity ArmRceG3Cpu is
    generic (
@@ -676,10 +677,10 @@ begin
          M_AXI_GP0_WDATA                  => axiGpMasterWriteFromArm(0).wdata(31 downto 0),
          M_AXI_GP0_ARCACHE                => axiGpMasterReadFromArm(0).arcache,
          M_AXI_GP0_ARLEN                  => axiGpMasterReadFromArm(0).arlen,
-         M_AXI_GP0_ARQOS                  => axiGpMasterReadFromArm(0).arqos,
+         M_AXI_GP0_ARQOS                  => open,
          M_AXI_GP0_AWCACHE                => axiGpMasterWriteFromArm(0).awcache,
          M_AXI_GP0_AWLEN                  => axiGpMasterWriteFromArm(0).awlen,
-         M_AXI_GP0_AWQOS                  => axiGpMasterWriteFromArm(0).awqos,
+         M_AXI_GP0_AWQOS                  => open,
          M_AXI_GP0_WSTRB                  => axiGpMasterWriteFromArm(0).wstrb(3 downto 0),
          M_AXI_GP0_ACLK                   => axiClk,
          M_AXI_GP0_ARREADY                => axiGpMasterReadToArm(0).arready,
@@ -717,10 +718,10 @@ begin
          M_AXI_GP1_WDATA                  => axiGpMasterWriteFromArm(1).wdata(31 downto 0),
          M_AXI_GP1_ARCACHE                => axiGpMasterReadFromArm(1).arcache,
          M_AXI_GP1_ARLEN                  => axiGpMasterReadFromArm(1).arlen,
-         M_AXI_GP1_ARQOS                  => axiGpMasterReadFromArm(1).arqos,
+         M_AXI_GP1_ARQOS                  => open,
          M_AXI_GP1_AWCACHE                => axiGpMasterWriteFromArm(1).awcache,
          M_AXI_GP1_AWLEN                  => axiGpMasterWriteFromArm(1).awlen,
-         M_AXI_GP1_AWQOS                  => axiGpMasterWriteFromArm(1).awqos,
+         M_AXI_GP1_AWQOS                  => open,
          M_AXI_GP1_WSTRB                  => axiGpMasterWriteFromArm(1).wstrb(3 downto 0),
          M_AXI_GP1_ACLK                   => axiClk,
          M_AXI_GP1_ARREADY                => axiGpMasterReadToArm(1).arready,
@@ -770,10 +771,10 @@ begin
          S_AXI_GP0_WDATA                  => axiGpSlaveWriteToArm(0).wdata(31 downto 0),
          S_AXI_GP0_ARCACHE                => axiGpSlaveReadToArm(0).arcache,
          S_AXI_GP0_ARLEN                  => axiGpSlaveReadToArm(0).arlen,
-         S_AXI_GP0_ARQOS                  => axiGpSlaveReadToArm(0).arqos,
+         S_AXI_GP0_ARQOS                  => "0000",
          S_AXI_GP0_AWCACHE                => axiGpSlaveWriteToArm(0).awcache,
          S_AXI_GP0_AWLEN                  => axiGpSlaveWriteToArm(0).awlen,
-         S_AXI_GP0_AWQOS                  => axiGpSlaveWriteToArm(0).awqos,
+         S_AXI_GP0_AWQOS                  => "0000",
          S_AXI_GP0_WSTRB                  => axiGpSlaveWriteToArm(0).wstrb(3 downto 0),
 
          -- S_AXI_GP1
@@ -811,10 +812,10 @@ begin
          S_AXI_GP1_WDATA                  => axiGpSlaveWriteToArm(1).wdata(31 downto 0),
          S_AXI_GP1_ARCACHE                => axiGpSlaveReadToArm(1).arcache,
          S_AXI_GP1_ARLEN                  => axiGpSlaveReadToArm(1).arlen,
-         S_AXI_GP1_ARQOS                  => axiGpSlaveReadToArm(1).arqos,
+         S_AXI_GP1_ARQOS                  => "0000",
          S_AXI_GP1_AWCACHE                => axiGpSlaveWriteToArm(1).awcache,
          S_AXI_GP1_AWLEN                  => axiGpSlaveWriteToArm(1).awlen,
-         S_AXI_GP1_AWQOS                  => axiGpSlaveWriteToArm(1).awqos,
+         S_AXI_GP1_AWQOS                  => "0000",
          S_AXI_GP1_WSTRB                  => axiGpSlaveWriteToArm(1).wstrb(3 downto 0),
 
          -- S_AXI_ACP
@@ -852,13 +853,13 @@ begin
          S_AXI_ACP_WDATA                  => axiAcpSlaveWriteToArm.wdata,
          S_AXI_ACP_ARCACHE                => axiAcpSlaveReadToArm.arcache,
          S_AXI_ACP_ARLEN                  => axiAcpSlaveReadToArm.arlen,
-         S_AXI_ACP_ARQOS                  => axiAcpSlaveReadToArm.arqos,
+         S_AXI_ACP_ARQOS                  => "0000",
          S_AXI_ACP_AWCACHE                => axiAcpSlaveWriteToArm.awcache,
          S_AXI_ACP_AWLEN                  => axiAcpSlaveWriteToArm.awlen,
-         S_AXI_ACP_AWQOS                  => axiAcpSlaveWriteToArm.awqos,
+         S_AXI_ACP_AWQOS                  => "0000",
          S_AXI_ACP_WSTRB                  => axiAcpSlaveWriteToArm.wstrb,
-         S_AXI_ACP_ARUSER                 => axiAcpSlaveReadToArm.aruser,
-         S_AXI_ACP_AWUSER                 => axiAcpSlaveWriteToArm.awuser,
+         S_AXI_ACP_ARUSER                 => "00011",
+         S_AXI_ACP_AWUSER                 => "00011",
 
          -- S_AXI_HP_0
          S_AXI_HP0_ARREADY                => axiHpSlaveReadFromArm(0).arready,
@@ -901,10 +902,10 @@ begin
          S_AXI_HP0_WDATA                  => axiHpSlaveWriteToArm(0).wdata,
          S_AXI_HP0_ARCACHE                => axiHpSlaveReadToArm(0).arcache,
          S_AXI_HP0_ARLEN                  => axiHpSlaveReadToArm(0).arlen,
-         S_AXI_HP0_ARQOS                  => axiHpSlaveReadToArm(0).arqos,
+         S_AXI_HP0_ARQOS                  => "0000",
          S_AXI_HP0_AWCACHE                => axiHpSlaveWriteToArm(0).awcache,
          S_AXI_HP0_AWLEN                  => axiHpSlaveWriteToArm(0).awlen,
-         S_AXI_HP0_AWQOS                  => axiHpSlaveWriteToArm(0).awqos,
+         S_AXI_HP0_AWQOS                  => "0000",
          S_AXI_HP0_WSTRB                  => axiHpSlaveWriteToArm(0).wstrb,
 
          -- S_AXI_HP_1
@@ -948,10 +949,10 @@ begin
          S_AXI_HP1_WDATA                  => axiHpSlaveWriteToArm(1).wdata,
          S_AXI_HP1_ARCACHE                => axiHpSlaveReadToArm(1).arcache,
          S_AXI_HP1_ARLEN                  => axiHpSlaveReadToArm(1).arlen,
-         S_AXI_HP1_ARQOS                  => axiHpSlaveReadToArm(1).arqos,
+         S_AXI_HP1_ARQOS                  => "0000",
          S_AXI_HP1_AWCACHE                => axiHpSlaveWriteToArm(1).awcache,
          S_AXI_HP1_AWLEN                  => axiHpSlaveWriteToArm(1).awlen,
-         S_AXI_HP1_AWQOS                  => axiHpSlaveWriteToArm(1).awqos,
+         S_AXI_HP1_AWQOS                  => "0000",
          S_AXI_HP1_WSTRB                  => axiHpSlaveWriteToArm(1).wstrb,
 
          -- S_AXI_HP_2
@@ -995,10 +996,10 @@ begin
          S_AXI_HP2_WDATA                  => axiHpSlaveWriteToArm(2).wdata,
          S_AXI_HP2_ARCACHE                => axiHpSlaveReadToArm(2).arcache,
          S_AXI_HP2_ARLEN                  => axiHpSlaveReadToArm(2).arlen,
-         S_AXI_HP2_ARQOS                  => axiHpSlaveReadToArm(2).arqos,
+         S_AXI_HP2_ARQOS                  => "0000",
          S_AXI_HP2_AWCACHE                => axiHpSlaveWriteToArm(2).awcache,
          S_AXI_HP2_AWLEN                  => axiHpSlaveWriteToArm(2).awlen,
-         S_AXI_HP2_AWQOS                  => axiHpSlaveWriteToArm(2).awqos,
+         S_AXI_HP2_AWQOS                  => "0000",
          S_AXI_HP2_WSTRB                  => axiHpSlaveWriteToArm(2).wstrb,
 
          -- S_AXI_HP_3
@@ -1042,10 +1043,10 @@ begin
          S_AXI_HP3_WDATA                  => axiHpSlaveWriteToArm(3).wdata,
          S_AXI_HP3_ARCACHE                => axiHpSlaveReadToArm(3).arcache,
          S_AXI_HP3_ARLEN                  => axiHpSlaveReadToArm(3).arlen,
-         S_AXI_HP3_ARQOS                  => axiHpSlaveReadToArm(3).arqos,
+         S_AXI_HP3_ARQOS                  => "0000",
          S_AXI_HP3_AWCACHE                => axiHpSlaveWriteToArm(3).awcache,
          S_AXI_HP3_AWLEN                  => axiHpSlaveWriteToArm(3).awlen,
-         S_AXI_HP3_AWQOS                  => axiHpSlaveWriteToArm(3).awqos,
+         S_AXI_HP3_AWQOS                  => "0000",
          S_AXI_HP3_WSTRB                  => axiHpSlaveWriteToArm(3).wstrb,
 
          -- IRQ
@@ -1097,8 +1098,6 @@ begin
    U_UnusedMasterGP: for i in 0 to 1 generate
       axiGpMasterReadFromArm(i).rdissuecap1_en       <= '0';
       axiGpMasterWriteFromArm(i).wrissuecap1_en      <= '0';
-      axiGpMasterReadFromArm(i).aruser               <= "00000";
-      axiGpMasterWriteFromArm(i).awuser              <= "00000";
       axiGpMasterWriteFromArm(i).wdata(63 downto 32) <= (others=>'0');
       axiGpMasterWriteFromArm(i).wstrb(7 downto 4)   <= "0000";
    end generate;

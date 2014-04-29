@@ -26,6 +26,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiPkg.all;
 
 entity AxiRceG3AxiReadCntrl is
    generic (
@@ -243,11 +244,8 @@ begin
    axiSlaveReadToArm.arsize         <= "011";
    axiSlaveReadToArm.arburst        <= "01";
    axiSlaveReadToArm.arcache        <= readDmaCache;
-   axiSlaveReadToArm.aruser         <= "00011";
    axiSlaveReadToArm.arlock         <= "00";
    axiSlaveReadToArm.arprot         <= "000";
-   axiSlaveReadToArm.arqos          <= "0000";
-   axiSlaveReadToArm.rdissuecap1_en <= '0';
 
    -----------------------------------------
    -- Read data  distribution

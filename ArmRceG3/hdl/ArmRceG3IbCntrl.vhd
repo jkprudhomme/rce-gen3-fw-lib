@@ -27,6 +27,7 @@ use unisim.vcomponents.all;
 
 use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiPkg.all;
 
 entity ArmRceG3IbCntrl is
    generic (

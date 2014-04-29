@@ -205,7 +205,7 @@ begin
    ---------------------------------------
 
    -- Sync remote data
-   U_RxDataSync : entity work.SyncStatusVector 
+   U_RxDataSync : entity work.SyncStatusFifo 
       generic map (
          TPD_G         => TPD_G,
          BRAM_EN_G     => false,
@@ -230,14 +230,14 @@ begin
    U_RxStatus8Bit : entity work.SyncStatusVector 
       generic map (
          TPD_G           => TPD_G,
-         RST_POLARITY_G  : sl       := '1';  -- '1' for active HIGH reset, '0' for active LOW reset
+         RST_POLARITY_G  => '1',
          COMMON_CLK_G    => false,
          RELEASE_DELAY_G => 3,
          IN_POLARITY_G   => "1",
          OUT_POLARITY_G  => '1',
          USE_DSP48_G     => "no",
          SYNTH_CNT_G     => "1111000",
-         CNT_RST_EDGE_G  : boolean  := true; -- true if counter reset should be edge detected, else level detected
+         CNT_RST_EDGE_G  => false,
          CNT_WIDTH_G     => 8,
          WIDTH_G         => 7
       ) port map (
@@ -267,16 +267,21 @@ begin
          rdRst                 => axiStatClkRst
       );
 
+   signal cntOut(6 downto 0,7 downto 0);
+
+
    -- 32 bit status counters
-   U_RxStatus4Bit : entity work.SyncStatusVector 
+   U_RxStatus32Bit : entity work.SyncStatusVector 
       generic map (
          TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
          COMMON_CLK_G    => false,
          RELEASE_DELAY_G => 3,
          IN_POLARITY_G   => "111",
          OUT_POLARITY_G  => '1',
          USE_DSP48_G     => "no",
          SYNTH_CNT_G     => "1",
+         CNT_RST_EDGE_G  => false,
          CNT_WIDTH_G     => 32,
          WIDTH_G         => 1
       ) port map (
@@ -302,12 +307,14 @@ begin
    U_TxStatus8Bit : entity work.SyncStatusVector 
       generic map (
          TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
          COMMON_CLK_G    => false,
          RELEASE_DELAY_G => 3,
          IN_POLARITY_G   => "1",
          OUT_POLARITY_G  => '1',
          USE_DSP48_G     => "no",
          SYNTH_CNT_G     => "10",
+         CNT_RST_EDGE_G  => false,
          CNT_WIDTH_G     => 8,
          WIDTH_G         => 2
       ) port map (
@@ -331,12 +338,14 @@ begin
    U_TxStatus4Bit : entity work.SyncStatusVector 
       generic map (
          TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
          COMMON_CLK_G    => false,
          RELEASE_DELAY_G => 3,
          IN_POLARITY_G   => "111",
          OUT_POLARITY_G  => '1',
          USE_DSP48_G     => "no",
          SYNTH_CNT_G     => "1",
+         CNT_RST_EDGE_G  => false,
          CNT_WIDTH_G     => 32,
          WIDTH_G         => 1
       ) port map (

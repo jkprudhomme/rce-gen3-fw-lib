@@ -1,1 +1,3 @@
+vhdl work hdl/XMacExport.vhd
+vhdl work hdl/XMacImport.vhd
 vhdl work hdl/ZynqEthernet10G.vhd
