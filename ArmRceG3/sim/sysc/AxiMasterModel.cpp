@@ -56,8 +56,6 @@ void AxiMasterModel::masterThread(void) {
    awlock.write(0);
    awcache.write(0);
    awprot.write(0);
-   awqos.write(0);
-   awuser.write(0);
    wvalid.write(SC_LOGIC_0);
    wdataH.write(0);
    wdataL.write(0);
@@ -74,8 +72,6 @@ void AxiMasterModel::masterThread(void) {
    arlock.write(0);
    arprot.write(0);
    arcache.write(0);
-   arqos.write(0);
-   aruser.write(0);
    rready.write(SC_LOGIC_0);
 
    // Run forever
@@ -115,8 +111,6 @@ void AxiMasterModel::masterThread(void) {
             awlock.write((writeAddr.awlock));
             awcache.write((writeAddr.awcache));
             awprot.write((writeAddr.awprot));
-            awqos.write((writeAddr.awqos));
-            awuser.write((writeAddr.awuser));
             writeAddrBusy = true;
          }
       }
@@ -190,8 +184,6 @@ void AxiMasterModel::masterThread(void) {
             arlock.write(readAddr.arlock);
             arprot.write(readAddr.arprot);
             arcache.write(readAddr.arcache);
-            arqos.write(readAddr.arqos);
-            aruser.write(readAddr.aruser);
             readAddrBusy = true;
          }
       }

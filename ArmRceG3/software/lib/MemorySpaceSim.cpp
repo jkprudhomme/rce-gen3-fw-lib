@@ -36,18 +36,18 @@ bool MemorySpaceSim::open () {
    uint x;
 
    // Setup config space
-   _configShared = AxiSharedMem::open ( "SimAxiMaster", 1 );
+   _configShared = sim_open ( (char *)"SimAxiMaster", 1, -1 );
 
    // Setup shared spaces
    for (x=0; x < 5; x++) {
       _memThread[x].ptr = this;    
       _memThread[x].idx = x;
    }
-   _memThread[0].mem = AxiSharedMem::open ( "SimAxiSlave",  2 );
-   _memThread[1].mem = AxiSharedMem::open ( "SimAxiSlave",  3 );
-   _memThread[2].mem = AxiSharedMem::open ( "SimAxiSlave",  4 );
-   _memThread[3].mem = AxiSharedMem::open ( "SimAxiSlave",  5 );
-   _memThread[4].mem = AxiSharedMem::open ( "SimAxiSlave",  6 );
+   _memThread[0].mem = sim_open ( (char *)"SimAxiSlave",  2, -1 );
+   _memThread[1].mem = sim_open ( (char *)"SimAxiSlave",  3, -1 );
+   _memThread[2].mem = sim_open ( (char *)"SimAxiSlave",  4, -1 );
+   _memThread[3].mem = sim_open ( (char *)"SimAxiSlave",  5, -1 );
+   _memThread[4].mem = sim_open ( (char *)"SimAxiSlave",  6, -1 );
 
    _runEnable = true;
 
@@ -77,9 +77,9 @@ void MemorySpaceSim::close () {
       pthread_join(_memThread[x].writeThread,NULL);
    }
 
-   AxiSharedMem::close(_configShared);
+   sim_close(_configShared);
 
-   for (x=0; x < 5; x++) AxiSharedMem::close(_memThread[x].mem);
+   for (x=0; x < 5; x++) sim_close(_memThread[x].mem);
 }
 
 // Config base software
@@ -181,14 +181,12 @@ void MemorySpaceSim::configRun() {
          writeAddr.awlock  = 0;
          writeAddr.awcache = 0;
          writeAddr.awprot  = 0;
-         writeAddr.awqos   = 0;
-         writeAddr.awuser  = 0;
 
          // Post addr
-         _configShared->setWriteAddr ( &writeAddr );
+         setWriteAddr (_configShared, &writeAddr );
 
          // Wait for ack
-         while ( !_configShared->readyWriteAddr() ) usleep(1);
+         while ( !readyWriteAddr(_configShared) ) usleep(1);
 
          // Post write data
          writeData.wdataH = 0;
@@ -198,13 +196,13 @@ void MemorySpaceSim::configRun() {
          writeData.wstrb  = 0xF;
 
          // Post data
-         _configShared->setWriteData ( &writeData );
+         setWriteData (_configShared, &writeData );
 
          // Wait for ack
-         while ( !_configShared->readyWriteData() ) usleep(1);
+         while ( !readyWriteData(_configShared) ) usleep(1);
 
          // Wait for completion
-         while ( !_configShared->getWriteComp ( &writeComp ) ) usleep(1);
+         while ( !getWriteComp (_configShared, &writeComp ) ) usleep(1);
 
          _writeAck = _writeReq;
 
@@ -226,17 +224,15 @@ void MemorySpaceSim::configRun() {
          readAddr.arlock  = 0;
          readAddr.arprot  = 0;
          readAddr.arcache = 0;
-         readAddr.arqos   = 0;
-         readAddr.aruser  = 0;
 
          // Post addr
-         _configShared->setReadAddr ( &readAddr );
+         setReadAddr (_configShared, &readAddr );
 
          // Wait for ack
-         while ( !_configShared->readyReadAddr() ) usleep(1);
+         while ( !readyReadAddr(_configShared) ) usleep(1);
 
          // Wait for read to finish
-         while ( !_configShared->getReadData ( &readData ) ) usleep(1);
+         while ( !getReadData (_configShared, &readData ) ) usleep(1);
 
          if ( ! readData.rlast ) cout << "!!!!!!!!!!! Error: Invalid last value on read !!!!!!!!!!" << endl;
 
@@ -274,14 +270,14 @@ void MemorySpaceSim::memoryReadRun(ThreadData *ptr) {
    uint                   x;
    uint                   id;
 
-   AxiSharedMem *acpShared = ptr->mem;
+   AxiSharedMem *slaveShared = ptr->mem;
 
    nextAddr = new AxiReadAddr; 
 
    while (_runEnable) {
 
       // Wait for read address
-      if ( acpShared->getReadAddr(nextAddr) ) {
+      if ( getReadAddr(slaveShared,nextAddr) ) {
 
          cout << "Read Start,  " 
               << " Thread=" << ptr->idx 
@@ -317,7 +313,7 @@ void MemorySpaceSim::memoryReadRun(ThreadData *ptr) {
          for (x=0; x < length;) {
 
             // Verify hardware is ready
-            while ( !acpShared->readyReadData() ) usleep(1);
+            while ( !readyReadData(slaveShared) ) usleep(1);
 
             // Format and output data
             readData.rdataL = _memorySpace[addr];
@@ -349,7 +345,7 @@ void MemorySpaceSim::memoryReadRun(ThreadData *ptr) {
             readData.rresp  = 0;
 
 
-            acpShared->setReadData(&readData);
+            setReadData(slaveShared,&readData);
          }
 
          readQueue.pop();
@@ -387,7 +383,7 @@ void MemorySpaceSim::memoryWriteRun(ThreadData *ptr) {
    uint                    tempMask;
    uint                    writeMask;
 
-   AxiSharedMem *acpShared = ptr->mem;
+   AxiSharedMem *slaveShared = ptr->mem;
 
    nextAddr = new AxiWriteAddr; 
    currAddr = NULL;
@@ -396,7 +392,7 @@ void MemorySpaceSim::memoryWriteRun(ThreadData *ptr) {
    while (_runEnable) {
 
       // Wait for read address
-      while ( acpShared->getWriteAddr(nextAddr) ) {
+      while ( getWriteAddr(slaveShared,nextAddr) ) {
          aid = nextAddr->awid;
 
          cout << "Write Start, " 
@@ -410,7 +406,7 @@ void MemorySpaceSim::memoryWriteRun(ThreadData *ptr) {
       }
 
       // Wait for write data
-      if ( acpShared->getWriteData(&writeData) ) {
+      if ( getWriteData(slaveShared,&writeData) ) {
          id = writeData.wid;
 
          // ID is not valid, search for record
@@ -491,12 +487,12 @@ void MemorySpaceSim::memoryWriteRun(ThreadData *ptr) {
          if ( writeData.wlast ) {
 
             // Verify hardware is ready
-            while ( !acpShared->readyWriteComp() ) usleep(1);
+            while ( !readyWriteComp(slaveShared) ) usleep(1);
 
             // Continue
             writeComp.bresp = 0;
             writeComp.bid = id;
-            acpShared->setWriteComp(&writeComp);
+            setWriteComp(slaveShared,&writeComp);
             valid[id] = false;
          } 
       } else usleep(1);

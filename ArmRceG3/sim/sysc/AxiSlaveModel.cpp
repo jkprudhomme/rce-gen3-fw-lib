@@ -82,8 +82,6 @@ void AxiSlaveModel::slaveThread(void) {
          writeAddr.awlock  = awlock.read().to_uint();
          writeAddr.awcache = awcache.read().to_uint();
          writeAddr.awprot  = awprot.read().to_uint();
-         writeAddr.awqos   = awqos.read().to_uint();
-         writeAddr.awuser  = awuser.read().to_uint();
          smem->setWriteAddr(&writeAddr);
          writeAddrBusy = true;
       }
@@ -143,8 +141,6 @@ void AxiSlaveModel::slaveThread(void) {
          readAddr.arlock  = arlock.read().to_uint();
          readAddr.arcache = arcache.read().to_uint();
          readAddr.arprot  = arprot.read().to_uint();
-         readAddr.arqos   = arqos.read().to_uint();
-         readAddr.aruser  = aruser.read().to_uint();
          smem->setReadAddr(&readAddr);
          readAddrBusy = true;
       }

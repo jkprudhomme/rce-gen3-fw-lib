@@ -62,10 +62,9 @@ rtl_src:
 # VHPI Library
 vhpi_src:
 	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/axi/simlink/VhpiGeneric.c
-	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/axi/simlink/AxiSharedMem.c
 	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/axi/simlink/AxiSimMaster.c
 	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/axi/simlink/AxiSimSlave.c
-	@cd $(SIM_DIR); gcc -Wall -shared -o libSimSw_lib.so AxiSharedMem.o VhpiGeneric.o AxiSimMaster.o AxiSimSlave.o
+	@cd $(SIM_DIR); gcc -Wall -shared -o libSimSw_lib.so VhpiGeneric.o AxiSimMaster.o AxiSimSlave.o
 
 sim_gen:
 	cd $(SIM_DIR); vcs $(EN64) $(TOP) -cpp g++ -cc g++ -debug -lrt -timescale=1ns/1ps -sim_res=1ps
