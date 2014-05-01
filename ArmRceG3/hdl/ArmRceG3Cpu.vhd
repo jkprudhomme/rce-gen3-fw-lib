@@ -138,9 +138,9 @@ architecture structure of ArmRceG3Cpu is
        TTC0_WAVE0_OUT : OUT STD_LOGIC;
        TTC0_WAVE1_OUT : OUT STD_LOGIC;
        TTC0_WAVE2_OUT : OUT STD_LOGIC;
-       TTC0_CLK0_IN : IN STD_LOGIC;
-       TTC0_CLK1_IN : IN STD_LOGIC;
-       TTC0_CLK2_IN : IN STD_LOGIC;
+       --TTC0_CLK0_IN : IN STD_LOGIC;
+       --TTC0_CLK1_IN : IN STD_LOGIC;
+       --TTC0_CLK2_IN : IN STD_LOGIC;
        WDT_RST_OUT : OUT STD_LOGIC;
        USB0_PORT_INDCTL : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
        USB0_VBUS_PWRSELECT : OUT STD_LOGIC;
@@ -642,9 +642,9 @@ begin
          TTC0_WAVE0_OUT                   => open,
          TTC0_WAVE1_OUT                   => open,
          TTC0_WAVE2_OUT                   => open,
-         TTC0_CLK0_IN                     => '0',
-         TTC0_CLK1_IN                     => '0',
-         TTC0_CLK2_IN                     => '0',
+         --TTC0_CLK0_IN                     => '0',
+         --TTC0_CLK1_IN                     => '0',
+         --TTC0_CLK2_IN                     => '0',
 
          -- WDT
          WDT_RST_OUT                      => open,
@@ -873,10 +873,10 @@ begin
          S_AXI_HP0_BRESP                  => axiHpSlaveWriteFromArm(0).bresp,
          S_AXI_HP0_RRESP                  => axiHpSlaveReadFromArm(0).rresp,
          S_AXI_HP0_RDATA                  => axiHpSlaveReadFromArm(0).rdata,
-         S_AXI_HP0_RCOUNT                 => axiHpSlaveReadFromArm(0).rcount,
-         S_AXI_HP0_WCOUNT                 => axiHpSlaveWriteFromArm(0).wcount,
-         S_AXI_HP0_RACOUNT                => axiHpSlaveReadFromArm(0).racount,
-         S_AXI_HP0_WACOUNT                => axiHpSlaveWriteFromArm(0).wacount,
+         S_AXI_HP0_RCOUNT                 => open,
+         S_AXI_HP0_WCOUNT                 => open,
+         S_AXI_HP0_RACOUNT                => open,
+         S_AXI_HP0_WACOUNT                => open,
          S_AXI_HP0_ACLK                   => axiClk,
          S_AXI_HP0_ARVALID                => axiHpSlaveReadToArm(0).arvalid,
          S_AXI_HP0_AWVALID                => axiHpSlaveWriteToArm(0).awvalid,
@@ -884,8 +884,8 @@ begin
          S_AXI_HP0_RREADY                 => axiHpSlaveReadToArm(0).rready,
          S_AXI_HP0_WLAST                  => axiHpSlaveWriteToArm(0).wlast,
          S_AXI_HP0_WVALID                 => axiHpSlaveWriteToArm(0).wvalid,
-         S_AXI_HP0_RDISSUECAP1_EN         => axiHpSlaveReadToArm(0).rdissuecap1_en,
-         S_AXI_HP0_WRISSUECAP1_EN         => axiHpSlaveWriteToArm(0).wrissuecap1_en,
+         S_AXI_HP0_RDISSUECAP1_EN         => '0',
+         S_AXI_HP0_WRISSUECAP1_EN         => '0',
          S_AXI_HP0_ARID                   => axiHpSlaveReadToArm(0).arid(5 downto 0),
          S_AXI_HP0_AWID                   => axiHpSlaveWriteToArm(0).awid(5 downto 0),
          S_AXI_HP0_WID                    => axiHpSlaveWriteToArm(0).wid(5 downto 0),
@@ -920,10 +920,10 @@ begin
          S_AXI_HP1_BRESP                  => axiHpSlaveWriteFromArm(1).bresp,
          S_AXI_HP1_RRESP                  => axiHpSlaveReadFromArm(1).rresp,
          S_AXI_HP1_RDATA                  => axiHpSlaveReadFromArm(1).rdata,
-         S_AXI_HP1_RCOUNT                 => axiHpSlaveReadFromArm(1).rcount,
-         S_AXI_HP1_WCOUNT                 => axiHpSlaveWriteFromArm(1).wcount,
-         S_AXI_HP1_RACOUNT                => axiHpSlaveReadFromArm(1).racount,
-         S_AXI_HP1_WACOUNT                => axiHpSlaveWriteFromArm(1).wacount,
+         S_AXI_HP1_RCOUNT                 => open,
+         S_AXI_HP1_WCOUNT                 => open,
+         S_AXI_HP1_RACOUNT                => open,
+         S_AXI_HP1_WACOUNT                => open,
          S_AXI_HP1_ACLK                   => axiClk,
          S_AXI_HP1_ARVALID                => axiHpSlaveReadToArm(1).arvalid,
          S_AXI_HP1_AWVALID                => axiHpSlaveWriteToArm(1).awvalid,
@@ -931,8 +931,8 @@ begin
          S_AXI_HP1_RREADY                 => axiHpSlaveReadToArm(1).rready,
          S_AXI_HP1_WLAST                  => axiHpSlaveWriteToArm(1).wlast,
          S_AXI_HP1_WVALID                 => axiHpSlaveWriteToArm(1).wvalid,
-         S_AXI_HP1_RDISSUECAP1_EN         => axiHpSlaveReadToArm(1).rdissuecap1_en,
-         S_AXI_HP1_WRISSUECAP1_EN         => axiHpSlaveWriteToArm(1).wrissuecap1_en,
+         S_AXI_HP1_RDISSUECAP1_EN         => '0',
+         S_AXI_HP1_WRISSUECAP1_EN         => '0',
          S_AXI_HP1_ARID                   => axiHpSlaveReadToArm(1).arid(5 downto 0),
          S_AXI_HP1_AWID                   => axiHpSlaveWriteToArm(1).awid(5 downto 0),
          S_AXI_HP1_WID                    => axiHpSlaveWriteToArm(1).wid(5 downto 0),
@@ -967,10 +967,10 @@ begin
          S_AXI_HP2_BRESP                  => axiHpSlaveWriteFromArm(2).bresp,
          S_AXI_HP2_RRESP                  => axiHpSlaveReadFromArm(2).rresp,
          S_AXI_HP2_RDATA                  => axiHpSlaveReadFromArm(2).rdata,
-         S_AXI_HP2_RCOUNT                 => axiHpSlaveReadFromArm(2).rcount,
-         S_AXI_HP2_WCOUNT                 => axiHpSlaveWriteFromArm(2).wcount,
-         S_AXI_HP2_RACOUNT                => axiHpSlaveReadFromArm(2).racount,
-         S_AXI_HP2_WACOUNT                => axiHpSlaveWriteFromArm(2).wacount,
+         S_AXI_HP2_RCOUNT                 => open,
+         S_AXI_HP2_WCOUNT                 => open,
+         S_AXI_HP2_RACOUNT                => open,
+         S_AXI_HP2_WACOUNT                => open,
          S_AXI_HP2_ACLK                   => axiClk,
          S_AXI_HP2_ARVALID                => axiHpSlaveReadToArm(2).arvalid,
          S_AXI_HP2_AWVALID                => axiHpSlaveWriteToArm(2).awvalid,
@@ -978,8 +978,8 @@ begin
          S_AXI_HP2_RREADY                 => axiHpSlaveReadToArm(2).rready,
          S_AXI_HP2_WLAST                  => axiHpSlaveWriteToArm(2).wlast,
          S_AXI_HP2_WVALID                 => axiHpSlaveWriteToArm(2).wvalid,
-         S_AXI_HP2_RDISSUECAP1_EN         => axiHpSlaveReadToArm(2).rdissuecap1_en,
-         S_AXI_HP2_WRISSUECAP1_EN         => axiHpSlaveWriteToArm(2).wrissuecap1_en,
+         S_AXI_HP2_RDISSUECAP1_EN         => '0',
+         S_AXI_HP2_WRISSUECAP1_EN         => '0',
          S_AXI_HP2_ARID                   => axiHpSlaveReadToArm(2).arid(5 downto 0),
          S_AXI_HP2_AWID                   => axiHpSlaveWriteToArm(2).awid(5 downto 0),
          S_AXI_HP2_WID                    => axiHpSlaveWriteToArm(2).wid(5 downto 0),
@@ -1014,10 +1014,10 @@ begin
          S_AXI_HP3_BRESP                  => axiHpSlaveWriteFromArm(3).bresp,
          S_AXI_HP3_RRESP                  => axiHpSlaveReadFromArm(3).rresp,
          S_AXI_HP3_RDATA                  => axiHpSlaveReadFromArm(3).rdata,
-         S_AXI_HP3_RCOUNT                 => axiHpSlaveReadFromArm(3).rcount,
-         S_AXI_HP3_WCOUNT                 => axiHpSlaveWriteFromArm(3).wcount,
-         S_AXI_HP3_RACOUNT                => axiHpSlaveReadFromArm(3).racount,
-         S_AXI_HP3_WACOUNT                => axiHpSlaveWriteFromArm(3).wacount,
+         S_AXI_HP3_RCOUNT                 => open,
+         S_AXI_HP3_WCOUNT                 => open,
+         S_AXI_HP3_RACOUNT                => open,
+         S_AXI_HP3_WACOUNT                => open,
          S_AXI_HP3_ACLK                   => axiClk,
          S_AXI_HP3_ARVALID                => axiHpSlaveReadToArm(3).arvalid,
          S_AXI_HP3_AWVALID                => axiHpSlaveWriteToArm(3).awvalid,
@@ -1025,8 +1025,8 @@ begin
          S_AXI_HP3_RREADY                 => axiHpSlaveReadToArm(3).rready,
          S_AXI_HP3_WLAST                  => axiHpSlaveWriteToArm(3).wlast,
          S_AXI_HP3_WVALID                 => axiHpSlaveWriteToArm(3).wvalid,
-         S_AXI_HP3_RDISSUECAP1_EN         => axiHpSlaveReadToArm(3).rdissuecap1_en,
-         S_AXI_HP3_WRISSUECAP1_EN         => axiHpSlaveWriteToArm(3).wrissuecap1_en,
+         S_AXI_HP3_RDISSUECAP1_EN         => '0',
+         S_AXI_HP3_WRISSUECAP1_EN         => '0',
          S_AXI_HP3_ARID                   => axiHpSlaveReadToArm(3).arid(5 downto 0),
          S_AXI_HP3_AWID                   => axiHpSlaveWriteToArm(3).awid(5 downto 0),
          S_AXI_HP3_WID                    => axiHpSlaveWriteToArm(3).wid(5 downto 0),
@@ -1096,28 +1096,18 @@ begin
 
    -- Unused AXI Master GP Signals
    U_UnusedMasterGP: for i in 0 to 1 generate
-      axiGpMasterReadFromArm(i).rdissuecap1_en       <= '0';
-      axiGpMasterWriteFromArm(i).wrissuecap1_en      <= '0';
       axiGpMasterWriteFromArm(i).wdata(63 downto 32) <= (others=>'0');
       axiGpMasterWriteFromArm(i).wstrb(7 downto 4)   <= "0000";
    end generate;
 
    -- Unused AXI Slave GP Signals
    U_UnusedSlaveGP: for i in 0 to 1 generate
-      axiGpSlaveReadFromArm(i).rcount              <= (others=>'0');
-      axiGpSlaveWriteFromArm(i).wcount             <= (others=>'0');
-      axiGpSlaveReadFromArm(i).racount             <= (others=>'0');
-      axiGpSlaveWriteFromArm(i).wacount            <= (others=>'0');
       axiGpSlaveReadFromArm(i).rdata(63 downto 32) <= (others=>'0');
       axiGpSlaveWriteFromArm(i).bid(11 downto 6)   <= (others=>'0');
       axiGpSlaveReadFromArm(i).rid(11 downto 6)    <= (others=>'0');
    end generate;
 
    -- Unused AXI ACP Signals
-   axiAcpSlaveReadFromArm.rcount            <= (others=>'0');
-   axiAcpSlaveWriteFromArm.wcount           <= (others=>'0');
-   axiAcpSlaveReadFromArm.racount           <= (others=>'0');
-   axiAcpSlaveWriteFromArm.wacount          <= (others=>'0');
    axiAcpSlaveWriteFromArm.bid(11 downto 3) <= (others=>'0');
    axiAcpSlaveReadFromArm.rid(11 downto 3)  <= (others=>'0');
 
