@@ -11,60 +11,7 @@ use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiPkg.all;
 
-entity ArmRceG3Cpu is
-   generic (
-      TPD_G : time := 1 ns
-   );
-   port (
-
-      -- Clocks
-      fclkClk3                 : out    sl;
-      fclkClk2                 : out    sl;
-      fclkClk1                 : out    sl;
-      fclkClk0                 : out    sl;
-      fclkRst3                 : out    sl;
-      fclkRst2                 : out    sl;
-      fclkRst1                 : out    sl;
-      fclkRst0                 : out    sl;
-
-      -- Common AXI Clock
-      axiClk                   : in     sl;
-
-      -- Interrupts
-      armInt                   : in     slv(15 downto 0);
-
-      -- AXI GP Master
-      axiGpMasterWriteFromArm  : out    AxiWriteMasterArray(1 downto 0);
-      axiGpMasterWriteToArm    : in     AxiWriteSlaveArray(1 downto 0);
-      axiGpMasterReadFromArm   : out    AxiReadMasterArray(1 downto 0);
-      axiGpMasterReadToArm     : in     AxiReadSlaveArray(1 downto 0);
-
-      -- AXI GP Slave
-      axiGpSlaveWriteFromArm   : out    AxiWriteSlaveArray(1 downto 0);
-      axiGpSlaveWriteToArm     : in     AxiWriteMasterArray(1 downto 0);
-      axiGpSlaveReadFromArm    : out    AxiReadSlaveArray(1 downto 0);
-      axiGpSlaveReadToArm      : in     AxiReadMasterArray(1 downto 0);
-
-      -- AXI ACP Slave
-      axiAcpSlaveWriteFromArm  : out    AxiWriteSlaveType;
-      axiAcpSlaveWriteToArm    : in     AxiWriteMasterType;
-      axiAcpSlaveReadFromArm   : out    AxiReadSlaveType;
-      axiAcpSlaveReadToArm     : in     AxiReadMasterType;
-
-      -- AXI HP Slave
-      axiHpSlaveWriteFromArm   : out    AxiWriteSlaveArray(3 downto 0);
-      axiHpSlaveWriteToArm     : in     AxiWriteMasterArray(3 downto 0);
-      axiHpSlaveReadFromArm    : out    AxiReadSlaveArray(3 downto 0);
-      axiHpSlaveReadToArm      : in     AxiReadMasterArray(3 downto 0);
-
-      -- Ethernet
-      ethFromArm               : out    EthFromArmArray(1 downto 0);
-      ethToArm                 : in     EthToArmArray(1 downto 0)
-
-   );
-end ArmRceG3Cpu;
-
-architecture structure of ArmRceG3Cpu is
+architecture Sim of ArmRceG3Cpu is
 
 begin
 
@@ -185,5 +132,5 @@ begin
 
    end generate;
 
-end architecture structure;
+end architecture Sim;
 
