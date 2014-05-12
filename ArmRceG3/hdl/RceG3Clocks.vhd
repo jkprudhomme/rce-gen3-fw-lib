@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title         : Clock generation block
--- File          : ArmRceG3Clocks.vhd
+-- File          : RceG3Clocks.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 04/02/2013
 -------------------------------------------------------------------------------
@@ -22,13 +22,11 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-use work.ArmRceG3Pkg.all;
 use work.StdRtlPkg.all;
-use work.AxiPkg.all;
 
-entity ArmRceG3Clocks is
+entity RceG3Clocks is
    generic (
-      AXI_CLKDIV_G : real  := 4.5;
+      DMA_CLKDIV_G : real  := 4.5;
       TPD_G        : time  := 1 ns
    );
    port (
@@ -44,8 +42,8 @@ entity ArmRceG3Clocks is
       fclkRst0                : in     sl;
 
       -- DMA clock and reset
-      dmaClk                  : out    sl;
-      dmaClkRst               : out    sl;
+      axiDmaClk               : out    sl;
+      axiDmaRst               : out    sl;
 
       -- Other system clocks
       sysClk125               : out    sl;
@@ -53,9 +51,9 @@ entity ArmRceG3Clocks is
       sysClk200               : out    sl;
       sysClk200Rst            : out    sl
    );
-end ArmRceG3Clocks;
+end RceG3Clocks;
 
-architecture structure of ArmRceG3Clocks is
+architecture structure of RceG3Clocks is
 
    -- Local signals
    signal ddmaClk            : sl;
@@ -79,7 +77,7 @@ architecture structure of ArmRceG3Clocks is
 begin
 
    -- Outputs
-   dmaClk    <= idmaClk;
+   axiDmaClk <= idmaClk;
    sysClk125 <= isysClk125;
    sysClk200 <= isysClk200;
 
@@ -202,7 +200,7 @@ begin
       port map (
         clk      => idmaClk,
         asyncRst => lockedReset,
-        syncRst  => dmaClkRst
+        syncRst  => axiDmaRst
       );
 
    U_sysClk200RstGen : entity work.RstSync
