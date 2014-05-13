@@ -6,111 +6,92 @@ use ieee.std_logic_unsigned.all;
 Library unisim;
 use unisim.vcomponents.all;
 
-use work.ArmRceG3Pkg.all;
+use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
+use work.AxiStreamPkg.all;
+use work.AxiPkg.all;
 
 entity tb is end tb;
 
 -- Define architecture
 architecture tb of tb is
 
-   signal axiClk           : sl;
-   signal i2cSda           : sl;
-   signal i2cScl           : sl;
-   signal ppiClk           : slv(3 downto 0);
-   signal ppiReadToFifo    : PpiReadToFifoArray(3 downto 0);
-   signal ppiReadFromFifo  : PpiReadFromFifoArray(3 downto 0);
-   signal ppiWriteToFifo   : PpiWriteToFifoArray(3 downto 0);
-   signal ppiWriteFromFifo : PpiWriteFromFifoArray(3 downto 0);
-   signal sysClk125        : sl;
-   signal sysClk125Rst     : sl;
+   constant RCE_DMA_COUNT_G       : integer := 1;
+
+   constant RCE_DMA_AXIS_CONFIG_C : AxiStreamConfigArray(RCE_DMA_COUNT_G-1 downto 0) := (others=>AXI_STREAM_CONFIG_INIT_C);
+   constant RCE_DMA_MODE_C        : RceDmaModeArray(RCE_DMA_COUNT_G-1 downto 0)      := (others=>RCE_DMA_AXIS_C);
+
+   signal i2cSda                   : sl;
+   signal i2cScl                   : sl;
+   signal sysClk125                : sl;
+   signal sysClk125Rst             : sl;
+   signal sysClk200                : sl;
+   signal sysClk200Rst             : sl;
+   signal axiClk                   : sl;
+   signal axiClkRst                : sl;
+   signal extAxilReadMaster        : AxiLiteReadMasterType;
+   signal extAxilReadSlave         : AxiLiteReadSlaveType;
+   signal extAxilWriteMaster       : AxiLiteWriteMasterType;
+   signal extAxilWriteSlave        : AxiLiteWriteSlaveType;
+   signal dmaClk                   : slv(RCE_DMA_COUNT_G-1 downto 0);
+   signal dmaClkRst                : slv(RCE_DMA_COUNT_G-1 downto 0);
+   signal dmaOnline                : slv(RCE_DMA_COUNT_G-1 downto 0);
+   signal dmaEnable                : slv(RCE_DMA_COUNT_G-1 downto 0);
+   signal dmaObMaster              : AxiStreamMasterArray(RCE_DMA_COUNT_G-1 downto 0);
+   signal dmaObSlave               : AxiStreamSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
+   signal dmaIbMaster              : AxiStreamMasterArray(RCE_DMA_COUNT_G-1 downto 0);
+   signal dmaIbSlave               : AxiStreamSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
+   signal armEthTx                 : ArmEthTxArray(1 downto 0);
+   signal armEthRx                 : ArmEthRxArray(1 downto 0);
+   signal clkSelA                  : slv(1 downto 0);
+   signal clkSelB                  : slv(1 downto 0);
 
 begin
 
    -- Core
-   U_ArmRceG3Top: entity work.ArmRceG3Top
-      port map (
-         i2cSda               => i2cSda,
-         i2cScl               => i2cScl,
-         axiClk               => axiClk,
-         axiClkRst            => open,
-         sysClk125            => sysClk125,
-         sysClk125Rst         => sysCLk125Rst,
-         sysClk200            => open,
-         sysClk200Rst         => open,
-         localAxiReadMaster   => open,
-         localAxiReadSlave    => AXI_LITE_READ_SLAVE_INIT_C, 
-         localAxiWriteMaster  => open,
-         localAxiWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
-         ethFromArm           => open,
-         ethToArm             => (others=>ETH_TO_ARM_INIT_C),
-         ppiClk               => ppiClk,
-         ppiOnline            => open,
-         ppiReadToFifo        => ppiReadToFifo,
-         ppiReadFromFifo      => ppiReadFromFifo,
-         ppiWriteToFifo       => ppiWriteToFifo,
-         ppiWriteFromFifo     => ppiWriteFromFifo,
-         clkSelA              => open,
-         clkSelB              => open
+   U_RceG3Top: entity work.RceG3Top
+      generic map (
+         TPD_G                 => 1 ns,
+         DMA_CLKDIV_G          => 4.5,
+         RCE_DMA_COUNT_G       => RCE_DMA_COUNT_G,
+         RCE_DMA_AXIS_CONFIG_G => RCE_DMA_AXIS_CONFIG_C,
+         RCE_DMA_MODE_G        => RCE_DMA_MODE_C
+      ) port map (
+         i2cSda                    => i2cSda,
+         i2cScl                    => i2cScl,
+         sysClk125                 => sysClk125,
+         sysClk125Rst              => sysClk125Rst,
+         sysClk200                 => sysClk200,
+         sysClk200Rst              => sysClk200Rst,
+         axiClk                    => axiClk,
+         axiClkRst                 => axiClkRst,
+         extAxilReadMaster         => extAxilReadMaster,
+         extAxilReadSlave          => extAxilReadSlave,
+         extAxilWriteMaster        => extAxilWriteMaster,
+         extAxilWriteSlave         => extAxilWriteSlave,
+         dmaClk                    => dmaClk,
+         dmaClkRst                 => dmaClkRst,
+         dmaOnline                 => dmaOnline,
+         dmaEnable                 => dmaEnable,
+         dmaObMaster               => dmaObMaster,
+         dmaObSlave                => dmaObSlave,
+         dmaIbMaster               => dmaIbMaster,
+         dmaIbSlave                => dmaIbSlave,
+         armEthTx                  => armEthTx,
+         armEthRx                  => armEthRx,
+         clkSelA                   => clkSelA,
+         clkSelB                   => clkSelB
       );
 
    i2cSda <= '1';
    i2cScl <= '1';
 
-   --------------------------------------------------
-   -- PPI Loopback
-   --------------------------------------------------
-   U_LoopGen : for i in 0 to 3 generate
+   dmaClk    <= (others=>sysClk125);
+   dmaClkRst <= (others=>sysClk125Rst);
 
-      ppiClk(i) <= sysCLk125;
-
-      ppiWriteToFifo(i).data    <= ppiReadFromFifo(i).data;
-      ppiWriteToFifo(i).size    <= ppiReadFromFifo(i).size;
-      ppiWriteToFifo(i).ftype   <= ppiReadFromFifo(i).ftype;
-      ppiWriteToFifo(i).eoh     <= ppiReadFromFifo(i).eoh;
-      ppiWriteToFifo(i).eof     <= ppiReadFromFifo(i).eof;
-      ppiWriteToFifo(i).err     <= '0';
-
-      ppiWriteToFifo(i).valid   <= ppiReadFromFifo(i).valid;
-
-      ppiReadToFifo(i).read     <= ppiReadFromFifo(i).valid;
-
-   end generate;
-
-
-   --------------------------------------------------
-   -- Register Test
-   --------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
---   U_RegTest: entity work.RegTest
---      generic map (
---         TPD_G        => 1 ns
---      ) port map (
---         axiClk           => sysClk125,
---         axiClkRst        => sysClk125Rst,
---         ppiClk           => sysClk125,
---         ppiClkRst        => sysClk125Rst,
---         ppiOnline        => '1',
---         ppiReadToFifo    => ppiReadToFifo(3),
---         ppiReadFromFifo  => ppiReadFromFifo(3),
---         ppiWriteToFifo   => ppiWriteToFifo(3),
---         ppiWriteFromFifo => ppiWriteFromFifo(3)
---      );
---
---      ppiClk(3) <= sysCLk125;
+   dmaIbMaster <= dmaObMaster;
+   dmaObSlave  <= dmaIbSlave;
 
 end tb;
 

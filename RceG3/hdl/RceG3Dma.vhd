@@ -24,6 +24,7 @@ use unisim.vcomponents.all;
 use work.StdRtlPkg.all;
 use work.RceG3Pkg.all;
 use work.AxiLitePkg.all;
+use work.AxiStreamPkg.all;
 use work.AxiPkg.all;
 
 entity RceG3Dma is
@@ -31,9 +32,8 @@ entity RceG3Dma is
       TPD_G                 : time                  := 1 ns;
       AXIL_BASE_ADDR_G      : slv(31 downto 0)      := x"00000000";
       RCE_DMA_COUNT_G       : integer range 1 to 16 := 1;
-      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigType   := AXI_STREAM_CONFIG_INIT_G;
-      RCE_DMA_MODE_G        : RceDmaModeArray(RCE_DMA_COUNT_G-1 downto 0)
-                            := (others=>RCE_DMA_PPI_C)
+      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigArray;
+      RCE_DMA_MODE_G        : RceDmaModeArray
    );
    port (
 
@@ -76,13 +76,13 @@ end RceG3Dma;
 
 architecture structure of RceG3Dma is
 
-   constant HP_BRANCES_C := integerArray(3 downto 0) :=
+   constant HP_BRANCHES_C : integerArray(3 downto 0) := (
       0 => (RCE_DMA_COUNT_G+3)/4,
       1 => (RCE_DMA_COUNT_G+2)/4,
       2 => (RCE_DMA_COUNT_G+1)/4,
       3 => (RCE_DMA_COUNT_G)/4);
 
-   constant HP_BASE_C := integerArray(3 downto 0) :=
+   constant HP_BASE_C : integerArray(3 downto 0) := (
       0 => 0,
       1 => (RCE_DMA_COUNT_G+3)/4,
       2 => (RCE_DMA_COUNT_G+2)/4,
@@ -153,7 +153,7 @@ begin
                axiClk          => axiDmaClk,
                axiRst          => axiDmaRst,
                sAxiReadMasters => ihpReadMasters((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               sAxiReadSlaves  => ihpReadSlaves(((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
+               sAxiReadSlaves  => ihpReadSlaves((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
                mAxiReadMaster  => hpReadMaster(i),
                mAxiReadSlave   => hpReadSlave(i)
             );
@@ -166,7 +166,7 @@ begin
                axiClk           => axiDmaClk,
                axiRst           => axiDmaRst,
                sAxiWriteMasters => ihpWriteMasters((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               sAxiWriteSlaves  => ihpWriteSlaves(((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
+               sAxiWriteSlaves  => ihpWriteSlaves((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
                mAxiWriteMaster  => hpWriteMaster(i),
                mAxiWriteSlave   => hpWriteSlave(i)
             );
@@ -189,18 +189,18 @@ begin
          NUM_SLAVE_SLOTS_G  => 1,
          NUM_MASTER_SLOTS_G => RCE_DMA_COUNT_G,
          DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
-         MASTERS_CONFIG_G   => MASTERS_CONFIG_G   
+         MASTERS_CONFIG_G   => MASTERS_CONFIG_C
       ) port map (
          axiClk              => axiDmaClk,
-         axiRst              => axiDmaRst,
+         axiClkRst           => axiDmaRst,
          sAxiWriteMasters(0) => axilWriteMaster,
          sAxiWriteSlaves(0)  => axilWriteSlave,
          sAxiReadMasters(0)  => axilReadMaster,
          sAxiReadSlaves(0)   => axilReadSlave,
-         axilReadMaster      => iaxilReadMaster,
-         axilReadSlave       => iaxilReadSlave,
-         axilWriteMaster     => iaxilWriteMaster,
-         axilWriteSlave      => iaxilWriteSlave
+         mAxiReadMasters     => iaxilReadMaster,
+         mAxiReadSlaves      => iaxilReadSlave,
+         mAxiWriteMasters    => iaxilWriteMaster,
+         mAxiWriteSlaves     => iaxilWriteSlave
       );
 
 
@@ -214,18 +214,18 @@ begin
             TPD_G            => TPD_G,
             AXIL_BASE_ADDR_G => MASTERS_CONFIG_C(i).baseAddr,
             AXIS_CONFIG_G    => RCE_DMA_AXIS_CONFIG_G(i),
-            CHANEL_NUM_G     => i
+            CHANNEL_NUM_G    => i
          ) port map (
             axiDmaClk        => axiDmaClk,
             axiDmaRst        => axiDmaRst,
-            acpWriteSlave    => iacpWriteSlave(i),
-            acpWriteMaster   => iacpWriteMaster(i),
-            acpReadSlave     => iacpReadSlave(i),
-            acpReadMaster    => iacpReadMaster(i),
-            hpWriteSlave     => ihpWriteSlave(i),
-            hpWriteMaster    => ihpWriteMaster(i),
-            hpReadSlave      => ihpReadSlave(i),
-            hpReadMaster     => ihpReadMaster(i),
+            acpWriteSlave    => iacpWriteSlaves(i),
+            acpWriteMaster   => iacpWriteMasters(i),
+            acpReadSlave     => iacpReadSlaves(i),
+            acpReadMaster    => iacpReadMasters(i),
+            hpWriteSlave     => ihpWriteSlaves(i),
+            hpWriteMaster    => ihpWriteMasters(i),
+            hpReadSlave      => ihpReadSlaves(i),
+            hpReadMaster     => ihpReadMasters(i),
             axilReadMaster   => iaxilReadMaster(i),
             axilReadSlave    => iaxilReadSlave(i),
             axilWriteMaster  => iaxilWriteMaster(i),

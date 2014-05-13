@@ -69,11 +69,6 @@ architecture structure of RceG3Clocks is
    signal ponReset           : sl;
    signal lockedReset        : sl;
 
-   attribute mark_debug : string;
-   attribute mark_debug of dmaClkRst    : signal is "true";
-   attribute mark_debug of sysClk125Rst : signal is "true";
-   attribute mark_debug of sysClk200Rst : signal is "true";
-
 begin
 
    -- Outputs
@@ -114,7 +109,7 @@ begin
          CLKFBOUT_MULT_F      => 10.000, -- 1000 base clock
          CLKFBOUT_PHASE       => 0.000,
          CLKFBOUT_USE_FINE_PS => FALSE,
-         CLKOUT0_DIVIDE_F     => AXI_CLKDIV_G,
+         CLKOUT0_DIVIDE_F     => DMA_CLKDIV_G,
          CLKOUT0_PHASE        => 0.000,
          CLKOUT0_DUTY_CYCLE   => 0.5,
          CLKOUT0_USE_FINE_PS  => FALSE,

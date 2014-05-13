@@ -7,20 +7,20 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-use work.ArmRceG3Pkg.all;
+use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiPkg.all;
 
-architecture Sim of ArmRceG3Cpu is
+architecture Sim of RceG3Cpu is
 
 begin
 
    ---------------------------------------
    -- Unused signals
    ---------------------------------------
-   -- armInt    : in slv(15 downto 0);
-   -- ethToArm  : in EthToArmType
-   ethFromArm <= (others=>ETH_FROM_ARM_INIT_C);
+   -- armInt
+   -- armEtcRx
+   armEthTx <= (others=>ARM_ETH_TX_INIT_C);
 
    ---------------------------------------
    -- Clock and reset generation
@@ -69,11 +69,11 @@ begin
             TPD_G       => TPD_G,
             MASTER_ID_G => i
          ) port map (
-            axiClk            => axiClk,
-            mstAxiReadMaster  => axiGpMasterReadFromArm(i),
-            mstAxiReadSlave   => axiGpMasterReadToArm(i),
-            mstAxiWriteMaster => axiGpMasterWriteFromArm(i),
-            mstAxiWriteSlave  => axiGpMasterWriteToArm(i)
+            axiClk            => mGpAxiClk(i),
+            mstAxiReadMaster  => mGpReadMaster(i),
+            mstAxiReadSlave   => mGpReadSlave(i),
+            mstAxiWriteMaster => mGpWriteMaster(i),
+            mstAxiWriteSlave  => mGpWriteSlave(i)
          );
 
    end generate;
@@ -86,13 +86,13 @@ begin
       U_SlaveGp: entity work.AxiSimSlaveWrap 
          generic map (
             TPD_G      => TPD_G,
-            SLAVE_ID_G => i
+            SLAVE_ID_G => i+2
          ) port map (
-            axiClk            => axiClk,
-            slvAxiReadMaster  => axiGpSlaveReadToArm(i),
-            slvAxiReadSlave   => axiGpSlaveReadFromArm(i),
-            slvAxiWriteMaster => axiGpSlaveWriteToArm(i),
-            slvAxiWriteSlave  => axiGpSlaveWriteFromArm(i)
+            axiClk            => sGpAxiClk(i),
+            slvAxiReadMaster  => sGpReadMaster(i),
+            slvAxiReadSlave   => sGpReadSlave(i),
+            slvAxiWriteMaster => sGpWriteMaster(i),
+            slvAxiWriteSlave  => sGpWriteSlave(i)
          );
 
    end generate;
@@ -103,13 +103,13 @@ begin
    U_SlaveAcp: entity work.AxiSimSlaveWrap 
       generic map (
          TPD_G      => TPD_G,
-         SLAVE_ID_G => 2
+         SLAVE_ID_G => 4
       ) port map (
-         axiClk            => axiClk,
-         slvAxiReadMaster  => axiAcpSlaveReadToArm,
-         slvAxiReadSlave   => axiAcpSlaveReadFromArm,
-         slvAxiWriteMaster => axiAcpSlaveWriteToArm,
-         slvAxiWriteSlave  => axiAcpSlaveWriteFromArm
+         axiClk            => acpAxiClk,
+         slvAxiReadMaster  => acpReadMaster,
+         slvAxiReadSlave   => acpReadSlave,
+         slvAxiWriteMaster => acpWriteMaster,
+         slvAxiWriteSlave  => acpWriteSlave
       );
 
 
@@ -121,13 +121,13 @@ begin
       U_SlaveHp: entity work.AxiSimSlaveWrap 
          generic map (
             TPD_G      => TPD_G,
-            SLAVE_ID_G => i+3
+            SLAVE_ID_G => i+5
          ) port map (
-            axiClk            => axiClk,
-            slvAxiReadMaster  => axiHpSlaveReadToArm(i),
-            slvAxiReadSlave   => axiHpSlaveReadFromArm(i),
-            slvAxiWriteMaster => axiHpSlaveWriteToArm(i),
-            slvAxiWriteSlave  => axiHpSlaveWriteFromArm(i)
+            axiClk            => hpAxiClk(i),
+            slvAxiReadMaster  => hpReadMaster(i),
+            slvAxiReadSlave   => hpReadSlave(i),
+            slvAxiWriteMaster => hpWriteMaster(i),
+            slvAxiWriteSlave  => hpWriteSlave(i)
          );
 
    end generate;

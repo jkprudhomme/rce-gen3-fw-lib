@@ -60,14 +60,14 @@ entity RceG3Cpu is
       sGpReadMaster       : in  AxiReadMasterArray(1 downto 0);
 
       -- AXI ACP Slave
-      acpAxiClk           : in  slv(1 downto 0);
+      acpAxiClk           : in  sl;
       acpWriteSlave       : out AxiWriteSlaveType;
       acpWriteMaster      : in  AxiWriteMasterType;
       acpReadSlave        : out AxiReadSlaveType;
       acpReadMaster       : in  AxiReadMasterType;
 
       -- AXI HP Slave
-      hpAxiClk            : in  slv(1 downto 0);
+      hpAxiClk            : in  slv(3 downto 0);
       hpWriteSlave        : out AxiWriteSlaveArray(3 downto 0);
       hpWriteMaster       : in  AxiWriteMasterArray(3 downto 0);
       hpReadSlave         : out AxiReadSlaveArray(3 downto 0);

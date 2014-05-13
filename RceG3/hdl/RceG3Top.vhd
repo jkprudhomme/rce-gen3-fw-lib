@@ -25,15 +25,16 @@ use unisim.vcomponents.all;
 use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
+use work.AxiStreamPkg.all;
 use work.AxiPkg.all;
 
 entity RceG3Top is
    generic (
       TPD_G                 : time                  := 1 ns;
-      DMA_CLKDIV_G          : real                  := 4.7;
+      DMA_CLKDIV_G          : real                  := 4.5;
       RCE_DMA_COUNT_G       : integer range 1 to 16 := 1;
-      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigType   := AXI_STREAM_CONFIG_INIT_G;
-      RCE_DMA_MODE_G        : RceDmaModeArray(RCE_DMA_COUNT_G-1 downto 0)
+      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigArray;
+      RCE_DMA_MODE_G        : RceDmaModeArray
    );
    port (
 
@@ -67,7 +68,7 @@ entity RceG3Top is
 
       -- Ethernet
       armEthTx                 : out   ArmEthTxArray(1 downto 0);
-      armEthRx                 : in    ArmEthRxArray(1 downto 0)
+      armEthRx                 : in    ArmEthRxArray(1 downto 0);
 
       -- Programmable Clock Select
       clkSelA                  : out   slv(1 downto 0);
@@ -86,10 +87,10 @@ architecture structure of RceG3Top is
    signal fclkRst2            : sl;
    signal fclkRst1            : sl;
    signal fclkRst0            : sl;
-   signal sysClk125           : sl;
-   signal sysClk125Rst        : sl;
-   signal sysClk200           : sl;
-   signal sysClk200Rst        : sl;
+   signal isysClk125          : sl;
+   signal isysClk125Rst       : sl;
+   signal isysClk200          : sl;
+   signal isysClk200Rst       : sl;
    signal axiDmaClk           : sl;
    signal axiDmaRst           : sl;
    signal armInt              : slv(15 downto 0);
@@ -138,17 +139,21 @@ begin
          mGpWriteSlave        => mGpWriteSlave,
          mGpReadMaster        => mGpReadMaster,
          mGpReadSlave         => mGpReadSlave,
-         sGpAxiClk            => axiDmaClk,
+         sGpAxiClk(0)         => axiDmaClk,
+         sGpAxiClk(1)         => axiDmaClk,
          sGpWriteSlave        => open,
-         sGpWriteMaster       => (other=>AXI_WRITE_MASTER_INIT_C),
+         sGpWriteMaster       => (others=>AXI_WRITE_MASTER_INIT_C),
          sGpReadSlave         => open,
-         sGpReadMaster        => (other=>AXI_READ_MASTER_INIT_C),
+         sGpReadMaster        => (others=>AXI_READ_MASTER_INIT_C),
          acpAxiClk            => axiDmaClk,
          acpWriteSlave        => acpWriteSlave,
          acpWriteMaster       => acpWriteMaster,
          acpReadSlave         => acpReadSlave,
          acpReadMaster        => acpReadMaster,
-         hpAxiClk             => axiDmaClk,
+         hpAxiClk(0)          => axiDmaClk,
+         hpAxiClk(1)          => axiDmaClk,
+         hpAxiClk(2)          => axiDmaClk,
+         hpAxiClk(3)          => axiDmaClk,
          hpWriteSlave         => hpWriteSlave,
          hpWriteMaster        => hpWriteMaster,
          hpReadSlave          => hpReadSlave,
@@ -164,7 +169,7 @@ begin
    U_RceG3Clocks: entity work.RceG3Clocks
       generic map (
          TPD_G        => TPD_G,
-         AXI_CLKDIV_G => AXI_CLKDIV_G
+         DMA_CLKDIV_G => DMA_CLKDIV_G
       ) port map (
          fclkClk3                 => fclkClk3,
          fclkClk2                 => fclkClk2,
@@ -187,8 +192,9 @@ begin
    sysClk125Rst <= isysClk125Rst;
    sysClk200    <= isysClk200;
    sysClk200Rst <= isysClk200Rst;
-   axiClk       <= isysClk125,
+   axiClk       <= isysClk125;
    axiClkRst    <= isysClk125Rst;
+
 
    --------------------------------------------
    -- AXI Lite Bus
@@ -225,7 +231,7 @@ begin
    --------------------------------------------
    -- BSI Controller
    --------------------------------------------
-   U_RceG3I2c : entity work.RceG3I2c
+   U_RceG3Bsi : entity work.RceG3Bsi
       generic map (
          TPD_G => TPD_G
       ) port map (

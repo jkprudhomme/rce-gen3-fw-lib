@@ -80,10 +80,14 @@ architecture structure of RceG3LocalAxi is
    signal midReadSlave      : AxiLiteReadSlaveType;
    signal midWriteMaster    : AxiLiteWriteMasterType;
    signal midWriteSlave     : AxiLiteWriteSlaveType;
-   signal axiReadMaster     : AxiLiteReadMasterType;
-   signal axiReadSlave      : AxiLiteReadSlaveType;
-   signal axiWriteMaster    : AxiLiteWriteMasterType;
-   signal axiWriteSlave     : AxiLiteWriteSlaveType;
+   signal intReadMaster     : AxiLiteReadMasterType;
+   signal intReadSlave      : AxiLiteReadSlaveType;
+   signal intWriteMaster    : AxiLiteWriteMasterType;
+   signal intWriteSlave     : AxiLiteWriteSlaveType;
+   signal tmpReadMasters    : AxiLiteReadMasterArray(3 downto 0);
+   signal tmpReadSlaves     : AxiLiteReadSlaveArray(3 downto 0);
+   signal tmpWriteMasters   : AxiLiteWriteMasterArray(3 downto 0);
+   signal tmpWriteSlaves    : AxiLiteWriteSlaveArray(3 downto 0);
    signal dnaValue          : slv(63 downto 0);
    signal dnaValid          : sl;
 
@@ -91,16 +95,16 @@ architecture structure of RceG3LocalAxi is
       scratchPad    : slv(31 downto 0);
       clkSelA       : slv(1 downto 0);
       clkSelB       : slv(1 downto 0);
-      axiReadSlave  : AxiLiteReadSlaveType;
-      axiWriteSlave : AxiLiteWriteSlaveType;
+      intReadSlave  : AxiLiteReadSlaveType;
+      intWriteSlave : AxiLiteWriteSlaveType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
       scratchPad    => (others => '0'),
       clkSelA       => (others => '0'),
       clkSelB       => (others => '1'),
-      axiReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
-      axiWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
+      intReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
+      intWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -110,22 +114,22 @@ architecture structure of RceG3LocalAxi is
    constant CROSSBAR_CONN_C : slv(15 downto 0) := x"FFFF";
 
    -- Channel 0 = 0x80000000 - 0x8000FFFF : Top level module registers
-   constant TOP_SPACE_INDEX_C     : natural          := 5;
+   constant TOP_SPACE_INDEX_C     : natural          := 0;
    constant TOP_SPACE_BASE_ADDR_C : slv(31 downto 0) := x"80000000";
    constant TOP_SPACE_NUM_BITS_C  : natural          := 16;
 
    -- Channel 1 = 0x84000000 - 0x84000FFF : BSI I2C Slave Registers
-   constant BSI0_I2C_INDEX_C      : natural          := 0;
+   constant BSI0_I2C_INDEX_C      : natural          := 1;
    constant BSI0_I2C_BASE_ADDR_C  : slv(31 downto 0) := x"84000000";
    constant BSI0_I2C_NUM_BITS_C   : natural          := 12;
 
    -- Channel 2 = 0x88000000 - 0x88000FFF : BSI I2C Slave Registers
-   constant BSI1_I2C_INDEX_C      : natural          := 0;
+   constant BSI1_I2C_INDEX_C      : natural          := 2;
    constant BSI1_I2C_BASE_ADDR_C  : slv(31 downto 0) := x"88000000";
    constant BSI1_I2C_NUM_BITS_C   : natural          := 12;
 
    -- Channel 3 = 0xA0000000 - 0xBFFFFFFF : External Address Space
-   constant EXT_SPACE_INDEX_C     : natural          := 4;
+   constant EXT_SPACE_INDEX_C     : natural          := 3;
    constant EXT_SPACE_BASE_ADDR_C : slv(31 downto 0) := x"90000000";
    constant EXT_SPACE_NUM_BITS_C  : natural          := 29;
 
@@ -165,7 +169,7 @@ begin
          axilReadMaster      => dmaAxilReadMaster,
          axilReadSlave       => dmaAxilReadSlave,
          axilWriteMaster     => dmaAxilWriteMaster,
-         axilWriteSlave      => dmaAxilWriteSlave,
+         axilWriteSlave      => dmaAxilWriteSlave
       );
 
 
@@ -185,7 +189,7 @@ begin
          axilReadMaster      => midReadMaster,
          axilReadSlave       => midReadSlave,
          axilWriteMaster     => midWriteMaster,
-         axilWriteSlave      => midWriteSlave,
+         axilWriteSlave      => midWriteSlave
       );
 
 
@@ -196,29 +200,36 @@ begin
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
-         NUM_SLOTS_G        => 4,
+         NUM_MASTER_SLOTS_G => 4,
          DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
          MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C 
       ) port map (
-         axiClk                       => axiClk,
-         axiClkRst                    => axiRst,
-         sAxiWriteMasters(0)          => midWriteMaster,
-         sAxiWriteSlaves(0)           => midWriteSlave,
-         sAxiReadMasters(0)           => midReadMaster,
-         sAxiReadSlaves(0)            => midReadSlave,
-         mAxiWriteMasters(0)          => axiWriteMaster,
-         mAxiWriteSlaves(0)           => axiWriteSlave,
-         mAxiReadMasters(0)           => axiReadMaster,
-         mAxiReadSlaves(0)            => axiReadSlave,
-         mAxiWriteMasters(2 downto 1) => bsiAxilWriteMaster,
-         mAxiWriteSlaves(2 downto 1)  => bsiAxilWriteSlave,
-         mAxiReadMasters(2 downto 1)  => bsiAxilReadMaster,
-         mAxiReadSlaves(2 downto 1)   => bsiAxilReadSlave,
-         mAxiWriteMasters(3)          => extAxilWriteMaster,
-         mAxiWriteSlaves(3)           => extAxilWriteSlave,
-         mAxiReadMasters(3)           => extAxilReadMaster,
-         mAxiReadSlaves(3)            => extAxilReadSlave
+         axiClk              => axiClk,
+         axiClkRst           => axiRst,
+         sAxiWriteMasters(0) => midWriteMaster,
+         sAxiWriteSlaves(0)  => midWriteSlave,
+         sAxiReadMasters(0)  => midReadMaster,
+         sAxiReadSlaves(0)   => midReadSlave,
+         mAxiWriteMasters    => tmpWriteMasters,
+         mAxiWriteSlaves     => tmpWriteSlaves,
+         mAxiReadMasters     => tmpReadMasters,
+         mAxiReadSlaves      => tmpReadSlaves
       );
+
+   intWriteMaster    <= tmpWriteMasters(0);
+   tmpWriteSlaves(0) <= intWriteSlave;
+   intReadMaster     <= tmpReadMasters(0);
+   tmpReadSlaves(0)  <= intReadSlave;
+
+   bsiAxilWriteMaster         <= tmpWriteMasters(2 downto 1);
+   tmpWriteSlaves(2 downto 1) <= bsiAxilWriteSlave;
+   bsiAxilReadMaster          <= tmpReadMasters(2 downto 1);
+   tmpReadSlaves(2 downto 1)  <= bsiAxilReadSlave;
+
+   extAxilWriteMaster <= tmpWriteMasters(3);
+   tmpWriteSlaves(3)  <= extAxilWriteSlave;
+   extAxilReadMaster  <= tmpReadMasters(3);
+   tmpReadSlaves(3)   <= extAxilReadSlave;
 
 
    -------------------------------------
@@ -234,73 +245,73 @@ begin
    end process;
 
    -- Async
-   process (axiRst, axiReadMaster, axiWriteMaster, dnaValid, dnaValue, r ) is
+   process (axiRst, intReadMaster, intWriteMaster, dnaValid, dnaValue, r ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
       variable c         : character;
    begin
       v := r;
 
-      axiSlaveWaitTxn(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave, axiStatus);
+      axiSlaveWaitTxn(intWriteMaster, intReadMaster, v.intWriteSlave, v.intReadSlave, axiStatus);
 
       -- Write
       if (axiStatus.writeEnable = '1') then
 
          -- Decode address and perform write
-         case (axiWriteMaster.awaddr(15 downto 0)) is
+         case (intWriteMaster.awaddr(15 downto 0)) is
             when X"0004" =>
-               v.scratchPad := axiWriteMaster.wdata;
+               v.scratchPad := intWriteMaster.wdata;
             when X"0010" =>
-               v.clkSelA(0) := axiWriteMaster.wdata(0);
-               v.clkSelB(0) := axiWriteMaster.wdata(1);
+               v.clkSelA(0) := intWriteMaster.wdata(0);
+               v.clkSelB(0) := intWriteMaster.wdata(1);
             when X"0014" =>
-               v.clkSelA(1) := axiWriteMaster.wdata(0);
-               v.clkSelB(1) := axiWriteMaster.wdata(1);
+               v.clkSelA(1) := intWriteMaster.wdata(0);
+               v.clkSelB(1) := intWriteMaster.wdata(1);
             when others => null;
          end case;
 
          -- Send Axi response
-         axiSlaveWriteResponse(v.axiWriteSlave );
+         axiSlaveWriteResponse(v.intWriteSlave );
       end if;
 
       -- Read
       if (axiStatus.readEnable = '1') then
-         v.axiReadSlave.rdata := (others => '0');
+         v.intReadSlave.rdata := (others => '0');
 
-         if axiReadMaster.araddr(15 downto 12) = 0 then
+         if intReadMaster.araddr(15 downto 12) = 0 then
 
             -- Decode address and assign read data
-            case axiReadMaster.araddr(15 downto 0) is
+            case intReadMaster.araddr(15 downto 0) is
                when X"0000" =>
-                  v.axiReadSlave.rdata := FPGA_VERSION_C;
+                  v.intReadSlave.rdata := FPGA_VERSION_C;
                when X"0004" =>
-                  v.axiReadSlave.rdata := r.scratchPad;
+                  v.intReadSlave.rdata := r.scratchPad;
                when X"0008" =>
-                  v.axiReadSlave.rdata := RCE_G3_VERSION_C;
+                  v.intReadSlave.rdata := RCE_G3_VERSION_C;
                when X"0010" =>
-                  v.axiReadSlave.rdata(0) := r.clkSelA(0);
-                  v.axiReadSlave.rdata(1) := r.clkSelB(0);
+                  v.intReadSlave.rdata(0) := r.clkSelA(0);
+                  v.intReadSlave.rdata(1) := r.clkSelB(0);
                when X"0014" =>
-                  v.axiReadSlave.rdata(0) := r.clkSelA(1);
-                  v.axiReadSlave.rdata(1) := r.clkSelB(1);
+                  v.intReadSlave.rdata(0) := r.clkSelA(1);
+                  v.intReadSlave.rdata(1) := r.clkSelB(1);
                when X"0020" =>
-                  v.axiReadSlave.rdata(31)          := dnaValid;
-                  v.axiReadSlave.rdata(24 downto 0) := dnaValue(56 downto 32);
+                  v.intReadSlave.rdata(31)          := dnaValid;
+                  v.intReadSlave.rdata(24 downto 0) := dnaValue(56 downto 32);
                when X"0024" =>
-                  v.axiReadSlave.rdata := dnaValue(31 downto 0);
+                  v.intReadSlave.rdata := dnaValue(31 downto 0);
                when others => null;
             end case;
          else
             for x in 0 to 3 loop
-               if (conv_integer(axiReadMaster.araddr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
-                  c := BUILD_STAMP_C(conv_integer(axiReadMaster.araddr(7 downto 0))+x+1);
-                  v.axiReadSlave.rdata(x*8+7 downto x*8) := conv_std_logic_vector(character'pos(c),8);
+               if (conv_integer(intReadMaster.araddr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
+                  c := BUILD_STAMP_C(conv_integer(intReadMaster.araddr(7 downto 0))+x+1);
+                  v.intReadSlave.rdata(x*8+7 downto x*8) := conv_std_logic_vector(character'pos(c),8);
                end if;
             end loop;
          end if;
 
          -- Send Axi Response
-         axiSlaveReadResponse(v.axiReadSlave);
+         axiSlaveReadResponse(v.intReadSlave);
       end if;
 
       -- Reset
@@ -312,8 +323,8 @@ begin
       rin <= v;
 
       -- Outputs
-      axiReadSlave  <= r.axiReadSlave;
-      axiWriteSlave <= r.axiWriteSlave;
+      intReadSlave  <= r.intReadSlave;
+      intWriteSlave <= r.intWriteSlave;
       clkSelA       <= r.clkSelA;
       clkSelB       <= r.clkSelB;
       

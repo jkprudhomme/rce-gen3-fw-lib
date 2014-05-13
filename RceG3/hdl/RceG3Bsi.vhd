@@ -64,11 +64,12 @@ architecture IMP of RceG3Bsi is
    signal cpuBramDout   : slv(31 downto 0);
    signal i2cIn         : i2c_in_type;
    signal i2cOut        : i2c_out_type;
-   signal bsiFifoWr     : sl;
+   signal bsiFifoWrite  : sl;
    signal bsiFifoDin    : slv(47 downto 0);
    signal bsiFifoAFull  : sl;
    signal bsiFifoDout   : slv(47 downto 0);
    signal bsiFifoValid  : sl;
+   signal aFullData     : slv(7 downto 0);
 
    type RegType is record
       cpuBramWr      : sl;
@@ -100,6 +101,8 @@ architecture IMP of RceG3Bsi is
       fifoEnable     : sl;
       memBaseAddress : slv(31 downto 18);
       wMaster        : AxiWriteMasterType;
+      axilReadSlave  : AxiLiteReadSlaveType;
+      axilWriteSlave : AxiLiteWriteSlaveType;
    end record BsiType;
 
    constant BSI_INIT_C : BsiType := (
@@ -108,7 +111,9 @@ architecture IMP of RceG3Bsi is
       bsiFifoRd      => '0',
       fifoEnable     => '0',
       memBaseAddress => (others=>'0'),
-      wMaster        => AXI_WRITE_MASTER_INIT_C
+      wMaster        => AXI_WRITE_MASTER_INIT_C,
+      axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
+      axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
    );
 
    signal b   : BsiType := BSI_INIT_C;
@@ -188,7 +193,7 @@ begin
          if axiClkRst = '1' then
             aFullData <= (others=>'0') after TPD_G;
          else
-            aFullData(0) <= bsiAlmostFull after TPD_G;
+            aFullData(0) <= bsiFifoAFull after TPD_G;
          end if;
       end if;
    end process;
@@ -277,7 +282,7 @@ begin
             elsif i2cBramAddr(1 downto 0) = 3 then
                bsiFifoDin(47 downto 32) <= i2cBramAddr after TPD_G;
                bsiFifoDin(31 downto 24) <= i2cBramDin  after TPD_G;
-               bisFifoWrite             <= '1'         after TPD_G;
+               bsiFifoWrite             <= '1'         after TPD_G;
             end if;
          else
             bsiFifoWrite <= '0' after TPD_G;
@@ -298,7 +303,7 @@ begin
          USE_BUILT_IN_G  => true,
          XIL_DEVICE_G    => "7SERIES",
          SYNC_STAGES_G   => 3,
-         DATA_WIDTH_G    => 32,
+         DATA_WIDTH_G    => 48,
          ADDR_WIDTH_G    => 9,
          INIT_G          => "0",
          FULL_THRES_G    => 479,
@@ -306,7 +311,7 @@ begin
       ) port map (
          rst             => axiClkRst,
          wr_clk          => axiClk,
-         wr_en           => bsiFifoWr,
+         wr_en           => bsiFifoWrite,
          din             => bsiFifoDin,
          wr_data_count   => open,
          wr_ack          => open,
@@ -388,16 +393,16 @@ begin
             -- Dirty/Ready status, 16 bits 0x88000400
             -- Bits 4     = BSI FIFO
             when X"400" =>
-               v.axilReadSlave.rdata(4) := r.dirty;
+               v.axilReadSlave.rdata(4) := b.dirty;
 
             -- FIFO Enable, 20 bits - 0x88000410
             -- Bits 4     = BSI FIFO
             when X"410" =>
-               v.axilReadSlave.rdata(4) := r.fifoEnable;
+               v.axilReadSlave.rdata(4) := b.fifoEnable;
 
             -- Memory base address 0x88000418
             when X"418" =>
-               v.axilReadSlave.rdata(31 downto 18) := r.memBaseAddress;
+               v.axilReadSlave.rdata(31 downto 18) := b.memBaseAddress;
 
             when others => null;
          end case;
@@ -415,27 +420,29 @@ begin
       v.wMaster.bready  := '1';
       v.bsiFifoRd       := '0';
 
-      case r.state is
+      case b.state is
 
          when S_IDLE_C =>
-            if bsiFifoValid = '1' and r.dirty = '0' then
-               v.state := S_ADDR_C:
+            if bsiFifoValid = '1' and b.dirty = '0' then
+               v.state := S_ADDR_C;
             end if;
 
          when S_ADDR_C =>
-            v.wMaster.awaddr  := r.address;
-            v.wMaster.awvalid := '1';
+            v.wMaster.awaddr(31 downto 18) := b.memBaseAddress;
+            v.wMaster.awaddr(17 downto  8) := (others=>'0');
+            v.wMaster.awaddr(7  downto  3) := "00100";
+            v.wMaster.awvalid              := '1';
 
-            if acpWriteSlave.awready = '1' and r.wMaster.awvalid = '1' then
+            if acpWriteSlave.awready = '1' and b.wMaster.awvalid = '1' then
                v.wMaster.awvalid := '0';
                v.state           := S_DATA_C;
             end if;
 
          when S_DATA_C =>
                v.wMaster.wvalid := '1';
-               v.wMaster.wdata  := x"0000" & bsiFifoDout(47 downto 0);
+               v.wMaster.wdata  := x"0000" & bsiFifoDout;
 
-            if acpWriteSlave.wready = '1' and r.wMaster.wvalid = '1' then
+            if acpWriteSlave.wready = '1' and b.wMaster.wvalid = '1' then
                v.wMaster.wvalid := '0';
                v.state          := S_WAIT_C;
                v.bsiFifoRd      := '1';

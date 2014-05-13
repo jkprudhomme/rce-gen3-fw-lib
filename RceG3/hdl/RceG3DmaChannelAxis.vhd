@@ -24,6 +24,7 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
+use work.RceG3Pkg.all;
 use work.AxiStreamPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiPkg.all;
@@ -45,21 +46,20 @@ architecture Axis of RceG3DmaChannel is
 
    constant DMA_AXIS_CONFIG_G : AxiStreamConfigType := (
       TSTRB_EN_C    => AXIS_CONFIG_G.TSTRB_EN_C,
-      TDATA_BYTES_C => AXI_HP_INIT_C.DATA_BYPES_C,
-      TDEST_BITS_C  => TDEST_BITS_C,
-      TID_BITS_C    => TID_BITS_C,
-      TKEEP_MODE_C  => TKEEP_MODE_C,
-      TUSER_BITS_C  => TUSER_BITS_C,
-      TUSER_MODE_C  => TUSER_MODE_C
+      TDATA_BYTES_C => AXI_HP_INIT_C.DATA_BYTES_C,
+      TDEST_BITS_C  => AXIS_CONFIG_G.TDEST_BITS_C,
+      TID_BITS_C    => AXIS_CONFIG_G.TID_BITS_C,
+      TKEEP_MODE_C  => AXIS_CONFIG_G.TKEEP_MODE_C,
+      TUSER_BITS_C  => AXIS_CONFIG_G.TUSER_BITS_C,
+      TUSER_MODE_C  => AXIS_CONFIG_G.TUSER_MODE_C);
 
 begin
 
    ------------------------------------------
    -- DMA Core
    ------------------------------------------
-
-   entity AxiStreamDma is
-      generic (
+   U_AxiStreamDma : entity work.AxiStreamDma
+      generic map (
          TPD_G            => TPD_G,
          AXIL_BASE_ADDR_G => AXIL_BASE_ADDR_G,
          AXI_READY_EN_G   => false,
@@ -68,8 +68,7 @@ begin
          AXI_CONFIG_G     => AXI_HP_INIT_C,
          AXI_BURST_G      => "01",
          AXI_CACHE_G      => "1111"
-      );
-      port (
+      ) port map (
          axiClk          => axiDmaClk,
          axiRst          => axiDmaRst,
          axilReadMaster  => axilReadMaster,
@@ -123,7 +122,7 @@ begin
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 500
+         FIFO_PAUSE_THRESH_G => 500,
          SLAVE_AXI_CONFIG_G  => AXIS_CONFIG_G,
          MASTER_AXI_CONFIG_G => DMA_AXIS_CONFIG_G
       ) port map (
@@ -156,7 +155,7 @@ begin
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 500
+         FIFO_PAUSE_THRESH_G => 500,
          SLAVE_AXI_CONFIG_G  => DMA_AXIS_CONFIG_G,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_G
       ) port map (
@@ -168,8 +167,8 @@ begin
          fifoPauseThresh => (others => '1'),
          mAxisClk        => dmaClk,
          mAxisRst        => dmaClkRst,
-         mAxisMaster     => dmaIbMaster,
-         mAxisSlave      => dmaIbSlave
+         mAxisMaster     => dmaObMaster,
+         mAxisSlave      => dmaObSlave
       );
 
 
@@ -181,8 +180,8 @@ begin
       generic map (
          TPD_G                    => TPD_G,
          RST_ASYNC_G              => false,
-         XIL_DEVICE_G             => "7SERIES".
-         USE_BUILT_IN_G           => false.
+         XIL_DEVICE_G             => "7SERIES",
+         USE_BUILT_IN_G           => false,
          GEN_SYNC_FIFO_G          => true,
          ALTERA_SYN_G             => false,
          ALTERA_RAM_G             => "M9K",
@@ -217,8 +216,8 @@ begin
       generic map (
          TPD_G                    => TPD_G,
          RST_ASYNC_G              => false,
-         XIL_DEVICE_G             => "7SERIES".
-         USE_BUILT_IN_G           => false.
+         XIL_DEVICE_G             => "7SERIES",
+         USE_BUILT_IN_G           => false,
          GEN_SYNC_FIFO_G          => true,
          ALTERA_SYN_G             => false,
          ALTERA_RAM_G             => "M9K",
