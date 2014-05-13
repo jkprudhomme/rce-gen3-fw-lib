@@ -19,8 +19,8 @@ architecture tb of tb is
 
    constant RCE_DMA_COUNT_G       : integer := 1;
 
-   constant RCE_DMA_AXIS_CONFIG_C : AxiStreamConfigArray(RCE_DMA_COUNT_G-1 downto 0) := (others=>AXI_STREAM_CONFIG_INIT_C);
-   constant RCE_DMA_MODE_C        : RceDmaModeArray(RCE_DMA_COUNT_G-1 downto 0)      := (others=>RCE_DMA_AXIS_C);
+   constant RCE_DMA_AXIS_CONFIG_C : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C;
+   constant RCE_DMA_MODE_C        : RceDmaModeType      := RCE_DMA_AXIS_C;
 
    signal i2cSda                   : sl;
    signal i2cScl                   : sl;

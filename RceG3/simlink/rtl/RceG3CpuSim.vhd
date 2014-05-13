@@ -7,6 +7,7 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
+use work.all;
 use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiPkg.all;
@@ -133,4 +134,11 @@ begin
    end generate;
 
 end architecture Sim;
+
+configuration simulation of RceG3Top is
+   for structure 
+      for U_RceG3Cpu : RceG3Cpu use entity work.RceG3Cpu(Sim);
+      end for;
+   end for;
+end configuration;
 

@@ -21,6 +21,7 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
+use work.all;
 use work.StdRtlPkg.all;
 use work.RceG3Pkg.all;
 use work.AxiLitePkg.all;
@@ -31,9 +32,9 @@ entity RceG3Dma is
    generic (
       TPD_G                 : time                  := 1 ns;
       AXIL_BASE_ADDR_G      : slv(31 downto 0)      := x"00000000";
-      RCE_DMA_COUNT_G       : integer range 1 to 16 := 1;
-      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigArray;
-      RCE_DMA_MODE_G        : RceDmaModeArray
+      RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C;
+      RCE_DMA_COUNT_G       : integer range 1 to 16 := 4;
+      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigType   := AXI_STREAM_CONFIG_INIT_C
    );
    port (
 
@@ -76,186 +77,83 @@ end RceG3Dma;
 
 architecture structure of RceG3Dma is
 
-   constant HP_BRANCHES_C : integerArray(3 downto 0) := (
-      0 => (RCE_DMA_COUNT_G+3)/4,
-      1 => (RCE_DMA_COUNT_G+2)/4,
-      2 => (RCE_DMA_COUNT_G+1)/4,
-      3 => (RCE_DMA_COUNT_G)/4);
-
-   constant HP_BASE_C : integerArray(3 downto 0) := (
-      0 => 0,
-      1 => (RCE_DMA_COUNT_G+3)/4,
-      2 => (RCE_DMA_COUNT_G+2)/4,
-      3 => (RCE_DMA_COUNT_G+1)/4);
-
-   constant MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(RCE_DMA_COUNT_G-1 downto 0) := 
-      genAxiLiteConfig ( RCE_DMA_COUNT_G, AXIL_BASE_ADDR_G, 16, 12);
-
-   signal iacpWriteSlaves  : AxiWriteSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iacpWriteMasters : AxiWriteMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iacpReadSlaves   : AxiReadSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iacpReadMasters  : AxiReadMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal ihpWriteSlaves   : AxiWriteSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal ihpWriteMasters  : AxiWriteMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal ihpReadSlaves    : AxiReadSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal ihpReadMasters   : AxiReadMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iaxilReadMaster  : AxiLiteReadMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iaxilReadSlave   : AxiLiteReadSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iaxilWriteMaster : AxiLiteWriteMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iaxilWriteSlave  : AxiLiteWriteSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iinterrupt       : Slv16Array(RCE_DMA_COUNT_G-1 downto 0);
-
 begin
 
 
    ------------------------------------
-   -- ACP Branching
+   -- PPI DMA Controllers
    ------------------------------------
-   U_AxiReadPathMux : entity work.AxiReadPathMux 
-      generic map (
-         TPD_G        => TPD_G,
-         NUM_SLAVES_G => RCE_DMA_COUNT_G
-      ) port map (
-         axiClk          => axiDmaClk,
-         axiRst          => axiDmaRst,
-         sAxiReadMasters => iacpReadMasters,
-         sAxiReadSlaves  => iacpReadSlaves,
-         mAxiReadMaster  => acpReadMaster,
-         mAxiReadSlave   => acpReadSlave
-      );
+   U_PpiDmaGen : if RCE_DMA_MODE_G = RCE_DMA_PPI_C generate
 
-   U_AxiWritePathMux : entity work.AxiWritePathMux
-      generic map (
-         TPD_G        => TPD_G,
-         NUM_SLAVES_G => RCE_DMA_COUNT_G
-      ) port map (
-         axiClk           => axiDmaClk,
-         axiRst           => axiDmaRst,
-         sAxiWriteMasters => iacpWriteMasters,
-         sAxiWriteSlaves  => iacpWriteSlaves,
-         mAxiWriteMaster  => acpWriteMaster,
-         mAxiWriteSlave   => acpWriteSlave
-      );
-
-
-   ------------------------------------
-   -- HP Branching
-   ------------------------------------
-   U_HpGen : for i in 0 to 3 generate
-
-      U_HpEn : if HP_BRANCHES_C(i) > 0 generate
-
-         U_HpReadPathMux : entity work.AxiReadPathMux 
-            generic map (
-               TPD_G        => TPD_G,
-               NUM_SLAVES_G => HP_BRANCHES_C(i)
-            ) port map (
-               axiClk          => axiDmaClk,
-               axiRst          => axiDmaRst,
-               sAxiReadMasters => ihpReadMasters((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               sAxiReadSlaves  => ihpReadSlaves((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               mAxiReadMaster  => hpReadMaster(i),
-               mAxiReadSlave   => hpReadSlave(i)
-            );
-
-         U_HpWritePathMux : entity work.AxiWritePathMux
-            generic map (
-               TPD_G        => TPD_G,
-               NUM_SLAVES_G => HP_BRANCHES_C(i)
-            ) port map (
-               axiClk           => axiDmaClk,
-               axiRst           => axiDmaRst,
-               sAxiWriteMasters => ihpWriteMasters((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               sAxiWriteSlaves  => ihpWriteSlaves((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               mAxiWriteMaster  => hpWriteMaster(i),
-               mAxiWriteSlave   => hpWriteSlave(i)
-            );
-      end generate;
-
-      U_HpDis : if HP_BRANCHES_C(i) = 0 generate
-         ihpReadSlaves(i)  <= AXI_READ_SLAVE_INIT_C;
-         ihpWriteSlaves(i) <= AXI_WRITE_SLAVE_INIT_C;
-      end generate;
-
-   end generate;
-
-
-   ------------------------------------
-   -- AXI-Lite Crossbar
-   ------------------------------------
-   U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
-      generic map (
-         TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => RCE_DMA_COUNT_G,
-         DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
-         MASTERS_CONFIG_G   => MASTERS_CONFIG_C
-      ) port map (
-         axiClk              => axiDmaClk,
-         axiClkRst           => axiDmaRst,
-         sAxiWriteMasters(0) => axilWriteMaster,
-         sAxiWriteSlaves(0)  => axilWriteSlave,
-         sAxiReadMasters(0)  => axilReadMaster,
-         sAxiReadSlaves(0)   => axilReadSlave,
-         mAxiReadMasters     => iaxilReadMaster,
-         mAxiReadSlaves      => iaxilReadSlave,
-         mAxiWriteMasters    => iaxilWriteMaster,
-         mAxiWriteSlaves     => iaxilWriteSlave
-      );
-
-
-   ------------------------------------
-   -- DMA Controllers
-   ------------------------------------
-   U_DmaGen : for i in 0 to RCE_DMA_COUNT_G-1 generate
-
-      U_DmaChannel : entity work.RceG3DmaChannel
+      U_RceG3DmaPpi : entity work.RceG3DmaPpi
          generic map (
             TPD_G            => TPD_G,
-            AXIL_BASE_ADDR_G => MASTERS_CONFIG_C(i).baseAddr,
-            AXIS_CONFIG_G    => RCE_DMA_AXIS_CONFIG_G(i),
-            CHANNEL_NUM_G    => i
+            AXIL_BASE_ADDR_G => AXIL_BASE_ADDR_G
          ) port map (
             axiDmaClk        => axiDmaClk,
             axiDmaRst        => axiDmaRst,
-            acpWriteSlave    => iacpWriteSlaves(i),
-            acpWriteMaster   => iacpWriteMasters(i),
-            acpReadSlave     => iacpReadSlaves(i),
-            acpReadMaster    => iacpReadMasters(i),
-            hpWriteSlave     => ihpWriteSlaves(i),
-            hpWriteMaster    => ihpWriteMasters(i),
-            hpReadSlave      => ihpReadSlaves(i),
-            hpReadMaster     => ihpReadMasters(i),
-            axilReadMaster   => iaxilReadMaster(i),
-            axilReadSlave    => iaxilReadSlave(i),
-            axilWriteMaster  => iaxilWriteMaster(i),
-            axilWriteSlave   => iaxilWriteSlave(i),
-            interrupt        => iinterrupt(i),
-            dmaClk           => dmaClk(i),
-            dmaClkRst        => dmaClkRst(i),
-            dmaOnline        => dmaOnline(i),
-            dmaEnable        => dmaEnable(i),
-            dmaObMaster      => dmaObMaster(i),
-            dmaObSlave       => dmaObSlave(i),
-            dmaIbMaster      => dmaIbMaster(i),
-            dmaIbSlave       => dmaIbSlave(i)
+            acpWriteSlave    => acpWriteSlave,
+            acpWriteMaster   => acpWriteMaster,
+            acpReadSlave     => acpReadSlave,
+            acpReadMaster    => acpReadMaster,
+            hpWriteSlave     => hpWriteSlave,
+            hpWriteMaster    => hpWriteMaster,
+            hpReadSlave      => hpReadSlave,
+            hpReadMaster     => hpReadMaster,
+            axilReadMaster   => axilReadMaster,
+            axilReadSlave    => axilReadSlave,
+            axilWriteMaster  => axilWriteMaster,
+            axilWriteSlave   => axilWriteSlave,
+            interrupt        => interrupt,
+            dmaClk           => dmaClk,
+            dmaClkRst        => dmaClkRst,
+            dmaObMaster      => dmaObMaster,
+            dmaObSlave       => dmaObSlave,
+            dmaIbMaster      => dmaIbMaster,
+            dmaIbSlave       => dmaIbSlave
          );
    end generate;
 
-   ------------------------------------
-   -- Interrupts
-   ------------------------------------
-   U_IntComb: process ( iinterrupt ) is
-      variable intOut : slv(15 downto 0);
-   begin
-      intOut := (others=>'0');
 
-      for i in 0 to RCE_DMA_COUNT_G-1 loop
-         intOut := intOut or iinterrupt(i);
-      end loop;
+   ------------------------------------
+   -- AXI Streaming DMA Controllers
+   ------------------------------------
+   U_AxisDmaGen : if RCE_DMA_MODE_G = RCE_DMA_AXIS_C generate
 
-      interrupt <= intOut;
-   end process;
+      U_RceG3DmaAxis : entity work.RceG3DmaAxis
+         generic map (
+            TPD_G                 => TPD_G,
+            AXIL_BASE_ADDR_G      => AXIL_BASE_ADDR_G,
+            RCE_DMA_COUNT_G       => RCE_DMA_COUNT_G,
+            RCE_DMA_AXIS_CONFIG_G => RCE_DMA_AXIS_CONFIG_G
+         ) port map (
+            axiDmaClk        => axiDmaClk,
+            axiDmaRst        => axiDmaRst,
+            hpWriteSlave     => hpWriteSlave,
+            hpWriteMaster    => hpWriteMaster,
+            hpReadSlave      => hpReadSlave,
+            hpReadMaster     => hpReadMaster,
+            axilReadMaster   => axilReadMaster,
+            axilReadSlave    => axilReadSlave,
+            axilWriteMaster  => axilWriteMaster,
+            axilWriteSlave   => axilWriteSlave,
+            interrupt        => interrupt,
+            dmaClk           => dmaClk,
+            dmaClkRst        => dmaClkRst,
+            dmaObMaster      => dmaObMaster,
+            dmaObSlave       => dmaObSlave,
+            dmaIbMaster      => dmaIbMaster,
+            dmaIbSlave       => dmaIbSlave
+         );
+
+      -- AXI ACP Slave Unused
+      acpWriteMaster <= AXI_WRITE_MASTER_INIT_C;
+      acpReadMaster  <= AXI_READ_MASTER_INIT_C;
+
+      -- Always online
+      dmaOnline <= (others=>'1');
+      dmaEnable <= (others=>'1');
+   end generate;
 
 end architecture structure;
 

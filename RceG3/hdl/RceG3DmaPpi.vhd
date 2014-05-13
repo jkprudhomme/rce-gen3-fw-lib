@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title      : RCE Generation 3 DMA channel
+-- Title      : RCE Generation 3 DMA channel, PPI Architecture
 -- Project    : General Purpose Core
 -------------------------------------------------------------------------------
--- File       : RceG3DmaChannel.vhd
+-- File       : RceG3DmaChannelAxis.vhd
 -- Author     : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created    : 2014-04-25
 -- Last update: 2014-05-05
@@ -10,7 +10,7 @@
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
--- AXI Stream DMA based channel for RCE core DMA.
+-- AXI Stream DMA based channel for RCE core DMA. PPI architecture.
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -29,12 +29,10 @@ use work.AxiLitePkg.all;
 use work.AxiPkg.all;
 use work.AxiDmaPkg.all;
 
-entity RceG3DmaChannel is
+entity RceG3DmaPpi is
    generic (
       TPD_G            : time                := 1 ns;
-      AXIL_BASE_ADDR_G : slv(31 downto 0)    := x"00000000";
-      AXIS_CONFIG_G    : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C;
-      CHANNEL_NUM_G    : integer := 0
+      AXIL_BASE_ADDR_G : slv(31 downto 0)    := x"00000000"
    );
    port (
 
@@ -49,10 +47,10 @@ entity RceG3DmaChannel is
       acpReadMaster       : out AxiReadMasterType;
 
       -- AXI HP Slave
-      hpWriteSlave        : in  AxiWriteSlaveType;
-      hpWriteMaster       : out AxiWriteMasterType;
-      hpReadSlave         : in  AxiReadSlaveType;
-      hpReadMaster        : out AxiReadMasterType;
+      hpWriteSlave        : in  AxiWriteSlaveArray(3 downto 0);
+      hpWriteMaster       : out AxiWriteMasterArray(3 downto 0);
+      hpReadSlave         : in  AxiReadSlaveArray(3 downto 0);
+      hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
       -- Local AXI Lite Bus
       axilReadMaster      : in  AxiLiteReadMasterType;
@@ -64,14 +62,32 @@ entity RceG3DmaChannel is
       interrupt           : out slv(15 downto 0);
 
       -- External DMA Interfaces
-      dmaClk              : in  sl;
-      dmaClkRst           : in  sl;
-      dmaOnline           : out sl;
-      dmaEnable           : out sl;
-      dmaObMaster         : out AxiStreamMasterType;
-      dmaObSlave          : in  AxiStreamSlaveType;
-      dmaIbMaster         : in  AxiStreamMasterType;
-      dmaIbSlave          : out AxiStreamSlaveType
+      dmaClk              : in  slv(3 downto 0);
+      dmaClkRst           : in  slv(3 downto 0);
+      dmaOnline           : out slv(3 downto 0);
+      dmaEnable           : out slv(3 downto 0);
+      dmaObMaster         : out AxiStreamMasterArray(3 downto 0);
+      dmaObSlave          : in  AxiStreamSlaveArray(3 downto 0);
+      dmaIbMaster         : in  AxiStreamMasterArray(3 downto 0);
+      dmaIbSlave          : out AxiStreamSlaveArray(3 downto 0)
    );
-end RceG3DmaChannel;
+end RceG3DmaPpi;
+
+architecture structure of RceG3DmaPpi is 
+
+begin
+
+   acpWriteMaster  <= AXI_WRITE_MASTER_INIT_C;
+   acpReadMaster   <= AXI_READ_MASTER_INIT_C;
+   hpWriteMaster   <= (others=>AXI_WRITE_MASTER_INIT_C);
+   hpReadMaster    <= (others=>AXI_READ_MASTER_INIT_C);
+   axilReadSlave   <= AXI_LITE_READ_SLAVE_INIT_C;
+   axilWriteSlave  <= AXI_LITE_WRITE_SLAVE_INIT_C;
+   interrupt       <= (others=>'0');
+   dmaOnline       <= (others=>'0');
+   dmaEnable       <= (others=>'0');
+   dmaObMaster     <= (others=>AXI_STREAM_MASTER_INIT_C);
+   dmaIbSlave      <= (others=>AXI_STREAM_SLAVE_INIT_C);
+
+end structure;
 

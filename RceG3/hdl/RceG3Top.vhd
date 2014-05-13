@@ -32,9 +32,9 @@ entity RceG3Top is
    generic (
       TPD_G                 : time                  := 1 ns;
       DMA_CLKDIV_G          : real                  := 4.5;
-      RCE_DMA_COUNT_G       : integer range 1 to 16 := 1;
-      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigArray;
-      RCE_DMA_MODE_G        : RceDmaModeArray
+      RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C;
+      RCE_DMA_COUNT_G       : integer range 1 to 16 := 4;
+      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigType   := AXI_STREAM_CONFIG_INIT_C
    );
    port (
 
@@ -78,6 +78,46 @@ end RceG3Top;
 
 architecture structure of RceG3Top is
 
+   -- Component declared here to allow configuration override for simulation
+   component RceG3Cpu 
+      generic (
+         TPD_G : time := 1 ns
+      );
+      port (
+         fclkClk3            : out sl;
+         fclkClk2            : out sl;
+         fclkClk1            : out sl;
+         fclkClk0            : out sl;
+         fclkRst3            : out sl;
+         fclkRst2            : out sl;
+         fclkRst1            : out sl;
+         fclkRst0            : out sl;
+         armInt              : in  slv(15 downto 0);
+         mGpAxiClk           : in  slv(1 downto 0);
+         mGpWriteMaster      : out AxiWriteMasterArray(1 downto 0);
+         mGpWriteSlave       : in  AxiWriteSlaveArray(1 downto 0);
+         mGpReadMaster       : out AxiReadMasterArray(1 downto 0);
+         mGpReadSlave        : in  AxiReadSlaveArray(1 downto 0);
+         sGpAxiClk           : in  slv(1 downto 0);
+         sGpWriteSlave       : out AxiWriteSlaveArray(1 downto 0);
+         sGpWriteMaster      : in  AxiWriteMasterArray(1 downto 0);
+         sGpReadSlave        : out AxiReadSlaveArray(1 downto 0);
+         sGpReadMaster       : in  AxiReadMasterArray(1 downto 0);
+         acpAxiClk           : in  sl;
+         acpWriteSlave       : out AxiWriteSlaveType;
+         acpWriteMaster      : in  AxiWriteMasterType;
+         acpReadSlave        : out AxiReadSlaveType;
+         acpReadMaster       : in  AxiReadMasterType;
+         hpAxiClk            : in  slv(3 downto 0);
+         hpWriteSlave        : out AxiWriteSlaveArray(3 downto 0);
+         hpWriteMaster       : in  AxiWriteMasterArray(3 downto 0);
+         hpReadSlave         : out AxiReadSlaveArray(3 downto 0);
+         hpReadMaster        : in  AxiReadMasterArray(3 downto 0);
+         armEthTx            : out ArmEthTxArray(1 downto 0);
+         armEthRx            : in  ArmEthRxArray(1 downto 0)
+      );
+   end component;
+
    -- Local signals
    signal fclkClk3            : sl;
    signal fclkClk2            : sl;
@@ -120,7 +160,7 @@ begin
    --------------------------------------------
    -- Processor Core
    --------------------------------------------
-   U_RceG3Cpu : entity work.RceG3Cpu 
+   U_RceG3Cpu : RceG3Cpu 
       generic map (
          TPD_G => TPD_G
       ) port map (

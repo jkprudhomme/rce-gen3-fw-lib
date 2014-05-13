@@ -79,14 +79,12 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3Bsi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3Clocks.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3Cpu.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3CpuHw.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../simlink/rtl/RceG3CpuSim.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3DmaChannel.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3DmaChannelAxis.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3DmaChannelPpi.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3DmaAxis.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3DmaPpi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3Dma.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3LocalAxi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3Top.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../simlink/rtl/RceG3CpuSim.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/tb.vhd
 
 # VHPI Library
