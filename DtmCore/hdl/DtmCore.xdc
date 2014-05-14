@@ -15,14 +15,14 @@
 #-------------------------------------------------------------------------------
 
 # Arm Core Clocks
-create_clock -name fclkClk0 -period 10 \
-   [get_pins U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Cpu/U_PS7/U0/PS7_i/FCLKCLK[0]]
+set fclk0Group     [get_clocks -of_objects \
+   [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKIN1]]
 set dmaClkGroup    [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT0]]
+   [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]]
 set sysClk200Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT1]]
+   [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]]
 set sysClk125Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT2]]
+   [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]]
 
 # Local 1G Ethernet Clocks
 create_clock -name eth_txoutclk -period 16 \
@@ -55,7 +55,7 @@ set extEthClk2_5Group [get_clocks -of_objects \
    [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]]
 
 # Set Asynchronous Paths
-set_clock_groups -asynchronous -group [get_clocks {fclkClk0}] \
+set_clock_groups -asynchronous -group ${fclk0Group} \
                                -group ${dmaClkGroup} \
                                -group ${sysClk200Group} \
                                -group ${sysClk125Group} 
@@ -126,11 +126,6 @@ set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *i
 
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
-
-# Reset Fanout
-set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/dmaClkRst]
-set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/sysClk200Rst]
-set_property MAX_FANOUT 100 [get_nets U_DtmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/sysClk125Rst]
 
 #########################################################
 # Pin Locations. All Defined Here

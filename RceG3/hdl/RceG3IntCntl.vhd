@@ -21,7 +21,6 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-use work.all;
 use work.StdRtlPkg.all;
 use work.RceG3Pkg.all;
 use work.AxiLitePkg.all;
@@ -59,8 +58,18 @@ architecture structure of RceG3IntCntl is
 
 begin
 
-   icAxilReadSlave  <= AXI_LITE_READ_SLAVE_INIT_C;
-   icAxilWriteSlave <= AXI_LITE_WRITE_SLAVE_INIT_C;
+   -- Terminate Unused AXI-Lite Interface
+   U_AxiLiteEmpty : entity work.AxiLiteEmpty
+      generic map (
+         TPD_G  => TPD_G
+      ) port map (
+         axiClk          => axiDmaClk,
+         axiClkRst       => axiDmaRst,
+         axiReadMaster   => icAxilReadMaster,
+         axiReadSlave    => icAxilReadSlave,
+         axiWriteMaster  => icAxilWriteMaster,
+         axiWriteSlave   => icAxilWriteSlave
+      );
 
    armInterrupt(3  downto 0) <= dmaInterrupt(3 downto 0);
    armInterrupt(15 downto 4) <= (others=>'0');

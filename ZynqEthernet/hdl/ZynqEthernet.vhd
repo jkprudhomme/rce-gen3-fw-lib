@@ -33,8 +33,8 @@ entity ZynqEthernet is
       sysClk200Rst            : in  sl;
 
       -- ARM Interface
-      ethFromArm              : in  EthFromArmType;
-      ethToArm                : out EthToArmType;
+      armEthTx                : in  ArmEthTxType;
+      armEthRx                : out ArmEthRxType;
 
       -- Ethernet Lines
       ethRxP                  : in  sl;
@@ -64,26 +64,26 @@ architecture structure of ZynqEthernet is
 begin
 
    -- Outputs
-   ethToArm.enetGmiiRxClk <= userclk2;
-   ethToArm.enetGmiiTxClk <= userclk2;
+   armEthRx.enetGmiiRxClk <= userclk2;
+   armEthRx.enetGmiiTxClk <= userclk2;
 
    -- Unused inputs
-   --ethFromArm.enetMdioT           : sl;
-   --ethFromArm.enetPtpDelayReqRx   : sl;
-   --ethFromArm.enetPtpDelayReqTx   : sl;
-   --ethFromArm.enetPtpPDelayReqRx  : sl;
-   --ethFromArm.enetPtpPDelayReqTx  : sl;
-   --ethFromArm.enetPtpPDelayRespRx : sl;
-   --ethFromArm.enetPtpPDelayRespTx : sl;
-   --ethFromArm.enetPtpSyncFrameRx  : sl;
-   --ethFromArm.enetPtpSyncFrameTx  : sl;
-   --ethFromArm.enetSofRx           : sl;
-   --ethFromArm.enetSofTx           : sl;
+   --armEthTx.enetMdioT           : sl;
+   --armEthTx.enetPtpDelayReqRx   : sl;
+   --armEthTx.enetPtpDelayReqTx   : sl;
+   --armEthTx.enetPtpPDelayReqRx  : sl;
+   --armEthTx.enetPtpPDelayReqTx  : sl;
+   --armEthTx.enetPtpPDelayRespRx : sl;
+   --armEthTx.enetPtpPDelayRespTx : sl;
+   --armEthTx.enetPtpSyncFrameRx  : sl;
+   --armEthTx.enetPtpSyncFrameTx  : sl;
+   --armEthTx.enetSofRx           : sl;
+   --armEthTx.enetSofTx           : sl;
 
    -- Unused outputs
-   ethToArm.enetGmiiCol  <= '0';
-   ethToArm.enetGmiiCrs  <= '0';
-   ethToArm.enetExtInitN <= '0';
+   armEthRx.enetGmiiCol  <= '0';
+   armEthRx.enetGmiiCrs  <= '0';
+   armEthRx.enetExtInitN <= '0';
 
    -----------------------------------------------------------------------------
    -- The following code is based on the zynq_gige_example_design.vhd
@@ -227,16 +227,16 @@ begin
          userclk2               => userclk2,
          independent_clock_bufg => sysClk200,
          pma_reset              => pma_reset,
-         gmii_txd               => ethFromArm.enetGmiiTxD,
-         gmii_tx_en             => ethFromArm.enetGmiiTxEn,
-         gmii_tx_er             => ethFromArm.enetGmiiTxEr,
-         gmii_rxd               => ethToArm.enetGmiiRxd,
-         gmii_rx_dv             => ethToArm.enetGmiiRxDv,
-         gmii_rx_er             => ethToArm.enetGmiiRxEr,
+         gmii_txd               => armEthTx.enetGmiiTxD,
+         gmii_tx_en             => armEthTx.enetGmiiTxEn,
+         gmii_tx_er             => armEthTx.enetGmiiTxEr,
+         gmii_rxd               => armEthRx.enetGmiiRxd,
+         gmii_rx_dv             => armEthRx.enetGmiiRxDv,
+         gmii_rx_er             => armEthRx.enetGmiiRxEr,
          gmii_isolate           => open,
-         mdc                    => ethFromArm.enetMdioMdc,
-         mdio_i                 => ethFromArm.enetMdioO,
-         mdio_o                 => ethToArm.enetMdioI,
+         mdc                    => armEthTx.enetMdioMdc,
+         mdio_i                 => armEthTx.enetMdioO,
+         mdio_o                 => armEthRx.enetMdioI,
          mdio_t                 => open,
          phyad                  => (others=>'0'),
          configuration_vector   => "00000",

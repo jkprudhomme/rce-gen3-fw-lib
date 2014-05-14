@@ -114,8 +114,17 @@ begin
 
    -- Unused AXI busses
    U_UnusedAxiGen : for i in 8 to DMA_AXIL_COUNT_G-1 generate
-      axilReadSlave(i)  <= AXI_LITE_READ_SLAVE_INIT_C; 
-      axilWriteSlave(i) <= AXI_LITE_WRITE_SLAVE_INIT_C; 
+      U_AxiLiteEmpty : entity work.AxiLiteEmpty
+         generic map (
+            TPD_G  => TPD_G
+         ) port map (
+            axiClk          => axiDmaClk,
+            axiClkRst       => axiDmaRst,
+            axiReadMaster   => axilReadMaster(i),
+            axiReadSlave    => axilReadSlave(i),
+            axiWriteMaster  => axilWriteMaster(i),
+            axiWriteSlave   => axilWriteSlave(i)
+         );
    end generate;
 
    ------------------------------------------

@@ -31,8 +31,8 @@ entity GmiiToRgmiiSwitch is
       sysClk200    : in    sl;
       sysClk200Rst : in    sl;
       -- ARM Interface
-      ethFromArm   : in    EthFromArmType;
-      ethToArm     : out   EthToArmType;
+      armEthTx     : in    ArmEthTxType;
+      armEthRx     : out   ArmEthRxType;
       -- Base Ethernet
       ethRxCtrl    : in    slv(1 downto 0);
       ethRxClk     : in    slv(1 downto 0);
@@ -149,23 +149,23 @@ begin
          mdio_phy_o        => ethMioO,
          mdio_phy_t        => ethMioT,
          -- GMII_TX Signals
-         gmii_tx_clk       => ethToArm.enetGmiiTxClk,
-         gmii_tx_en        => ethFromArm.enetGmiiTxEn,
-         gmii_tx_er        => ethFromArm.enetGmiiTxEr,
-         gmii_txd          => ethFromArm.enetGmiiTxD,
+         gmii_tx_clk       => armEthRx.enetGmiiTxClk,
+         gmii_tx_en        => armEthTx.enetGmiiTxEn,
+         gmii_tx_er        => armEthTx.enetGmiiTxEr,
+         gmii_txd          => armEthTx.enetGmiiTxD,
          -- GMII_RX Signals
-         gmii_rx_clk       => ethToArm.enetGmiiRxClk,
-         gmii_rx_dv        => ethToArm.enetGmiiRxDv,
-         gmii_rx_er        => ethToArm.enetGmiiRxEr,
-         gmii_rxd          => ethToArm.enetGmiiRxd,
+         gmii_rx_clk       => armEthRx.enetGmiiRxClk,
+         gmii_rx_dv        => armEthRx.enetGmiiRxDv,
+         gmii_rx_er        => armEthRx.enetGmiiRxEr,
+         gmii_rxd          => armEthRx.enetGmiiRxd,
          -- GMII_MIO Signals
-         mdio_gem_mdc      => ethFromArm.enetMdioMdc,
-         mdio_gem_i        => ethToArm.enetMdioI,
-         mdio_gem_o        => ethFromArm.enetMdioO,
-         mdio_gem_t        => ethFromArm.enetMdioT,
+         mdio_gem_mdc      => armEthTx.enetMdioMdc,
+         mdio_gem_i        => armEthRx.enetMdioI,
+         mdio_gem_o        => armEthTx.enetMdioO,
+         mdio_gem_t        => armEthTx.enetMdioT,
          -- GMII_MISC Signals
-         gmii_crs          => ethToArm.enetGmiiCrs,
-         gmii_col          => ethToArm.enetGmiiCol,
+         gmii_crs          => armEthRx.enetGmiiCrs,
+         gmii_col          => armEthRx.enetGmiiCol,
          -- Status Signals         
          link_status       => linkStatus,
          clock_speed       => clockSpeed,
@@ -180,7 +180,7 @@ begin
          T  => ethMioT);       -- 3-state enable input, high=input, low=output 
 
    -- Unused Interrupt Signal
-   ethToArm.enetExtInitN <= '0';
+   armEthRx.enetExtInitN <= '0';
 
    -- Unused RGMII Ports       
    ethTxCtrl(DIS_CH_C)  <= 'Z';

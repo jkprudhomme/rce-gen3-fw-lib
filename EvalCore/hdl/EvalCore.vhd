@@ -17,11 +17,16 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
-use work.ArmRceG3Pkg.all;
+use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
+use work.AxiStreamPkg.all;
 
 entity EvalCore is
+   generic (
+      TPD_G          : time           := 1 ns;
+      RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C
+   );
    port (
       i2cSda                  : inout sl;
       i2cScl                  : inout sl;
@@ -32,112 +37,124 @@ entity EvalCore is
       sysClk200               : out   sl;
       sysClk200Rst            : out   sl;
 
-      -- External Axi Bus, 0xA0000000 - 0xBFFFFFFF
+      -- External Axi Bus, 0xA0000000 - 0xAFFFFFFF
       axiClk                  : out   sl;
       axiClkRst               : out   sl;
-      localAxiReadMaster      : out   AxiLiteReadMasterType;
-      localAxiReadSlave       : in    AxiLiteReadSlaveType;
-      localAxiWriteMaster     : out   AxiLiteWriteMasterType;
-      localAxiWriteSlave      : in    AxiLiteWriteSlaveType;
+      extAxilReadMaster       : out   AxiLiteReadMasterType;
+      extAxilReadSlave        : in    AxiLiteReadSlaveType;
+      extAxilWriteMaster      : out   AxiLiteWriteMasterType;
+      extAxilWriteSlave       : in    AxiLiteWriteSlaveType;
 
-      -- PPI Clock and Reset
-      ppiClk                  : in     slv(3 downto 0);
-      ppiOnline               : out    slv(3 downto 0);
-
-      -- PPI Outbound FIFO Interface
-      ppiReadToFifo           : in     PpiReadToFifoArray(3 downto 0);
-      ppiReadFromFifo         : out    PpiReadFromFifoArray(3 downto 0);
-
-      -- PPI Inbound FIFO Interface
-      ppiWriteToFifo          : in     PpiWriteToFifoArray(3 downto 0);
-      ppiWriteFromFifo        : out    PpiWriteFromFifoArray(3 downto 0)
-
+      -- DMA Interfaces
+      dmaClk                  : in    slv(2 downto 0);
+      dmaClkRst               : in    slv(2 downto 0);
+      dmaOnline               : out   slv(2 downto 0);
+      dmaEnable               : out   slv(2 downto 0);
+      dmaObMaster             : out   AxiStreamMasterArray(2 downto 0);
+      dmaObSlave              : in    AxiStreamSlaveArray(2 downto 0);
+      dmaIbMaster             : in    AxiStreamMasterArray(2 downto 0);
+      dmaIbSlave              : out   AxiStreamSlaveArray(2 downto 0)
    );
 end EvalCore;
 
 architecture STRUCTURE of EvalCore is
 
-   -- Local Signals
-   signal intAxiReadMaster  : AxiLiteReadMasterArray(0 downto 0);
-   signal intAxiReadSlave   : AxiLiteReadSlaveArray(0 downto 0);
-   signal intAxiWriteMaster : AxiLiteWriteMasterArray(0 downto 0);
-   signal intAxiWriteSlave  : AxiLiteWriteSlaveArray(0 downto 0);
-   signal topAxiReadMaster  : AxiLiteReadMasterType;
-   signal topAxiReadSlave   : AxiLiteReadSlaveType;
-   signal topAxiWriteMaster : AxiLiteWriteMasterType;
-   signal topAxiWriteSlave  : AxiLiteWriteSlaveType;
-   signal intAxiClk         : std_logic;
-   signal intAxiClkRst      : std_logic;
+   signal iaxiClk             : sl;
+   signal iaxiClkRst          : sl;
+   signal isysClk125          : sl;
+   signal isysClk125Rst       : sl;
+   signal isysClk200          : sl;
+   signal isysClk200Rst       : sl;
+   signal idmaClk             : slv(3 downto 0);
+   signal idmaClkRst          : slv(3 downto 0);
+   signal idmaOnline          : slv(3 downto 0);
+   signal idmaEnable          : slv(3 downto 0);
+   signal idmaObMaster        : AxiStreamMasterArray(3 downto 0);
+   signal idmaObSlave         : AxiStreamSlaveArray(3 downto 0);
+   signal idmaIbMaster        : AxiStreamMasterArray(3 downto 0);
+   signal idmaIbSlave         : AxiStreamSlaveArray(3 downto 0);
+   signal coreAxilReadMaster  : AxiLiteReadMasterType;
+   signal coreAxilReadSlave   : AxiLiteReadSlaveType;
+   signal coreAxilWriteMaster : AxiLiteWriteMasterType;
+   signal coreAxilWriteSlave  : AxiLiteWriteSlaveType;
 
 begin
 
    -- Core
-   U_ArmRceG3Top: entity work.ArmRceG3Top
+   U_RceG3Top: entity work.RceG3Top
       generic map (
-         AXI_CLKDIV_G => 10.0
+         TPD_G          => TPD_G,
+         RCE_DMA_MODE_G => RCE_DMA_MODE_G,
+         DMA_CLKDIV_G   => 10.0
       ) port map (
          i2cSda              => i2cSda,
          i2cScl              => i2cScl,
-         sysClk125           => sysClk125,
-         sysClk125Rst        => sysClk125Rst,
-         sysClk200           => sysClk200,
-         sysClk200Rst        => sysClk200Rst,
-         axiClk              => intAxiClk,
-         axiClkRst           => intAxiClkRst,
-         localAxiReadMaster  => topAxiReadMaster,
-         localAxiReadSlave   => topAxiReadSlave ,
-         localAxiWriteMaster => topAxiWriteMaster,
-         localAxiWriteSlave  => topAxiWriteSlave ,
-         ppiClk              => ppiClk,
-         ppiOnline           => ppiOnline,
-         ppiReadToFifo       => ppiReadToFifo,
-         ppiReadFromFifo     => ppiReadFromFifo,
-         ppiWriteToFifo      => ppiWriteToFifo,
-         ppiWriteFromFifo    => ppiWriteFromFifo,
-         ethFromArm          => open,
-         ethToArm            => (others=>ETH_TO_ARM_INIT_C),
+         sysClk125           => isysClk125,
+         sysClk125Rst        => isysClk125Rst,
+         sysClk200           => isysClk200,
+         sysClk200Rst        => isysClk200Rst,
+         axiClk              => iaxiClk,
+         axiClkRst           => iaxiClkRst,
+         extAxilReadMaster   => extAxilReadMaster,
+         extAxilReadSlave    => extAxilReadSlave ,
+         extAxilWriteMaster  => extAxilWriteMaster,
+         extAxilWriteSlave   => extAxilWriteSlave ,
+         coreAxilReadMaster  => coreAxilReadMaster,
+         coreAxilReadSlave   => coreAxilReadSlave,
+         coreAxilWriteMaster => coreAxilWriteMaster,
+         coreAxilWriteSlave  => coreAxilWriteSlave,
+         dmaClk              => idmaClk,
+         dmaClkRst           => idmaClkRst,
+         dmaOnline           => idmaOnline,
+         dmaEnable           => idmaEnable,
+         dmaObMaster         => idmaObMaster,
+         dmaObSlave          => idmaObSlave,
+         dmaIbMaster         => idmaIbMaster,
+         dmaIbSlave          => idmaIbSlave,
+         armEthTx            => open,
+         armEthRx            => (others=>ARM_ETH_RX_INIT_C),
          clkSelA             => open,
          clkSelB             => open
       );
 
-   -- Output
-   axiClk    <= intAxiClk;
-   axiClkRst <= intAxiClkRst;
+   -- Clock Outputs
+   axiClk        <= iaxiClk;
+   axiClkRst     <= iaxiClkRst;
+   axiClk        <= iaxiClk;
+   axiClkRst     <= iaxiClkRst;
+   sysClk125     <= isysClk125;
+   sysClk125Rst  <= isysClk125Rst;
+   sysClk200     <= isysClk200;
+   sysClk200Rst  <= isysClk200Rst;
 
-   -------------------------------------
-   -- AXI Lite Crossbar
-   -- Base: 0xA0000000 - 0xBFFFFFFF
-   -------------------------------------
-   U_AxiCrossbar : entity work.AxiLiteCrossbar 
+   -- DMA Interfaces
+   idmaClk(2 downto 0)      <= dmaClk;
+   idmaClkRst(2 downto 0)   <= dmaClkRst;
+   dmaOnline                <= idmaOnline(2 downto 0);
+   dmaEnable                <= idmaEnable(2 downto 0);
+   dmaObMaster              <= idmaObMaster(2 downto 0);
+   idmaObSlave(2 downto 0)  <= dmaObSlave;
+   idmaIbMaster(2 downto 0) <= dmaIbMaster;
+   dmaIbSlave               <= idmaIbSlave(2 downto 0);
+
+   -- Unused DMA Interface
+   idmaClk(3)      <= isysClk125;
+   idmaClkRst(3)   <= isysClk125Rst;
+   idmaObSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;
+   idmaIbMaster(3) <= AXI_STREAM_MASTER_INIT_C;
+
+   -- Terminate Unused AXI-Lite Interface
+   U_AxiLiteEmpty : entity work.AxiLiteEmpty
       generic map (
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => 1,
-         DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
-         MASTERS_CONFIG_G   => (
-
-            -- Channel 0 = 0xA0000000 - 0xAFFFFFFF : External Top Level
-            0 => ( baseAddr     => x"A0000000",
-                   addrBits     => 28,
-                   connectivity => x"FFFF")
-         )
+         TPD_G  => TPD_G
       ) port map (
-         axiClk              => intAxiClk,
-         axiClkRst           => intAxiClkRst,
-         sAxiWriteMasters(0) => topAxiWriteMaster,
-         sAxiWriteSlaves(0)  => topAxiWriteSlave,
-         sAxiReadMasters(0)  => topAxiReadMaster,
-         sAxiReadSlaves(0)   => topAxiReadSlave,
-         mAxiWriteMasters    => intAxiWriteMaster,
-         mAxiWriteSlaves     => intAxiWriteSlave,
-         mAxiReadMasters     => intAxiReadMaster,
-         mAxiReadSlaves      => intAxiReadSlave
+         axiClk          => iaxiClk,
+         axiClkRst       => iaxiClkRst,
+         axiReadMaster   => coreAxilReadMaster,
+         axiReadSlave    => coreAxilReadSlave,
+         axiWriteMaster  => coreAxilWriteMaster,
+         axiWriteSlave   => coreAxilWriteSlave
       );
-
-   -- External Connections
-   localAxiReadMaster  <= intAxiReadMaster(0);
-   intAxiReadSlave(0)  <= localAxiReadSlave;
-   localAxiWriteMaster <= intAxiWriteMaster(0);
-   intAxiWriteSlave(0) <= localAxiWriteSlave;
 
 end architecture STRUCTURE;
 

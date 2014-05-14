@@ -82,13 +82,27 @@ begin
    acpReadMaster   <= AXI_READ_MASTER_INIT_C;
    hpWriteMaster   <= (others=>AXI_WRITE_MASTER_INIT_C);
    hpReadMaster    <= (others=>AXI_READ_MASTER_INIT_C);
-   axilReadSlave   <= (others=>AXI_LITE_READ_SLAVE_INIT_C);
-   axilWriteSlave  <= (others=>AXI_LITE_WRITE_SLAVE_INIT_C);
    interrupt       <= (others=>'0');
    dmaOnline       <= (others=>'0');
    dmaEnable       <= (others=>'0');
    dmaObMaster     <= (others=>AXI_STREAM_MASTER_INIT_C);
    dmaIbSlave      <= (others=>AXI_STREAM_SLAVE_INIT_C);
+
+   U_EmptyGen : for i in 0 to DMA_AXIL_COUNT_G-1 generate
+
+      -- Terminate Unused AXI-Lite Interface
+      U_AxiLiteEmpty : entity work.AxiLiteEmpty
+         generic map (
+            TPD_G  => TPD_G
+         ) port map (
+            axiClk          => axiDmaClk,
+            axiClkRst       => axiDmaRst,
+            axiReadMaster   => axilReadMaster(i),
+            axiReadSlave    => axilReadSlave(i),
+            axiWriteMaster  => axilWriteMaster(i),
+            axiWriteSlave   => axilWriteSlave(i)
+         );
+   end generate;
 
 end structure;
 
