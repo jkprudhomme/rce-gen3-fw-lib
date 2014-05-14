@@ -32,16 +32,21 @@ use work.AxiDmaPkg.all;
 
 entity RceG3DmaAxis is
    generic (
-      TPD_G                 : time                  := 1 ns;
-      AXIL_BASE_ADDR_G      : slv(31 downto 0)      := x"00000000";
-      RCE_DMA_COUNT_G       : integer range 1 to 16 := 4;
-      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigType   := AXI_STREAM_CONFIG_INIT_C
+      TPD_G            : time     := 1 ns;
+      DMA_AXIL_COUNT_G : positive := 8;
+      DMA_INT_COUNT_G  : positive := 4
    );
    port (
 
       -- Clock/Reset
       axiDmaClk           : in  sl;
       axiDmaRst           : in  sl;
+
+      -- AXI ACP Slave
+      acpWriteSlave       : in  AxiWriteSlaveType;
+      acpWriteMaster      : out AxiWriteMasterType;
+      acpReadSlave        : in  AxiReadSlaveType;
+      acpReadMaster       : out AxiReadMasterType;
 
       -- AXI HP Slave
       hpWriteSlave        : in  AxiWriteSlaveArray(3 downto 0);
@@ -50,148 +55,80 @@ entity RceG3DmaAxis is
       hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
       -- Local AXI Lite Bus
-      axilReadMaster      : in  AxiLiteReadMasterType;
-      axilReadSlave       : out AxiLiteReadSlaveType;
-      axilWriteMaster     : in  AxiLiteWriteMasterType;
-      axilWriteSlave      : out AxiLiteWriteSlaveType;
+      axilReadMaster      : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
+      axilReadSlave       : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
+      axilWriteMaster     : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
+      axilWriteSlave      : out AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
 
       -- Interrupts
-      interrupt           : out slv(15 downto 0);
+      interrupt           : out slv(DMA_INT_COUNT_G-1 downto 0);
 
       -- External DMA Interfaces
-      dmaClk              : in  slv(RCE_DMA_COUNT_G-1 downto 0);
-      dmaClkRst           : in  slv(RCE_DMA_COUNT_G-1 downto 0);
-      dmaObMaster         : out AxiStreamMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-      dmaObSlave          : in  AxiStreamSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-      dmaIbMaster         : in  AxiStreamMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-      dmaIbSlave          : out AxiStreamSlaveArray(RCE_DMA_COUNT_G-1 downto 0)
+      dmaClk              : in  slv(3 downto 0);
+      dmaClkRst           : in  slv(3 downto 0);
+      dmaOnline           : out slv(3 downto 0);
+      dmaEnable           : out slv(3 downto 0);
+      dmaObMaster         : out AxiStreamMasterArray(3 downto 0);
+      dmaObSlave          : in  AxiStreamSlaveArray(3 downto 0);
+      dmaIbMaster         : in  AxiStreamMasterArray(3 downto 0);
+      dmaIbSlave          : out AxiStreamSlaveArray(3 downto 0)
    );
 end RceG3DmaAxis;
 
 architecture structure of RceG3DmaAxis is 
 
-   constant HP_BRANCHES_C : integerArray(3 downto 0) := (
-      0 => (RCE_DMA_COUNT_G+3)/4,
-      1 => (RCE_DMA_COUNT_G+2)/4,
-      2 => (RCE_DMA_COUNT_G+1)/4,
-      3 => (RCE_DMA_COUNT_G)/4);
-
-   constant HP_BASE_C : integerArray(3 downto 0) := (
-      0 => 0,
-      1 => (RCE_DMA_COUNT_G+3)/4,
-      2 => (RCE_DMA_COUNT_G+2)/4,
-      3 => (RCE_DMA_COUNT_G+1)/4);
-
-   constant MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(RCE_DMA_COUNT_G-1 downto 0) := 
-      genAxiLiteConfig ( RCE_DMA_COUNT_G, AXIL_BASE_ADDR_G, 16, 12);
-
    constant DMA_AXIS_CONFIG_G : AxiStreamConfigType := (
-      TSTRB_EN_C    => RCE_DMA_AXIS_CONFIG_G.TSTRB_EN_C,
-      TDATA_BYTES_C => AXI_HP_INIT_C.DATA_BYTES_C,
-      TDEST_BITS_C  => RCE_DMA_AXIS_CONFIG_G.TDEST_BITS_C,
-      TID_BITS_C    => RCE_DMA_AXIS_CONFIG_G.TID_BITS_C,
-      TKEEP_MODE_C  => RCE_DMA_AXIS_CONFIG_G.TKEEP_MODE_C,
-      TUSER_BITS_C  => RCE_DMA_AXIS_CONFIG_G.TUSER_BITS_C,
-      TUSER_MODE_C  => RCE_DMA_AXIS_CONFIG_G.TUSER_MODE_C);
+      TSTRB_EN_C    => false,
+      TDATA_BYTES_C => 8,
+      TDEST_BITS_C  => 8,
+      TID_BITS_C    => 0,
+      TKEEP_MODE_C  => TKEEP_COMP_C,
+      TUSER_BITS_C  => 2,
+      TUSER_MODE_C  => TUSER_FIRST_LAST_C);
 
-   signal ihpWriteSlaves   : AxiWriteSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal ihpWriteMasters  : AxiWriteMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal ihpReadSlaves    : AxiReadSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal ihpReadMasters   : AxiReadMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iaxilReadMaster  : AxiLiteReadMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iaxilReadSlave   : AxiLiteReadSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iaxilWriteMaster : AxiLiteWriteMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal iaxilWriteSlave  : AxiLiteWriteSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal locReadMaster    : AxiReadMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal locReadSlave     : AxiReadSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal locWriteMaster   : AxiWriteMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal locWriteSlave    : AxiWriteSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal locWriteCtrl     : AxiCtrlArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal sAxisMaster      : AxiStreamMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal sAxisSlave       : AxiStreamSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal mAxisMaster      : AxiStreamMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal mAxisSlave       : AxiStreamSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-   signal mAxisCtrl        : AxiStreamCtrlArray(RCE_DMA_COUNT_G-1 downto 0);
+   signal locReadMaster    : AxiReadMasterArray(3 downto 0);
+   signal locReadSlave     : AxiReadSlaveArray(3 downto 0);
+   signal locWriteMaster   : AxiWriteMasterArray(3 downto 0);
+   signal locWriteSlave    : AxiWriteSlaveArray(3 downto 0);
+   signal locWriteCtrl     : AxiCtrlArray(3 downto 0);
+   signal sAxisMaster      : AxiStreamMasterArray(3 downto 0);
+   signal sAxisSlave       : AxiStreamSlaveArray(3 downto 0);
+   signal mAxisMaster      : AxiStreamMasterArray(3 downto 0);
+   signal mAxisSlave       : AxiStreamSlaveArray(3 downto 0);
+   signal mAxisCtrl        : AxiStreamCtrlArray(3 downto 0);
 
 begin
 
+   -- AXI ACP Slave Unused
+   acpWriteMaster <= AXI_WRITE_MASTER_INIT_C;
+   acpReadMaster  <= AXI_READ_MASTER_INIT_C;
 
-   ------------------------------------
-   -- HP Branching
-   ------------------------------------
-   U_HpGen : for i in 0 to 3 generate
+   -- Always online
+   dmaOnline <= (others=>'1');
+   dmaEnable <= (others=>'1');
 
-      U_HpEn : if HP_BRANCHES_C(i) > 0 generate
-
-         U_HpReadPathMux : entity work.AxiReadPathMux 
-            generic map (
-               TPD_G        => TPD_G,
-               NUM_SLAVES_G => HP_BRANCHES_C(i)
-            ) port map (
-               axiClk          => axiDmaClk,
-               axiRst          => axiDmaRst,
-               sAxiReadMasters => ihpReadMasters((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               sAxiReadSlaves  => ihpReadSlaves((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               mAxiReadMaster  => hpReadMaster(i),
-               mAxiReadSlave   => hpReadSlave(i)
-            );
-
-         U_HpWritePathMux : entity work.AxiWritePathMux
-            generic map (
-               TPD_G        => TPD_G,
-               NUM_SLAVES_G => HP_BRANCHES_C(i)
-            ) port map (
-               axiClk           => axiDmaClk,
-               axiRst           => axiDmaRst,
-               sAxiWriteMasters => ihpWriteMasters((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               sAxiWriteSlaves  => ihpWriteSlaves((HP_BASE_C(i)+HP_BRANCHES_C(i))-1 downto HP_BASE_C(i)),
-               mAxiWriteMaster  => hpWriteMaster(i),
-               mAxiWriteSlave   => hpWriteSlave(i)
-            );
-      end generate;
-
-      U_HpDis : if HP_BRANCHES_C(i) = 0 generate
-         ihpReadSlaves(i)  <= AXI_READ_SLAVE_INIT_C;
-         ihpWriteSlaves(i) <= AXI_WRITE_SLAVE_INIT_C;
-      end generate;
-
+   -- Unused Interrupts
+   U_UnusedIntGen : for i in 4 to DMA_INT_COUNT_G-1 generate
+      interrupt(i) <= '0';
    end generate;
 
-
-   ------------------------------------
-   -- AXI-Lite Crossbar
-   ------------------------------------
-   U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
-      generic map (
-         TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => RCE_DMA_COUNT_G,
-         DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
-         MASTERS_CONFIG_G   => MASTERS_CONFIG_C
-      ) port map (
-         axiClk              => axiDmaClk,
-         axiClkRst           => axiDmaRst,
-         sAxiWriteMasters(0) => axilWriteMaster,
-         sAxiWriteSlaves(0)  => axilWriteSlave,
-         sAxiReadMasters(0)  => axilReadMaster,
-         sAxiReadSlaves(0)   => axilReadSlave,
-         mAxiReadMasters     => iaxilReadMaster,
-         mAxiReadSlaves      => iaxilReadSlave,
-         mAxiWriteMasters    => iaxilWriteMaster,
-         mAxiWriteSlaves     => iaxilWriteSlave
-      );
-
+   -- Unused AXI busses
+   U_UnusedAxiGen : for i in 8 to DMA_AXIL_COUNT_G-1 generate
+      axilReadSlave(i)  <= AXI_LITE_READ_SLAVE_INIT_C; 
+      axilWriteSlave(i) <= AXI_LITE_WRITE_SLAVE_INIT_C; 
+   end generate;
 
    ------------------------------------------
    -- DMA Channels
    ------------------------------------------
-   U_DmaChanGen : for i in 0 to RCE_DMA_COUNT_G-1 generate
+   U_DmaChanGen : for i in 0 to 3 generate
 
       -- DMA Core
       U_AxiStreamDma : entity work.AxiStreamDma
          generic map (
             TPD_G            => TPD_G,
-            AXIL_BASE_ADDR_G => MASTERS_CONFIG_C(i).baseAddr,
+            AXIL_COUNT_G     => 2,
+            AXIL_BASE_ADDR_G => x"00000000",
             AXI_READY_EN_G   => false,
             AXIS_READY_EN_G  => false,
             AXIS_CONFIG_G    => DMA_AXIS_CONFIG_G,
@@ -201,10 +138,10 @@ begin
          ) port map (
             axiClk          => axiDmaClk,
             axiRst          => axiDmaRst,
-            axilReadMaster  => iaxilReadMaster(i),
-            axilReadSlave   => iaxilReadSlave(i),
-            axilWriteMaster => iaxilWriteMaster(i),
-            axilWriteSlave  => iaxilWriteSlave(i),
+            axilReadMaster  => axilReadMaster((i*2)+1 downto i*2),
+            axilReadSlave   => axilReadSlave((i*2)+1 downto i*2),
+            axilWriteMaster => axilWriteMaster((i*2)+1 downto i*2),
+            axilWriteSlave  => axilWriteSlave((i*2)+1 downto i*2),
             interrupt       => interrupt(i),
             sAxisMaster     => sAxisMaster(i),
             sAxisSlave      => sAxisSlave(i),
@@ -237,7 +174,7 @@ begin
             FIFO_ADDR_WIDTH_G   => 9,
             FIFO_FIXED_THRESH_G => true,
             FIFO_PAUSE_THRESH_G => 500,
-            SLAVE_AXI_CONFIG_G  => RCE_DMA_AXIS_CONFIG_G,
+            SLAVE_AXI_CONFIG_G  => DMA_AXIS_CONFIG_G,
             MASTER_AXI_CONFIG_G => DMA_AXIS_CONFIG_G
          ) port map (
             sAxisClk        => dmaClk(i),
@@ -271,7 +208,7 @@ begin
             FIFO_FIXED_THRESH_G => true,
             FIFO_PAUSE_THRESH_G => 500,
             SLAVE_AXI_CONFIG_G  => DMA_AXIS_CONFIG_G,
-            MASTER_AXI_CONFIG_G => RCE_DMA_AXIS_CONFIG_G
+            MASTER_AXI_CONFIG_G => DMA_AXIS_CONFIG_G
          ) port map (
             sAxisClk        => axiDmaClk,
             sAxisRst        => axiDmaRst,
@@ -318,8 +255,8 @@ begin
             sAxiReadSlave  => locReadSlave(i),
             mAxiClk        => axiDmaClk,
             mAxiRst        => axiDmaRst,
-            mAxiReadMaster => ihpReadMasters(i),
-            mAxiReadSlave  => ihpReadSlaves(i)
+            mAxiReadMaster => hpReadMaster(i),
+            mAxiReadSlave  => hpReadSlave(i)
          );
 
 
@@ -360,17 +297,9 @@ begin
             sAxiCtrl        => locWriteCtrl(i),
             mAxiClk         => axiDmaClk,
             mAxiRst         => axiDmaRst,
-            mAxiWriteMaster => ihpWriteMasters(i),
-            mAxiWriteSlave  => ihpWriteSlaves(i)
+            mAxiWriteMaster => hpWriteMaster(i),
+            mAxiWriteSlave  => hpWriteSlave(i)
          );
-   end generate;
-
-
-   ------------------------------------------
-   -- Unused Interrupts
-   ------------------------------------------
-   U_UnusedIntGen : for i in RCE_DMA_COUNT_G to 15 generate
-      interrupt(i) <= '0';
    end generate;
 
 end structure;

@@ -32,9 +32,7 @@ entity RceG3Top is
    generic (
       TPD_G                 : time                  := 1 ns;
       DMA_CLKDIV_G          : real                  := 4.5;
-      RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C;
-      RCE_DMA_COUNT_G       : integer range 1 to 16 := 4;
-      RCE_DMA_AXIS_CONFIG_G : AxiStreamConfigType   := AXI_STREAM_CONFIG_INIT_C
+      RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C
    );
    port (
 
@@ -48,23 +46,31 @@ entity RceG3Top is
       sysClk200                : out   sl;
       sysClk200Rst             : out   sl;
 
-      -- External Axi Bus, 0xA0000000 - 0xBFFFFFFF
+      -- AXI Bus Clock
       axiClk                   : out   sl;
       axiClkRst                : out   sl;
+
+      -- External Axi Bus, 0xA0000000 - 0xAFFFFFFF
       extAxilReadMaster        : out   AxiLiteReadMasterType;
       extAxilReadSlave         : in    AxiLiteReadSlaveType;
       extAxilWriteMaster       : out   AxiLiteWriteMasterType;
       extAxilWriteSlave        : in    AxiLiteWriteSlaveType;
 
+      -- Core Axi Bus, 0xB0000000 - 0xBFFFFFFF
+      coreAxilReadMaster       : out   AxiLiteReadMasterType;
+      coreAxilReadSlave        : in    AxiLiteReadSlaveType;
+      coreAxilWriteMaster      : out   AxiLiteWriteMasterType;
+      coreAxilWriteSlave       : in    AxiLiteWriteSlaveType;
+
       -- DMA Interfaces
-      dmaClk                   : in    slv(RCE_DMA_COUNT_G-1 downto 0);
-      dmaClkRst                : in    slv(RCE_DMA_COUNT_G-1 downto 0);
-      dmaOnline                : out   slv(RCE_DMA_COUNT_G-1 downto 0);
-      dmaEnable                : out   slv(RCE_DMA_COUNT_G-1 downto 0);
-      dmaObMaster              : out   AxiStreamMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-      dmaObSlave               : in    AxiStreamSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
-      dmaIbMaster              : in    AxiStreamMasterArray(RCE_DMA_COUNT_G-1 downto 0);
-      dmaIbSlave               : out   AxiStreamSlaveArray(RCE_DMA_COUNT_G-1 downto 0);
+      dmaClk                   : in    slv(3 downto 0);
+      dmaClkRst                : in    slv(3 downto 0);
+      dmaOnline                : out   slv(3 downto 0);
+      dmaEnable                : out   slv(3 downto 0);
+      dmaObMaster              : out   AxiStreamMasterArray(3 downto 0);
+      dmaObSlave               : in    AxiStreamSlaveArray(3 downto 0);
+      dmaIbMaster              : in    AxiStreamMasterArray(3 downto 0);
+      dmaIbSlave               : out   AxiStreamSlaveArray(3 downto 0);
 
       -- Ethernet
       armEthTx                 : out   ArmEthTxArray(1 downto 0);
@@ -92,7 +98,7 @@ architecture structure of RceG3Top is
          fclkRst2            : out sl;
          fclkRst1            : out sl;
          fclkRst0            : out sl;
-         armInt              : in  slv(15 downto 0);
+         armInterrupt        : in  slv(15 downto 0);
          mGpAxiClk           : in  slv(1 downto 0);
          mGpWriteMaster      : out AxiWriteMasterArray(1 downto 0);
          mGpWriteSlave       : in  AxiWriteSlaveArray(1 downto 0);
@@ -118,6 +124,9 @@ architecture structure of RceG3Top is
       );
    end component;
 
+   constant DMA_AXIL_COUNT_C : integer := 8;
+   constant DMA_INT_COUNT_C  : integer := 16;
+
    -- Local signals
    signal fclkClk3            : sl;
    signal fclkClk2            : sl;
@@ -133,7 +142,6 @@ architecture structure of RceG3Top is
    signal isysClk200Rst       : sl;
    signal axiDmaClk           : sl;
    signal axiDmaRst           : sl;
-   signal armInt              : slv(15 downto 0);
    signal mGpWriteMaster      : AxiWriteMasterArray(1 downto 0);
    signal mGpWriteSlave       : AxiWriteSlaveArray(1 downto 0);
    signal mGpReadMaster       : AxiReadMasterArray(1 downto 0);
@@ -146,14 +154,21 @@ architecture structure of RceG3Top is
    signal hpWriteMaster       : AxiWriteMasterArray(3 downto 0);
    signal hpReadSlave         : AxiReadSlaveArray(3 downto 0);
    signal hpReadMaster        : AxiReadMasterArray(3 downto 0);
-   signal dmaAxilReadMaster   : AxiLiteReadMasterType;
-   signal dmaAxilReadSlave    : AxiLiteReadSlaveType;
-   signal dmaAxilWriteMaster  : AxiLiteWriteMasterType;
-   signal dmaAxilWriteSlave   : AxiLiteWriteSlaveType;
    signal bsiAxilReadMaster   : AxiLiteReadMasterArray(1 downto 0);
    signal bsiAxilReadSlave    : AxiLiteReadSlaveArray(1 downto 0);
    signal bsiAxilWriteMaster  : AxiLiteWriteMasterArray(1 downto 0);
    signal bsiAxilWriteSlave   : AxiLiteWriteSlaveArray(1 downto 0);
+   signal dmaAxilReadMaster   : AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+   signal dmaAxilReadSlave    : AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+   signal dmaAxilWriteMaster  : AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+   signal dmaAxilWriteSlave   : AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+   signal icAxilReadMaster    : AxiLiteReadMasterType;
+   signal icAxilReadSlave     : AxiLiteReadSlaveType;
+   signal icAxilWriteMaster   : AxiLiteWriteMasterType;
+   signal icAxilWriteSlave    : AxiLiteWriteSlaveType;
+   signal armInterrupt        : slv(15 downto 0);
+   signal dmaInterrupt        : slv(DMA_INT_COUNT_C-1 downto 0);
+   signal bsiInterrupt        : sl;
 
 begin
 
@@ -172,7 +187,7 @@ begin
          fclkRst2             => fclkRst2,
          fclkRst1             => fclkRst1,
          fclkRst0             => fclkRst0,
-         armInt               => armInt,
+         armInterrupt         => armInterrupt,
          mGpAxiClk(0)         => axiDmaClk,
          mGpAxiClk(1)         => isysClk125,
          mGpWriteMaster       => mGpWriteMaster,
@@ -239,22 +254,27 @@ begin
    --------------------------------------------
    -- AXI Lite Bus
    --------------------------------------------
-   U_RceG3LocalAxi: entity work.RceG3LocalAxi 
+   U_RceG3AxiCntl: entity work.RceG3AxiCntl 
       generic map (
-         TPD_G => TPD_G
+         TPD_G            => TPD_G,
+         DMA_AXIL_COUNT_G => DMA_AXIL_COUNT_C
       ) port map (
-         axiClk               => isysClk125,
-         axiRst               => isysClk125Rst,
-         axiDmaClk            => axiDmaClk,
-         axiDmaRst            => axiDmaRst,
          mGpReadMaster        => mGpReadMaster,
          mGpReadSlave         => mGpReadSlave,
          mGpWriteMaster       => mGpWriteMaster,
          mGpWriteSlave        => mGpWriteSlave,
+         axiDmaClk            => axiDmaClk,
+         axiDmaRst            => axiDmaRst,
+         icAxilReadMaster     => icAxilReadMaster,
+         icAxilReadSlave      => icAxilReadSlave,
+         icAxilWriteMaster    => icAxilWriteMaster,
+         icAxilWriteSlave     => icAxilWriteSlave,
          dmaAxilReadMaster    => dmaAxilReadMaster,
          dmaAxilReadSlave     => dmaAxilReadSlave,
          dmaAxilWriteMaster   => dmaAxilWriteMaster,
          dmaAxilWriteSlave    => dmaAxilWriteSlave,
+         axiClk               => isysClk125,
+         axiRst               => isysClk125Rst,
          bsiAxilReadMaster    => bsiAxilReadMaster,
          bsiAxilReadSlave     => bsiAxilReadSlave,
          bsiAxilWriteMaster   => bsiAxilWriteMaster,
@@ -263,6 +283,10 @@ begin
          extAxilReadSlave     => extAxilReadSlave,
          extAxilWriteMaster   => extAxilWriteMaster,
          extAxilWriteSlave    => extAxilWriteSlave,
+         coreAxilReadMaster   => coreAxilReadMaster,
+         coreAxilReadSlave    => coreAxilReadSlave,
+         coreAxilWriteMaster  => coreAxilWriteMaster,
+         coreAxilWriteSlave   => coreAxilWriteSlave,
          clkSelA              => clkSelA,
          clkSelB              => clkSelB
       );
@@ -283,6 +307,7 @@ begin
          axilWriteSlave   => bsiAxilWriteSlave,
          acpWriteMaster   => acpWriteMaster,
          acpWriteSlave    => acpWriteSlave,
+         bsiInterrupt     => bsiInterrupt,
          i2cSda           => i2cSda,
          i2cScl           => i2cScl
       );
@@ -294,9 +319,8 @@ begin
    U_RceG3Dma: entity work.RceG3Dma 
       generic map (
          TPD_G                 => TPD_G,
-         AXIL_BASE_ADDR_G      => x"40000000",
-         RCE_DMA_COUNT_G       => RCE_DMA_COUNT_G,
-         RCE_DMA_AXIS_CONFIG_G => RCE_DMA_AXIS_CONFIG_G,
+         DMA_AXIL_COUNT_G      => DMA_AXIL_COUNT_C,
+         DMA_INT_COUNT_G       => DMA_INT_COUNT_C,
          RCE_DMA_MODE_G        => RCE_DMA_MODE_G
       ) port map (
          axiDmaClk            => axiDmaClk,
@@ -311,11 +335,11 @@ begin
          hpWriteMaster        => hpWriteMaster,
          hpReadSlave          => hpReadSlave,
          hpReadMaster         => hpReadMaster,
-         axilReadMaster       => dmaAxilReadMaster,
-         axilReadSlave        => dmaAxilReadSlave,
-         axilWriteMaster      => dmaAxilWriteMaster,
-         axilWriteSlave       => dmaAxilWriteSlave,
-         interrupt            => armInt,
+         dmaAxilReadMaster    => dmaAxilReadMaster,
+         dmaAxilReadSlave     => dmaAxilReadSlave,
+         dmaAxilWriteMaster   => dmaAxilWriteMaster,
+         dmaAxilWriteSlave    => dmaAxilWriteSlave,
+         dmaInterrupt         => dmaInterrupt,
          dmaClk               => dmaClk,
          dmaClkRst            => dmaClkRst,
          dmaOnline            => dmaOnline,
@@ -324,6 +348,27 @@ begin
          dmaObSlave           => dmaObSlave,
          dmaIbMaster          => dmaIbMaster,
          dmaIbSlave           => dmaIbSlave
+      );
+
+
+   --------------------------------------------
+   -- Interrupt Controller
+   --------------------------------------------
+   U_RceG3IntCntl: entity work.RceG3IntCntl 
+      generic map (
+         TPD_G                 => TPD_G,
+         DMA_INT_COUNT_G       => DMA_INT_COUNT_C,
+         RCE_DMA_MODE_G        => RCE_DMA_MODE_G
+      ) port map (
+         axiDmaClk            => axiDmaClk,
+         axiDmaRst            => axiDmaRst,
+         icAxilReadMaster     => icAxilReadMaster,
+         icAxilReadSlave      => icAxilReadSlave,
+         icAxilWriteMaster    => icAxilWriteMaster,
+         icAxilWriteSlave     => icAxilWriteSlave,
+         dmaInterrupt         => dmaInterrupt,
+         bsiInterrupt         => bsiInterrupt,
+         armInterrupt         => armInterrupt
       );
 
 end architecture structure;

@@ -82,7 +82,8 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3DmaAxis.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3DmaPpi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3Dma.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3LocalAxi.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3AxiCntl.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3IntCntl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3Top.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../simlink/rtl/RceG3CpuSim.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/tb.vhd

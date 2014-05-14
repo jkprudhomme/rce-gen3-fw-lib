@@ -32,7 +32,8 @@ use work.AxiDmaPkg.all;
 entity RceG3DmaPpi is
    generic (
       TPD_G            : time                := 1 ns;
-      AXIL_BASE_ADDR_G : slv(31 downto 0)    := x"00000000"
+      DMA_AXIL_COUNT_G : positive            := 4;
+      DMA_INT_COUNT_G  : positive            := 4
    );
    port (
 
@@ -53,13 +54,13 @@ entity RceG3DmaPpi is
       hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
       -- Local AXI Lite Bus
-      axilReadMaster      : in  AxiLiteReadMasterType;
-      axilReadSlave       : out AxiLiteReadSlaveType;
-      axilWriteMaster     : in  AxiLiteWriteMasterType;
-      axilWriteSlave      : out AxiLiteWriteSlaveType;
+      axilReadMaster      : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
+      axilReadSlave       : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
+      axilWriteMaster     : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
+      axilWriteSlave      : out AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
 
       -- Interrupts
-      interrupt           : out slv(15 downto 0);
+      interrupt           : out slv(DMA_INT_COUNT_G-1 downto 0);
 
       -- External DMA Interfaces
       dmaClk              : in  slv(3 downto 0);
@@ -81,8 +82,8 @@ begin
    acpReadMaster   <= AXI_READ_MASTER_INIT_C;
    hpWriteMaster   <= (others=>AXI_WRITE_MASTER_INIT_C);
    hpReadMaster    <= (others=>AXI_READ_MASTER_INIT_C);
-   axilReadSlave   <= AXI_LITE_READ_SLAVE_INIT_C;
-   axilWriteSlave  <= AXI_LITE_WRITE_SLAVE_INIT_C;
+   axilReadSlave   <= (others=>AXI_LITE_READ_SLAVE_INIT_C);
+   axilWriteSlave  <= (others=>AXI_LITE_WRITE_SLAVE_INIT_C);
    interrupt       <= (others=>'0');
    dmaOnline       <= (others=>'0');
    dmaEnable       <= (others=>'0');

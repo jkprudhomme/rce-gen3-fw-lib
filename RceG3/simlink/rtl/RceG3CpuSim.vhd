@@ -19,7 +19,7 @@ begin
    ---------------------------------------
    -- Unused signals
    ---------------------------------------
-   -- armInt
+   -- armInterrupt
    -- armEtcRx
    armEthTx <= (others=>ARM_ETH_TX_INIT_C);
 

@@ -43,7 +43,7 @@ entity RceG3Cpu is
       fclkRst0            : out sl;
 
       -- Interrupts
-      armInt              : in  slv(15 downto 0);
+      armInterrupt        : in  slv(15 downto 0);
 
       -- AXI GP Master
       mGpAxiClk           : in  slv(1 downto 0);
@@ -1051,7 +1051,7 @@ begin
          S_AXI_HP3_WSTRB                  => hpWriteMaster(3).wstrb,
 
          -- IRQ
-         IRQ_F2P                          => armInt,
+         IRQ_F2P                          => armInterrupt,
          Core0_nFIQ                       => '0',
          Core0_nIRQ                       => '0',
          Core1_nFIQ                       => '0',

@@ -1,12 +1,11 @@
 vhdl work hdl/RceG3Bsi.vhd
 vhdl work hdl/RceG3Clocks.vhd
 vhdl work hdl/RceG3Cpu.vhd
-vhdl work hdl/RceG3CpuHw.vhd
-vhdl work hdl/RceG3DmaChannel.vhd
-vhdl work hdl/RceG3DmaChannelAxis.vhd
-vhdl work hdl/RceG3DmaChannelPpi.vhd
+vhdl work hdl/RceG3DmaAxis.vhd
+vhdl work hdl/RceG3DmaPpi.vhd
 vhdl work hdl/RceG3Dma.vhd
-vhdl work hdl/RceG3LocalAxi.vhd
+vhdl work hdl/RceG3AxiCntl.vhd
+vhdl work hdl/RceG3IntCntl.vhd
 vhdl work hdl/RceG3Pkg.vhd
 vhdl work hdl/RceG3Version.vhd
 vhdl work hdl/RceG3Top.vhd

@@ -47,6 +47,9 @@ entity RceG3Bsi is
       acpWriteMaster  : out AxiWriteMasterType;
       acpWriteSlave   : in  AxiWriteSlaveType;
 
+      -- Interrupt
+      bsiInterrupt    : out sl;
+
       -- IIC Interface
       i2cSda          : inout sl;
       i2cScl          : inout sl
@@ -483,8 +486,10 @@ begin
       axilReadSlave(1)  <= b.axilReadSlave;
       axilWriteSlave(1) <= b.axilWriteSlave;
       acpWriteMaster    <= b.wMaster;
-      
+
    end process;
+
+   bsiInterrupt <= '0';
 
 end architecture IMP;
 

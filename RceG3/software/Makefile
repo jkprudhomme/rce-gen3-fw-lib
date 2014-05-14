@@ -1,9 +1,15 @@
 # Variables
-CFLAGS  := -Wall 
+CFLAGS  := -Wall -I../../StdLib/axi/simlink/src/ -Iaxi_lib -Ilib
 LFLAGS  := -lrt -pthread 
 CC      := g++ -fpermissive 
 BIN     := $(PWD)/bin
 OBJ     := $(PWD)/.obj
+
+# Generic Sources
+AXI_DIR := $(PWD)/axi_lib
+AXI_SRC := $(wildcard $(AXI_DIR)/*.cpp)
+AXI_HDR := $(wildcard $(AXI_DIR)/*.h)
+AXI_OBJ := $(patsubst $(AXI_DIR)/%.cpp,$(OBJ)/%.o,$(AXI_SRC))
 
 # Generic Sources
 LIB_DIR := $(PWD)/lib
@@ -23,7 +29,7 @@ TOP_SRC := $(wildcard $(TOP_DIR)/*.cpp)
 TOP_BIN := $(patsubst $(TOP_DIR)/%.cpp,$(BIN)/%,$(TOP_SRC))
 
 # Default
-all: dir $(LIB_OBJ) $(COM_OBJ) $(TOP_BIN)
+all: dir $(AXI_OBJ) $(LIB_OBJ) $(COM_OBJ) $(TOP_BIN)
 
 # Object directory
 dir:
@@ -33,6 +39,10 @@ dir:
 clean:
 	rm -f $(OBJ)/*
 	rm -f $(BIN)/*
+
+# Compile Library Sources
+$(OBJ)/%.o: $(AXI_DIR)/%.cpp $(AXI_DIR)/%.h
+	$(CC) -c $(CFLAGS) $(DEF) -o $@ $<
 
 # Compile Library Sources
 $(OBJ)/%.o: $(LIB_DIR)/%.cpp $(LIB_DIR)/%.h
