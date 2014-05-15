@@ -23,6 +23,7 @@ use unisim.vcomponents.all;
 use work.StdRtlPkg.all;
 use work.AxiPkg.all;
 use work.i2cPkg.all;
+use work.RceG3Pkg.all;
 use work.AxiLitePkg.all;
 
 entity RceG3Bsi is
@@ -34,6 +35,8 @@ entity RceG3Bsi is
       -- Clock and reset
       axiClk          : in  sl;
       axiClkRst       : in  sl;
+      axiDmaClk       : in  sl;
+      axiDmaRst       : in  sl;
 
       -- AXI Lite Busses
       -- Channel 0 = 0x84000000 - 0x84000FFF : BSI I2C Slave Registers
@@ -58,21 +61,23 @@ end RceG3Bsi;
 
 architecture IMP of RceG3Bsi is
 
-   signal i2cBramRd     : sl;
-   signal i2cBramWr     : sl;
-   signal i2cBramAddr   : slv(15 downto 0);
-   signal i2cBramDout   : slv( 7 downto 0);
-   signal locBramDout   : slv( 7 downto 0);
-   signal i2cBramDin    : slv( 7 downto 0);
-   signal cpuBramDout   : slv(31 downto 0);
-   signal i2cIn         : i2c_in_type;
-   signal i2cOut        : i2c_out_type;
-   signal bsiFifoWrite  : sl;
-   signal bsiFifoDin    : slv(47 downto 0);
-   signal bsiFifoAFull  : sl;
-   signal bsiFifoDout   : slv(47 downto 0);
-   signal bsiFifoValid  : sl;
-   signal aFullData     : slv(7 downto 0);
+   signal i2cBramRd       : sl;
+   signal i2cBramWr       : sl;
+   signal i2cBramAddr     : slv(15 downto 0);
+   signal i2cBramDout     : slv( 7 downto 0);
+   signal locBramDout     : slv( 7 downto 0);
+   signal i2cBramDin      : slv( 7 downto 0);
+   signal cpuBramDout     : slv(31 downto 0);
+   signal i2cIn           : i2c_in_type;
+   signal i2cOut          : i2c_out_type;
+   signal bsiFifoWrite    : sl;
+   signal bsiFifoDin      : slv(47 downto 0);
+   signal bsiFifoAFull    : sl;
+   signal bsiFifoDout     : slv(47 downto 0);
+   signal bsiFifoValid    : sl;
+   signal aFullData       : slv(7 downto 0);
+   signal intWriteMaster  : AxiWriteMasterType;
+   signal intWriteSlave   : AxiWriteSlaveType;
 
    type RegType is record
       cpuBramWr      : sl;
@@ -98,25 +103,37 @@ architecture IMP of RceG3Bsi is
    type StateType is (S_IDLE_C, S_ADDR_C, S_DATA_C, S_WAIT_C);
 
    type BsiType is record
-      state          : StateType;
-      dirty          : sl;
-      bsiFifoRd      : sl;
-      fifoEnable     : sl;
-      memBaseAddress : slv(31 downto 18);
-      wMaster        : AxiWriteMasterType;
-      axilReadSlave  : AxiLiteReadSlaveType;
-      axilWriteSlave : AxiLiteWriteSlaveType;
+      bsiTest             : sl;
+      fifoEnable          : slv(8  downto  0);
+      memBaseAddress      : slv(31 downto 18);
+      writeDmaCache       : slv(3 downto 0);
+      readDmaCache        : slv(3 downto 0);
+      intEnable           : slv(15  downto 0);
+      ppiReadDmaCache     : slv(3 downto 0);
+      ppiWriteDmaCache    : slv(3 downto 0);
+      state               : StateType;
+      dirty               : sl;
+      bsiFifoRd           : sl;
+      wMaster             : AxiWriteMasterType;
+      axilReadSlave       : AxiLiteReadSlaveType;
+      axilWriteSlave      : AxiLiteWriteSlaveType;
    end record BsiType;
 
    constant BSI_INIT_C : BsiType := (
-      state          => S_IDLE_C,
-      dirty          => '0',
-      bsiFifoRd      => '0',
-      fifoEnable     => '0',
-      memBaseAddress => (others=>'0'),
-      wMaster        => AXI_WRITE_MASTER_INIT_C,
-      axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
-      axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
+      bsiTest             => '0',
+      fifoEnable          => (others=>'0'),
+      memBaseAddress      => (others=>'0'),
+      writeDmaCache       => (others=>'0'),
+      readDmaCache        => (others=>'0'),
+      intEnable           => (others=>'0'),
+      ppiReadDmaCache     => (others=>'0'),
+      ppiWriteDmaCache    => (others=>'0'),
+      state               => S_IDLE_C,
+      dirty               => '0',
+      bsiFifoRd           => '0',
+      wMaster             => AXI_WRITE_MASTER_INIT_C,
+      axilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
+      axilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C
    );
 
    signal b   : BsiType := BSI_INIT_C;
@@ -348,11 +365,13 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, b, axilWriteMaster(1), axilReadMaster(1), acpWriteSlave, bsiFifoValid, bsiFifoDout ) is
+   process (axiClkRst, b, axilWriteMaster(1), axilReadMaster(1), intWriteSlave, bsiFifoValid, bsiFifoDout ) is
       variable v         : BsiType;
       variable axiStatus : AxiLiteStatusType;
    begin
       v := b;
+
+      v.bsiTest := '0';
 
       ------------------------
       -- Register Space
@@ -371,13 +390,32 @@ begin
          elsif axilWriteMaster(1).awaddr(11 downto 8) = x"4" then
             case (axilWriteMaster(1).awaddr(7 downto 0)) is
 
-               -- FIFO Enable, Bits 4 = BSI FIFO
+               -- IntEnable, Bit 4 = BSI FIFO
+               when X"04" =>
+                  v.intEnable := axilWriteMaster(1).wdata(15 downto 0);
+
+               when X"08" =>
+                  v.writeDmaCache := axilWriteMaster(1).wdata(3 downto 0);
+
+               when X"0C" =>
+                  v.readDmaCache := axilWriteMaster(1).wdata(3 downto 0);
+
+               -- FIFO Enable, Bit 4 = BSI FIFO
                when X"10" =>
-                  v.fifoEnable := axilWriteMaster(1).wdata(4);
+                  v.fifoEnable := axilWriteMaster(1).wdata(8 downto 0);
 
                -- Memory base address 0x88000418
                when X"18" =>
                   v.memBaseAddress := axilWriteMaster(1).wdata(31 downto 18);
+
+               when X"1C" =>
+                  v.ppiReadDmaCache := axilWriteMaster(1).wdata(3 downto 0);
+
+               when X"20" =>
+                  v.ppiWriteDmaCache := axilWriteMaster(1).wdata(3 downto 0);
+
+               when X"80" =>
+                  v.bsiTest := axilWriteMaster(1).wdata(0);
 
                when others => null;
             end case;
@@ -398,14 +436,29 @@ begin
             when X"400" =>
                v.axilReadSlave.rdata(4) := b.dirty;
 
+            when X"404" =>
+               v.axilReadSlave.rdata(15 downto 0) := b.intEnable;
+
+            when X"408" =>
+               v.axilReadSlave.rdata(3 downto 0) := b.writeDmaCache;
+
+            when X"40C" =>
+               v.axilReadSlave.rdata(3 downto 0) := b.readDmaCache;
+
             -- FIFO Enable, 20 bits - 0x88000410
             -- Bits 4     = BSI FIFO
             when X"410" =>
-               v.axilReadSlave.rdata(4) := b.fifoEnable;
+               v.axilReadSlave.rdata(8 downto 0) := b.fifoEnable;
 
             -- Memory base address 0x88000418
             when X"418" =>
                v.axilReadSlave.rdata(31 downto 18) := b.memBaseAddress;
+
+            when X"41C" =>
+               v.axilReadSlave.rdata(3 downto 0) := b.ppiReadDmaCache;
+
+            when X"420" =>
+               v.axilReadSlave.rdata(3 downto 0) := b.ppiWriteDmaCache;
 
             when others => null;
          end case;
@@ -426,7 +479,7 @@ begin
       case b.state is
 
          when S_IDLE_C =>
-            if bsiFifoValid = '1' and b.dirty = '0' then
+            if (bsiFifoValid = '1' and b.dirty = '0' and b.fifoEnable(4) = '1') or b.bsiTest = '1' then
                v.state := S_ADDR_C;
             end if;
 
@@ -436,7 +489,7 @@ begin
             v.wMaster.awaddr(7  downto  3) := "00100";
             v.wMaster.awvalid              := '1';
 
-            if acpWriteSlave.awready = '1' and b.wMaster.awvalid = '1' then
+            if intWriteSlave.awready = '1' and b.wMaster.awvalid = '1' then
                v.wMaster.awvalid := '0';
                v.state           := S_DATA_C;
             end if;
@@ -445,14 +498,14 @@ begin
                v.wMaster.wvalid := '1';
                v.wMaster.wdata  := x"0000" & bsiFifoDout;
 
-            if acpWriteSlave.wready = '1' and b.wMaster.wvalid = '1' then
+            if intWriteSlave.wready = '1' and b.wMaster.wvalid = '1' then
                v.wMaster.wvalid := '0';
                v.state          := S_WAIT_C;
                v.bsiFifoRd      := '1';
             end if;
 
          when S_WAIT_C =>
-            if acpWriteSlave.bvalid = '1' then
+            if intWriteSlave.bvalid = '1' then
                v.state := S_IDLE_C;
                v.dirty := '1';
             end if;
@@ -485,11 +538,52 @@ begin
       -- Outputs
       axilReadSlave(1)  <= b.axilReadSlave;
       axilWriteSlave(1) <= b.axilWriteSlave;
-      acpWriteMaster    <= b.wMaster;
+      intWriteMaster    <= b.wMaster;
 
    end process;
 
-   bsiInterrupt <= '0';
+   bsiInterrupt <= b.intEnable(4) and b.dirty;
+
+   -- Write path FIFO
+   U_AxiWritePathFifo : entity work.AxiWritePathFifo
+      generic map (
+         TPD_G                    => TPD_G,
+         RST_ASYNC_G              => false,
+         XIL_DEVICE_G             => "7SERIES",
+         USE_BUILT_IN_G           => false,
+         GEN_SYNC_FIFO_G          => false,
+         ALTERA_SYN_G             => false,
+         ALTERA_RAM_G             => "M9K",
+         ADDR_LSB_G               => 3,
+         ID_FIXED_EN_G            => true,
+         SIZE_FIXED_EN_G          => true,
+         BURST_FIXED_EN_G         => true,
+         LEN_FIXED_EN_G           => false,
+         LOCK_FIXED_EN_G          => true,
+         PROT_FIXED_EN_G          => true,
+         CACHE_FIXED_EN_G         => true,
+         ADDR_BRAM_EN_G           => false,
+         ADDR_CASCADE_SIZE_G      => 1,
+         ADDR_FIFO_ADDR_WIDTH_G   => 4,
+         DATA_BRAM_EN_G           => false,
+         DATA_CASCADE_SIZE_G      => 1,
+         DATA_FIFO_ADDR_WIDTH_G   => 4,
+         DATA_FIFO_PAUSE_THRESH_G => 1,
+         RESP_BRAM_EN_G           => false,
+         RESP_CASCADE_SIZE_G      => 1,
+         RESP_FIFO_ADDR_WIDTH_G   => 4,
+         AXI_CONFIG_G             => AXI_ACP_INIT_C
+      ) port map (
+         sAxiClk         => axiClk,
+         sAxiRst         => axiClkRst,
+         sAxiWriteMaster => intWriteMaster,
+         sAxiWriteSlave  => intWriteSlave,
+         sAxiCtrl        => open,
+         mAxiClk         => axiDmaClk,
+         mAxiRst         => axiDmaRst,
+         mAxiWriteMaster => acpWriteMaster,
+         mAxiWriteSlave  => acpWriteSlave
+      );
 
 end architecture IMP;
 

@@ -72,7 +72,8 @@ begin
       );
 
    armInterrupt(3  downto 0) <= dmaInterrupt(3 downto 0);
-   armInterrupt(15 downto 4) <= (others=>'0');
+   armInterrupt(4)           <= bsiInterrupt;
+   armInterrupt(15 downto 5) <= (others=>'0');
 
 end architecture structure;
 

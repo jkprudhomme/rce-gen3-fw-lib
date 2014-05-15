@@ -42,7 +42,11 @@ int main(int argc, char **argv) {
       return 1;
    }
    master = rce->getMaster(0x40000000);
-   //master->setVerbose(true);
+
+   //rce->setVerbose(true);
+   //sleep(5);
+   //rce->write(0x88000480,1);
+   //sleep(100);
 
    dma = new AxiStreamDmaSim(master,0x60000000,0x60010000,mem,buffSize*buffCount,buffSize);
 

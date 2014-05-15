@@ -71,3 +71,11 @@ AxiMasterSim * RceG3CpuSim::getMaster(uint address) {
    if ( address >= gp1Base && address <= gp1Top ) return(_gpMaster[1]);
    return(NULL);
 }
+
+void RceG3CpuSim::setVerbose(bool v) { 
+   uint x;
+   for(x=0; x<4; x++) _hpSlave[x]->setVerbose(v);
+   _apvSlave->setVerbose(v);
+   for(x=0; x<2; x++) _gpMaster[x]->setVerbose(v);
+}
+

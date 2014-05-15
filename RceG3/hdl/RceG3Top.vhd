@@ -274,7 +274,7 @@ begin
          dmaAxilWriteMaster   => dmaAxilWriteMaster,
          dmaAxilWriteSlave    => dmaAxilWriteSlave,
          axiClk               => isysClk125,
-         axiRst               => isysClk125Rst,
+         axiClkRst            => isysClk125Rst,
          bsiAxilReadMaster    => bsiAxilReadMaster,
          bsiAxilReadSlave     => bsiAxilReadSlave,
          bsiAxilWriteMaster   => bsiAxilWriteMaster,
@@ -301,6 +301,8 @@ begin
       ) port map (
          axiClk           => isysClk125,
          axiClkRst        => isysClk125Rst,
+         axiDmaClk        => axiDmaClk,
+         axiDmaRst        => axiDmaRst,
          axilReadMaster   => bsiAxilReadMaster,
          axilReadSlave    => bsiAxilReadSlave,
          axilWriteMaster  => bsiAxilWriteMaster,

@@ -60,7 +60,7 @@ entity RceG3AxiCntl is
 
       -- Slow AXI Busses
       axiClk               : in     sl;
-      axiRst               : in     sl;
+      axiClkRst            : in     sl;
 
       -- BSI AXI Lite
       bsiAxilReadMaster    : out    AxiLiteReadMasterArray(1 downto 0);
@@ -229,7 +229,7 @@ begin
          TPD_G  => TPD_G
       ) port map (
          axiClk              => axiClk,
-         axiClkRst           => axiRst,
+         axiClkRst           => axiClkRst,
          axiReadMaster       => mGpReadMaster(1),
          axiReadSlave        => mGpReadSlave(1),
          axiWriteMaster      => mGpWriteMaster(1),
@@ -284,7 +284,7 @@ begin
               connectivity => x"FFFF"))
       ) port map (
          axiClk              => axiClk,
-         axiClkRst           => axiRst,
+         axiClkRst           => axiClkRst,
          sAxiWriteMasters(0) => midGp1WriteMaster,
          sAxiWriteSlaves(0)  => midGp1WriteSlave,
          sAxiReadMasters(0)  => midGp1ReadMaster,
@@ -329,7 +329,7 @@ begin
    end process;
 
    -- Async
-   process (axiRst, intReadMaster, intWriteMaster, dnaValid, dnaValue, r ) is
+   process (axiClkRst, intReadMaster, intWriteMaster, dnaValid, dnaValue, r ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
       variable c         : character;
@@ -399,7 +399,7 @@ begin
       end if;
 
       -- Reset
-      if (axiRst = '1') then
+      if (axiClkRst = '1') then
          v := REG_INIT_C;
       end if;
 
@@ -425,7 +425,7 @@ begin
          SIM_DNA_VALUE_G => X"000000000000000"
       ) port map (
          clk      => axiClk,
-         rst      => axiRst,
+         rst      => axiClkRst,
          dnaValue => dnaValue,
          dnaValid => dnaValid
       );

@@ -17,7 +17,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.ArmRceG3Pkg.all;
+use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 
 library unisim;
@@ -94,11 +94,11 @@ architecture mapping of GmiiToRgmiiSwitch is
          speed_mode        : out slv(1 downto 0));
    end component;
 
-   attribute SYN_BLACK_BOX                    : boolean;
-   attribute SYN_BLACK_BOX of GmiiToRgmiiCore : component is true;
+   --attribute SYN_BLACK_BOX                    : boolean;
+   --attribute SYN_BLACK_BOX of GmiiToRgmiiCore : component is true;
 
-   attribute BLACK_BOX_PAD_PIN                    : string;
-   attribute BLACK_BOX_PAD_PIN of GmiiToRgmiiCore : component is "tx_reset,rx_reset,clkin,ref_clk_out,gmii_clk_125m_out,gmii_clk_25m_out,gmii_clk_2_5m_out,rgmii_txd[3:0],rgmii_tx_ctl,rgmii_txc,rgmii_rxd[3:0],rgmii_rx_ctl,rgmii_rxc,link_status,clock_speed[1:0],duplex_status,mdio_gem_mdc,mdio_gem_i,mdio_gem_o,mdio_gem_t,mdio_phy_mdc,mdio_phy_i,mdio_phy_o,mdio_phy_t,gmii_txd[7:0],gmii_tx_en,gmii_tx_er,gmii_tx_clk,gmii_crs,gmii_col,gmii_rxd[7:0],gmii_rx_dv,gmii_rx_er,gmii_rx_clk,speed_mode[1:0]";
+   --attribute BLACK_BOX_PAD_PIN                    : string;
+   --attribute BLACK_BOX_PAD_PIN of GmiiToRgmiiCore : component is "tx_reset,rx_reset,clkin,ref_clk_out,gmii_clk_125m_out,gmii_clk_25m_out,gmii_clk_2_5m_out,rgmii_txd[3:0],rgmii_tx_ctl,rgmii_txc,rgmii_rxd[3:0],rgmii_rx_ctl,rgmii_rxc,link_status,clock_speed[1:0],duplex_status,mdio_gem_mdc,mdio_gem_i,mdio_gem_o,mdio_gem_t,mdio_phy_mdc,mdio_phy_i,mdio_phy_o,mdio_phy_t,gmii_txd[7:0],gmii_tx_en,gmii_tx_er,gmii_tx_clk,gmii_crs,gmii_col,gmii_rxd[7:0],gmii_rx_dv,gmii_rx_er,gmii_rx_clk,speed_mode[1:0]";
 
    signal ethMioI,
       ethMioO,

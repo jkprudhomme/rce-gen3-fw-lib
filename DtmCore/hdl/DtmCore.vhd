@@ -220,10 +220,10 @@ begin
          sAxiWriteSlaves(0)  => coreAxilWriteSlave,
          sAxiReadMasters(0)  => coreAxilReadMaster,
          sAxiReadSlaves(0)   => coreAxilReadSlave,
-         mAxiWriteMasters    => pcieAxilWriteMaster,
-         mAxiWriteSlaves     => pcieAxilWriteSlave,
-         mAxiReadMasters     => pcieAxilReadMaster,
-         mAxiReadSlaves      => pcieAxilReadSlave
+         mAxiWriteMasters(0) => pcieAxilWriteMaster,
+         mAxiWriteSlaves(0)  => pcieAxilWriteSlave,
+         mAxiReadMasters(0)  => pcieAxilReadMaster,
+         mAxiReadSlaves(0)   => pcieAxilReadSlave
       );
 
 
@@ -235,10 +235,10 @@ begin
       port map (
          axiClk          => iaxiClk,
          axiClkRst       => iaxiClkRst,
-         axiReadMaster   => pcieAxiReadMaster,
-         axiReadSlave    => pcieAxiReadSlave,
-         axiWriteMaster  => pcieAxiWriteMaster,
-         axiWriteSlave   => pcieAxiWriteSlave,
+         axiReadMaster   => pcieAxilReadMaster,
+         axiReadSlave    => pcieAxilReadSlave,
+         axiWriteMaster  => pcieAxilWriteMaster,
+         axiWriteSlave   => pcieAxilWriteSlave,
          pciRefClkP      => pciRefClkP,
          pciRefClkM      => pciRefClkM,
          pcieResetL      => pciResetL,

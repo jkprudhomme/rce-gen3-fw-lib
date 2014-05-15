@@ -40,6 +40,8 @@ class RceG3CpuSim  {
 
       // Get a master for a particular address space
       AxiMasterSim *getMaster (uint address);
+
+      void setVerbose(bool v);
 };
 
 #endif
