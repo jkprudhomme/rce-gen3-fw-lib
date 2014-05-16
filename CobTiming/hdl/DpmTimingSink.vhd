@@ -21,7 +21,6 @@ use IEEE.numeric_std.all;
 library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 use work.StdRtlPkg.all;
-use work.ArmRceG3Pkg.all;
 use work.AxiLitePkg.all;
 
 entity DpmTimingSink is
@@ -324,7 +323,7 @@ begin
 
          -- OC FIFO read, one per FIFO
          elsif axiReadMaster.araddr(11 downto 0) = x"010" then
-            v.ocFifoRd := '1';
+            v.ocFifoRd := ocFifoValid;
 
             v.axiReadSlave.rdata(8)           := ocFifoValid;
             v.axiReadSlave.rdata(7 downto 0)  := ocFifoData;
@@ -350,7 +349,7 @@ begin
       -- Outputs
       axiReadSlave  <= r.axiReadSlave;
       axiWriteSlave <= r.axiWriteSlave;
-      ocFifoRd      <= v.ocFifoRd;
+      ocFifoRd      <= r.ocFifoRd;
       
    end process;
 
@@ -362,30 +361,19 @@ begin
       if rising_edge(intClk) then
          if intClkRst = '1' then
             ledCountA <= (others=>'0') after TPD_G;
+            ledCountB <= (others=>'0') after TPD_G;
          else
             ledCountA <= ledCountA + 1 after TPD_G;
+
+            if intCodeEn = '1' then
+               ledCountB <= ledCountB + 1 after TPD_G;
+            end if;
          end if;
       end if;
    end process;
 
    led(0) <= ledCountA(26);
-
-   process ( intClk ) begin
-      if rising_edge(intClk) then
-         if intClkRst = '1' then
-            ledCountB <= (others=>'0') after TPD_G;
-            led(1)    <= '1'           after TPD_G;
-         elsif intCodeEn = '1' then
-            ledCountB <= (others=>'1') after TPD_G;
-            led(1)    <= '0'           after TPD_G;
-         elsif ledCountB /= 0 then
-            ledCountB <= ledCountB - 1 after TPD_G;
-            led(1)    <= '0'           after TPD_G;
-         else
-            led(1)    <= '1'           after TPD_G;
-         end if;
-      end if;
-   end process;
+   led(1) <= ledCountB(15);
 
 end architecture STRUCTURE;
 

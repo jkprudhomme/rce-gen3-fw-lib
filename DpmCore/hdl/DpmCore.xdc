@@ -14,8 +14,8 @@
 #-------------------------------------------------------------------------------
 
 # Arm Core Clocks
-create_clock -name fclkClk0 -period 10 \
-   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Cpu/U_PS7/U0/PS7_i/FCLKCLK[0]]
+set fclk0Group     [get_clocks -of_objects \
+   [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKIN1]]
 set dmaClkGroup    [get_clocks -of_objects \
    [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT0]]
 set sysClk200Group [get_clocks -of_objects \
@@ -32,6 +32,12 @@ set intEthClk0Group [get_clocks -of_objects \
 set intEthClk1Group [get_clocks -of_objects \
    [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]]
 
+# Set Asynchronous Paths
+set_clock_groups -asynchronous -group ${fclk0Group} \
+                               -group ${dmaClkGroup} \
+                               -group ${sysClk200Group} \
+                               -group ${sysClk125Group} 
+
 set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk0Group}
 set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk1Group}
 
@@ -40,20 +46,6 @@ set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk1Group
 
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk0Group}
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk1Group}
-
-# Local 10G Ethernet Clocks
-create_clock -name eth_txoutclk -period 6.4 \
-   [get_pins U_DpmCore/U_Eth10gGen.U_ZynqEthernet10G/U_ZynqXaui/U0/xaui_block_i/gt_wrapper_i/gt0_zynq_10g_xaui_gt_wrapper_i/gtxe2_i/TXOUTCLK]
-
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group [get_clocks {eth_txoutclk}]
-set_clock_groups -asynchronous -group ${sysClk125Group} -group [get_clocks {eth_txoutclk}]
-set_clock_groups -asynchronous -group ${sysClk200Group} -group [get_clocks {eth_txoutclk}]
-
-# Set Asynchronous Paths
-set_clock_groups -asynchronous -group [get_clocks {fclkClk0}] \
-                               -group ${dmaClkGroup} \
-                               -group ${sysClk200Group} \
-                               -group ${sysClk125Group} 
 
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
@@ -159,16 +151,11 @@ set_property IOSTANDARD LVCMOS25 [get_ports i2cSda]
 set_property IOSTANDARD LVCMOS25 [get_ports clkSelA]
 set_property IOSTANDARD LVCMOS25 [get_ports clkSelB]
 
-#########################################################
-# Top Level IO Types, To Be Defined At Top Level
-#########################################################
+set_property IOSTANDARD LVCMOS25 [get_ports led]
 
-# IO Standard
-#set_property IOSTANDARD LVCMOS25 [get_ports led]
+set_property IOSTANDARD LVDS_25 [get_ports dtmClkP]
+set_property IOSTANDARD LVDS_25 [get_ports dtmClkM]
 
-#set_property IOSTANDARD LVDS_25 [get_ports dtmClkP]
-#set_property IOSTANDARD LVDS_25 [get_ports dtmClkM]
-
-#set_property IOSTANDARD LVDS_25 [get_ports dtmFbP]
-#set_property IOSTANDARD LVDS_25 [get_ports dtmFbM]
+set_property IOSTANDARD LVDS_25 [get_ports dtmFbP]
+set_property IOSTANDARD LVDS_25 [get_ports dtmFbM]
 
