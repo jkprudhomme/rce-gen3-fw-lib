@@ -17,7 +17,7 @@ USE ieee.std_logic_1164.ALL;
 
 package RceG3Version is
 
-constant RCE_G3_VERSION_C : std_logic_vector(31 downto 0) := x"00000010";
+constant RCE_G3_VERSION_C : std_logic_vector(31 downto 0) := x"00000011";
 
 end RceG3Version;
 

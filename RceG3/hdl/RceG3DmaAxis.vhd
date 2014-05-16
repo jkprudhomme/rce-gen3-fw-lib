@@ -172,7 +172,6 @@ begin
             PIPE_STAGES_G       => 1,
             SLAVE_READY_EN_G    => true,
             VALID_THOLD_G       => 1,
-            RST_ASYNC_G         => false,
             BRAM_EN_G           => true,
             XIL_DEVICE_G        => "7SERIES",
             USE_BUILT_IN_G      => false,
@@ -205,7 +204,6 @@ begin
             PIPE_STAGES_G       => 1,
             SLAVE_READY_EN_G    => false,
             VALID_THOLD_G       => 1,
-            RST_ASYNC_G         => false,
             BRAM_EN_G           => true,
             XIL_DEVICE_G        => "7SERIES",
             USE_BUILT_IN_G      => false,
@@ -236,7 +234,6 @@ begin
       U_AxiReadPathFifo : entity work.AxiReadPathFifo 
          generic map (
             TPD_G                    => TPD_G,
-            RST_ASYNC_G              => false,
             XIL_DEVICE_G             => "7SERIES",
             USE_BUILT_IN_G           => false,
             GEN_SYNC_FIFO_G          => true,
@@ -273,7 +270,6 @@ begin
       U_AxiWritePathFifo : entity work.AxiWritePathFifo
          generic map (
             TPD_G                    => TPD_G,
-            RST_ASYNC_G              => false,
             XIL_DEVICE_G             => "7SERIES",
             USE_BUILT_IN_G           => false,
             GEN_SYNC_FIFO_G          => true,

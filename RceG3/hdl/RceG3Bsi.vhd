@@ -84,6 +84,7 @@ architecture IMP of RceG3Bsi is
       cpuBramAddr    : slv(8  downto 0);
       cpuBramDin     : slv(31 downto 0);
       readEnDly      : slv(1  downto 0);
+      bsiFifoRd      : sl;
       axilReadSlave  : AxiLiteReadSlaveType;
       axilWriteSlave : AxiLiteWriteSlaveType;
    end record RegType;
@@ -93,6 +94,7 @@ architecture IMP of RceG3Bsi is
       cpuBramAddr    => (others=>'0'),
       cpuBramDin     => (others=>'0'),
       readEnDly      => (others=>'0'),
+      bsiFifoRd      => '0',
       axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
    );
@@ -138,6 +140,10 @@ architecture IMP of RceG3Bsi is
 
    signal b   : BsiType := BSI_INIT_C;
    signal bin : BsiType;
+
+   signal bsiFifoRd    : sl;
+   signal bsiFifoRdAxi : sl;
+   signal bsiFifoRdAcp : sl;
 
 begin
 
@@ -232,12 +238,13 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, axilReadMaster(0), axilWriteMaster(0), cpuBramDout, r ) is
+   process (axiClkRst, axilReadMaster(0), axilWriteMaster(0), cpuBramDout, r, bsiFifoValid, bsiFifoDout ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
       v := r;
 
+      v.bsiFifoRd := '0';
       v.cpuBramWr := '0';
       v.readEnDly := (others=>'0');
 
@@ -245,23 +252,34 @@ begin
 
       -- Write
       if (axiStatus.writeEnable = '1') then
-         v.cpuBramWr   := '1';
-         v.cpuBramAddr := axilWriteMaster(0).awaddr(10 downto 2);
-         v.cpuBramDin  := axilWriteMaster(0).wdata;
+
+         -- Write only to block ram
+         if axilWriteMaster(0).awaddr(11) = '0' then
+            v.cpuBramWr   := '1';
+            v.cpuBramAddr := axilWriteMaster(0).awaddr(10 downto 2);
+            v.cpuBramDin  := axilWriteMaster(0).wdata;
+         end if;
          axiSlaveWriteResponse(v.axilWriteSlave);
       end if;
 
       -- Read
       if (axiStatus.readEnable = '1') then
-
          v.cpuBramAddr := axilReadMaster(0).araddr(10 downto 2);
 
-         v.readEnDly(0) := '1';
-         v.readEnDly(1) := r.readEnDly(0);
+         -- Read from to block ram
+         if axilReadMaster(0).araddr(11) = '0' then
+            v.readEnDly(0) := '1';
+            v.readEnDly(1) := r.readEnDly(0);
 
-         -- Send Axi Response
-         if ( r.readEnDly(1) = '1' ) then
-            v.axilReadSlave.rdata := cpuBramDout;
+            -- Send Axi Response
+            if ( r.readEnDly(1) = '1' ) then
+               v.axilReadSlave.rdata := cpuBramDout;
+               axiSlaveReadResponse(v.axilReadSlave);
+            end if;
+         else
+            v.bsiFifoRd                        := bsiFifoValid;
+            v.axilReadSlave.rdata(15 downto 0) := bsiFifoDout(47 downto 32);
+            v.axilReadSlave.rdata(16)          := bsiFifoValid;
             axiSlaveReadResponse(v.axilReadSlave);
          end if;
       end if;
@@ -277,6 +295,7 @@ begin
       -- Outputs
       axilReadSlave(0)  <= r.axilReadSlave;
       axilWriteSlave(0) <= r.axilWriteSlave;
+      bsiFifoRdAxi      <= r.bsiFifoRd;
       
    end process;
 
@@ -341,7 +360,7 @@ begin
          full            => open,
          not_full        => open,
          rd_clk          => axiClk,
-         rd_en           => b.bsiFifoRd,
+         rd_en           => bsiFifoRd,
          dout            => bsiFifoDout,
          rd_data_count   => open,
          valid           => bsiFifoValid,
@@ -351,6 +370,7 @@ begin
          empty           => open
       );
 
+   bsiFifoRd <= bsiFifoRdAcp or bsiFifoRdAxi;
 
    --------------------------------------------------
    -- ACP Push
@@ -539,6 +559,7 @@ begin
       axilReadSlave(1)  <= b.axilReadSlave;
       axilWriteSlave(1) <= b.axilWriteSlave;
       intWriteMaster    <= b.wMaster;
+      bsiFifoRdAcp      <= b.bsiFifoRd;
 
    end process;
 
@@ -548,7 +569,6 @@ begin
    U_AxiWritePathFifo : entity work.AxiWritePathFifo
       generic map (
          TPD_G                    => TPD_G,
-         RST_ASYNC_G              => false,
          XIL_DEVICE_G             => "7SERIES",
          USE_BUILT_IN_G           => false,
          GEN_SYNC_FIFO_G          => false,
