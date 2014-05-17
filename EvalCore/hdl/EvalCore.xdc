@@ -13,8 +13,10 @@
 #-- 11/14/2013: created.
 #-------------------------------------------------------------------------------
 
-# Arm Core Clocks
+# CPU Clock
+create_clock -name fclk0 -period 10 [get_pins U_EvalCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
 
+# Arm Core Clocks
 set fclk0Group     [get_clocks -of_objects \
    [get_pins U_EvalCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKIN1]]
 set dmaClkGroup    [get_clocks -of_objects \

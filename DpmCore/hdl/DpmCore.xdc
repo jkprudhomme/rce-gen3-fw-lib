@@ -13,15 +13,18 @@
 #-- 11/14/2013: created.
 #-------------------------------------------------------------------------------
 
+# CPU Clock
+create_clock -name fclk0 -period 10 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
+
 # Arm Core Clocks
 set fclk0Group     [get_clocks -of_objects \
    [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKIN1]]
 set dmaClkGroup    [get_clocks -of_objects \
-   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT0]]
+   [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]]
 set sysClk200Group [get_clocks -of_objects \
-   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT1]]
+   [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]]
 set sysClk125Group [get_clocks -of_objects \
-   [get_pins U_DpmCore/U_ArmRceG3Top/U_ArmRceG3Clocks/U_ClockGen/CLKOUT2]]
+   [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]]
 create_clock -name ethRefClk -period 6.4 [get_ports ethRefClkP]
 
 # Local 1G Ethernet Clocks

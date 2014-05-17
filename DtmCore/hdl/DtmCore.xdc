@@ -14,6 +14,9 @@
 #-- 01/20/2014: Added GMII-To-RGMII Switch
 #-------------------------------------------------------------------------------
 
+# CPU Clock
+create_clock -name fclk0 -period 10 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
+
 # Arm Core Clocks
 set fclk0Group     [get_clocks -of_objects \
    [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKIN1]]
