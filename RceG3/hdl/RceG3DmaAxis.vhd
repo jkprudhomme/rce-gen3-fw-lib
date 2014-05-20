@@ -213,7 +213,7 @@ begin
             CASCADE_SIZE_G      => 1,
             FIFO_ADDR_WIDTH_G   => 9,
             FIFO_FIXED_THRESH_G => true,
-            FIFO_PAUSE_THRESH_G => 500,
+            FIFO_PAUSE_THRESH_G => 475,
             SLAVE_AXI_CONFIG_G  => DMA_AXIS_CONFIG_G,
             MASTER_AXI_CONFIG_G => DMA_AXIS_CONFIG_G
          ) port map (
