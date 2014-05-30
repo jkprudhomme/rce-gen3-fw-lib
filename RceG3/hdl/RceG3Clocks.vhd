@@ -69,6 +69,16 @@ architecture structure of RceG3Clocks is
    signal ponReset           : sl;
    signal lockedReset        : sl;
 
+   attribute KEEP_HIERARCHY : string;
+   attribute KEEP_HIERARCHY of
+      U_ClockGen,
+      U_DmaClkBuf,
+      U_sysClk200Buf,
+      U_sysClk125Buf,
+      U_dmaClkRstGen,
+      U_sysClk200RstGen,
+      U_sysClk125RstGen : label is "TRUE";      
+   
 begin
 
    -- Outputs

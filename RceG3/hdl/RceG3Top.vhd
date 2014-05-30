@@ -170,6 +170,15 @@ architecture structure of RceG3Top is
    signal dmaInterrupt        : slv(DMA_INT_COUNT_C-1 downto 0);
    signal bsiInterrupt        : sl;
 
+   attribute KEEP_HIERARCHY : string;
+   attribute KEEP_HIERARCHY of
+      U_RceG3Cpu,
+      U_RceG3Clocks,
+      U_RceG3AxiCntl,
+      U_RceG3Bsi,
+      U_RceG3Dma,
+      U_RceG3IntCntl : label is "TRUE";    
+   
 begin
 
    --------------------------------------------

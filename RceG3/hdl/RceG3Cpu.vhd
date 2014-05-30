@@ -565,6 +565,10 @@ architecture Hw of RceG3Cpu is
    signal fclkRst2N : sl;
    signal fclkRst1N : sl;
    signal fclkRst0N : sl;
+   
+   attribute KEEP_HIERARCHY : string;
+   attribute KEEP_HIERARCHY of
+      U_PS7 : label is "TRUE";    
 
 begin
 
