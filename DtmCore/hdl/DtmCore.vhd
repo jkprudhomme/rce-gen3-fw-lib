@@ -129,6 +129,14 @@ architecture STRUCTURE of DtmCore is
    signal armEthTx            : ArmEthTxArray(1 downto 0);
    signal armEthRx            : ArmEthRxArray(1 downto 0);
 
+   attribute KEEP_HIERARCHY : string;
+   attribute KEEP_HIERARCHY of
+      U_RceG3Top,
+      U_AxiCrossbar,
+      U_ZynqPcieMaster,
+      U_ZynqEthernet,
+      U_GmiiToRgmiiSwitch : label is "TRUE";   
+   
 begin
 
    --------------------------------------------------

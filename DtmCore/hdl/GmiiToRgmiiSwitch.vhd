@@ -116,6 +116,10 @@ architecture mapping of GmiiToRgmiiSwitch is
       duplexStatus,
       speedMode,
       clockSpeed : signal is "TRUE";
+      
+   attribute KEEP_HIERARCHY : string;
+   attribute KEEP_HIERARCHY of
+      GmiiToRgmiiCore_Inst : label is "TRUE";        
    
 begin
 
