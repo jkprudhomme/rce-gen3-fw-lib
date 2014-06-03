@@ -29,10 +29,8 @@ use work.AxiPkg.all;
 
 entity RceG3Dma is
    generic (
-      TPD_G                 : time                  := 1 ns;
-      DMA_AXIL_COUNT_G      : positive              := 4;
-      DMA_INT_COUNT_G       : positive              := 4;
-      RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C
+      TPD_G           : time           := 1 ns;
+      RCE_DMA_MODE_G  : RceDmaModeType := RCE_DMA_PPI_C
    );
    port (
 
@@ -53,19 +51,18 @@ entity RceG3Dma is
       hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
       -- Local AXI Lite Bus
-      dmaAxilReadMaster   : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
-      dmaAxilReadSlave    : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
-      dmaAxilWriteMaster  : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
-      dmaAxilWriteSlave   : out AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
+      dmaAxilReadMaster   : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilReadSlave    : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilWriteMaster  : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilWriteSlave   : out AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
 
       -- Interrupts
-      dmaInterrupt        : out slv(DMA_INT_COUNT_G-1 downto 0);
+      dmaInterrupt        : out slv(DMA_INT_COUNT_C-1 downto 0);
 
       -- External DMA Interfaces
       dmaClk              : in  slv(3 downto 0);
       dmaClkRst           : in  slv(3 downto 0);
-      dmaOnline           : out slv(3 downto 0);
-      dmaEnable           : out slv(3 downto 0);
+      dmaState            : out RceDmaStateArray(3 downto 0);
       dmaObMaster         : out AxiStreamMasterArray(3 downto 0);
       dmaObSlave          : in  AxiStreamSlaveArray(3 downto 0);
       dmaIbMaster         : in  AxiStreamMasterArray(3 downto 0);
@@ -85,9 +82,7 @@ begin
 
       U_RceG3DmaPpi : entity work.RceG3DmaPpi
          generic map (
-            TPD_G            => TPD_G,
-            DMA_AXIL_COUNT_G => DMA_AXIL_COUNT_G,
-            DMA_INT_COUNT_G  => DMA_INT_COUNT_G
+            TPD_G            => TPD_G
          ) port map (
             axiDmaClk        => axiDmaClk,
             axiDmaRst        => axiDmaRst,
@@ -106,8 +101,7 @@ begin
             interrupt        => dmaInterrupt,
             dmaClk           => dmaClk,
             dmaClkRst        => dmaClkRst,
-            dmaOnline        => dmaOnline,
-            dmaEnable        => dmaEnable,
+            dmaState         => dmaState,
             dmaObMaster      => dmaObMaster,
             dmaObSlave       => dmaObSlave,
             dmaIbMaster      => dmaIbMaster,
@@ -123,9 +117,7 @@ begin
 
       U_RceG3DmaAxis : entity work.RceG3DmaAxis
          generic map (
-            TPD_G            => TPD_G,
-            DMA_AXIL_COUNT_G => DMA_AXIL_COUNT_G,
-            DMA_INT_COUNT_G  => DMA_INT_COUNT_G
+            TPD_G            => TPD_G
          ) port map (
             axiDmaClk        => axiDmaClk,
             axiDmaRst        => axiDmaRst,
@@ -144,8 +136,7 @@ begin
             interrupt        => dmaInterrupt,
             dmaClk           => dmaClk,
             dmaClkRst        => dmaClkRst,
-            dmaOnline        => dmaOnline,
-            dmaEnable        => dmaEnable,
+            dmaState         => dmaState,
             dmaObMaster      => dmaObMaster,
             dmaObSlave       => dmaObSlave,
             dmaIbMaster      => dmaIbMaster,

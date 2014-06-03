@@ -22,14 +22,26 @@ use work.AxiPkg.all;
 
 package RceG3Pkg is
 
+   constant DMA_AXIL_COUNT_C : integer := 9;
+   constant DMA_INT_COUNT_C  : integer := 48;
+
    --------------------------------------------------------
    -- DMA Engine Types
    --------------------------------------------------------
 
    type RceDmaModeType is (RCE_DMA_PPI_C, RCE_DMA_AXIS_C );
 
-   type RceDmaModeArray is array (natural range<>) of RceDmaModeType;
+   type RceDmaStateType is record
+      online : sl;
+      enable : sl;
+   end record;
 
+   constant RCE_DMA_STATE_INIT_C : RceDmaStateType := ( 
+      online => '0',
+      enable => '0'
+   );
+
+   type RceDmaStateArray is array (natural range<>) of RceDmaStateType;
 
    --------------------------------------------------------
    -- AXI Configuration Constants

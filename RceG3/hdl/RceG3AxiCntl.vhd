@@ -31,8 +31,8 @@ use work.RceG3Version.all;
 
 entity RceG3AxiCntl is
    generic (
-      TPD_G            : time                   := 1 ns;
-      DMA_AXIL_COUNT_G : integer range 1 to 256 := 4
+      TPD_G          : time           := 1 ns;
+      RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C
    );
    port (
 
@@ -53,10 +53,10 @@ entity RceG3AxiCntl is
       icAxilWriteSlave     : in     AxiLiteWriteSlaveType;
 
       -- DMA AXI Lite Busses, dmaAxiClk
-      dmaAxilReadMaster    : out    AxiLiteReadMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
-      dmaAxilReadSlave     : in     AxiLiteReadSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
-      dmaAxilWriteMaster   : out    AxiLiteWriteMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
-      dmaAxilWriteSlave    : in     AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
+      dmaAxilReadMaster    : out    AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilReadSlave     : in     AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilWriteMaster   : out    AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilWriteSlave    : in     AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
 
       -- Slow AXI Busses
       axiClk               : in     sl;
@@ -88,7 +88,7 @@ end RceG3AxiCntl;
 
 architecture structure of RceG3AxiCntl is
 
-   constant GP0_MAST_CNT_C : integer := DMA_AXIL_COUNT_G + 1;
+   constant GP0_MAST_CNT_C : integer := DMA_AXIL_COUNT_C + 1;
    constant GP1_MAST_CNT_C : integer := 5;
 
    -- Gp0 Signals
@@ -139,8 +139,8 @@ architecture structure of RceG3AxiCntl is
    signal rin : RegType;
 
    -- GP0 Address Map Generator
-   function genGp0Config ( dmaCnt : positive ) return AxiLiteCrossbarMasterConfigArray is
-      variable retConf : AxiLiteCrossbarMasterConfigArray(dmaCnt downto 0);
+   function genGp0Config return AxiLiteCrossbarMasterConfigArray is
+      variable retConf : AxiLiteCrossbarMasterConfigArray(DMA_AXIL_COUNT_C downto 0);
       variable addr    : slv(31 downto 0);
    begin
 
@@ -150,8 +150,13 @@ architecture structure of RceG3AxiCntl is
       retConf(0).connectivity := x"FFFF";
 
       -- Generate dma records
-      addr := x"60000000";
-      for i in 0 to dmaCnt-1 loop
+      if RCE_DMA_MODE_G = RCE_DMA_PPI_C then
+         addr := x"50000000";
+      else
+         addr := x"60000000";
+      end if;
+
+      for i in 0 to DMA_AXIL_COUNT_C-1 loop
          addr(23 downto 16)        := toSlv(i,8);
          retConf(i+1).baseAddr     := addr;
          retConf(i+1).addrBits     := 16;
@@ -160,8 +165,6 @@ architecture structure of RceG3AxiCntl is
 
       return retConf;
    end function;
-
-   constant GP0_MASTERS_CONFIG_G : AxiLiteCrossbarMasterConfigArray := genGp0Config(DMA_AXIL_COUNT_G);
 
 begin
 
@@ -195,7 +198,7 @@ begin
          NUM_SLAVE_SLOTS_G  => 1,
          NUM_MASTER_SLOTS_G => GP0_MAST_CNT_C,
          DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
-         MASTERS_CONFIG_G   => GP0_MASTERS_CONFIG_G
+         MASTERS_CONFIG_G   => genGp0Config
       ) port map (
          axiClk              => axiDmaClk,
          axiClkRst           => axiDmaRst,
@@ -214,10 +217,10 @@ begin
    icAxilReadMaster     <= tmpGp0ReadMasters(0);
    tmpGp0ReadSlaves(0)  <= icAxilReadSlave;
 
-   dmaAxilWriteMaster                           <= tmpGp0WriteMasters(DMA_AXIL_COUNT_G downto 1);
-   tmpGp0WriteSlaves(DMA_AXIL_COUNT_G downto 1) <= dmaAxilWriteSlave;
-   dmaAxilReadMaster                            <= tmpGp0ReadMasters(DMA_AXIL_COUNT_G downto 1);
-   tmpGp0ReadSlaves(DMA_AXIL_COUNT_G downto 1)  <= dmaAxilReadSlave;
+   dmaAxilWriteMaster                           <= tmpGp0WriteMasters(DMA_AXIL_COUNT_C downto 1);
+   tmpGp0WriteSlaves(DMA_AXIL_COUNT_C downto 1) <= dmaAxilWriteSlave;
+   dmaAxilReadMaster                            <= tmpGp0ReadMasters(DMA_AXIL_COUNT_C downto 1);
+   tmpGp0ReadSlaves(DMA_AXIL_COUNT_C downto 1)  <= dmaAxilReadSlave;
 
 
    -------------------------------------

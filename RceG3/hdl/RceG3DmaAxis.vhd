@@ -32,9 +32,7 @@ use work.AxiDmaPkg.all;
 
 entity RceG3DmaAxis is
    generic (
-      TPD_G            : time     := 1 ns;
-      DMA_AXIL_COUNT_G : positive := 8;
-      DMA_INT_COUNT_G  : positive := 4
+      TPD_G            : time     := 1 ns
    );
    port (
 
@@ -55,19 +53,18 @@ entity RceG3DmaAxis is
       hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
       -- Local AXI Lite Bus
-      axilReadMaster      : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
-      axilReadSlave       : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
-      axilWriteMaster     : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_G-1 downto 0);
-      axilWriteSlave      : out AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_G-1 downto 0);
+      axilReadMaster      : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      axilReadSlave       : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+      axilWriteMaster     : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      axilWriteSlave      : out AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
 
       -- Interrupts
-      interrupt           : out slv(DMA_INT_COUNT_G-1 downto 0);
+      interrupt           : out slv(DMA_INT_COUNT_C-1 downto 0);
 
       -- External DMA Interfaces
       dmaClk              : in  slv(3 downto 0);
       dmaClkRst           : in  slv(3 downto 0);
-      dmaOnline           : out slv(3 downto 0);
-      dmaEnable           : out slv(3 downto 0);
+      dmaState            : out RceDmaStateArray(3 downto 0);
       dmaObMaster         : out AxiStreamMasterArray(3 downto 0);
       dmaObSlave          : in  AxiStreamSlaveArray(3 downto 0);
       dmaIbMaster         : in  AxiStreamMasterArray(3 downto 0);
@@ -103,34 +100,31 @@ begin
    acpWriteMaster <= AXI_WRITE_MASTER_INIT_C;
    acpReadMaster  <= AXI_READ_MASTER_INIT_C;
 
-   -- Always online
-   dmaOnline <= (others=>'1');
-   dmaEnable <= (others=>'1');
-
    -- Unused Interrupts
-   U_UnusedIntGen : for i in 4 to DMA_INT_COUNT_G-1 generate
-      interrupt(i) <= '0';
-   end generate;
+   interrupt <= (others=>'0');
 
-   -- Unused AXI busses
-   U_UnusedAxiGen : for i in 8 to DMA_AXIL_COUNT_G-1 generate
-      U_AxiLiteEmpty : entity work.AxiLiteEmpty
-         generic map (
-            TPD_G  => TPD_G
-         ) port map (
-            axiClk          => axiDmaClk,
-            axiClkRst       => axiDmaRst,
-            axiReadMaster   => axilReadMaster(i),
-            axiReadSlave    => axilReadSlave(i),
-            axiWriteMaster  => axilWriteMaster(i),
-            axiWriteSlave   => axilWriteSlave(i)
-         );
-   end generate;
+   -- Terminate Unused AXI-Lite Interface
+   U_AxiLiteEmpty : entity work.AxiLiteEmpty
+      generic map (
+         TPD_G  => TPD_G
+      ) port map (
+         axiClk          => axiDmaClk,
+         axiClkRst       => axiDmaRst,
+         axiReadMaster   => axilReadMaster(8),
+         axiReadSlave    => axilReadSlave(8),
+         axiWriteMaster  => axilWriteMaster(8),
+         axiWriteSlave   => axilWriteSlave(8)
+      );
+
 
    ------------------------------------------
    -- DMA Channels
    ------------------------------------------
    U_DmaChanGen : for i in 0 to 3 generate
+
+      -- Always online
+      dmaState(i).online <= not dmaClkRst(i);
+      dmaState(i).enable <= not dmaClkRst(i);
 
       -- DMA Core
       U_AxiStreamDma : entity work.AxiStreamDma
@@ -151,7 +145,7 @@ begin
             axilReadSlave   => axilReadSlave((i*2)+1 downto i*2),
             axilWriteMaster => axilWriteMaster((i*2)+1 downto i*2),
             axilWriteSlave  => axilWriteSlave((i*2)+1 downto i*2),
-            interrupt       => interrupt(i),
+            interrupt       => open,
             sAxisMaster     => sAxisMaster(i),
             sAxisSlave      => sAxisSlave(i),
             mAxisMaster     => mAxisMaster(i),

@@ -65,8 +65,7 @@ entity RceG3Top is
       -- DMA Interfaces
       dmaClk                   : in    slv(3 downto 0);
       dmaClkRst                : in    slv(3 downto 0);
-      dmaOnline                : out   slv(3 downto 0);
-      dmaEnable                : out   slv(3 downto 0);
+      dmaState                 : out   RceDmaStateArray(3 downto 0);
       dmaObMaster              : out   AxiStreamMasterArray(3 downto 0);
       dmaObSlave               : in    AxiStreamSlaveArray(3 downto 0);
       dmaIbMaster              : in    AxiStreamMasterArray(3 downto 0);
@@ -123,9 +122,6 @@ architecture structure of RceG3Top is
          armEthRx            : in  ArmEthRxArray(1 downto 0)
       );
    end component;
-
-   constant DMA_AXIL_COUNT_C : integer := 8;
-   constant DMA_INT_COUNT_C  : integer := 16;
 
    -- Local signals
    signal fclkClk3            : sl;
@@ -266,7 +262,7 @@ begin
    U_RceG3AxiCntl: entity work.RceG3AxiCntl 
       generic map (
          TPD_G            => TPD_G,
-         DMA_AXIL_COUNT_G => DMA_AXIL_COUNT_C
+         RCE_DMA_MODE_G   => RCE_DMA_MODE_G
       ) port map (
          mGpReadMaster        => mGpReadMaster,
          mGpReadSlave         => mGpReadSlave,
@@ -316,8 +312,10 @@ begin
          axilReadSlave    => bsiAxilReadSlave,
          axilWriteMaster  => bsiAxilWriteMaster,
          axilWriteSlave   => bsiAxilWriteSlave,
-         acpWriteMaster   => acpWriteMaster,
-         acpWriteSlave    => acpWriteSlave,
+         --acpWriteMaster   => acpWriteMaster,
+         --acpWriteSlave    => acpWriteSlave,
+         acpWriteMaster   => open,
+         acpWriteSlave    => AXI_WRITE_SLAVE_INIT_C,
          bsiInterrupt     => bsiInterrupt,
          i2cSda           => i2cSda,
          i2cScl           => i2cScl
@@ -330,16 +328,14 @@ begin
    U_RceG3Dma: entity work.RceG3Dma 
       generic map (
          TPD_G                 => TPD_G,
-         DMA_AXIL_COUNT_G      => DMA_AXIL_COUNT_C,
-         DMA_INT_COUNT_G       => DMA_INT_COUNT_C,
          RCE_DMA_MODE_G        => RCE_DMA_MODE_G
       ) port map (
          axiDmaClk            => axiDmaClk,
          axiDmaRst            => axiDmaRst,
-         --acpWriteSlave        => acpWriteSlave,
-         --acpWriteMaster       => acpWriteMaster,
-         acpWriteSlave        => AXI_WRITE_SLAVE_INIT_C,
-         acpWriteMaster       => open,
+         acpWriteSlave        => acpWriteSlave,
+         acpWriteMaster       => acpWriteMaster,
+         --acpWriteSlave        => AXI_WRITE_SLAVE_INIT_C,
+         --acpWriteMaster       => open,
          acpReadSlave         => acpReadSlave,
          acpReadMaster        => acpReadMaster,
          hpWriteSlave         => hpWriteSlave,
@@ -353,8 +349,7 @@ begin
          dmaInterrupt         => dmaInterrupt,
          dmaClk               => dmaClk,
          dmaClkRst            => dmaClkRst,
-         dmaOnline            => dmaOnline,
-         dmaEnable            => dmaEnable,
+         dmaState             => dmaState,
          dmaObMaster          => dmaObMaster,
          dmaObSlave           => dmaObSlave,
          dmaIbMaster          => dmaIbMaster,
@@ -368,7 +363,6 @@ begin
    U_RceG3IntCntl: entity work.RceG3IntCntl 
       generic map (
          TPD_G                 => TPD_G,
-         DMA_INT_COUNT_G       => DMA_INT_COUNT_C,
          RCE_DMA_MODE_G        => RCE_DMA_MODE_G
       ) port map (
          axiDmaClk            => axiDmaClk,

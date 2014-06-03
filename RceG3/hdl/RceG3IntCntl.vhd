@@ -30,7 +30,6 @@ use work.AxiPkg.all;
 entity RceG3IntCntl is
    generic (
       TPD_G                 : time                  := 1 ns;
-      DMA_INT_COUNT_G       : positive              := 4;
       RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C
    );
    port (
@@ -46,7 +45,7 @@ entity RceG3IntCntl is
       icAxilWriteSlave    : out AxiLiteWriteSlaveType;
 
       -- Interrupt Inputs
-      dmaInterrupt        : in  slv(DMA_INT_COUNT_G-1 downto 0);
+      dmaInterrupt        : in  slv(DMA_INT_COUNT_C-1 downto 0);
       bsiInterrupt        : in  sl;
 
       -- Interrupt Outputs
