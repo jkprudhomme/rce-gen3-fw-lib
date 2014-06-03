@@ -48,8 +48,7 @@ entity EvalCore is
       -- DMA Interfaces
       dmaClk                  : in    slv(2 downto 0);
       dmaClkRst               : in    slv(2 downto 0);
-      dmaOnline               : out   slv(2 downto 0);
-      dmaEnable               : out   slv(2 downto 0);
+      dmaState                : out   RceDmaStateArray(2 downto 0);
       dmaObMaster             : out   AxiStreamMasterArray(2 downto 0);
       dmaObSlave              : in    AxiStreamSlaveArray(2 downto 0);
       dmaIbMaster             : in    AxiStreamMasterArray(2 downto 0);
@@ -67,8 +66,8 @@ architecture STRUCTURE of EvalCore is
    signal isysClk200Rst       : sl;
    signal idmaClk             : slv(3 downto 0);
    signal idmaClkRst          : slv(3 downto 0);
-   signal idmaOnline          : slv(3 downto 0);
-   signal idmaEnable          : slv(3 downto 0);
+   signal idmaCtrl            : slv(3 downto 0);
+   signal idmaState           : RceDmaStateArray(3 downto 0);
    signal idmaObMaster        : AxiStreamMasterArray(3 downto 0);
    signal idmaObSlave         : AxiStreamSlaveArray(3 downto 0);
    signal idmaIbMaster        : AxiStreamMasterArray(3 downto 0);
@@ -105,8 +104,7 @@ begin
          coreAxilWriteSlave  => coreAxilWriteSlave,
          dmaClk              => idmaClk,
          dmaClkRst           => idmaClkRst,
-         dmaOnline           => idmaOnline,
-         dmaEnable           => idmaEnable,
+         dmaState            => idmaState,
          dmaObMaster         => idmaObMaster,
          dmaObSlave          => idmaObSlave,
          dmaIbMaster         => idmaIbMaster,
@@ -130,8 +128,7 @@ begin
    -- DMA Interfaces
    idmaClk(2 downto 0)      <= dmaClk;
    idmaClkRst(2 downto 0)   <= dmaClkRst;
-   dmaOnline                <= idmaOnline(2 downto 0);
-   dmaEnable                <= idmaEnable(2 downto 0);
+   dmaState                 <= idmaState(2 downto 0);
    dmaObMaster              <= idmaObMaster(2 downto 0);
    idmaObSlave(2 downto 0)  <= dmaObSlave;
    idmaIbMaster(2 downto 0) <= dmaIbMaster;
