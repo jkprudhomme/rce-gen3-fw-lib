@@ -75,6 +75,8 @@ end RceG3DmaPpi;
 
 architecture structure of RceG3DmaPpi is 
 
+   constant LOOP_FIFO_COUNT_C : integer := 4;
+
    signal iacpReadMaster  : AxiReadMasterArray(7 downto 0);
    signal iacpReadSlave   : AxiReadSlaveArray(7 downto 0);
    signal muxReadMaster   : AxiReadMasterType;
@@ -98,6 +100,8 @@ architecture structure of RceG3DmaPpi is
    signal obWorkAFull     : slv(3 downto 0);
    signal compFifoClk     : slv(PPI_COMP_CNT_C-1 downto 0);
    signal compFifoRst     : slv(PPI_COMP_CNT_C-1 downto 0);
+   signal loopFifoValid   : slv(LOOP_FIFO_COUNT_C-1 downto 0);
+   signal loopFifoAEmpty  : slv(LOOP_FIFO_COUNT_C-1 downto 0);
 
 begin
 
@@ -105,9 +109,10 @@ begin
    interrupt(7  downto  4) <= ibWorkAFull;
    interrupt(11 downto  8) <= obFreeAEmpty;
    interrupt(15 downto 12) <= obWorkAFull;
+   interrupt(19 downto 16) <= loopFifoValid;
+   interrupt(23 downto 20) <= loopFifoAEmpty;
 
-   interrupt(PPI_COMP_CNT_C+15 downto 16) <= compFifoValid;
-
+   interrupt(DMA_INT_COUNT_C-1 downto 24) <= compFifoValid;
 
    -- Sockets
    U_PpiGen : for i in 0 to 3 generate
@@ -182,7 +187,7 @@ begin
    end process;
 
 
-   -- Completion FIFOs
+   -- Completion FIFOs & Utility FIFOs
    U_AxiLiteFifoPop : entity work.AxiLiteFifoPop 
       generic map (
          TPD_G              => TPD_G,
@@ -190,7 +195,8 @@ begin
          POP_SYNC_FIFO_G    => true,
          POP_BRAM_EN_G      => true,
          POP_ADDR_WIDTH_G   => 9,
-         LOOP_FIFO_COUNT_G  => 0,
+         LOOP_FIFO_EN_G     => true,
+         LOOP_FIFO_COUNT_G  => 4,
          LOOP_BRAM_EN_G     => true,
          LOOP_ADDR_WIDTH_G  => 9,
          RANGE_LSB_G        => 8,
@@ -209,6 +215,8 @@ begin
          axiWriteSlave      => axilWriteSlave(8),
          popFifoValid       => compFifoValid,
          popFifoAEmpty      => open,
+         loopFifoValid      => loopFifoValid,
+         loopFifoAEmpty     => loopFifoAEmpty,
          popFifoClk         => compFifoClk,
          popFifoRst         => compFifoRst,
          popFifoWrite       => compFifoWrite,
