@@ -283,7 +283,8 @@ begin
          POP_SYNC_FIFO_G    => true,
          POP_BRAM_EN_G      => true,
          POP_ADDR_WIDTH_G   => 9,
-         LOOP_FIFO_COUNT_G  => 0,
+         LOOP_FIFO_EN_G     => false,
+         LOOP_FIFO_COUNT_G  => 1,
          LOOP_BRAM_EN_G     => true,
          LOOP_ADDR_WIDTH_G  => 4,
          PUSH_FIFO_COUNT_G  => PUSH_FIFO_COUNT_C,
@@ -372,7 +373,7 @@ begin
          obPendMaster    => obPendMaster,
          obPendSlave     => obPendSlave,
          dmaClk          => dmaClk,
-         dmaClkRst       => dmaClk,
+         dmaClkRst       => dmaClkRst,
          dmaObMaster     => dmaObMaster,
          dmaObSlave      => dmaObSlave
       );
@@ -387,7 +388,7 @@ begin
          TPD_G => TPD_G
       ) port map (
          dmaClk          => dmaClk,
-         dmaClkRst       => dmaClk,
+         dmaClkRst       => dmaClkRst,
          dmaIbMaster     => dmaIbMaster,
          dmaIbSlave      => dmaIbSlave,
          headIbMaster    => headIbMaster,

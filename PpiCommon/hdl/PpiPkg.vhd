@@ -289,6 +289,6 @@ package body PpiPkg is
       axisMaster.tLast  := '0';
       axisMaster.tUser  := (others => '0');
    end procedure;
-  
+
 end package body PpiPkg;
 
