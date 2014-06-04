@@ -62,6 +62,7 @@ architecture structure of PpiCompCtrl is
       compRead      : slv(7 downto 0);
       srcSel        : slv(2 downto 0);
       srcAcks       : slv(7 downto 0);
+      req           : slv(7 downto 0);
       valid         : sl;
    end record RegType;
 
@@ -72,6 +73,7 @@ architecture structure of PpiCompCtrl is
       compRead      => (others=>'0'),
       srcSel        => (others=>'0'),
       srcAcks       => (others=>'0'),
+      req           => (others=>'0'),
       valid         => '0'
    );
 
@@ -91,28 +93,27 @@ begin
    -- Async
    process (r, axiRst, compValid, compSel, compDin, compFifoAFull ) is
       variable v   : RegType;
-      variable req : slv(7 downto 0);
    begin
       v := r;
 
       v.compFifoWrite := '0';
       v.compRead      := (others=>'0');
-      req             := (others=>'0');
-
-      -- format requests
-     for i in 0 to 7 loop
-        if compValid(i) = '1' and compSel(i)(bitSize(PPI_COMP_CNT_C-1)-1 downto 0) = CHAN_ID_G then
-           req(i) := '1';
-        end if;
-     end loop;
 
       case r.state is
 
          when IDLE_S =>
+            v.req := (others=>'0');
+
+            -- format requests
+            for i in 0 to 7 loop
+               if compValid(i) = '1' and compSel(i)(bitSize(PPI_COMP_CNT_C-1)-1 downto 0) = CHAN_ID_G then
+                  v.req(i) := '1';
+               end if;
+            end loop;
 
             -- Aribrate between requesters
             if r.valid = '0' then
-               arbitrate(req, r.srcSel, v.srcSel, v.valid, v.srcAcks);
+               arbitrate(r.req, r.srcSel, v.srcSel, v.valid, v.srcAcks);
             end if;
 
             -- Valid request
@@ -124,9 +125,13 @@ begin
             v.compFifoWrite := '1';
             v.compFifoDin   := compDin(conv_integer(r.srcSel)) & "0";
             v.state         := READ_S;
+            v.req           := (others=>'0');
+
+            v.compRead(conv_integer(r.srcSel)) := '1';
 
          when READ_S =>
             v.state := IDLE_S;
+            v.req   := (others=>'0');
 
       end case;
 
