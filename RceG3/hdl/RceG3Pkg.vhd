@@ -23,7 +23,9 @@ use work.AxiPkg.all;
 package RceG3Pkg is
 
    constant DMA_AXIL_COUNT_C : integer := 9;
-   constant DMA_INT_COUNT_C  : integer := 56;
+   constant DMA_INT_COUNT_C  : integer := 95;
+
+   constant USER_INT_COUNT_C : integer := 32;
 
    --------------------------------------------------------
    -- DMA Engine Types

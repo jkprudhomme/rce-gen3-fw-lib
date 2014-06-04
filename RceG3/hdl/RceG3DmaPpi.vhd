@@ -112,7 +112,10 @@ begin
    interrupt(19 downto 16) <= loopFifoValid;
    interrupt(23 downto 20) <= loopFifoAEmpty;
 
-   interrupt(DMA_INT_COUNT_C-1 downto 24) <= compFifoValid;
+   interrupt(PPI_COMP_CNT_C+23 downto 24) <= compFifoValid;
+
+   interrupt(DMA_INT_COUNT_C-1 downto PPI_COMP_CNT_C+24) <= (others=>'0');
+
 
    -- Sockets
    U_PpiGen : for i in 0 to 3 generate

@@ -32,7 +32,8 @@ entity RceG3Top is
    generic (
       TPD_G                 : time                  := 1 ns;
       DMA_CLKDIV_G          : real                  := 4.5;
-      RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C
+      RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C;
+      OLD_BSI_MODE_G        : boolean               := false
    );
    port (
 
@@ -70,6 +71,9 @@ entity RceG3Top is
       dmaObSlave               : in    AxiStreamSlaveArray(3 downto 0);
       dmaIbMaster              : in    AxiStreamMasterArray(3 downto 0);
       dmaIbSlave               : out   AxiStreamSlaveArray(3 downto 0);
+
+      -- User Interrupts
+      userInterrupt            : in    slv(USER_INT_COUNT_C-1 downto 0);
 
       -- Ethernet
       armEthTx                 : out   ArmEthTxArray(1 downto 0);
@@ -162,6 +166,10 @@ architecture structure of RceG3Top is
    signal icAxilReadSlave     : AxiLiteReadSlaveType;
    signal icAxilWriteMaster   : AxiLiteWriteMasterType;
    signal icAxilWriteSlave    : AxiLiteWriteSlaveType;
+   signal bsiAcpWriteSlave    : AxiWriteSlaveType;
+   signal bsiAcpWriteMaster   : AxiWriteMasterType;
+   signal dmaAcpWriteSlave    : AxiWriteSlaveType;
+   signal dmaAcpWriteMaster   : AxiWriteMasterType;
    signal armInterrupt        : slv(15 downto 0);
    signal dmaInterrupt        : slv(DMA_INT_COUNT_C-1 downto 0);
    signal bsiInterrupt        : sl;
@@ -221,6 +229,14 @@ begin
          armEthTx             => armEthTx,
          armEthRx             => armEthRx
       );
+
+   -- ACP connection MUX
+   acpWriteMaster   <= bsiAcpWriteMaster when OLD_BSI_MODE_G = true  else dmaAcpWriteMaster;
+   bsiAcpWriteSlave <= acpWriteSlave     when OLD_BSI_MODE_G = true  else AXI_WRITE_SLAVE_INIT_C;
+   dmaAcpWriteSlave <= acpWriteSlave     when OLD_BSI_MODE_G = false else AXI_WRITE_SLAVE_INIT_C;
+
+   assert OLD_BSI_MODE_G = false or RCE_DMA_MODE_G = RCE_DMA_AXIS_C 
+      report "OLD_BSI_MODE_G must be false when using PPI DMA" severity failure;
 
 
    --------------------------------------------
@@ -312,10 +328,8 @@ begin
          axilReadSlave    => bsiAxilReadSlave,
          axilWriteMaster  => bsiAxilWriteMaster,
          axilWriteSlave   => bsiAxilWriteSlave,
-         --acpWriteMaster   => acpWriteMaster,
-         --acpWriteSlave    => acpWriteSlave,
-         acpWriteMaster   => open,
-         acpWriteSlave    => AXI_WRITE_SLAVE_INIT_C,
+         acpWriteMaster   => bsiAcpWriteMaster,
+         acpWriteSlave    => bsiAcpWriteSlave,
          bsiInterrupt     => bsiInterrupt,
          i2cSda           => i2cSda,
          i2cScl           => i2cScl
@@ -332,10 +346,8 @@ begin
       ) port map (
          axiDmaClk            => axiDmaClk,
          axiDmaRst            => axiDmaRst,
-         acpWriteSlave        => acpWriteSlave,
-         acpWriteMaster       => acpWriteMaster,
-         --acpWriteSlave        => AXI_WRITE_SLAVE_INIT_C,
-         --acpWriteMaster       => open,
+         acpWriteSlave        => dmaAcpWriteSlave,
+         acpWriteMaster       => dmaAcpWriteMaster,
          acpReadSlave         => acpReadSlave,
          acpReadMaster        => acpReadMaster,
          hpWriteSlave         => hpWriteSlave,
@@ -373,6 +385,7 @@ begin
          icAxilWriteSlave     => icAxilWriteSlave,
          dmaInterrupt         => dmaInterrupt,
          bsiInterrupt         => bsiInterrupt,
+         userInterrupt        => userInterrupt,
          armInterrupt         => armInterrupt
       );
 

@@ -25,7 +25,8 @@ use work.AxiStreamPkg.all;
 entity EvalCore is
    generic (
       TPD_G          : time           := 1 ns;
-      RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C
+      RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C;
+      OLD_BSI_MODE_G : boolean        := false
    );
    port (
       i2cSda                  : inout sl;
@@ -52,7 +53,10 @@ entity EvalCore is
       dmaObMaster             : out   AxiStreamMasterArray(2 downto 0);
       dmaObSlave              : in    AxiStreamSlaveArray(2 downto 0);
       dmaIbMaster             : in    AxiStreamMasterArray(2 downto 0);
-      dmaIbSlave              : out   AxiStreamSlaveArray(2 downto 0)
+      dmaIbSlave              : out   AxiStreamSlaveArray(2 downto 0);
+
+      -- User Interrupts
+      userInterrupt            : in    slv(USER_INT_COUNT_C-1 downto 0)
    );
 end EvalCore;
 
@@ -84,6 +88,7 @@ begin
       generic map (
          TPD_G          => TPD_G,
          RCE_DMA_MODE_G => RCE_DMA_MODE_G,
+         OLD_BSI_MODE_G => OLD_BSI_MODE_G,
          DMA_CLKDIV_G   => 10.0
       ) port map (
          i2cSda              => i2cSda,
@@ -109,6 +114,7 @@ begin
          dmaObSlave          => idmaObSlave,
          dmaIbMaster         => idmaIbMaster,
          dmaIbSlave          => idmaIbSlave,
+         userInterrupt       => userInterrupt,
          armEthTx            => open,
          armEthRx            => (others=>ARM_ETH_RX_INIT_C),
          clkSelA             => open,

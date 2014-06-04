@@ -55,7 +55,8 @@ begin
       generic map (
          TPD_G                 => 1 ns,
          DMA_CLKDIV_G          => 4.5,
-         RCE_DMA_MODE_G        => RCE_DMA_MODE_C
+         RCE_DMA_MODE_G        => RCE_DMA_MODE_C,
+         OLD_BSI_MODE_G        => false
       ) port map (
          i2cSda                    => i2cSda,
          i2cScl                    => i2cScl,
@@ -80,6 +81,7 @@ begin
          dmaObSlave                => dmaObSlave,
          dmaIbMaster               => dmaIbMaster,
          dmaIbSlave                => dmaIbSlave,
+         userInterrupt             => (others=>'0'),
          armEthTx                  => armEthTx,
          armEthRx                  => armEthRx,
          clkSelA                   => clkSelA,
