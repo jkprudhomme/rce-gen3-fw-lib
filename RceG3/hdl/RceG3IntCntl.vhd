@@ -56,21 +56,24 @@ end RceG3IntCntl;
 
 architecture structure of RceG3IntCntl is
 
-   constant WINDOW_SIZE_C     : integer := 32;
-   constant SRC_WINDOW_CNT_C  : integer := 16;
-   constant GROUP_COUNT_C     : integer := 16;
+   constant GROUP_SIZE_C       : integer range 1 to 32 := 32;
+   constant GROUP_COUNT_C      : integer range 1 to 16 := 8;
 
-   constant GROUP_BITS_C      : integer := bitSize(GROUP_COUNT_C-1);
-   constant SRC_INT_COUNT_C   : integer := WINDOW_SIZE_C * SRC_WINDOW_CNT_C;
-   constant WINDOW_SEL_BITS_C : integer := bitSize(SRC_WINDOW_CNT_C-1);
+   constant DEST_COUNT_C       : integer := GROUP_SIZE_C * GROUP_COUNT_C;
+   constant DEST_COUNT_BITS_C  : integer := bitSize(DEST_COUNT_C-1);
+   constant GROUP_SIZE_BITS_C  : integer := bitSize(GROUP_SIZE_C-1);
+   constant GROUP_COUNT_BITS_C : integer := bitSize(GROUP_COUNT_C-1);
 
-   signal locWindows : SlVectorArray(SRC_WINDOW_CNT_C-1 downto 0,WINDOW_SIZE_C-1 downto 0);
+   constant SRC_COUNT_C        : integer := DMA_INT_COUNT_C + USER_INT_COUNT_C + 1;
+   constant SRC_COUNT_BITS_C   : integer := bitSize(SRC_COUNT_C-1);
+
+   signal locSources : slv(SRC_COUNT_C-1 downto 0);
 
    type RegType is record
-      intEnable        : SlVectorArray(GROUP_COUNT_C-1 downto 0,WINDOW_SIZE_C-1 downto 0);
-      intStatus        : SlVectorArray(GROUP_COUNT_C-1 downto 0,WINDOW_SIZE_C-1 downto 0);
-      groupSourceSel   : SlVectorArray(GROUP_COUNT_C-1 downto 0,WINDOW_SEL_BITS_C-1 downto 0);
-      groupSourceMask  : SlVectorArray(GROUP_COUNT_C-1 downto 0,WINDOW_SIZE_C-1 downto 0);
+      intEnable        : SlVectorArray(GROUP_COUNT_C-1 downto 0, GROUP_SIZE_C-1 downto 0);
+      intStatus        : SlVectorArray(GROUP_COUNT_C-1 downto 0, GROUP_SIZE_C-1 downto 0);
+      intSourceSel     : SlVectorArray(DEST_COUNT_C-1  downto 0, SRC_COUNT_BITS_C-1 downto 0);
+      intSourceEn      : slv(DEST_COUNT_C-1  downto 0);
       intOutput        : slv(GROUP_COUNT_C-1 downto 0);
       icAxilReadSlave  : AxiLiteReadSlaveType;
       icAxilWriteSlave : AxiLiteWriteSlaveType;
@@ -79,8 +82,8 @@ architecture structure of RceG3IntCntl is
    constant REG_INIT_C : RegType := (
       intEnable        => (others=>(others=>'0')),
       intStatus        => (others=>(others=>'0')),
-      groupSourceSel   => (others=>(others=>'0')),
-      groupSourceMask  => (others=>(others=>'0')),
+      intSourceSel     => (others=>(others=>'0')),
+      intSourceEn      => (others=>'0'),
       intOutput        => (others=>'0'),
       icAxilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
       icAxilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
@@ -92,26 +95,17 @@ architecture structure of RceG3IntCntl is
 begin
 
    --------------------------------------
-   -- Interrupt Window Mapping
+   -- Interrupt Registration
    --------------------------------------
    process ( axiDmaClk ) is
    begin
       if (rising_edge(axiDmaClk)) then
          if axiDmaRst = '1' then
-            locWindows <= (others=>(others=>'0')) after TPD_G;
+            locSources <= (others=>'0') after TPD_G;
          else
-
-
-
-      --dmaInterrupt        : in  slv(DMA_INT_COUNT_C-1 downto 0);
-      --bsiInterrupt        : in  sl;
-      --userInterrupt       : in  slv(USER_INT_COUNT_C-1 downto 0);
-
-
-
-
-
-
+            locSources(DMA_INT_COUNT_C-1 downto 0)             <= dmaInterrupt  after TPD_G;
+            locSources(DMA_INT_COUNT_C)                        <= bsiInterrupt  after TPD_G;
+            locSources(SRC_COUNT_C-1 downto DMA_INT_COUNT_C+1) <= userInterrupt after TPD_G;
          end if;
       end if;
    end process;
@@ -130,105 +124,75 @@ begin
    end process;
 
    -- Async
-   process (r, axiDmaRst, icAxilReadMaster, icAxilWriteMaster, locWindows ) is
+   process (r, axiDmaRst, icAxilReadMaster, icAxilWriteMaster, locSources ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
-      variable wrGrpSel  : integer;
-      variable rdGrpSel  : integer;
    begin
       v := r;
 
       -- Connect and drive interrupts
       for g in 0 to GROUP_COUNT_C-1 loop
-         for i in 0 to WINDOW_SIZE_C-1 loop
-            if r.intEnable(g,i) = '1' and r.groupSourceMask(g,i) = '1' then
-               v.intStatus(g,i) := locWindows(conv_integer(muxSlVectorArray(r.groupSourceSel,g)),i);
+         for i in 0 to GROUP_SIZE_C-1 loop
+            if r.intEnable(g,i) = '1' and r.intSourceEn((g*GROUP_SIZE_C)+i) = '1' then
+               v.intStatus(g,i) := locSources(conv_integer(muxSlVectorArray(r.intSourceSel,(g*GROUP_SIZE_C)+i)));
             else
                v.intStatus(g,i) := '0';
             end if;
          end loop;
 
          v.intOutput(g) := uOr(muxSlVectorArray(r.intStatus,g));
-
       end loop;
 
       axiSlaveWaitTxn(icAxilWriteMaster, icAxilReadMaster, v.icAxilWriteSlave, v.icAxilReadSlave, axiStatus);
 
       -- Write
       if (axiStatus.writeEnable = '1') then
-         wrGrpSel := conv_integer(icAxilWriteMaster.awaddr(GROUP_BITS_C+7 downto 8));
 
-         -- Each group gets 8 bits of address space
-         case icAxilWriteMaster.awaddr(7 downto 0) is
+         -- Enable/source Registers 0x0xxx
+         if icAxilWriteMaster.awaddr(15) = '0' then
+            for i in 0 to SRC_COUNT_BITS_C-1 loop
+               v.intSourceSel(conv_integer(icAxilWriteMaster.awaddr(DEST_COUNT_BITS_C+1 downto 2)),i) := icAxilWriteMaster.wdata(i);
+            end loop;
+            v.intSourceEn(conv_integer(icAxilWriteMaster.awaddr(DEST_COUNT_BITS_C+1 downto 2)))  := icAxiLWriteMaster.wdata(31);
 
-            -- Group source select
-            when x"00" =>
-               for i in 0 to WINDOW_SEL_BITS_C-1 loop
-                  v.groupSourceSel(wrGrpSel,i) := icAxilWriteMaster.wdata(i);
-               end loop;
-
-            -- Group mask
-            when x"04" =>
-               for i in 0 to WINDOW_SIZE_C-1 loop
-                  v.groupSourceMask(wrGrpSel,i) := icAxilWriteMaster.wdata(i);
-               end loop;
-
-            -- Int enable
-            when x"08" =>
-               for i in 0 to WINDOW_SIZE_C-1 loop
-                  v.intEnable(wrGrpSel,i) := icAxilWriteMaster.wdata(i);
-               end loop;
-
-            when others =>
-               null;
-         end case;
-
-         axiSlaveWriteResponse(v.icAxilWriteSlave);
+         -- Enable Registers, 0x8xx0
+         elsif icAxilWriteMaster.awaddr(3 downto 2) = "00" then
+            for i in 0 to GROUP_SIZE_C-1 loop
+               v.intEnable(conv_integer(icAxilWriteMaster.awaddr(GROUP_COUNT_BITS_C+3 downto 4)),i) := icAxilWriteMaster.wdata(i);
+            end loop;
+         end if;
       end if;
-
+            
       -- Read
       if (axiStatus.readEnable = '1') then
-         rdGrpSel := conv_integer(icAxilWriteMaster.awaddr(GROUP_BITS_C+7 downto 8));
-
          v.icAxilReadSlave.rdata := (others=>'0');
 
-         -- Each group gets 8 bits of address space
-         case icAxilReadMaster.araddr(7 downto 0) is
+         -- Enable/source Registers 0x0xxx
+         if icAxilReadMaster.araddr(15) = '0' then
+            for i in 0 to SRC_COUNT_BITS_C-1 loop
+               v.icAxilReadSlave.rdata(i) := r.intSourceSel(conv_integer(icAxilReadMaster.araddr(DEST_COUNT_BITS_C+1 downto 2)),i);
+            end loop;
+            v.icAxilReadSlave.rdata(31) := r.intSourceEn(conv_integer(icAxilReadMaster.araddr(DEST_COUNT_BITS_C+1 downto 2)));
 
-            -- Group source select
-            when x"00" =>
-               for i in 0 to WINDOW_SEL_BITS_C-1 loop
-                  v.icAxilReadSlave.rdata(i) := r.groupSourceSel(rdGrpSel,i);
-               end loop;
+         -- Enable Registers, 0x8xx0
+         elsif icAxilReadMaster.araddr(3 downto 2) = "00" then
+            for i in 0 to GROUP_SIZE_C-1 loop
+               v.icAxilReadSlave.rdata(i) := r.intEnable(conv_integer(icAxilReadMaster.araddr(GROUP_COUNT_BITS_C+3 downto 4)),i);
+            end loop;
 
-            -- Group mask
-            when x"04" =>
-               for i in 0 to WINDOW_SIZE_C-1 loop
-                  v.icAxilReadSlave.rdata(i) := r.groupSourceMask(rdGrpSel,i);
-               end loop;
+         -- Status/Disable Registers, 0x8xx8
+         elsif icAxilReadMaster.araddr(3 downto 2) = "10" then
+            for i in 0 to GROUP_SIZE_C-1 loop
 
-            -- Int enable
-            when x"08" =>
-               for i in 0 to WINDOW_SIZE_C-1 loop
-                  v.icAxilReadSlave.rdata(i) := r.intEnable(rdGrpSel,i);
-               end loop;
-      
-            -- Int status/disable
-            when x"0C" =>
-               for i in 0 to WINDOW_SIZE_C-1 loop
+               -- Return active bits
+               v.icAxilReadSlave.rdata(i) := r.intStatus(conv_integer(icAxilReadMaster.araddr(GROUP_COUNT_BITS_C+3 downto 4)),i);
 
-                  -- Return active bits
-                  v.icAxilReadSlave.rdata(i) := r.intStatus(rdGrpSel,i);
-
-                  -- Disable any bits that are active
-                  if r.intStatus(rdGrpSel,i) = '1' then
-                     v.intEnable(rdGrpSel,i) := '0';
-                  end if;
-               end loop;
-
-            when others =>
-               null;
-         end case;
+               -- Disable any bits that are active
+               if r.intStatus(conv_integer(icAxilReadMaster.araddr(GROUP_COUNT_BITS_C+3 downto 4)),i) = '1' then
+                  v.intEnable(conv_integer(icAxilReadMaster.araddr(GROUP_COUNT_BITS_C+3 downto 4)),i) := '0';
+               end if;
+            end loop;
+         end if;
 
          -- Send Axi Response
          axiSlaveReadResponse(v.icAxilReadSlave);

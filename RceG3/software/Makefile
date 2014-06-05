@@ -43,6 +43,6 @@ $(OBJ)/%.o: $(LIB_DIR)/%.cpp $(LIB_DIR)/%.h
 	$(CC) -c $(CFLAGS) $(DEF) -o $@ $<
 
 # Comile applications
-$(BIN)/%: $(TOP_DIR)/%.cpp $(LIB_OBJ)
+$(BIN)/%: $(TOP_DIR)/%.cpp $(LIB_OBJ) $(AXI_OBJ)
 	$(CC) $(CFLAGS) $(DEF) $(OBJ)/*.o -o $@ $< $(LFLAGS) 
 

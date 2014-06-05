@@ -114,7 +114,9 @@ begin
 
    interrupt(PPI_COMP_CNT_C+23 downto 24) <= compFifoValid;
 
-   interrupt(DMA_INT_COUNT_C-1 downto PPI_COMP_CNT_C+24) <= (others=>'0');
+   U_UnusedInt : if DMA_INT_COUNT_C > (PPI_COMP_CNT_C+24) generate
+      interrupt(DMA_INT_COUNT_C-1 downto PPI_COMP_CNT_C+24) <= (others=>'0');
+   end generate;
 
 
    -- Sockets
