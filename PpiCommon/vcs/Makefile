@@ -102,7 +102,7 @@ rtl_src:
 
 # VHPI Library
 vhpi_src:
-	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/axi/simlink/src/VhpiGeneric.c
+	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/general/simlink/src/VhpiGeneric.c
 	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/axi/simlink/src/AxiStreamSimOb.c
 	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/axi/simlink/src/AxiStreamSimIb.c
 	@cd $(SIM_DIR); gcc -Wall -c -fPIC -O -I$(VCS_HOME)/include/ $(PWD)/../../StdLib/axi/simlink/src/AxiSimMaster.c

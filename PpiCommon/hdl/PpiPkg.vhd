@@ -50,11 +50,14 @@ package PpiPkg is
    -- Build an PPI configuration
    -------------------------------------------------------------------------------------------------
    function ppiAxiStreamConfig (
-      dataBytes : natural := PPI_TDATA_BYTES_C)
+      dataBytes : natural       := PPI_TDATA_BYTES_C;
+      keepMode  : TKeepModeType := PPI_TKEEP_MODE_C)
       return AxiStreamConfigType;
 
    -- A default PPI config is useful to have
-   constant PPI_AXIS_CONFIG_INIT_C : AxiStreamConfigType := ppiAxiStreamConfig(PPI_TDATA_BYTES_C);
+   constant PPI_AXIS_CONFIG_INIT_C : AxiStreamConfigType := ppiAxiStreamConfig(PPI_TDATA_BYTES_C,PPI_TKEEP_MODE_C);
+   constant PPI_AXIS_HEADER_INIT_C : AxiStreamConfigType := ppiAxiStreamConfig(PPI_TDATA_BYTES_C,TKEEP_UNUSED_C);
+
 
    -------------------------------------------------------------------------------------------------
    -- PPI Records and AXI-Stream conversion functions
@@ -138,7 +141,8 @@ end package PpiPkg;
 package body PpiPkg is
 
    function ppiAxiStreamConfig (
-      dataBytes : natural := PPI_TDATA_BYTES_C )
+      dataBytes : natural       := PPI_TDATA_BYTES_C;
+      keepMode  : TKeepModeType := PPI_TKEEP_MODE_C)
       return AxiStreamConfigType is
       variable ret : AxiStreamConfigType;
    begin
@@ -146,11 +150,12 @@ package body PpiPkg is
       ret.TUSER_BITS_C  := PPI_TUSER_BITS_C;    -- 2 TUSER: EOH, ERR
       ret.TDEST_BITS_C  := PPI_TDEST_BITS_C;    -- 4 TDEST bits for type
       ret.TID_BITS_C    := PPI_TID_BITS_C;      -- TID not used
-      ret.TKEEP_MODE_C  := PPI_TKEEP_MODE_C;    -- Compress TKEEP
+      ret.TKEEP_MODE_C  := keepMode;            -- Compress TKEEP
       ret.TSTRB_EN_C    := PPI_TSTRB_EN_C;      -- No TSTRB support in PPI
       ret.TUSER_MODE_C  := PPI_TUSER_MODE_C;    -- User field valid on last only
       return ret;
    end function ppiAxiStreamConfig;
+
 
    -------------------------------------------------------------------------------------------------
    function ppi2AxisMaster (
