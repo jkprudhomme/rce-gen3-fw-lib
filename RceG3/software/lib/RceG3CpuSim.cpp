@@ -11,14 +11,14 @@
 #include "RceG3CpuSim.h"
 using namespace std;
  
-RceG3CpuSim::RceG3CpuSim (unsigned char *memSpace, uint memSize ) {
+RceG3CpuSim::RceG3CpuSim (unsigned char *memSpace, uint memSize, uint addrMask ) {
    uint x;
 
    _memSpace = memSpace;
    _memSize  = memSize;
 
-   for(x=0; x<4; x++) _hpSlave[x] = new AxiSlaveSim(memSpace,memSize);
-   _apvSlave = new AxiSlaveSim(memSpace,memSize);
+   for(x=0; x<4; x++) _hpSlave[x] = new AxiSlaveSim(memSpace,memSize,addrMask);
+   _apvSlave = new AxiSlaveSim(memSpace,memSize,addrMask);
 
    for(x=0; x<2; x++) _gpMaster[x] = new AxiMasterSim();
 }

@@ -26,7 +26,7 @@ class RceG3CpuSim  {
 
    public:
 
-      RceG3CpuSim (unsigned char *memSpace, uint memSize);
+      RceG3CpuSim (unsigned char *memSpace, uint memSize, uint addrMask=0xFFFFFFFF);
       ~RceG3CpuSim ();
 
       bool open();
