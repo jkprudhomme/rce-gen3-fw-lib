@@ -17,12 +17,6 @@ LIB_SRC := $(wildcard $(LIB_DIR)/*.cpp)
 LIB_HDR := $(wildcard $(LIB_DIR)/*.h)
 LIB_OBJ := $(patsubst $(LIB_DIR)/%.cpp,$(OBJ)/%.o,$(LIB_SRC))
 
-# Common Sources
-COM_DIR := $(PWD)/../common/
-COM_SRC := $(wildcard $(COM_DIR)/*.cpp)
-COM_HDR := $(wildcard $(COM_DIR)/*.h)
-COM_OBJ := $(patsubst $(COM_DIR)/%.cpp,$(OBJ)/%.o,$(COM_SRC))
-
 # Top Sources
 TOP_DIR := $(PWD)/src
 TOP_SRC := $(wildcard $(TOP_DIR)/*.cpp)
@@ -46,10 +40,6 @@ $(OBJ)/%.o: $(AXI_DIR)/%.cpp $(AXI_DIR)/%.h
 
 # Compile Library Sources
 $(OBJ)/%.o: $(LIB_DIR)/%.cpp $(LIB_DIR)/%.h
-	$(CC) -c $(CFLAGS) $(DEF) -o $@ $<
-
-# Compile Library Sources
-$(OBJ)/%.o: $(COM_DIR)/%.cpp $(COM_DIR)/%.h
 	$(CC) -c $(CFLAGS) $(DEF) -o $@ $<
 
 # Comile applications
