@@ -34,23 +34,25 @@ PpiDmaSim::PpiDmaSim (uint idx, RceG3CpuSim *cpu, unsigned char *mem, uint memSi
 PpiDmaSim::~PpiDmaSim () { }
 
 // Write a block of data
-int PpiDmaSim::write(unsigned char *data, uint hdrSize, uint paySize) {
+int PpiDmaSim::write(unsigned char *data, uint hdrSize, uint paySize, uint type) {
    uint            addr;
    uint            desc;
    uint            size;
    uint          * uintPtr;
    unsigned char * ucharPtr;
 
-   if ((addr = _cpuSim->read(_baseAddr[_channel]+_obFree)) != 0 ) return(0);
+   addr = _cpuSim->read(_baseAddr[_channel]+_obFree);
+
+   if ((addr & 0x1) != 0 ) return(0);
    printf("Got free outbound address : 0x%08x\n",addr);
 
    uintPtr  = (uint *)(_slaveMem + addr);
    ucharPtr = _slaveMem + addr + 24;
 
-   uintPtr[0] = paySize;
-   uintPtr[1] = addr + 24 + hdrSize;
-   uintPtr[2] = 0x5a5a5a5a;
-   uintPtr[3] = _channel*2;
+   uintPtr[0] = addr + 24 + hdrSize;
+   uintPtr[1] = paySize;
+   uintPtr[2] = _channel*2;
+   uintPtr[3] = 0x5a5a5a5a;
 
    uintPtr[4] = hdrSize;
    uintPtr[5] = paySize;
@@ -58,7 +60,7 @@ int PpiDmaSim::write(unsigned char *data, uint hdrSize, uint paySize) {
    memcpy(ucharPtr,data,hdrSize+paySize);
    size = hdrSize + paySize + 24;
 
-   desc = addr | ((hdrSize/8) << 18) | (_channel << 26);
+   desc = addr | (((hdrSize/8)+3) << 18) | (type << 26);
 
    if ( paySize > 0 ) desc |= 0xC0000000;
    else desc |= 0x40000000;
@@ -66,10 +68,15 @@ int PpiDmaSim::write(unsigned char *data, uint hdrSize, uint paySize) {
    printf("Writing to outbound work\n");
    _cpuSim->write(_baseAddr[_channel]+_obWork,desc);
 
-   printf("Waiting for outbound completion\n");
-   while ( (desc = _cpuSim->read((_compFifos+(_channel*8)) & 0x1)) != 0 ) usleep(100);
+   if ( paySize > 0 ) {
+      printf("Waiting for outbound completion\n");
+      do {
+         desc = _cpuSim->read(_compFifos+(_channel*8));
+         usleep(100);
+      } while ( (desc & 0x1) != 0);
+      printf("Got write completion : 0x%08x\n",desc);
+   }
 
-   printf("Got completion : 0x%08x\n",desc);
    return(hdrSize+paySize);
 }
 
@@ -81,7 +88,8 @@ int PpiDmaSim::read(unsigned char *data, uint maxSize, uint *type, uint *err, ui
    uint            pay;
    uint            addr;
 
-   if ((desc = _cpuSim->read(_baseAddr[_channel]+_obFree)) != 0 ) return(0);
+   desc = _cpuSim->read(_baseAddr[_channel]+_ibPend);
+   if ((desc & 0x1) != 0 ) return(0);
 
    addr  = desc & 0x3FFFF;
    *type = (desc >> 26) & 0xF;
@@ -104,19 +112,21 @@ int PpiDmaSim::read(unsigned char *data, uint maxSize, uint *type, uint *err, ui
       return(*hdrSize);
    }
 
-   uintPtr[0] = *paySize;
-   uintPtr[1] = addr + 24 + *hdrSize;
-   uintPtr[2] = 0x5a5a5a5a;
-   uintPtr[3] = (_channel*2)+1;
+   uintPtr[0] = addr + 24 + *hdrSize;
+   uintPtr[1] = *paySize;
+   uintPtr[2] = (_channel*2)+1;
+   uintPtr[3] = 0x5a5a5a5a;
 
    printf("Writing to inbound work\n");
    desc = 0x60000000 | addr;
-   _cpuSim->write(_baseAddr[_channel]+_obWork,desc);
+   _cpuSim->write(_baseAddr[_channel]+_ibWork,desc);
 
    printf("Waiting for inbound completion\n");
-   while ( (desc = _cpuSim->read((_compFifos+(_channel*8)+4) & 0x1)) != 0 ) usleep(100);
-
-   printf("Got completion : 0x%08x\n",desc);
+   do {
+      desc = _cpuSim->read(_compFifos+((_channel*8)+4));
+      usleep(100);
+   } while ( (desc & 0x1) != 0);
+   printf("Got read completion : 0x%08x\n",desc);
 
    memcpy(data,ucharPtr,*hdrSize+*paySize);
 

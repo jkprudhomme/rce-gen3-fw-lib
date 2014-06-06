@@ -92,8 +92,8 @@ begin
          intSlave   := headIbSlave;
 
          -- Set tLast equal to EOH or frame last
-         headIbMaster.tLast <= intIbMaster.tLast or 
-                               axiStreamGetUserBit(PPI_AXIS_CONFIG_INIT_C,intIbMaster,PPI_EOH_C);
+         headMaster.tLast := intIbMaster.tLast or 
+                             axiStreamGetUserBit(PPI_AXIS_CONFIG_INIT_C,intIbMaster,PPI_EOH_C);
 
          -- Set EOH to equal tLast for header frame
          axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, headMaster, PPI_EOH_C,intIbMaster.tLast);

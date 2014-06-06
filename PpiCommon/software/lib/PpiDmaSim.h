@@ -50,7 +50,7 @@ class PpiDmaSim  {
       ~PpiDmaSim ();
 
       // Write a block of data
-      int write(unsigned char *data, uint hdrSize, uint paySize);
+      int write(unsigned char *data, uint hdrSize, uint paySize, uint type);
 
       // Read a block of data, return -1 on error, 0 if no data, size if data
       int read(unsigned char *data, uint maxSize, uint *type, uint *err, uint *hdrSize, uint *paySize);

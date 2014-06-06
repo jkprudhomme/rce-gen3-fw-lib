@@ -130,6 +130,7 @@ architecture structure of PpiIbPayload is
    signal wrAxisMaster    : AxiStreamMasterType;
    signal wrAxisSlave     : AxiStreamSlaveType;
    signal rdAxisMaster    : AxiStreamMasterType;
+   signal rdAxisSlave     : AxiStreamSlaveType;
    signal compWrite       : sl;
    signal compDin         : slv(COMP_BITS_C-1 downto 0);
    signal compDout        : slv(COMP_BITS_C-1 downto 0);
@@ -337,11 +338,13 @@ begin
          dmaReq          => rdReq,
          dmaAck          => rdAck,
          axisMaster      => rdAxisMaster,
-         axisSlave       => AXI_STREAM_SLAVE_INIT_C,
+         axisSlave       => rdAxisSlave,
          axisCtrl        => AXI_STREAM_CTRL_UNUSED_C,
          axiReadMaster   => intReadMaster,
          axiReadSlave    => intReadSlave
       );
+
+   rdAxisSlave.tReady <= '1';
 
 
    -- Read Path AXI FIFO

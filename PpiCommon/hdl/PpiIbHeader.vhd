@@ -71,6 +71,7 @@ architecture structure of PpiIbHeader is
 
    type RegType is record
       state         : StateType;
+      baseAddr      : slv(17 downto 4);
       ibPendWrite   : sl;
       ibPendDin     : slv(31 downto 0);
       ibFreeRead    : sl;
@@ -80,6 +81,7 @@ architecture structure of PpiIbHeader is
 
    constant REG_INIT_C : RegType := (
       state         => IDLE_S,
+      baseAddr      => (others=>'0'),
       ibPendWrite   => '0',
       ibPendDin     => (others=>'0'),
       ibFreeRead    => '0',
@@ -125,10 +127,12 @@ begin
 
          when IDLE_S =>
             v.dmaReq.address(17 downto 4) := ibFreeDout + 1;
+            v.baseAddr                    := ibFreeDout;
 
             if ibFreeValid = '1' and ibPendAFull = '0' then
                v.dmaReq.request := '1';
                v.ibFreeRead     := '1';
+               v.state          := WAIT_S;
             end if;
 
          when WAIT_S =>
@@ -137,7 +141,7 @@ begin
                v.ibError                 := dmaAck.writeError;
                v.ibPendDin(31)           := not dmaAck.lastUser(PPI_EOH_C); -- EOH = EOF here
                v.ibPendDin(29 downto 26) := dmaAck.dest(3 downto 0);
-               v.ibPendDin(17 downto  4) := dmaReq.address(17 downto 4);
+               v.ibPendDin(17 downto  4) := r.baseAddr;
                v.ibPendWrite             := '1';
                v.state                   := IDLE_S;
 

@@ -126,12 +126,14 @@ begin
             v.compFifoDin   := compDin(conv_integer(r.srcSel)) & "0";
             v.state         := READ_S;
             v.req           := (others=>'0');
+            v.valid         := '0';
 
             v.compRead(conv_integer(r.srcSel)) := '1';
 
          when READ_S =>
             v.state := IDLE_S;
             v.req   := (others=>'0');
+            v.valid := '0';
 
       end case;
 

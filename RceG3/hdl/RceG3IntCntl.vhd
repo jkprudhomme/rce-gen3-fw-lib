@@ -148,7 +148,7 @@ begin
       -- Write
       if (axiStatus.writeEnable = '1') then
 
-         -- Enable/source Registers 0x0xxx
+         -- Source Registers 0x0xxx
          if icAxilWriteMaster.awaddr(15) = '0' then
             for i in 0 to SRC_COUNT_BITS_C-1 loop
                v.intSourceSel(conv_integer(icAxilWriteMaster.awaddr(DEST_COUNT_BITS_C+1 downto 2)),i) := icAxilWriteMaster.wdata(i);
@@ -161,6 +161,10 @@ begin
                v.intEnable(conv_integer(icAxilWriteMaster.awaddr(GROUP_COUNT_BITS_C+3 downto 4)),i) := icAxilWriteMaster.wdata(i);
             end loop;
          end if;
+
+         -- Send Axi Response
+         axiSlaveWriteResponse(v.icAxilWriteSlave);
+
       end if;
             
       -- Read
