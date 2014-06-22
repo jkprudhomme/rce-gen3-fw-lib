@@ -60,7 +60,7 @@ int PpiDmaSim::write(unsigned char *data, uint hdrSize, uint paySize, uint type)
    memcpy(ucharPtr,data,hdrSize+paySize);
    size = hdrSize + paySize + 24;
 
-   desc = addr | (((hdrSize/8)+3) << 18) | (type << 26);
+   desc = addr | (((hdrSize/8)+1) << 18) | (type << 26);
 
    if ( paySize > 0 ) desc |= 0xC0000000;
    else desc |= 0x40000000;
@@ -75,6 +75,9 @@ int PpiDmaSim::write(unsigned char *data, uint hdrSize, uint paySize, uint type)
          usleep(100);
       } while ( (desc & 0x1) != 0);
       printf("Got write completion : 0x%08x\n",desc);
+
+      desc = _cpuSim->read(_compFifos+(_channel*8));
+      printf("Second write completion read : 0x%08x\n",desc);
    }
 
    return(hdrSize+paySize);
@@ -127,6 +130,9 @@ int PpiDmaSim::read(unsigned char *data, uint maxSize, uint *type, uint *err, ui
       usleep(100);
    } while ( (desc & 0x1) != 0);
    printf("Got read completion : 0x%08x\n",desc);
+
+   desc = _cpuSim->read(_compFifos+((_channel*8)+4));
+   printf("Second read completion read : 0x%08x\n",desc);
 
    memcpy(data,ucharPtr,*hdrSize+*paySize);
 

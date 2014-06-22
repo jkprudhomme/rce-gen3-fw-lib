@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
    unsigned char     txData[buffSize];
    unsigned char *   mem;
    uint              x;
+   uint              y;
    uint              txHdrSize;
    uint              txPaySize;
    uint              rxHdrSize;
@@ -59,19 +60,24 @@ int main(int argc, char **argv) {
 
    for (x=0; x < (txHdrSize+txPaySize); x++) txData[x] = x;
 
-   printf("Write\n");
-   ret = dma->write(txData,txHdrSize,txPaySize,txType);
-   printf("Write Done. Ret=%i\n",ret);
+   for (y=0; y < 2; y++) {
 
-   printf("Read\n");
-   while (dma->read(rxData,buffSize,&rxType,&rxErr,&rxHdrSize,&rxPaySize) == 0 ) usleep(100);
-   printf("Read Done\n");
+      printf("Write\n");
+      ret = dma->write(txData,txHdrSize,txPaySize,txType);
+      printf("Write Done. Ret=%i\n",ret);
 
-   if ( rxHdrSize != txHdrSize ) printf("Header size mismatch!\n");
-   if ( rxPaySize != txPaySize ) printf("Payload size mismatch!\n");
+      printf("Read\n");
+      while (dma->read(rxData,buffSize,&rxType,&rxErr,&rxHdrSize,&rxPaySize) == 0 ) usleep(100);
+      printf("Read Done\n");
 
-   for (x=0; x < (txHdrSize+txPaySize); x++) {
-      if ( txData[x] != rxData[x] ) printf("Data mismatch. Idx=%i Got=0x%08x Exp=0x%08x\n",x,rxData[x],txData[x]);
+      if ( rxHdrSize != txHdrSize ) printf("Header size mismatch!\n");
+      if ( rxPaySize != txPaySize ) printf("Payload size mismatch!\n");
+
+      for (x=0; x < (txHdrSize+txPaySize); x++) {
+         if ( txData[x] != rxData[x] ) printf("Data mismatch. Idx=%i Got=0x%08x Exp=0x%08x\n",x,rxData[x],txData[x]);
+      }
+
+      printf("\n\n\n ------------ Loop %i DOne --------------------\n\n\n",y);
    }
 
    ret = rce->read(0x40008008);

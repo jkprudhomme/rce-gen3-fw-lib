@@ -55,9 +55,13 @@ end PpiIbRoute;
 
 architecture structure of PpiIbRoute is
 
-   signal intIbMaster : AxiStreamMasterType;
-   signal intIbSlave  : AxiStreamSlaveType;
-   signal payloadEn   : sl;
+   signal intIbMaster   : AxiStreamMasterType;
+   signal intIbSlave    : AxiStreamSlaveType;
+   signal payloadEn     : sl;
+   signal iheadIbMaster : AxiStreamMasterType;
+   signal iheadIbSlave  : AxiStreamSlaveType;
+   signal ipayIbMaster  : AxiStreamMasterType;
+   signal ipayIbSlave   : AxiStreamSlaveType;
 
 begin
 
@@ -77,7 +81,7 @@ begin
 
 
    -- Destination MUX
-   process ( payloadEn, headIbSlave, payIbSlave, intIbMaster ) is
+   process ( payloadEn, iheadIbSlave, ipayIbSlave, intIbMaster ) is
       variable headMaster : AxiStreamMasterType;
       variable payMaster  : AxiStreamMasterType;
       variable intSlave   : AxiStreamSlaveType;
@@ -89,7 +93,7 @@ begin
       -- Select destination
       if payloadEn = '0' then
          headMaster := intIbMaster;
-         intSlave   := headIbSlave;
+         intSlave   := iheadIbSlave;
 
          -- Set tLast equal to EOH or frame last
          headMaster.tLast := intIbMaster.tLast or 
@@ -100,13 +104,13 @@ begin
 
       else
          payMaster := intIbMaster;
-         intSlave  := payIbSlave;
+         intSlave  := ipayIbSlave;
       end if;
 
       -- Outputs
-      headIbMaster <= headMaster;
-      payIbMaster  <= payMaster;
-      intIbSlave   <= intSlave;
+      iheadIbMaster <= headMaster;
+      ipayIbMaster  <= payMaster;
+      intIbSlave    <= intSlave;
 
    end process;
 
@@ -129,6 +133,35 @@ begin
          end if;
       end if;
    end process;
+
+
+   -- Sync outgoing stream for timing
+   U_PaySync : entity work.AxiStreamPipeline 
+      generic map (
+         TPD_G         => TPD_G,
+         PIPE_STAGES_G => 2
+      ) port map (
+         axisClk     => dmaClk,
+         axisRst     => dmaClkRst,
+         sAxisMaster => ipayIbMaster,
+         sAxisSlave  => ipayIbSlave,
+         mAxisMaster => payIbMaster,
+         mAxisSlave  => payIbSlave
+      );
+
+   -- Sync outgoing stream for timing
+   U_HeadSync : entity work.AxiStreamPipeline 
+      generic map (
+         TPD_G         => TPD_G,
+         PIPE_STAGES_G => 2
+      ) port map (
+         axisClk     => dmaClk,
+         axisRst     => dmaClkRst,
+         sAxisMaster => iheadIbMaster,
+         sAxisSlave  => iheadIbSlave,
+         mAxisMaster => headIbMaster,
+         mAxisSlave  => headIbSlave
+      );
 
 end structure;
 
