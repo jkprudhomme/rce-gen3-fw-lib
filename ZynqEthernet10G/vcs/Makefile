@@ -29,6 +29,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/SynchronizerOneShot.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/SynchronizerOneShotCnt.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/SynchronizerOneShotCntVector.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/sync/rtl/SyncStatusVector.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/ArbiterPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/Arbiter.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/PrbsPkg.vhd
@@ -66,6 +67,8 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/simlink/rtl/AxiSimSlave.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/axi/simlink/rtl/AxiSimSlaveWrap.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/xilinx7/rtl/DeviceDna.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/CrcPkg.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/Crc32.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/stdlib.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cSlave.vhd
@@ -78,19 +81,19 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cRegMasterAxiBridge.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/Version.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Pkg.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiPkg.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiObHeader.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiObPayload.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiIbHeader.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiIbPayload.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiIbRoute.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiSocket.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiSocket.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiCompCtrl.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiToAxiLite.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiStateSync.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiStatus.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiInterconnect.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiPkg.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiObHeader.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiObPayload.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiIbHeader.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiIbPayload.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiIbRoute.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiSocket.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiSocket.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiCompCtrl.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiToAxiLite.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiStateSync.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiStatus.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../PpiCommon/hdl/PpiInterconnect.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Version.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Bsi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Clocks.vhd
@@ -102,6 +105,10 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3IntCntl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Top.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/simlink/rtl/RceG3CpuSim.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacImport.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacExport.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMac.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ZynqEthernet10G.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/tb.vhd
 
 # VHPI Library

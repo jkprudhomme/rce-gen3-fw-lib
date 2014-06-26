@@ -22,60 +22,61 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-use work.ArmRceG3Pkg.all;
+use work.PpiPkg.all;
+use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
+use work.AxiStreamPkg.all;
 
 entity PpiStatus is
    generic (
-      TPD_G                  : time                       := 1 ns;
-      PPI_ADDR_WIDTH_G       : integer range 2 to 48      := 6;
-      PPI_PAUSE_THOLD_G      : integer range 1 to (2**24) := 50;
-      NUM_STATUS_WORDS_G     : natural range 1 to 8       := 8
+      TPD_G                  : time                   := 1 ns;
+      NUM_STATUS_WORDS_G     : natural range 1 to 30  := 30;
+      STATUS_SEND_WIDTH_G    : natural                := 1
    );
    port (
 
       -- PPI Interface
       ppiClk           : in  sl;
       ppiClkRst        : in  sl;
-      ppiOnline        : in  sl;
-      ppiWriteToFifo   : in  PpiWriteToFifoType;
-      ppiWriteFromFifo : out PpiWriteFromFifoType;
-      ppiReadToFifo    : in  PpiReadToFifoType;
-      ppiReadFromFifo  : out PpiReadFromFifoType;
+      ppiIbMaster      : out AxiStreamMasterType;
+      ppiIbSlave       : in  AxiStreamSlaveType;
+      ppiObMaster      : in  AxiStreamMasterType;
+      ppiObSlave       : out AxiStreamSlaveType;
+      ppiState         : in  RceDmaStateType;
 
       -- Status Busses
       statusClk        : in  sl;
       statusClkRst     : in  sl;
       statusWords      : in  Slv64Array(NUM_STATUS_WORDS_G-1 downto 0);
-      statusSend       : in  sl
+      statusSend       : in  slv(STATUS_SEND_WIDTH_G-1 downto 0)
    );
 end PpiStatus;
 
 architecture structure of PpiStatus is
 
    -- Local signals
-   signal intWriteToFifo   : PpiWriteToFifoType;
-   signal intWriteFromFifo : PpiWriteFromFifoType;
    signal swReqIn          : sl;
    signal swReqEdge        : sl;
+   signal intIbMaster      : AxiStreamMasterType;
+   signal intIbCtrl        : AxiStreamCtrlType;
+   signal statusSendGen    : sl;
    signal statusSendEdge   : sl;
-   signal intOnline        : sl;
-   signal intOnlineEdge    : sl;
+   signal intState         : RceDmaStateType;
 
-   type StateType is (S_IDLE_C, S_WAIT_C, S_MESSAGE_C, S_LAST_C );
+   type StateType is (S_IDLE_C, S_WAIT_C, S_FIRST_C, S_MESSAGE_C, S_LAST_C );
 
    type RegType is record
       statusWords     : Slv64Array(NUM_STATUS_WORDS_G-1 downto 0);
-      count           : slv(2 downto 0);
+      count           : slv(4 downto 0);
       state           : StateType;
-      ppiWriteToFifo  : ppiWriteToFifoType;
+      intIbMaster     : AxiStreamMasterType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
       statusWords     => (others=>(others=>'0')),
       count           => (others=>'0'),
       state           => S_IDLE_C,
-      ppiWriteToFifo  => PPI_WRITE_TO_FIFO_INIT_C
+      intIbMaster     => AXI_STREAM_MASTER_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -86,8 +87,8 @@ begin
    ------------------------------------
    -- Generate status request pulse
    ------------------------------------
-   swReqIn                <= ppiWriteToFifo.valid and ppiWriteToFifo.eof;
-   ppiWriteFromFifo.pause <= '0';
+   swReqIn    <= ppiObMaster.tValid and ppiObMaster.tlast;
+   ppiObSlave <= AXI_STREAM_SLAVE_FORCE_C;
 
    U_SwSync : entity work.SynchronizerOneShot
       generic map (
@@ -100,24 +101,20 @@ begin
          dataOut => swReqEdge
       );
 
-   -- Online Sync
-   U_OnlineSync : entity work.SynchronizerEdge 
+   -- Sync State
+   U_StateSync: entity work.PpiStateSync
       generic map (
-         TPD_G          => TPD_G,
-         RST_POLARITY_G => '1',
-         OUT_POLARITY_G => '1',
-         RST_ASYNC_G    => false,
-         STAGES_G       => 2,
-         INIT_G         => "0"
+         TPD_G => TPD_G
       ) port map (
-         clk         => statusClk,
-         rst         => statusClkRst,
-         dataIn      => ppiOnline,
-         dataOut     => intOnline,
-         risingEdge  => intOnlineEdge,
-         fallingEdge => open
+         ppiState  => ppiState,
+         locClk    => statusClk,
+         locClkRst => statusClkRst,
+         locState  => intState
       );
 
+   statusSendGen <= uor(statusSend);
+
+   -- Request edge detect
    U_ReqSync : entity work.SynchronizerOneShot
       generic map (
          TPD_G          => TPD_G,
@@ -125,7 +122,7 @@ begin
          OUT_POLARITY_G => '1'
       ) port map (
          clk     => statusClk,
-         dataIn  => statusSend,
+         dataIn  => statusSendGen,
          dataOut => statusSendEdge
       );
 
@@ -133,22 +130,32 @@ begin
    ------------------------------------
    -- FIFO
    ------------------------------------
-   U_OutFifo : entity work.PpiFifo
+   U_OutFifo : entity work.AxiStreamFifo 
       generic map (
-         TPD_G          => TPD_G,
-         ADDR_WIDTH_G   => PPI_ADDR_WIDTH_G,
-         PAUSE_THOLD_G  => PPI_PAUSE_THOLD_G
+         TPD_G                => TPD_G,
+         PIPE_STAGES_G        => 0,
+         SLAVE_READY_EN_G     => false,
+         VALID_THOLD_G        => 0,
+         BRAM_EN_G            => true,
+         XIL_DEVICE_G         => "7SERIES",
+         USE_BUILT_IN_G       => false,
+         GEN_SYNC_FIFO_G      => false,
+         CASCADE_SIZE_G       => 1,
+         FIFO_ADDR_WIDTH_G    => 9,
+         FIFO_FIXED_THRESH_G  => true,
+         FIFO_PAUSE_THRESH_G  => 255,
+         SLAVE_AXI_CONFIG_G   => PPI_AXIS_CONFIG_INIT_C,
+         MASTER_AXI_CONFIG_G  => PPI_AXIS_CONFIG_INIT_C 
       ) port map (
-         ppiWrClk         => statusClk,
-         ppiWrClkRst      => statusClkRst,
-         ppiWrOnline      => '0',
-         ppiWriteToFifo   => intWriteToFifo,
-         ppiWriteFromFifo => intWriteFromFifo,
-         ppiRdClk         => ppiClk,
-         ppiRdClkRst      => ppiClkRst,
-         ppiRdOnline      => open,
-         ppiReadToFifo    => ppiReadToFifo,
-         ppiReadFromFifo  => ppiReadFromFifo
+         sAxisClk        => statusClk,
+         sAxisRst        => statusClkRst,
+         sAxisMaster     => intIbMaster,
+         sAxisSlave      => open,
+         sAxisCtrl       => intIbCtrl,
+         mAxisClk        => ppiClk,
+         mAxisRst        => ppiClkRst,
+         mAxisMaster     => ppiIbMaster,
+         mAxisSlave      => ppiIbSlave
       );
 
 
@@ -165,26 +172,25 @@ begin
    end process;
 
    -- Async
-   process (statusClkRst, r, intWriteFromFifo, swReqEdge, statusSendEdge, intOnline, intOnlineEdge, statusWords ) is
+   process (statusClkRst, r, intIbCtrl, swReqEdge, statusSendEdge, intState, statusWords ) is
       variable v : RegType;
    begin
       v := r;
 
       -- Init
-      v.ppiWriteToFifo      := PPI_WRITE_TO_FIFO_INIT_C;
-      v.ppiWriteToFifo.size := "111";
+      v.intIbMaster.tValid  := '0';
 
       -- State Machine
       case r.state is
 
          -- Idle
          when S_IDLE_C =>
-            v.ppiWriteToFifo := PPI_WRITE_TO_FIFO_INIT_C;
+            v.intIbMaster    := AXI_STREAM_MASTER_INIT_C;
             v.count          := (others=>'0');
             v.statusWords    := statusWords;
 
             -- When to send a message, transition to online, sw request or firmware request
-            if intOnlineEdge = '1' or swReqEdge = '1' or statusSendEdge = '1' then
+            if swReqEdge = '1' or (statusSendEdge = '1' and intState.online = '1') then
                v.state := S_WAIT_C;
             end if;
 
@@ -192,15 +198,22 @@ begin
          when S_WAIT_C =>
 
             -- Proceeed when pause is de-asserted
-            if intWriteFromFifo.pause = '0' then
-               v.state := S_MESSAGE_C;
+            if intIbCtrl.pause = '0' then
+               v.state := S_FIRST_C;
             end if;
+
+         -- First Word
+         when S_FIRST_C =>
+            v.intIbMaster.tData    := (others=>'0');
+            v.intIbMaster.tValid   := '1';
+            v.intIbMaster.tLast    := '0';
+            v.state                := S_MESSAGE_C;
 
          -- Status message
          when S_MESSAGE_C =>
-            v.ppiWriteToFifo.data  := r.statusWords(conv_integer(r.count));
-            v.ppiWriteToFifo.valid := '1';
-            v.count                := r.count + 1;
+            v.intIbMaster.tData(63 downto 0) := r.statusWords(conv_integer(r.count));
+            v.intIbmaster.tvalid             := '1';
+            v.count                          := r.count + 1;
 
             if r.count = (NUM_STATUS_WORDS_G - 1) then
                v.state := S_LAST_C;
@@ -208,10 +221,9 @@ begin
 
          -- Last Word
          when S_LAST_C =>
-            v.ppiWriteToFifo.data  := (others=>'0');
-            v.ppiWriteToFifo.eof   := '1';
-            v.ppiWriteToFifo.eoh   := '1';
-            v.ppiWriteToFifo.valid := '1';
+            v.intIbMaster.tData    := (others=>'0');
+            v.intIbMaster.tValid   := '1';
+            v.intIbMaster.tLast    := '1';
             v.state                := S_IDLE_C;
 
          when others =>
@@ -220,7 +232,7 @@ begin
       end case;
 
       -- Reset
-      if statusClkRst = '1' or intOnline = '0' then
+      if statusClkRst = '1' then
          v := REG_INIT_C;
       end if;
 
@@ -228,7 +240,7 @@ begin
       rin <= v;
 
       -- Outputs
-      intWriteToFifo <= r.ppiWriteToFifo;  
+      intIbMaster <= r.intIbMaster;
 
    end process;
 

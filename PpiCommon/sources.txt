@@ -6,3 +6,7 @@ vhdl work hdl/PpiIbRoute.vhd
 vhdl work hdl/PpiObHeader.vhd
 vhdl work hdl/PpiObPayload.vhd
 vhdl work hdl/PpiSocket.vhd
+vhdl work hdl/PpiToAxiLite.vhd
+vhdl work hdl/PpiStateSync.vhd
+vhdl work hdl/PpiStatus.vhd
+vhdl work hdl/PpiInterconnect.vhd

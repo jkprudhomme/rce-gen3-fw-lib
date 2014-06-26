@@ -1,0 +1,747 @@
+-------------------------------------------------------------------------------
+-- Title         : 10G MAC / Export
+-- Project       : RCE 10G-bit MAC
+-------------------------------------------------------------------------------
+-- File          : XMacExport.vhd
+-- Author        : Ryan Herbst, rherbst@slac.stanford.edu
+-- Created       : 02/11/2008
+-------------------------------------------------------------------------------
+-- Description:
+-- PIC Export block for 10G MAC core for the RCE.
+-------------------------------------------------------------------------------
+-- Copyright (c) 2008 by Ryan Herbst. All rights reserved.
+-------------------------------------------------------------------------------
+-- Modification history:
+-- 02/11/2008: created.
+-- 02/23/2008: Fixed error which incorrectly detected short frame if the 
+--             data available signal was de-asserted with the last line signal.
+-- 02/29/2008: Outgoing data is now dumped when phy is not ready. Byte order
+--             is swapped at PIC interface. 
+-- 03/31/2008: Fixed errror where status was not generated properly in error
+--             situation. 
+-- 05/09/2008: Removed header/payload re-alignment. Added automated pause frame
+--             reception and transmission.
+-- 08/05/2008: Added two clock delay following tx of pause frames.
+-- 11/12/2008: Added padding for frames under 64 bytes.
+-- 04/22/2014: Adapted for AXI Stream interface.
+-------------------------------------------------------------------------------
+
+LIBRARY ieee;
+use work.all;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+use work.AxiStreamPkg.all;
+use work.StdRtlPkg.all;
+
+entity XMacExport is 
+   generic (
+      TPD_G         : time                := 1 ns;
+      ADDR_WIDTH_G  : integer             := 9;
+      VALID_THOLD_G : integer             := 0;
+      AXIS_CONFIG_G : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C
+   );
+   port ( 
+
+      -- PPI Interface   
+      dmaClk           : in  sl;
+      dmaClkRst        : in  sl;
+      dmaObMaster      : in  AxiStreamMasterType;
+      dmaObSlave       : out AxiStreamSlaveType;
+
+      -- XAUI Interface
+      phyClk           : in  sl;
+      phyRst           : in  sl;
+      phyTxd           : out slv(63 downto 0);
+      phyTxc           : out slv(7  downto 0);
+      phyReady         : in  sl;
+
+      -- Pause Interface
+      rxPauseReq       : in  sl;
+      rxPauseSet       : in  sl;
+      rxPauseValue     : in  slv(15 downto 0);
+
+      -- Configuration
+      interFrameGap    : in  slv(3  downto 0);
+      pauseTime        : in  slv(15 downto 0);
+      macAddress       : in  slv(47 downto 0);
+
+      -- Errors
+      txCountEn        : out sl;
+      txUnderRun       : out sl;
+      txLinkNotReady   : out sl
+   );
+end XMacExport;
+
+
+-- Define architecture
+architecture XMacExport of XMacExport is
+
+   -- Local Signals
+   signal intAdvance       : sl;
+   signal intDump          : sl;
+   signal intRunt          : sl;
+   signal intPad           : sl;
+   signal intLastLine      : sl;
+   signal intLastValidByte : slv(2  downto 0);
+   signal frameShift0      : sl;
+   signal frameShift1      : sl;
+   signal txEnable0        : sl;
+   signal txEnable1        : sl;
+   signal txEnable2        : sl;
+   signal txEnable3        : sl;
+   signal txEnable4        : sl;
+   signal nxtMaskIn        : slv(7  downto 0);
+   signal nxtEOF           : sl;
+   signal intData          : slv(63 downto 0);
+   signal stateCount       : slv(3  downto 0);
+   signal stateCountRst    : sl;
+   signal pausePreCnt      : slv(2  downto 0);
+   signal importPauseCnt   : slv(15 downto 0);
+   signal exportPauseCnt   : slv(15 downto 0);
+   signal exportWordCnt    : slv(3  downto 0);
+   signal pauseTx          : sl;
+   signal pausePrst        : sl;
+   signal pauseLast        : sl;
+   signal pauseData        : slv(63 downto 0);
+   signal crcFifoIn        : slv(71 downto 0);
+   signal crcFifoOut       : slv(71 downto 0);
+   signal crcInv           : slv(31 downto 0);
+   signal crcIn            : slv(63 downto 0);
+   signal crcInit          : sl;
+   signal crcMaskIn        : slv(7  downto 0);
+   signal crcInAdj         : slv(63 downto 0);
+   signal crcDataWidth     : slv(2  downto 0);
+   signal crcDataValid     : sl;
+   signal crcReset         : sl;
+   signal crcOut           : slv(31 downto 0);
+   signal intObMaster      : AxiStreamMasterType;
+   signal intObSlave       : AxiStreamSlaveType;
+   signal intError         : sl;
+   signal nxtError         : sl;
+
+   -- MAC States
+   signal   curState    : slv(2 downto 0);
+   signal   nxtState    : slv(2 downto 0);
+   constant ST_IDLE_C   : slv(2 downto 0) := "000";
+   constant ST_DUMP_C   : slv(2 downto 0) := "001";
+   constant ST_READ_C   : slv(2 downto 0) := "010";
+   constant ST_WAIT_C   : slv(2 downto 0) := "011";
+   constant ST_PWAIT_C  : slv(2 downto 0) := "100";
+   constant ST_PAUSE_C  : slv(2 downto 0) := "101";
+   constant ST_PAD_C    : slv(2 downto 0) := "110";
+
+begin
+
+   ------------------------------------------
+   -- PPI FIFO
+   ------------------------------------------
+
+   -- PPI FIFO
+   U_InFifo : entity work.AxiStreamFifo 
+      generic map (
+         TPD_G                => TPD_G,
+         PIPE_STAGES_G        => 0,
+         SLAVE_READY_EN_G     => true,
+         VALID_THOLD_G        => VALID_THOLD_G,
+         BRAM_EN_G            => true,
+         XIL_DEVICE_G         => "7SERIES",
+         USE_BUILT_IN_G       => false,
+         GEN_SYNC_FIFO_G      => false,
+         CASCADE_SIZE_G       => 1,
+         FIFO_ADDR_WIDTH_G    => ADDR_WIDTH_G,
+         FIFO_FIXED_THRESH_G  => true,
+         FIFO_PAUSE_THRESH_G  => 500,
+         SLAVE_AXI_CONFIG_G   => AXIS_CONFIG_G,
+         MASTER_AXI_CONFIG_G  => AXIS_CONFIG_G 
+      ) port map (
+         sAxisClk        => dmaClk,
+         sAxisRst        => dmaClkRst,
+         sAxisMaster     => dmaObMaster,
+         sAxisSlave      => dmaObSlave,
+         sAxisCtrl       => open,
+         mAxisClk        => phyClk,
+         mAxisRst        => phyRst,
+         mAxisMaster     => intObMaster,
+         mAxisSlave      => intObSlave
+      );
+
+
+   ------------------------------------------
+   -- MAC Logic
+   ------------------------------------------
+
+   -- Generate read
+   intObSlave.tReady <= (intAdvance and (not intPad)) or intDump;
+
+   -- Re-Order Bytes
+   intData(63 downto 56) <= intObMaster.tData(39 downto 32);
+   intData(55 downto 48) <= intObMaster.tData(47 downto 40);
+   intData(47 downto 40) <= intObMaster.tData(55 downto 48);
+   intData(39 downto 32) <= intObMaster.tData(63 downto 56);
+   intData(31 downto 24) <= intObMaster.tData(7  downto  0);
+   intData(23 downto 16) <= intObMaster.tData(15 downto  8);
+   intData(15 downto  8) <= intObMaster.tData(23 downto 16);
+   intData(7  downto  0) <= intObMaster.tData(31 downto 24);
+
+   -- State machine logic
+   process ( phyClk ) begin
+      if rising_edge(phyClk) then
+         if phyRst = '1' then
+            curState        <= ST_IDLE_C     after TPD_G;
+            intError        <= '0'           after TPD_G;
+            stateCount      <= (others=>'0') after TPD_G;
+            exportWordCnt   <= (others=>'0') after TPD_G;
+         else
+
+            -- State transition
+            curState <= nxtState after TPD_G;
+            intError <= nxtError after TPD_G;
+
+            -- Inter frame gap
+            if stateCountRst = '1' then
+              stateCount <= (others=>'0');
+            else
+              stateCount <= stateCount + 1;
+            end if;
+
+            if stateCountRst = '1' then
+              exportWordCnt <= (others=>'0');
+            elsif intAdvance = '1' and intRunt = '1' then
+              exportWordCnt <= exportWordCnt + 1;
+            end if;
+            
+         end if;
+      end if;
+   end process;
+
+   -- Pad runt frames
+   intRunt          <= not exportWordCnt(3);
+   intLastValidByte <= "111" when curState=ST_PAD_C else onesCount(intObMaster.tKeep(7 downto 0));
+   
+   -- State machine
+   process (curState, intObMaster, intError, phyReady, phyRst, stateCount, 
+            rxPauseReq, importPauseCnt, exportPauseCnt, interFrameGap, intRunt ) begin
+
+      -- Init
+      txCountEn      <= '0';
+      txUnderRun     <= '0';
+      txLinkNotReady <= '0';
+      nxtError       <= intError;
+
+      case curState is 
+
+         -- IDLE, wait for data to be available
+         when ST_IDLE_C =>
+            pauseTx       <= '0';
+            pauseLast     <= '0';
+            stateCountRst <= '1';
+            intPad        <= '0';
+            intLastLine   <= '0';
+            nxtError      <= '0';
+            
+            -- Pause frame is required
+            if rxPauseReq = '1' and importPauseCnt = 0 then
+               intAdvance <= '0';   
+               intDump    <= '0';   
+               pausePrst  <= '1';
+               nxtState   <= ST_PAUSE_C;
+
+            -- Wait for start flag, export pause count must be zero
+            elsif intObMaster.tValid = '1' and phyRst = '0' and exportPauseCnt = 0 then
+               pausePrst  <= '0';
+
+               -- Phy is ready
+               if phyReady = '1' then
+                  intAdvance <= '1';
+                  intDump    <= '0';
+                  nxtState   <= ST_READ_C;
+
+               -- Phy is not ready dump data
+               else
+                  intAdvance     <= '0';
+                  intDump        <= '1';
+                  nxtState       <= ST_DUMP_C;
+                  txLinkNotReady <= '1';
+               end if;
+            else
+               intAdvance <= '0';
+               intDump    <= '0';
+               pausePrst  <= '0';
+               nxtState   <= curState;
+            end if;
+
+         -- Transmit Pause Frame
+         when ST_PAUSE_C =>
+            pauseTx     <= '1';
+            intAdvance  <= '0';   
+            intDump     <= '0';   
+            pausePrst   <= '0';
+            intPad      <= '0';
+            intLastLine <= '0';
+            
+            -- Pause Frame Is Finished
+            if stateCount = 8 then
+               stateCountRst <= '1';
+               pauseLast     <= '1';
+               nxtState      <= ST_PWAIT_C;
+            else
+               stateCountRst <= '0';
+               pauseLast     <= '0';
+               nxtState      <= curState;
+            end if;
+
+         -- Wait following pause frame TX
+         when ST_PWAIT_C =>
+            intDump       <= '0';
+            intAdvance    <= '0';
+            pauseTx       <= '0';
+            pauseLast     <= '0';
+            stateCountRst <= '0';
+            pausePrst     <= '0';
+            intPad        <= '0';
+            intLastLine   <= '0';
+            
+            -- Wait for gap
+            if stateCount = 2 then
+               nxtState <= ST_IDLE_C;
+            else
+               nxtState <= curState;
+            end if;
+
+         -- Reading from PIC
+         when ST_READ_C =>
+            intDump       <= '0';
+            pauseTx       <= '0';
+            pauseLast     <= '0';
+            stateCountRst <= '0';
+            pausePrst     <= '0';
+            intLastLine   <= '0';
+            intPad        <= '0';
+            nxtState      <= curState;
+
+            -- Read until we get last
+            if intObMaster.tLast = '1' and intRunt = '1' then
+               intAdvance <= '1';
+               intPad     <= '1';
+               nxtState   <= ST_PAD_C;
+               txCountEn  <= '1';
+
+            elsif intObMaster.tLast ='1' and intRunt = '0' then
+               intAdvance  <= '0';
+               intLastLine <= '1';
+               nxtState    <= ST_WAIT_C;
+               txCountEn   <= '1';
+
+            -- Detect underflow
+            elsif intObMaster.tValid = '0' then
+               txUnderRun <= '1';
+               nxtError   <= '1';
+               intAdvance <= '0';
+
+            -- Keep reading
+            else
+               intAdvance <= '1';
+            end if;
+
+         -- Reading from PIC, Dumping data
+         when ST_DUMP_C =>
+            intAdvance    <= '0';
+            pauseTx       <= '0';
+            pauseLast     <= '0';
+            stateCountRst <= '0';
+            pausePrst     <= '0';
+            intPad        <= '0';
+            
+            -- Read until we get last
+            if intObMaster.tLast = '1' then
+               intDump     <= '0';
+               intLastLine <= '1';
+               nxtState    <= ST_WAIT_C;
+
+            -- Keep reading
+            else
+               intDump     <= intObMaster.tValid;
+               intLastLine <= '0';
+               nxtState    <= curState;
+            end if;
+
+         -- Wait for inter-frame gap
+         when ST_WAIT_C =>
+            intDump       <= '0';
+            intAdvance    <= '0';
+            pauseTx       <= '0';
+            pauseLast     <= '0';
+            stateCountRst <= '0';
+            pausePrst     <= '0';
+            intPad        <= '0';
+            intLastLine   <= '0';
+            
+            -- Wait for gap
+            if stateCount = interFrameGap then
+               nxtState <= ST_IDLE_C;
+            else
+               nxtState <= curState;
+            end if;
+
+         -- Padding frame
+         when ST_PAD_C =>
+            intDump       <= '0';
+            pauseTx       <= '0';
+            pauseLast     <= '0';
+            stateCountRst <= '0';
+            pausePrst     <= '0';
+
+            if intRunt = '1' then
+              intAdvance  <= '1';
+              intPad      <= '1';
+              intLastLine <= '0';
+              nxtState    <= curState;
+            else
+              intAdvance  <= '0';
+              intPad      <= '0';
+              intLastLine <= '1';
+              nxtState    <= ST_WAIT_C;
+            end if;
+
+        when others =>
+            nxtState      <= ST_IDLE_C;
+            intAdvance    <= '0';
+            intDump       <= '0';
+            pauseTx       <= '0';
+            pauseLast     <= '0';
+            stateCountRst <= '0';
+            pausePrst     <= '0';
+            intPad        <= '0';
+            intLastLine   <= '0';
+      end case;
+   end process;
+
+
+   -- Format data for input into CRC delay FIFO.
+   process ( phyClk ) begin
+      if rising_edge(phyClk) then
+         if phyRst = '1' then
+            frameShift0    <= '0'           after TPD_G;
+            frameShift1    <= '0'           after TPD_G;
+            txEnable0      <= '0'           after TPD_G;
+            txEnable1      <= '0'           after TPD_G;
+            txEnable2      <= '0'           after TPD_G;
+            txEnable3      <= '0'           after TPD_G;
+            txEnable4      <= '0'           after TPD_G;
+            crcInit        <= '0'           after TPD_G;
+            crcDataValid   <= '0'           after TPD_G;
+            crcDataWidth   <= (others=>'0') after TPD_G;
+            crcMaskIn      <= (others=>'0') after TPD_G;
+            nxtMaskIn      <= (others=>'0') after TPD_G;
+            crcIn          <= (others=>'0') after TPD_G;
+         else 
+
+            -- Shift register to track frame state
+            frameShift0 <= intAdvance  or pauseTx after TPD_G;
+            frameShift1 <= frameShift0            after TPD_G;
+
+            -- Input to transmit enable shift register. 
+            -- Asserted with frameShift0
+            if (intAdvance = '1' or pauseTx = '1') and frameShift0 = '0' then
+               txEnable0 <= '1' after TPD_G;
+
+            -- De-assert following frame shift0, 
+            -- keep one extra clock if nxtMask contains a non-zero value.
+            elsif frameShift0 = '0' and nxtMaskIn = x"00" then
+               txEnable0 <= '0' after TPD_G;
+            end if;
+
+            -- Transmit enable shift register
+            txEnable1 <= txEnable0 after TPD_G;
+            txEnable2 <= txEnable1 after TPD_G;
+            txEnable3 <= txEnable2 after TPD_G;
+            txEnable4 <= txEnable3 after TPD_G;
+
+            -- CRC Input
+            if pauseTx = '1' then
+               crcIn <= pauseData after TPD_G;
+            else
+               crcIn <= intData after TPD_G;
+            end if;
+
+            -- CRC Input Control. 
+            -- Assert init after shift 1, before shift 2
+            if frameShift0 = '1' and frameShift1 = '0' then
+               crcInit      <= '1'   after TPD_G;
+               crcDataValid <= '1'   after TPD_G;
+               crcDataWidth <= "111" after TPD_G;
+            else
+
+               -- Init asserted for one pulse
+               crcInit        <= '0'         after TPD_G;
+               crcDataValid <= frameShift0 after TPD_G;
+
+               -- Last line
+               if intLastLine = '1' and pauseTx = '0' then
+                  crcDataWidth <= intLastValidByte after TPD_G;
+               else
+                  crcDataWidth <= "111" after TPD_G;
+               end if;
+            end if;
+
+            -- Generate CRC Mask Value for CRC append after delay buffer.
+            -- depends on number of bytes in last transfer
+            if pauseLast = '1' then
+               crcMaskIn <= x"00" after TPD_G;
+               nxtMaskIn <= x"0F" after TPD_G;
+            elsif intLastLine = '1' and frameShift0 = '1' and pauseTx = '0' then
+               if intError = '1' then -- Corrupt CRC
+                  crcMaskIn <= x"FF" after TPD_G;
+                  nxtMaskIn <= x"00" after TPD_G;
+               else
+                  case intLastValidByte is
+                     when "000"  => crcMaskIn <= x"1E" after TPD_G; nxtMaskIn <= x"00" after TPD_G;
+                     when "001"  => crcMaskIn <= x"3C" after TPD_G; nxtMaskIn <= x"00" after TPD_G;
+                     when "010"  => crcMaskIn <= x"78" after TPD_G; nxtMaskIn <= x"00" after TPD_G;
+                     when "011"  => crcMaskIn <= x"F0" after TPD_G; nxtMaskIn <= x"00" after TPD_G;
+                     when "100"  => crcMaskIn <= x"E0" after TPD_G; nxtMaskIn <= x"01" after TPD_G;
+                     when "101"  => crcMaskIn <= x"C0" after TPD_G; nxtMaskIn <= x"03" after TPD_G;
+                     when "110"  => crcMaskIn <= x"80" after TPD_G; nxtMaskIn <= x"07" after TPD_G;
+                     when "111"  => crcMaskIn <= x"00" after TPD_G; nxtMaskIn <= x"0F" after TPD_G;
+                     when others => crcMaskIn <= x"00" after TPD_G; nxtMaskIn <= x"00" after TPD_G;
+                  end case;
+               end if;
+            else
+               crcMaskIn <= nxtMaskIn     after TPD_G;
+               nxtMaskIn <= (others=>'0') after TPD_G;
+            end if;
+         end if;
+      end if;
+   end process;
+
+   -- Select CRC FIFO Data
+   crcFifoIn(71 downto 64) <= crcMaskIn;
+   crcFifoIn(63 downto  0) <= crcIn;
+
+   -- CRC Delay FIFO
+   U_CrcFifo: entity work.Fifo
+      generic map (
+         TPD_G              => TPD_G,
+         RST_POLARITY_G     => '1',
+         RST_ASYNC_G        => false,
+         GEN_SYNC_FIFO_G    => false,
+         BRAM_EN_G          => false,
+         FWFT_EN_G          => false,
+         USE_DSP48_G        => "no",
+         USE_BUILT_IN_G     => false,
+         XIL_DEVICE_G       => "7SERIES",
+         SYNC_STAGES_G      => 3,
+         DATA_WIDTH_G       => 64,
+         ADDR_WIDTH_G       => 4,
+         INIT_G             => "0",
+         FULL_THRES_G       => 1,
+         EMPTY_THRES_G      => 1
+      ) port map (
+         rst           => phyRst,
+         wr_clk        => phyClk,
+         wr_en         => txEnable0,
+         din           => crcFifoIn,
+         wr_data_count => open,
+         wr_ack        => open,
+         overflow      => open,
+         prog_full     => open,
+         almost_full   => open,
+         full          => open,
+         not_full      => open,
+         rd_clk        => phyClk,
+         rd_en         => txEnable2,
+         dout          => crcFifoOut,
+         rd_data_count => open,
+         valid         => open,
+         underflow     => open,
+         prog_empty    => open,
+         almost_empty  => open,
+         empty         => open
+      );
+
+
+   -- Output Stage to PHY
+   process ( phyClk ) begin
+      if rising_edge(phyClk) then
+         if phyRst = '1' then
+            phyTxd  <= (others=>'0') after TPD_G;
+            phyTxc  <= (others=>'0') after TPD_G;
+            nxtEOF  <= '0'           after TPD_G;
+         else
+
+            -- EOF Charactor Required If CRC was in last word and there was
+            -- not enough space for EOF
+            if nxtEOF = '1' then
+               phyTxd <= X"BCBCBCBCBCBCBCFD" after TPD_G;
+               phyTxc <= x"FF"               after TPD_G;
+               nxtEOF <= '0'                 after TPD_G;
+
+            -- Not transmitting
+            elsif txEnable3 = '0' then 
+               phyTxd  <= X"0707070707070707" after TPD_G;
+               phyTxc  <= x"FF"               after TPD_G;
+
+            -- Pre-amble word
+            elsif txEnable4 = '0' then
+               phyTxd  <= X"D5555555555555FB" after TPD_G;
+               phyTxc  <= x"01"               after TPD_G;
+
+            -- Normal data or CRC data. Select CRC / data combination
+            else
+               case crcFifoOut(71 downto 64) is -- CRC MASK
+                  when x"00" => 
+                     phyTxd <= crcFifoOut(63 downto 0)               after TPD_G;
+                     phyTxc <= x"00"                                 after TPD_G;
+                  when x"80" => 
+                     phyTxd(63 downto 56) <= crcInv(7  downto 0)     after TPD_G;
+                     phyTxd(55 downto  0) <= crcFifoOut(55 downto 0) after TPD_G;
+                     phyTxc               <= x"00"                   after TPD_G;
+                  when x"07" => 
+                     phyTxd(63 downto 24) <= x"BCBCBCBCFD"           after TPD_G;
+                     phyTxd(23 downto  0) <= crcInv(31 downto 8)     after TPD_G;
+                     phyTxc               <= x"F8"                   after TPD_G;
+                  when x"0F" => 
+                     phyTxd(63 downto 32) <= x"BCBCBCFD"             after TPD_G;
+                     phyTxd(31 downto  0) <= crcInv                  after TPD_G;
+                     phyTxc               <= x"F0"                   after TPD_G;
+                  when x"1E" => 
+                     phyTxd(63 downto 40) <= x"BCBCFD"               after TPD_G;
+                     phyTxd(39 downto  8) <= crcInv                  after TPD_G;
+                     phyTxd(7  downto  0) <= crcFifoOut(7 downto 0)  after TPD_G;
+                     phyTxc               <= x"E0"                   after TPD_G;
+                  when x"3C" => 
+                     phyTxd(63 downto 48) <= x"BCFD"                 after TPD_G;
+                     phyTxd(47 downto 16) <= crcInv                  after TPD_G;
+                     phyTxd(15 downto  0) <= crcFifoOut(15 downto 0) after TPD_G;
+                     phyTxc               <= x"C0"                   after TPD_G;
+                  when x"78" => 
+                     phyTxd(63 downto 56) <= x"FD"                   after TPD_G;
+                     phyTxd(55 downto 24) <= crcInv                  after TPD_G;
+                     phyTxd(23 downto  0) <= crcFifoOut(23 downto 0) after TPD_G;
+                     phyTxc               <= x"80"                   after TPD_G;
+                  when x"F0" => 
+                     phyTxd(63 downto 32) <= crcInv                  after TPD_G;
+                     phyTxd(31 downto  0) <= crcFifoOut(31 downto 0) after TPD_G;
+                     phyTxc               <= x"00"                   after TPD_G;
+                     nxtEOF               <= '1'                     after TPD_G;
+                  when x"E0" => 
+                     phyTxd(63 downto 40) <= crcInv(23 downto 0)     after TPD_G;
+                     phyTxd(39 downto  0) <= crcFifoOut(39 downto 0) after TPD_G;
+                     phyTxc               <= x"00"                   after TPD_G;
+                  when x"01" => 
+                     phyTxd(63 downto  8) <= x"BCBCBCBCBCBCFD"       after TPD_G;
+                     phyTxd(7  downto  0) <= crcInv(31 downto 24)    after TPD_G;
+                     phyTxc               <= x"FE"                   after TPD_G;
+                  when x"C0" => 
+                     phyTxd(63 downto 48) <= crcInv(15 downto 0)     after TPD_G;
+                     phyTxd(47 downto  0) <= crcFifoOut(47 downto 0) after TPD_G;
+                     phyTxc               <= x"00"                   after TPD_G;
+                  when x"03" => 
+                     phyTxd(63 downto 16) <= x"BCBCBCBCBCFD"         after TPD_G;
+                     phyTxd(15 downto  0) <= crcInv(31 downto 16)    after TPD_G;
+                     phyTxc               <= x"FC"                   after TPD_G;
+                  when x"FF" => 
+                     phyTxd(63 downto 32) <= x"BCBCBCFD"             after TPD_G;
+                     phyTxd(31 downto  0) <= not crcInv              after TPD_G;
+                     phyTxc               <= x"F0"                   after TPD_G;
+                  when others => 
+                     phyTxd <= x"0707070707070707"                   after TPD_G;
+                     phyTxc <= x"FF"                                 after TPD_G;
+               end case;
+            end if;
+         end if;
+      end if;
+   end process;
+
+
+   ------------------------------------------
+   -- Pause frame generation
+   ------------------------------------------
+
+   -- Pause Counters & Frame Generation
+   with stateCount select
+     pauseData <=
+       -- Preamble
+       (others => '0') when "0000", 
+       -- Src Id, Upper 2 Bytes + Dest Id, All 6 bytes
+       (macAddress(39 downto 32) & macAddress(47 downto 40) & x"010000C28001") when "0001",
+       -- Pause Opcode + Length/Type Field + Src Id, Lower 4 bytes
+       (x"0100" & x"0888" & macAddress( 7 downto 0) &
+                            macAddress(15 downto  8) &
+                            macAddress(23 downto 16) &
+                            macAddress(31 downto 24)) when "0010",
+       -- Pause length
+       (x"000000000000" & pauseTime( 7 downto 0) & pauseTime(15 downto 8)) when "0011",
+       (others=>'0') when others;
+
+
+   -- Counters for pause tracking
+   process ( phyClk ) begin
+      if rising_edge(phyClk) then
+         if phyRst = '1' then
+            pausePreCnt    <= (others=>'0') after TPD_G;
+            importPauseCnt <= (others=>'0') after TPD_G;
+            exportPauseCnt <= (others=>'0') after TPD_G;
+         else
+
+            -- Pre-counter, 8 125Mhz clocks ~= 512 bit times of 10G
+            pausePreCnt <= pausePreCnt + 1 after TPD_G;
+
+            -- Import Pause Counter, preset with transmitted pause value
+            -- Decrement at end of pause tx. This ensures local count will
+            -- expire in time to send a new pause frame to remote end before it expires
+            if pausePrst = '1' then
+               importPauseCnt <= pauseTime after TPD_G;
+            elsif (pausePreCnt = 0 or pauseLast = '1') and importPauseCnt /= 0 then
+               importPauseCnt <= importPauseCnt - 1 after TPD_G;
+            end if;
+
+            -- Export Pause Counter, preset with received pause value
+            if rxPauseSet = '1' then
+               exportPauseCnt <= rxPauseValue after TPD_G;
+            elsif pausePreCnt = 0 and exportPauseCnt /= 0 then
+               exportPauseCnt <= exportPauseCnt - 1 after TPD_G;
+            end if;
+         end if;
+      end if;
+   end process;
+
+
+   ------------------------------------------
+   -- CRC Logic
+   ------------------------------------------
+
+   -- CRC Input
+   crcReset               <= crcInit or phyRst or (not phyReady);
+   crcInAdj(63 downto 56) <= crcIn(7  downto  0);
+   crcInAdj(55 downto 48) <= crcIn(15 downto  8);
+   crcInAdj(47 downto 40) <= crcIn(23 downto 16);
+   crcInAdj(39 downto 32) <= crcIn(31 downto 24);
+   crcInAdj(31 downto 24) <= crcIn(39 downto 32);
+   crcInAdj(23 downto 16) <= crcIn(47 downto 40);
+   crcInAdj(15 downto  8) <= crcIn(55 downto 48);
+   crcInAdj(7  downto  0) <= crcIn(63 downto 56);
+
+   -- CRC
+   U_Crc32 : entity work.Crc32
+      generic map (
+         BYTE_WIDTH_G => 8
+      ) port map (
+         crcOut        => crcOut,
+         crcClk        => phyClk,
+         crcDataValid  => crcDataValid,
+         crcDataWidth  => crcDataWidth,
+         crcIn         => crcInAdj,
+         crcReset      => crcReset
+      ); 
+
+   -- Invert CRC for transmission
+   crcInv(31 downto 24) <= not crcOut(7  downto  0);
+   crcInv(23 downto 16) <= not crcOut(15 downto  8);
+   crcInv(15 downto  8) <= not crcOut(23 downto 16);
+   crcInv(7  downto  0) <= not crcOut(31 downto 24);
+
+end XMacExport;
+

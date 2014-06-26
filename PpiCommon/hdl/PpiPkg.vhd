@@ -35,7 +35,7 @@ package PpiPkg is
    constant PPI_TKEEP_MODE_C  : TKeepModeType := TKEEP_COMP_C;
    constant PPI_TUSER_MODE_C  : TUserModeType := TUSER_LAST_C;
 
-   constant PPI_MAX_HEADER_C     : slv(31 downto 0) := x"00000100";
+   constant PPI_MAX_HEADER_C     : slv(31 downto 0) := x"00000100"; -- 256 Bytes
    constant PPI_OCM_BASE_ADDR_C  : slv(31 downto 0) := x"FFFC0000";
    constant PPI_AXI_BURST_C      : slv(1 downto 0)  := "01";
    constant PPI_AXI_CACHE_C      : slv(3 downto 0)  := "1111";
