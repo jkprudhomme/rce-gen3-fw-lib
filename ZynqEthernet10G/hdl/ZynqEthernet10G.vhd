@@ -21,6 +21,7 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
+use work.all;
 use work.PpiPkg.all;
 use work.RceG3Pkg.all;
 use work.AxiLitePkg.all;

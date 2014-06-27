@@ -17,6 +17,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
+use work.all;
 use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
@@ -169,22 +170,6 @@ begin
    clkSelA(1) <= '1';
    clkSelB(1) <= '1';
 
-   -------------------------------------
-   -- AXI Lite Terminator
-   -------------------------------------
-   U_AxiLiteEmpty : entity work.AxiLiteEmpty
-      generic map (
-         TPD_G  => TPD_G
-      ) port map (
-         axiClk          => iaxiClk,
-         axiClkRst       => iaxiClkRst,
-         axiReadMaster   => coreAxilReadMaster,
-         axiReadSlave    => coreAxilReadSlave,
-         axiWriteMaster  => coreAxilWriteMaster,
-         axiWriteSlave   => coreAxilWriteSlave
-      );
-
-
    --------------------------------------------------
    -- Ethernet
    --------------------------------------------------
@@ -209,6 +194,48 @@ begin
       ethTxP(3 downto 1) <= (others=>'0');
       ethTxM(3 downto 1) <= (others=>'0');
       armEthRx(1)        <= ARM_ETH_RX_INIT_C;
+
+      U_AxiLiteEmpty : entity work.AxiLiteEmpty
+         generic map (
+            TPD_G  => TPD_G
+         ) port map (
+            axiClk          => iaxiClk,
+            axiClkRst       => iaxiClkRst,
+            axiReadMaster   => coreAxilReadMaster,
+            axiReadSlave    => coreAxilReadSlave,
+            axiWriteMaster  => coreAxilWriteMaster,
+            axiWriteSlave   => coreAxilWriteSlave
+         );
+   end generate;
+
+   U_Eth10gGen: if ETH_10G_EN_G = true generate 
+      U_ZynqEthernet10G : entity work.ZynqEthernet10G 
+         port map (
+            sysClk200          => isysClk200,
+            sysClk200Rst       => isysClk200Rst,
+            ppiClk             => idmaClk(3),
+            ppiClkRst          => idmaClkRst(3),
+            ppiState           => idmaState(3),
+            ppiIbMaster        => idmaIbMaster(3),
+            ppiIbSlave         => idmaIbSlave(3),
+            ppiObMaster        => idmaObMaster(3),
+            ppiObSlave         => idmaObSlave(3),
+            axilClk            => iaxiClk,
+            axilClkRst         => iaxiClkRst,
+            axilWriteMaster    => coreAxilWriteMaster,
+            axilWriteSlave     => coreAxilWriteSlave,
+            axilReadMaster     => coreAxilReadMaster,
+            axilReadSlave      => coreAxilReadSlave,
+            ethRefClkP         => ethRefClkP,
+            ethRefClkM         => ethRefClkM,
+            ethRxP             => ethRxP,
+            ethRxM             => ethRxM,
+            ethTxP             => ethTxP,
+            ethTxM             => ethTxM
+         );
+
+      armEthRx <= (others=>ARM_ETH_RX_INIT_C);
+
    end generate;
 
 end architecture STRUCTURE;
