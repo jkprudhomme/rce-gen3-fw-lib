@@ -17,7 +17,6 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
-use work.all;
 use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
@@ -173,7 +172,7 @@ begin
    --------------------------------------------------
    -- Ethernet
    --------------------------------------------------
-   U_Eth1gGen: if ETH_10G_EN_G = false generate 
+--   U_Eth1gGen: if ETH_10G_EN_G = false generate 
       U_ZynqEthernet : entity work.ZynqEthernet 
          port map (
             sysClk125          => isysClk125,
@@ -206,37 +205,37 @@ begin
             axiWriteMaster  => coreAxilWriteMaster,
             axiWriteSlave   => coreAxilWriteSlave
          );
-   end generate;
+--   end generate;
 
-   U_Eth10gGen: if ETH_10G_EN_G = true generate 
-      U_ZynqEthernet10G : entity work.ZynqEthernet10G 
-         port map (
-            sysClk200          => isysClk200,
-            sysClk200Rst       => isysClk200Rst,
-            ppiClk             => idmaClk(3),
-            ppiClkRst          => idmaClkRst(3),
-            ppiState           => idmaState(3),
-            ppiIbMaster        => idmaIbMaster(3),
-            ppiIbSlave         => idmaIbSlave(3),
-            ppiObMaster        => idmaObMaster(3),
-            ppiObSlave         => idmaObSlave(3),
-            axilClk            => iaxiClk,
-            axilClkRst         => iaxiClkRst,
-            axilWriteMaster    => coreAxilWriteMaster,
-            axilWriteSlave     => coreAxilWriteSlave,
-            axilReadMaster     => coreAxilReadMaster,
-            axilReadSlave      => coreAxilReadSlave,
-            ethRefClkP         => ethRefClkP,
-            ethRefClkM         => ethRefClkM,
-            ethRxP             => ethRxP,
-            ethRxM             => ethRxM,
-            ethTxP             => ethTxP,
-            ethTxM             => ethTxM
-         );
-
-      armEthRx <= (others=>ARM_ETH_RX_INIT_C);
-
-   end generate;
+--   U_Eth10gGen: if ETH_10G_EN_G = true generate 
+--      U_ZynqEthernet10G : entity work.ZynqEthernet10G 
+--         port map (
+--            sysClk200          => isysClk200,
+--            sysClk200Rst       => isysClk200Rst,
+--            ppiClk             => idmaClk(3),
+--            ppiClkRst          => idmaClkRst(3),
+--            ppiState           => idmaState(3),
+--            ppiIbMaster        => idmaIbMaster(3),
+--            ppiIbSlave         => idmaIbSlave(3),
+--            ppiObMaster        => idmaObMaster(3),
+--            ppiObSlave         => idmaObSlave(3),
+--            axilClk            => iaxiClk,
+--            axilClkRst         => iaxiClkRst,
+--            axilWriteMaster    => coreAxilWriteMaster,
+--            axilWriteSlave     => coreAxilWriteSlave,
+--            axilReadMaster     => coreAxilReadMaster,
+--            axilReadSlave      => coreAxilReadSlave,
+--            ethRefClkP         => ethRefClkP,
+--            ethRefClkM         => ethRefClkM,
+--            ethRxP             => ethRxP,
+--            ethRxM             => ethRxM,
+--            ethTxP             => ethTxP,
+--            ethTxM             => ethTxM
+--         );
+--
+--      armEthRx <= (others=>ARM_ETH_RX_INIT_C);
+--
+--   end generate;
 
 end architecture STRUCTURE;
 

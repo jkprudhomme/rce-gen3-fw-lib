@@ -158,7 +158,9 @@ begin
          -- Enable Registers, 0x8xx0
          elsif icAxilWriteMaster.awaddr(3 downto 2) = "00" then
             for i in 0 to GROUP_SIZE_C-1 loop
-               v.intEnable(conv_integer(icAxilWriteMaster.awaddr(GROUP_COUNT_BITS_C+3 downto 4)),i) := icAxilWriteMaster.wdata(i);
+               if icAxilWriteMaster.wdata(i) = '1' then
+                  v.intEnable(conv_integer(icAxilWriteMaster.awaddr(GROUP_COUNT_BITS_C+3 downto 4)),i) := '1';
+               end if;
             end loop;
          end if;
 
