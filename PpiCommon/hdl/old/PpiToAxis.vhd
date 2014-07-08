@@ -1,17 +1,15 @@
 -------------------------------------------------------------------------------
--- Title         : PPI To VC Block, Outbound Transmit.
--- File          : PpiVcOb.vhd
+-- Title         : PPI To AXI Stream Block, Outbound Transmit.
+-- File          : PpiToAxis.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 03/21/2014
 -------------------------------------------------------------------------------
 -- Description:
--- PPI block to transmit outbound VC Frames.
--- First word of PPI frame contains control data:
---    Bits 03:00 = VC
---    Bits 8     = SOF
---    Bits 9     = EOF
---    Bits 10    = EOFE
---    Bits 63:11 = Ignored
+-- PPI block to transmit outbound AXI Stream Frames.
+-- First quad word of PPI frame contains control data:
+--    Bits 07:00 = Dest
+--    Bits 15:08 = First User
+--    Bits 23:16 = Last  User
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -28,45 +26,45 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-use work.ArmRceG3Pkg.all;
+use work.PpiPkg.all;
 use work.StdRtlPkg.all;
-use work.Vc64Pkg.all;
+use work.AxiStreamPkg.all;
 
-entity PpiVcOb is
+entity PpiToAxis is
    generic (
-      TPD_G              : time := 1 ns;
-      VC_WIDTH_G         : integer range 16 to 64     := 16;  -- 16, 32 or 64
-      VC_COUNT_G         : integer range 1  to 16     := 4;   -- Number of VCs
-      PPI_ADDR_WIDTH_G   : integer range 2 to 48      := 9;   -- (2**9) * 64 bits = 4096 bytes
-      PPI_PAUSE_THOLD_G  : integer range 2 to (2**24) := 256; -- 256 * 64 bits = 2048 bytes
-      PPI_READY_THOLD_G  : integer range 0 to 511     := 0    -- 0 * 64 bits = 0 bytes
+
+      -- PPI Settings
+      PPI_MAX_FRAME_SIZE_G : integer := 2048
+      PPI_ADDR_WIDTH_G     : integer := 9;
+
+      -- AXIS Settings
+      AXIS_CONFIG_G        : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C;
+      AXIS_ADDR_WIDTH_G    : integer             := 9;
+      AXIS_CASCADE_SIZE_G  : integer             := 1
    );
    port (
 
       -- PPI Interface
       ppiClk           : in  sl;
       ppiClkRst        : in  sl;
-      ppiOnline        : in  sl;
-      ppiWriteToFifo   : in  PpiWriteToFifoType;
-      ppiWriteFromFifo : out PpiWriteFromFifoType;
+      ppiState         : in  RceDmaStateType;
+      ppiObMaster      : in  AxiStreamMasterType;
+      ppiObSlave       : out AxiStreamSlaveType;
 
-      -- Outbound VC Interface, ready is used for handshake
-      obVcClk          : in  sl;
-      obVcClkRst       : in  sl;
-      obVcData         : out Vc64DataType;
-      obVcCtrl         : in  Vc64CtrlArray(VC_COUNT_G-1 downto 0);
+      -- Outbound AXI Stream Interface
+      axisObClk       : in  sl;
+      axisObClkRst    : in  sl;
+      axisObMaster    : out AxiStreamMasterType;
+      axisObCtrl      : in  AxiStreamCtrlType;
 
       -- Frame Counter
-      remOverflow      : out sl;
-      txFrameCntEn     : out sl
+      txFrameCntEn    : out sl
    );
 
 begin
-   assert (VC_WIDTH_G = 16 or VC_WIDTH_G = 32 or VC_WIDTH_G = 64 ) 
-      report "VC_WIDTH_G must not be = 16, 32 or 64" severity failure;
-end PpiVcOb;
+end PpiToAxis;
 
-architecture structure of PpiVcOb is
+architecture structure of PpiToAxis is
 
    -- Local signals
    signal intReadToFifo    : PpiReadToFifoType;
