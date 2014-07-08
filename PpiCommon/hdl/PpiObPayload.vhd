@@ -80,6 +80,8 @@ architecture structure of PpiObPayload is
       compData      : slv(31 downto 1);
       compEnable    : sl;
       rdError       : sl;
+      headOnly      : sl;
+      noHeader      : sl;
       fAxisMaster   : AxiStreamMasterType;
       hAxisSlave    : AxiStreamSlaveType;
       dmaReq        : AxiReadDmaReqType;
@@ -92,6 +94,8 @@ architecture structure of PpiObPayload is
       compData      => (others=>'0'),
       compEnable    => '0',
       rdError       => '0',
+      headOnly      => '0',
+      noHeader      => '0',
       fAxisMaster   => AXI_STREAM_MASTER_INIT_C,
       hAxisSlave    => AXI_STREAM_SLAVE_INIT_C,
       dmaReq        => AXI_READ_DMA_REQ_INIT_C
@@ -148,7 +152,20 @@ begin
             v.dmaReq.size             := obPendMaster.tData(63 downto 32);
             v.dmaReq.dest(3 downto 0) := obPendMaster.tDest(3 downto 0);
             v.hAxisSlave.tReady       := '1';
+            v.headOnly                := '0';
+            v.noHeader                := '0';
+            v.compEnable              := '0';
             v.state                   := DESCB_S;
+
+            -- Determine completion enable
+            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 3 then
+               v.compEnable := '1';
+            end if;
+
+            -- Header only
+            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 1 then
+               v.headOnly := '1';
+            end if;
 
          -- get completion descriptor portion of header
          when DESCB_S =>
@@ -156,9 +173,33 @@ begin
             v.compChan          := obPendMaster.tData(CHAN_BITS_C-1 downto 0);
             v.hAxisSlave.tReady := '1';
 
+            -- Data is valid
             if obPendMaster.tValid = '1' then
-               v.hAxisSlave.tReady := not intAxisCtrl.pause;
-               v.state             := HEAD_S;
+
+               -- Zero header frame
+               if obPendMaster.tLast = '1' then
+                  v.noHeader          := '1';
+                  v.fAxisMaster.tLast := '0'; -- not end of frame yet
+
+                  -- Oops. Zero header and zero payload. Just drop it!
+                  if v.headOnly = '1' then
+                     v.dmaReq.request := '0';
+                     v.state          := IDLE_S;
+
+                  -- No header. Assert EOH on first quad word of payload. 
+                  -- (outbound engines should really ignore EOH)
+                  else
+                     v.dmaReq.request              := '1';
+                     v.dmaReq.firstUser            := (others=>'0');
+                     v.dmaReq.firstUser(PPI_EOH_C) := '1';
+                     v.state                       := WAIT_S;
+                  end if;
+
+               -- Pass along header data
+               else
+                  v.hAxisSlave.tReady := not intAxisCtrl.pause;
+                  v.state             := HEAD_S;
+               end if;
             end if;
 
          -- Header data, send out
@@ -168,13 +209,6 @@ begin
             v.fAxisMaster.tUser  := (others=>'0'); -- Clear user field
             v.fAxisMaster.tValid := obPendMaster.tValid and r.hAxisSlave.tReady;
 
-            -- Determine completion enable
-            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 3 then
-               v.compEnable := '1';
-            else
-               v.compEnable := '0';
-            end if;
-
             -- End of frame
             if obPendMaster.tValid = '1' and r.hAxisSlave.tReady = '1' and obPendMaster.tLast = '1' then
                v.hAxisSlave.tReady := '0';
@@ -182,8 +216,8 @@ begin
                -- Set end of header
                axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, v.fAxisMaster, PPI_EOH_C,'1');
 
-               -- Header only
-               if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 1 then
+               -- Header only, we are done
+               if r.headOnly = '1' then
                   v.state := IDLE_S;
 
                -- Payload Enable, start DMA
@@ -191,6 +225,7 @@ begin
                   v.state             := WAIT_S;
                   v.fAxisMaster.tLast := '0'; -- not end of frame yet
                   v.dmaReq.request    := '1';
+                  v.dmaReq.firstUser  := (others=>'0');
                end if;
             end if;
 
