@@ -27,7 +27,6 @@
 -------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
@@ -218,7 +217,7 @@ begin
 
    -- Pad runt frames
    intRunt          <= not exportWordCnt(3);
-   intLastValidByte <= "111" when curState=ST_PAD_C else onesCount(intObMaster.tKeep(7 downto 0));
+   intLastValidByte <= "111" when curState=ST_PAD_C else onesCount(intObMaster.tKeep(7 downto 1));
    
    -- State machine
    process (curState, intObMaster, intError, phyReady, phyRst, stateCount, 
@@ -533,7 +532,7 @@ begin
          USE_BUILT_IN_G     => false,
          XIL_DEVICE_G       => "7SERIES",
          SYNC_STAGES_G      => 3,
-         DATA_WIDTH_G       => 64,
+         DATA_WIDTH_G       => 72,
          ADDR_WIDTH_G       => 4,
          INIT_G             => "0",
          FULL_THRES_G       => 1,
@@ -725,17 +724,17 @@ begin
    crcInAdj(7  downto  0) <= crcIn(63 downto 56);
 
    -- CRC
-   U_Crc32 : entity work.Crc32
-      generic map (
-         BYTE_WIDTH_G => 8
-      ) port map (
-         crcOut        => crcOut,
-         crcClk        => phyClk,
-         crcDataValid  => crcDataValid,
-         crcDataWidth  => crcDataWidth,
-         crcIn         => crcInAdj,
-         crcReset      => crcReset
-      ); 
+--   U_Crc32 : entity work.Crc32
+--      generic map (
+--         BYTE_WIDTH_G => 8
+--      ) port map (
+--         crcOut        => crcOut,
+--         crcClk        => phyClk,
+--         crcDataValid  => crcDataValid,
+--         crcDataWidth  => crcDataWidth,
+--         crcIn         => crcInAdj,
+--         crcReset      => crcReset
+--      ); 
 
    -- Invert CRC for transmission
    crcInv(31 downto 24) <= not crcOut(7  downto  0);

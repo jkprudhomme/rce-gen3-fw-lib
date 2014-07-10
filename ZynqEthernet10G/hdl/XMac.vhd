@@ -21,7 +21,6 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-use work.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.StdRtlPkg.all;
@@ -112,12 +111,10 @@ architecture structure of XMac is
    signal xauiTxd           : slv(63 downto 0);
    signal xauiTxc           : slv(7  downto 0);
    signal phyStatus         : slv(7  downto 0);
-   signal phyConfig         : slv(6  downto 0);
    signal phyDebug          : slv(5  downto 0);
    signal ethClk            : sl;
    signal ethClkRst         : sl;
    signal ethClkLock        : sl;
-   signal coreReset         : sl;
    signal rxPauseReq        : sl;
    signal rxPauseSet        : sl;
    signal rxPauseValue      : slv(15 downto 0);
@@ -144,7 +141,7 @@ architecture structure of XMac is
 
    constant REG_INIT_C : RegType := (
       countReset        => '0',
-      phyReset          => '0',
+      phyReset          => '1',
       config            => (others=>'0'),
       interFrameGap     => (others=>'0'),
       pauseTime         => (others=>'0'),
@@ -166,7 +163,7 @@ begin
    U_ZynqXaui: zynq_10g_xaui
       PORT map (
          dclk                  => axilClk,
-         reset                 => coreReset,
+         reset                 => r.phyReset,
          clk156_out            => ethClk,
          refclk_p              => ethRefClkP,
          refclk_n              => ethRefClkM,
@@ -193,7 +190,7 @@ begin
          xaui_rx_l3_n          => ethRxM(3), 
          signal_detect         => (others=>'1'),
          debug                 => phyDebug,
-         configuration_vector  => phyConfig,
+         configuration_vector  => r.config,
          status_vector         => phyStatus
       );
 
@@ -309,7 +306,7 @@ begin
          SYNTH_CNT_G     => "000000001111",
          CNT_RST_EDGE_G  => false,
          CNT_WIDTH_G     => 8,
-         WIDTH_G         => 4
+         WIDTH_G         => 12 
       ) port map (
          statusIn(0)            => rxOverflow,
          statusIn(1)            => rxCrcError,

@@ -21,7 +21,6 @@ use IEEE.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-use work.all;
 use work.PpiPkg.all;
 use work.RceG3Pkg.all;
 use work.AxiLitePkg.all;
@@ -173,10 +172,10 @@ begin
       ) port map (
          dmaClk           => sysClk200,
          dmaClkRst        => sysClk200Rst,
-         dmaIbMaster      => ppiIbMaster,
-         dmaIbSlave       => ppiIbSlave,
-         dmaObMaster      => ppiObMaster,
-         dmaObSlave       => ppiObSlave,
+         dmaIbMaster      => locIbMaster,
+         dmaIbSlave       => locIbSlave,
+         dmaObMaster      => locObMaster,
+         dmaObSlave       => locObSlave,
          axilClk          => axilClk,
          axilClkRst       => axilClkRst,
          axilWriteMaster  => intAxilWriteMaster,

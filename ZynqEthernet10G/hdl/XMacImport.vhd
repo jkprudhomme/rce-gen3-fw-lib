@@ -27,7 +27,6 @@
 -------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
@@ -174,9 +173,9 @@ begin
             varMaster.tLast              := intLastLine;
             varMaster.tValid             := intAdvance;
 
-            if macSize /= 7 then
-               varMaster.tKeep(7 downto (conv_integer(macSize)+1)) := (others=>'0');
-            end if;
+            -- Keep
+            varMaster.tKeep(7 downto 0)                     := (others=>'0');
+            varMaster.tKeep(conv_integer(macSize) downto 0) := (others=>'1');
 
             if (HEADER_SIZE_G /= 0) and (writeCount = (HEADER_SIZE_G-1)) then
                axiStreamSetUserBit(AXIS_CONFIG_G, varMaster, EOH_BIT_G, '1');
@@ -521,17 +520,17 @@ begin
    crcGood <= '1' when crcOut = X"E320BBDE" else '0';
 
    -- CRC
-   U_Crc32 : entity work.Crc32
-      generic map (
-         BYTE_WIDTH_G => 8
-      ) port map (
-         crcOut        => crcOut,
-         crcClk        => phyClk,
-         crcDataValid  => crcDataValid,
-         crcDataWidth  => crcDataWidth,
-         crcIn         => crcIn,
-         crcReset      => crcReset
-      ); 
+--   U_Crc32 : entity work.Crc32
+--      generic map (
+--         BYTE_WIDTH_G => 8
+--      ) port map (
+--         crcOut        => crcOut,
+--         crcClk        => phyClk,
+--         crcDataValid  => crcDataValid,
+--         crcDataWidth  => crcDataWidth,
+--         crcIn         => crcIn,
+--         crcReset      => crcReset
+--      ); 
 
 end XMacImport;
 

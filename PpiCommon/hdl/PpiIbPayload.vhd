@@ -153,7 +153,7 @@ begin
 
 
    -- Async
-   process (r, axiRst, rdAck, wrAck, ibWorkValid, ibWorkDout, ibFreeAFull, rdAxisMaster ) is
+   process (r, axiRst, rdAck, wrAck, ibWorkValid, ibWorkDout, ibFreeAFull, rdAxisMaster, compAFull ) is
       variable v : RegType;
    begin
       v := r;
