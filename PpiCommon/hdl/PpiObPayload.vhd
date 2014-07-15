@@ -158,12 +158,12 @@ begin
             v.state                   := DESCB_S;
 
             -- Determine completion enable
-            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 3 then
+            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster,0)(1 downto 0) = 3 then
                v.compEnable := '1';
             end if;
 
             -- Header only
-            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 1 then
+            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster,0)(1 downto 0) = 1 then
                v.headOnly := '1';
             end if;
 

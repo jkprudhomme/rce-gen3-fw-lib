@@ -118,6 +118,7 @@ architecture structure of RceG3AxiCntl is
    signal intWriteSlave     : AxiLiteWriteSlaveType;
    signal dnaValue          : slv(63 downto 0);
    signal dnaValid          : sl;
+   signal eFuseUsr          : slv(31 downto 0);
 
    type RegType is record
       scratchPad    : slv(31 downto 0);
@@ -332,7 +333,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, intReadMaster, intWriteMaster, dnaValid, dnaValue, r ) is
+   process (axiClkRst, intReadMaster, intWriteMaster, dnaValid, dnaValue, r, eFuseUsr ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
       variable c         : character;
@@ -386,6 +387,8 @@ begin
                   v.intReadSlave.rdata(24 downto 0) := dnaValue(56 downto 32);
                when X"0024" =>
                   v.intReadSlave.rdata := dnaValue(31 downto 0);
+               when X"0030" =>
+                  v.intReadSlave.rdata := eFuseUsr;
                when others => null;
             end case;
          else
@@ -431,6 +434,15 @@ begin
          rst      => axiClkRst,
          dnaValue => dnaValue,
          dnaValid => dnaValid
+      );
+
+
+   -------------------------------------
+   -- EFuse
+   -------------------------------------
+   U_EFuse : EFUSE_USR
+      port map (
+         EFUSEUSR => eFuseUsr
       );
 
 end architecture structure;
