@@ -138,6 +138,24 @@ begin
       v.fAxisMaster.tValid := '0';
       v.compWrite          := '0';
 
+      -- Determine completion enable
+      if obPendMaster.tLast = '1' then
+         if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 3 then
+            v.compEnable := '1';
+         else
+            v.compEnable := '0';
+         end if;
+      end if;
+
+      -- Header only
+      if obPendMaster.tLast = '1' then
+         if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 1 then
+            v.headOnly := '1';
+         else
+            v.headOnly := '0';
+         end if;
+      end if;
+
       case r.state is
 
          when IDLE_S =>
@@ -152,20 +170,8 @@ begin
             v.dmaReq.size             := obPendMaster.tData(63 downto 32);
             v.dmaReq.dest(3 downto 0) := obPendMaster.tDest(3 downto 0);
             v.hAxisSlave.tReady       := '1';
-            v.headOnly                := '0';
             v.noHeader                := '0';
-            v.compEnable              := '0';
             v.state                   := DESCB_S;
-
-            -- Determine completion enable
-            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster,0)(1 downto 0) = 3 then
-               v.compEnable := '1';
-            end if;
-
-            -- Header only
-            if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster,0)(1 downto 0) = 1 then
-               v.headOnly := '1';
-            end if;
 
          -- get completion descriptor portion of header
          when DESCB_S =>
@@ -217,7 +223,7 @@ begin
                axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, v.fAxisMaster, PPI_EOH_C,'1');
 
                -- Header only, we are done
-               if r.headOnly = '1' then
+               if v.headOnly = '1' then
                   v.state := IDLE_S;
 
                -- Payload Enable, start DMA

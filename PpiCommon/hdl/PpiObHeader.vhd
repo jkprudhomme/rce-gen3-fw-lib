@@ -119,7 +119,7 @@ begin
       case r.state is
 
          when IDLE_S =>
-            v.dmaReq.firstUser(1 downto 0) := obWorkDout(31 downto 30); -- OpCode
+            v.dmaReq.lastUser(1 downto 0)  := obWorkDout(31 downto 30); -- OpCode
             v.dmaReq.dest(3 downto 0)      := obWorkDout(29 downto 26);
             v.dmaReq.size(10 downto 3)     := obWorkDout(25 downto 18) + 2; -- Size is in units of 8 bytes
             v.dmaReq.address(17 downto  4) := obWorkDout(17 downto  4);
