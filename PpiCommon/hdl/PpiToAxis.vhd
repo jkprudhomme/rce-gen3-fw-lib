@@ -28,11 +28,13 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.PpiPkg.all;
+use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 
 entity PpiToAxis is
    generic (
+      TPD_G                : time    := 1 ns;
 
       -- PPI Settings
       PPI_ADDR_WIDTH_G     : integer := 9;
@@ -67,21 +69,21 @@ end PpiToAxis;
 architecture structure of PpiToAxis is
 
    -- Internal AXIS configuration
-   constant INT_AXIS_CONFIG_C : AxiStreamConfigType := {
+   constant INT_AXIS_CONFIG_C : AxiStreamConfigType := (
       TSTRB_EN_C    => false,
       TDATA_BYTES_C => 8,
       TDEST_BITS_C  => AXIS_CONFIG_G.TDEST_BITS_C,
       TID_BITS_C    => 0,
       TKEEP_MODE_C  => TKEEP_COMP_C,
       TUSER_BITS_C  => AXIS_CONFIG_G.TUSER_BITS_C,
-      TUSER_MODE_C  => AXIS_CONFIG_G.TUSER_FIRST_LAST_C
-   };
+      TUSER_MODE_C  => TUSER_FIRST_LAST_C
+   );
 
    -- Local signals
-   ippiObMaster     : AxiStreamMasterType;
-   ippiObSlave      : AxiStreamSlaveType;
-   iaxisObMaster    : AxiStreamMasterType;
-   iaxisObCtrl      : AxiStreamCtrlType;
+   signal ippiObMaster  : AxiStreamMasterType;
+   signal ippiObSlave   : AxiStreamSlaveType;
+   signal iaxisObMaster : AxiStreamMasterType;
+   signal iaxisObCtrl   : AxiStreamCtrlType;
 
    type StateType is (HEADER_S, FIRST_S, DATA_S);
 
@@ -91,6 +93,7 @@ architecture structure of PpiToAxis is
       firstUser       : slv(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0);
       lastUser        : slv(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0);
       eof             : sl;
+      txFrameCntEn    : sl;
       iaxisObMaster   : AxiStreamMasterType;
    end record RegType;
 
@@ -100,7 +103,8 @@ architecture structure of PpiToAxis is
       firstUser      => (others=>'0'),
       lastUser       => (others=>'0'),
       eof            => '0',
-      iaxisObMaster  => AXIS_STREAM_MASTER_INIT_C
+      txFrameCntEn   => '0',
+      iaxisObMaster  => AXI_STREAM_MASTER_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -167,41 +171,41 @@ begin
 
    -- Async
    process (ppiClkRst, r, ippiObMaster, ippiObSlave ) is
-      variable v : RegMoveType;
+      variable v : RegType;
    begin
       v := r;
 
       v.iaxisObMaster.tValid := '0';
       v.txFrameCntEn         := '0';
 
-      case rm.state is
+      case r.state is
 
          when HEADER_S =>
-            v.iaxisObMaster := AXIS_STREAM_MASTER_INIT_C;
+            v.iaxisObMaster := AXI_STREAM_MASTER_INIT_C;
             v.dest          := ippiObMaster.tData((AXIS_CONFIG_G.TDEST_BITS_C-1)    downto  0);
             v.firstUser     := ippiObMaster.tData((AXIS_CONFIG_G.TUSER_BITS_C-1)+8  downto  8);
             v.firstUser     := ippiObMaster.tData((AXIS_CONFIG_G.TUSER_BITS_C-1)+16 downto 16);
             v.eof           := ippiObMaster.tData(26);
 
-            if ( ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
+            if ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
                v.state := FIRST_S;
             end if;
 
          when FIRST_S =>
             v.iaxisObMaster.tData(63 downto 0) := ippiObMaster.tData(63 downto 0);
 
-            v.iaxisObMaster.tDest((AXIS_CONFIG_G.TDEST_BITS_C-1 downto 0) := r.dest;
-            v.iaxisObMaster.tUser((AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.firstUser;
+            v.iaxisObMaster.tDest(AXIS_CONFIG_G.TDEST_BITS_C-1 downto 0) := r.dest;
+            v.iaxisObMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.firstUser;
 
-            if ( ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
+            if ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
                v.iaxisObMaster.tValid := '1';
 
                if v.iaxisObMaster.tLast = '1' then
-                  v.iaxisObMaster.tUser((AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.lastUser;
+                  v.iaxisObMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.lastUser;
 
                   v.iaxisObMaster.tLast := r.eof;
                   v.txFrameCntEn        := '1';
-                  v.state               := LAST_S;
+                  v.state               := HEADER_S;
                else
                   v.state := DATA_S;
                end if;
@@ -212,11 +216,11 @@ begin
 
             v.iaxisObMaster.tUser := (others=>'0');
 
-            if ( ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
+            if ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
                v.iaxisObMaster.tValid := '1';
 
                if v.iaxisObMaster.tLast = '1' then
-                  v.iaxisObMaster.tUser((AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.lastUser;
+                  v.iaxisObMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.lastUser;
 
                   v.iaxisObMaster.tLast := r.eof;
                   v.txFrameCntEn        := '1';
@@ -228,7 +232,7 @@ begin
 
       -- Reset
       if ppiClkRst = '1' then
-         v := REG_MOVE_INIT_C;
+         v := REG_INIT_C;
       end if;
 
       -- Next register assignment
@@ -266,8 +270,8 @@ begin
          sAxisMaster => iaxisObMaster,
          sAxisSlave  => open,
          sAxisCtrl   => iaxisObCtrl,
-         mAxisClk    => axisClk,
-         mAxisRst    => axisClkRst,
+         mAxisClk    => axisObClk,
+         mAxisRst    => axisObClkRst,
          mAxisMaster => axisObMaster,
          mAxisSlave  => axisObSlave
       );

@@ -91,6 +91,8 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiStateSync.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiStatus.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiInterconnect.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/AxisToPpi.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/PpiToAxis.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Version.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Bsi.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Clocks.vhd
