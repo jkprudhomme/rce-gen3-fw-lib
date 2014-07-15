@@ -1,3 +1,2 @@
-hdl/PpiPgpCntrl.vhd
 hdl/PpiPgpLane.vhd
 hdl/PpiPgpArray.vhd

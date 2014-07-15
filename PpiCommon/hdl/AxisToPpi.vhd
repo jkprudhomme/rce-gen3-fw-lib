@@ -12,6 +12,7 @@
 --    Bits 23:16 = Last  User
 --    Bit  24    = Inbound overflow occured
 --    Bits 25    = Header only frame
+--    Bits 26    = End of Frame
 --    Bits 63:32 = Length in bytes
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
@@ -39,6 +40,7 @@ entity AxisToPpi is
 
       -- AXIS Settings
       AXIS_CONFIG_G        : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C;
+      AXIS_READY_EN_G      : boolean             := false;
       AXIS_ADDR_WIDTH_G    : integer             := 9;
       AXIS_PAUSE_THRESH_G  : integer             := 500;
       AXIS_CASCADE_SIZE_G  : integer             := 1;
@@ -65,6 +67,7 @@ entity AxisToPpi is
       axisIbClk       : in  sl;
       axisIbClkRst    : in  sl;
       axisIbMaster    : in  AxiStreamMasterType;
+      axisIbSlave     : out AxiStreamSlaveType;
       axisIbCtrl      : out AxiStreamCtrlType;
 
       -- Status
@@ -78,7 +81,7 @@ architecture structure of AxisToPpi is
 
    -- Constants
    constant BYTE_COUNT_BITS_C    : integer := bitSize(PPI_MAX_FRAME_SIZE_G);
-   constant HEADER_DATA_WIDTH_G  : integer := BYTE_COUNT_BITS_C + 
+   constant HEADER_DATA_WIDTH_G  : integer := BYTE_COUNT_BITS_C + 1 +
                                               (AXIS_CONFIG_G.TUSER_BITS_C*2) + 
                                               AXIS_CONFIG_G.TDEST_BITS_C;
 
@@ -99,6 +102,7 @@ architecture structure of AxisToPpi is
       firstUser : slv(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0);
       lastUser  : slv(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0);
       byteCnt   : slv(BYTE_COUNT_BITS_C-1 downto 0);
+      eof       : sl;
       valid     : sl;
    end record HeaderFifoType;
 
@@ -107,6 +111,7 @@ architecture structure of AxisToPpi is
       firstUser => (others=>'0'),
       lastUser  => (others=>'0'),
       byteCnt   => (others=>'0'),
+      eof       => '0',
       valid     => '0'
    );
 
@@ -188,12 +193,21 @@ architecture structure of AxisToPpi is
 
 begin
 
-   -- NEED CONFIGURATION ASSERTIONS HERE!!!!!!
-   -- TSRB_EN_C must be false
-   -- TID_BITS_C must be 0
-   -- TUSER_MODE_C must be LAST_C or FIRST_LAST_C
-   -- DATA_ADDR_WIDTH_G must be wide enough for PPI_MAX_FRAME_SIZE_G
-   -- AXIS_ERROR_BIT_G must be less than TUSER width
+   assert (AXIS_CONFIG_G.TSTRB_EN_C = false)
+      report "TSTRB_EN_C must be false" severity failure;
+
+   assert (AXIS_CONFIG_G.TID_BITS_C = 0)
+      report "TID_BITS_C must be 0" severity failure;
+
+   assert (AXIS_CONFIG_G.TUSER_MODE_C = TUSER_LAST_C or AXIS_CONFIG_G.TUSER_MODE_C = TUSER_FIRST_LAST_C)
+      report "TUSER_MODE_C must be last or first_last" severity failure;
+
+   assert (AXIS_ERROR_BIT_G < (AXIS_CONFIG_G.TUSER_BITS_C-1))
+      report "AXIS_ERROR_BIT_G must be less than TUSER_BITS_C-1" severity failure;
+
+   assert (DATA_ADDR_WIDTH_G >= bitSize(PPI_MAX_FRAME_SIZE_G))
+      report "DATA_ADDR_WIDTH_G is not wide enough for PPI_MAX_FRAME_SIZE_G" severity failure;
+
 
    -------------------------
    -- Input FIFO, ASYNC
@@ -202,7 +216,7 @@ begin
       generic map (
          TPD_G               => TPD_G,
          PIPE_STAGES_G       => 0,
-         SLAVE_READY_EN_G    => false,
+         SLAVE_READY_EN_G    => AXIS_READY_EN_G,
          VALID_THOLD_G       => 1,
          BRAM_EN_G           => true,
          XIL_DEVICE_G        => "7SERIES",
@@ -218,7 +232,7 @@ begin
          sAxisClk    => axisClk,
          sAxisRst    => axisClkRst,
          sAxisMaster => axisIbMaster,
-         sAxisSlave  => open,
+         sAxisSlave  => axisIbSlave,
          sAxisCtrl   => iaxisIbCtrl,
          mAxisClk    => ppiClk,
          mAxisRst    => ppiClkRst,
@@ -279,6 +293,7 @@ begin
       if intIbMaster.tValid = '1' and intIbSlave.tReady = '1' then
          v.nextHeader.byteCnt  := r.nextHeader.byteSize + (onesCount(intIbMaster.tKeep(7 downto 0))+1);
          v.nextHeader.lastUser := intIbMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_G-1 downto 0);
+         v.nextHeader.eof      := intIbMaster.tLast;
          v.inFrame             := '1';
          v.dataIn.valid        := '1';
 
@@ -375,6 +390,9 @@ begin
       i := i + AXIS_CONFIG_G.TUSER_BITS_C;
 
       ret((BYTE_COUNT_BITS-1)+i downto i) := headerIn.byteCnt;
+      i := i + BYTE_COUNT_BITS;
+
+      ret(i) := headerIn.eof;
 
       headerInSlv <= ret;
    end if;
@@ -395,6 +413,9 @@ begin
       i := i + AXIS_CONFIG_G.TUSER_BITS_C;
 
       ret.byteCnt := headerOutSlv((BYTE_COUNT_BITS-1)+i downto i);
+      i := i + BYTE_COUNT_BITS;
+
+      ret.eof := headerOutSlv(i);
 
       headerOut <= ret;
    end if;
@@ -484,6 +505,7 @@ begin
             v.regIbMaster.tData((AXIS_CONFIG_G.TUSER_BITS_C-1)+16 downto 16) := headerOut.lastUser;
             v.regIbMaster.tData(BYTE_COUNT_BITS_C+31 downto 32)              := headerOut.byteCnt;
 
+            v.regIbMaster.tData(26) := headerOut.eof;
             v.regIbMaster.tData(24) := r.overflow;
             v.regIbMaster.tValid    := '1';
             v.headerRead            := '1';
