@@ -184,7 +184,7 @@ begin
             v.iaxisObMaster := AXI_STREAM_MASTER_INIT_C;
             v.dest          := ippiObMaster.tData((AXIS_CONFIG_G.TDEST_BITS_C-1)    downto  0);
             v.firstUser     := ippiObMaster.tData((AXIS_CONFIG_G.TUSER_BITS_C-1)+8  downto  8);
-            v.firstUser     := ippiObMaster.tData((AXIS_CONFIG_G.TUSER_BITS_C-1)+16 downto 16);
+            v.lastUser      := ippiObMaster.tData((AXIS_CONFIG_G.TUSER_BITS_C-1)+16 downto 16);
             v.eof           := ippiObMaster.tData(26);
 
             if ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
@@ -193,15 +193,17 @@ begin
 
          when FIRST_S =>
             v.iaxisObMaster.tData(63 downto 0) := ippiObMaster.tData(63 downto 0);
+            v.iaxisObMaster.tKeep              := ippiObMaster.tKeep;
 
             v.iaxisObMaster.tDest(AXIS_CONFIG_G.TDEST_BITS_C-1 downto 0) := r.dest;
-            v.iaxisObMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.firstUser;
+
+            axiStreamSetUserField (AXIS_CONFIG_G,v.iaxisObMaster,r.firstUser,0);
 
             if ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
                v.iaxisObMaster.tValid := '1';
 
                if v.iaxisObMaster.tLast = '1' then
-                  v.iaxisObMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.lastUser;
+                  axiStreamSetUserField (AXIS_CONFIG_G,v.iaxisObMaster,r.lastUser);
 
                   v.iaxisObMaster.tLast := r.eof;
                   v.txFrameCntEn        := '1';
@@ -213,14 +215,15 @@ begin
 
          when DATA_S =>
             v.iaxisObMaster.tData(63 downto 0) := ippiObMaster.tData(63 downto 0);
+            v.iaxisObMaster.tKeep              := ippiObMaster.tKeep;
 
             v.iaxisObMaster.tUser := (others=>'0');
 
             if ippiObMaster.tValid = '1' and ippiObSlave.tReady = '1' then
                v.iaxisObMaster.tValid := '1';
 
-               if v.iaxisObMaster.tLast = '1' then
-                  v.iaxisObMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0) := r.lastUser;
+               if ippiObMaster.tLast = '1' then
+                  axiStreamSetUserField (AXIS_CONFIG_G,v.iaxisObMaster,r.lastUser);
 
                   v.iaxisObMaster.tLast := r.eof;
                   v.txFrameCntEn        := '1';

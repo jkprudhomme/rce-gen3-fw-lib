@@ -116,10 +116,11 @@ architecture structure of AxisToPpi is
       valid     => '0'
    );
 
-   signal headerOut    : HeaderFifoType;
-   signal headerIn     : HeaderFifoType;
-   signal headerOutSlv : slv(HEADER_DATA_WIDTH_C-1 downto 0);
-   signal headerInSlv  : slv(HEADER_DATA_WIDTH_C-1 downto 0);
+   signal headerOut      : HeaderFifoType;
+   signal headerIn       : HeaderFifoType;
+   signal headerOutSlv   : slv(HEADER_DATA_WIDTH_C-1 downto 0);
+   signal headerOutValid : sl;
+   signal headerInSlv    : slv(HEADER_DATA_WIDTH_C-1 downto 0);
 
    -- Data FIFO type
    type DataFifoType is record
@@ -138,17 +139,19 @@ architecture structure of AxisToPpi is
 
    -- Header/Data Move Type
    type RegType is record
-      inFrame      : sl;
+      headerEn     : sl;
       dataIn       : DataFifoType;
       headerIn     : HeaderFifoType;  
       nextHeader   : HeaderFifoType;  
+      intIbSlave   : AxiStreamSlaveType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      inFrame      => '0',
+      headerEn     => '0',
       dataIn       => DATA_FIFO_INIT_C,
       headerIn     => HEADER_FIFO_INIT_C,
-      nextHeader   => HEADER_FIFO_INIT_C
+      nextHeader   => HEADER_FIFO_INIT_C,
+      intIbSlave   => AXI_STREAM_SLAVE_INIT_C
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -266,9 +269,6 @@ begin
    -- Data/Header Split
    -------------------------
 
-   -- Always move when there is space left in data and header FIFOs
-   intIbSlave.tReady <= (not headerAFull) and (not dataAFull);
-
    -- Sync
    process (ppiClk) is
    begin
@@ -278,39 +278,53 @@ begin
    end process;
 
    -- Async
-   process (ppiClkRst, r, intIbMaster, ppiState, intIbSlave ) is
+   process (ppiClkRst, r, intIbMaster, ppiState, headerAFull, dataAFull ) is
       variable v : RegType;
    begin
       v := r;
 
       -- Init
-      v.headerIn.valid := '0';
-      v.dataIn.valid   := '0';
+      v.dataIn.valid      := '0';
+      v.headerIn.valid    := '0';
+      v.intIbSlave.tReady := (not headerAFull) and (not dataAFull);
 
       -- Pass data
       v.dataIn.data := intIbMaster.tData(63 downto 0);
 
-      -- Data is valid and ready is asserted
-      if intIbMaster.tValid = '1' and intIbSlave.tReady = '1' then
-         v.nextHeader.byteCnt  := r.nextHeader.byteCnt + (onesCount(intIbMaster.tKeep(7 downto 0))+1);
-         v.nextHeader.lastUser := intIbMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0);
-         v.nextHeader.eof      := intIbMaster.tLast;
-         v.inFrame             := '1';
-         v.dataIn.valid        := '1';
+      -- Writing header
+      if r.headerEn = '1' then
+         v.headerIn          := r.nextHeader;
+         v.headerIn.valid    := '1';
+         v.nextHeader        := HEADER_FIFO_INIT_C;
+         v.intIbSlave.tReady := '0';
+         v.headerEn          := '0';
 
-         -- Not in frame or destination has changed, current data is part of next frame, start a new header
-         if r.inFrame = '0' and intIbMaster.tDest /= r.headerIn.dest then
-            v.headerIn             := r.nextHeader;
-            v.nextHeader.byteCnt   := (onesCount(intIbMaster.tKeep(7 downto 0))+1);
-            v.nextHeader.dest      := intIbMaster.tDest(AXIS_CONFIG_G.TDEST_BITS_C-1 downto 0);
-            v.nextHeader.firstUser := intIbMaster.tUser(AXIS_CONFIG_G.TUSER_BITS_C-1 downto 0);
-            v.headerIn.valid       := r.inFrame;
+      -- Data is valid
+      elsif intIbMaster.tValid = '1' then
 
-         -- Last is asserted or max frame size is reached.
-         elsif intIbMaster.tLast = '1' or v.nextHeader.byteCnt = PPI_MAX_FRAME_SIZE_G then
-            v.headerIn       := r.nextHeader;
-            v.headerIn.valid := '1';
-            v.inFrame        := '0';
+         -- Destination has changed and length is non zero, write header
+         if r.nextHeader.byteCnt /= 0 and intIbMaster.tDest /= r.nextHeader.dest then
+            v.headerEn          := '1';
+            v.intIbSlave.tReady := '0';
+         end if;
+
+         -- valid is asserted
+         if v.intIbSlave.tReady = '1' then
+            v.nextHeader.byteCnt  := r.nextHeader.byteCnt + onesCount(intIbMaster.tKeep(7 downto 0));
+            v.nextHeader.lastUser := axiStreamGetUserField(INT_AXIS_CONFIG_C,intIbmaster);
+            v.nextHeader.eof      := intIbMaster.tLast;
+            v.dataIn.valid        := '1';
+
+            -- First data
+            if r.nextHeader.byteCnt = 0 then
+               v.nextHeader.firstUser := axiStreamGetUserField(INT_AXIS_CONFIG_C,intIbmaster,0);
+               v.nextHeader.dest      := intIbMaster.tDest(AXIS_CONFIG_G.TDEST_BITS_C-1 downto 0);
+            end if;
+
+            -- Last is asserted or max frame size is reached.
+            if intIbMaster.tLast = '1' or r.nextHeader.byteCnt = (PPI_MAX_FRAME_SIZE_G-8) then
+               v.headerEn := '1';
+            end if;
          end if;
       end if;
 
@@ -326,6 +340,7 @@ begin
       dataIn        <= r.dataIn;
       headerIn      <= r.headerIn;
       rxFrameCntEn  <= r.headerIn.valid;
+      intIbSlave    <= v.intIbSlave;
 
    end process;
 
@@ -368,7 +383,7 @@ begin
          rd_en              => headerRead,
          dout               => headerOutSlv,
          rd_data_count      => open,
-         valid              => headerOut.valid,
+         valid              => headerOutValid,
          underflow          => open,
          prog_empty         => open,
          almost_empty       => open,
@@ -398,7 +413,7 @@ begin
       headerInSlv <= ret;
    end process;
 
-   process ( headerOutSlv ) is
+   process ( headerOutSlv, headerOutValid ) is
       variable i   : integer;
       variable ret : HeaderFifoType;
    begin
@@ -418,6 +433,7 @@ begin
 
       ret.eof := headerOutSlv(i);
 
+      ret.valid := headerOutValid;
       headerOut <= ret;
    end process;
 
@@ -511,7 +527,9 @@ begin
             v.regIbMaster.tValid    := '1';
             v.headerRead            := '1';
             v.byteCnt               := headerOut.byteCnt;
+            v.state                 := DATA_S;
 
+            -- Full frame fits in header
             if headerOut.byteCnt <= PPI_MAX_HEADER_C then
                v.regIbMaster.tData(25) := '1';
             else
@@ -540,7 +558,8 @@ begin
                      v.regIbMaster.tKeep(7 downto conv_integer(rm.byteCnt)) := (others=>'0');
                   end if;
 
-                  v.state := LAST_S;
+                  v.state             := LAST_S;
+                  v.regIbMaster.tLast := '1';
                end if;
             end if;
 

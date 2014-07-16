@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
    dma = new PpiDmaSim(0,rce,mem,memSize);
 
-   txHdrSize = 80;
+   txHdrSize = 0;
    txPaySize = 128;
    txType    = 3;
 

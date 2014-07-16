@@ -192,13 +192,10 @@ begin
                      v.dmaReq.request := '0';
                      v.state          := IDLE_S;
 
-                  -- No header. Assert EOH on first quad word of payload. 
-                  -- (outbound engines should really ignore EOH)
+                  -- No header. EOH not asserted
                   else
-                     v.dmaReq.request              := '1';
-                     v.dmaReq.firstUser            := (others=>'0');
-                     v.dmaReq.firstUser(PPI_EOH_C) := '1';
-                     v.state                       := WAIT_S;
+                     v.dmaReq.request := '1';
+                     v.state          := WAIT_S;
                   end if;
 
                -- Pass along header data
@@ -231,7 +228,6 @@ begin
                   v.state             := WAIT_S;
                   v.fAxisMaster.tLast := '0'; -- not end of frame yet
                   v.dmaReq.request    := '1';
-                  v.dmaReq.firstUser  := (others=>'0');
                end if;
             end if;
 

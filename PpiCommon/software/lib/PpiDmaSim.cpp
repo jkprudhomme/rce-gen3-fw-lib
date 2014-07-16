@@ -54,13 +54,14 @@ int PpiDmaSim::write(unsigned char *data, uint hdrSize, uint paySize, uint type)
    uintPtr[2] = _channel*2;
    uintPtr[3] = 0x5a5a5a5a;
 
-   uintPtr[4] = hdrSize;
-   uintPtr[5] = paySize;
+   //uintPtr[4] = hdrSize;
+   //uintPtr[5] = paySize;
 
    memcpy(ucharPtr,data,hdrSize+paySize);
    size = hdrSize + paySize + 24;
 
-   desc = addr | (((hdrSize/8)+1) << 18) | (type << 26);
+   //desc = addr | (((hdrSize/8)+1) << 18) | (type << 26);
+   desc = addr | (((hdrSize/8)) << 18) | (type << 26);
 
    if ( paySize > 0 ) desc |= 0xC0000000;
    else desc |= 0x40000000;
@@ -102,8 +103,11 @@ int PpiDmaSim::read(unsigned char *data, uint maxSize, uint *type, uint *err, ui
    uintPtr  = (uint *)(_slaveMem + addr);
    ucharPtr = _slaveMem + addr + 24;
 
-   *hdrSize = uintPtr[4];
-   *paySize = uintPtr[5];
+   //*hdrSize = uintPtr[4];
+   //*paySize = uintPtr[5];
+
+   *hdrSize = 0;
+   *paySize = 128;
 
    printf("Got inbound header Addr: 0x%08x, Type: %i, Err: %i, Pay: %i, HSize: %i, PSize: %i\n",
       addr,*type,*err,pay,*hdrSize,*paySize);
