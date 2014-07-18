@@ -59,7 +59,10 @@ entity PpiObHeader is
 
       -- Outbound pending (internal FIFO)
       obPendMaster    : out AxiStreamMasterType;
-      obPendSlave     : in  AxiStreamSlaveType
+      obPendSlave     : in  AxiStreamSlaveType;
+
+      -- Debug Vectors
+      obHeaderDebug   : out Slv32Array(1 downto 0)
    );
 end PpiObHeader;
 
@@ -73,6 +76,7 @@ architecture structure of PpiObHeader is
       obFreeDin     : slv(31 downto 0);
       obWorkRead    : sl;
       obError       : sl;
+      obHeaderDebug : Slv32Array(1 downto 0);
       dmaReq        : AxiReadDmaReqType;
    end record RegType;
 
@@ -82,6 +86,7 @@ architecture structure of PpiObHeader is
       obFreeDin     => (others=>'0'),
       obWorkRead    => '0',
       obError       => '0',
+      obHeaderDebug => (others=>(others=>'0')),
       dmaReq        => AXI_READ_DMA_REQ_INIT_C
    );
 
@@ -116,6 +121,8 @@ begin
       v.obWorkRead  := '0';
       v.obError     := '0';
 
+      v.obHeaderDebug(0)(2 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 3);
+
       case r.state is
 
          when IDLE_S =>
@@ -142,6 +149,9 @@ begin
                v.obError        := dmaAck.readError;
                v.state          := FREE_S;
             end if;
+            v.obHeaderDebug(0)(31 downto 16) := r.dmaReq.size(15 downto 0);
+            v.obHeaderDebug(0)(15 downto 14) := r.dmaReq.lastUser(1 downto 0); -- Opcode
+            v.obHeaderDebug(1)               := r.dmaReq.address;
 
          when FREE_S =>
             v.obFreeDin(17 downto 0) := r.dmaReq.address(17 downto 0);
@@ -162,11 +172,12 @@ begin
       rin <= v;
 
       -- Outputs
-      dmaReq      <= r.dmaReq;
-      obFreeWrite <= r.obFreeWrite;
-      obFreeDin   <= r.obFreeDin;
-      obWorkRead  <= r.obWorkRead;
-      obAxiError  <= r.obError;
+      dmaReq        <= r.dmaReq;
+      obFreeWrite   <= r.obFreeWrite;
+      obFreeDin     <= r.obFreeDin;
+      obWorkRead    <= r.obWorkRead;
+      obAxiError    <= r.obError;
+      obHeaderDebug <= r.obHeaderDebug;
 
    end process;
 

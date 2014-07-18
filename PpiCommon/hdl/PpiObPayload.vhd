@@ -62,7 +62,10 @@ entity PpiObPayload is
       dmaClk          : in  sl;
       dmaClkRst       : in  sl;
       dmaObMaster     : out AxiStreamMasterType;
-      dmaObSlave      : in  AxiStreamSlaveType
+      dmaObSlave      : in  AxiStreamSlaveType;
+
+      -- Debug Vectors
+      obPayloadDebug  : out Slv32Array(1 downto 0)
    );
 end PpiObPayload;
 
@@ -74,31 +77,34 @@ architecture structure of PpiObPayload is
    type StateType is (IDLE_S, DESCA_S, DESCB_S, HEAD_S, WAIT_S, COMP_S, ERR_S);
 
    type RegType is record
-      state         : StateType;
-      compWrite     : sl;
-      compChan      : slv(CHAN_BITS_C-1 downto 0);
-      compData      : slv(31 downto 1);
-      compEnable    : sl;
-      rdError       : sl;
-      headOnly      : sl;
-      noHeader      : sl;
-      fAxisMaster   : AxiStreamMasterType;
-      hAxisSlave    : AxiStreamSlaveType;
-      dmaReq        : AxiReadDmaReqType;
+      state          : StateType;
+      compWrite      : sl;
+      compChan       : slv(CHAN_BITS_C-1 downto 0);
+      compData       : slv(31 downto 1);
+      compEnable     : sl;
+      rdError        : sl;
+      headOnly       : sl;
+      noHeader       : sl;
+      fAxisMaster    : AxiStreamMasterType;
+      hAxisSlave     : AxiStreamSlaveType;
+      dmaReq         : AxiReadDmaReqType;
+      obPayloadDebug : Slv32Array(1 downto 0);
+
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      state         => IDLE_S,
-      compWrite     => '0',
-      compChan      => (others=>'0'),
-      compData      => (others=>'0'),
-      compEnable    => '0',
-      rdError       => '0',
-      headOnly      => '0',
-      noHeader      => '0',
-      fAxisMaster   => AXI_STREAM_MASTER_INIT_C,
-      hAxisSlave    => AXI_STREAM_SLAVE_INIT_C,
-      dmaReq        => AXI_READ_DMA_REQ_INIT_C
+      state          => IDLE_S,
+      compWrite      => '0',
+      compChan       => (others=>'0'),
+      compData       => (others=>'0'),
+      compEnable     => '0',
+      rdError        => '0',
+      headOnly       => '0',
+      noHeader       => '0',
+      fAxisMaster    => AXI_STREAM_MASTER_INIT_C,
+      hAxisSlave     => AXI_STREAM_SLAVE_INIT_C,
+      dmaReq         => AXI_READ_DMA_REQ_INIT_C,
+      obPayloadDebug => (others=>(others=>'0'))
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -137,6 +143,11 @@ begin
       v.hAxisSlave.tReady  := '0';
       v.fAxisMaster.tValid := '0';
       v.compWrite          := '0';
+
+      v.obPayloadDebug(0)(2 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 3);
+      v.obPayloadDebug(0)(4)          := r.noHeader;
+      v.obPayloadDebug(0)(5)          := r.compEnable;
+      v.obPayloadDebug(0)(6)          := r.headOnly;
 
       -- Determine completion enable
       if obPendMaster.tLast = '1' then
@@ -204,6 +215,9 @@ begin
                   v.state             := HEAD_S;
                end if;
             end if;
+
+            v.obPayloadDebug(1)               := r.dmaReq.address;
+            v.obPayloadDebug(0)(31 downto 16) := r.dmaReq.size(15 downto 0);
 
          -- Header data, send out
          when HEAD_S =>
@@ -292,6 +306,7 @@ begin
       obPendSlave    <= r.hAxisSlave;
       intAxisMaster  <= r.fAxisMaster;
       compWrite      <= r.compWrite;
+      obPayloadDebug <= r.obPayloadDebug;
 
       compDin(COMP_BITS_C-1 downto 31) <= r.compChan;
       compDin(30 downto  0)            <= r.compData;

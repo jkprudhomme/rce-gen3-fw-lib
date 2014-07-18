@@ -71,7 +71,10 @@ entity PpiIbPayload is
       dmaClk          : in  sl;
       dmaClkRst       : in  sl;
       payIbMaster     : in  AxiStreamMasterType;
-      payIbSlave      : out AxiStreamSlaveType
+      payIbSlave      : out AxiStreamSlaveType;
+
+      -- Debug Vectors
+      ibPayloadDebug  : out Slv32Array(2 downto 0)
    );
 end PpiIbPayload;
 
@@ -83,41 +86,43 @@ architecture structure of PpiIbPayload is
    type StateType is (IDLE_S, CODE_S, READ_A_S, READ_B_S, READ_C_S, WAIT_S, FREE_S, DUMP_S, COMP_S, ERR_S);
 
    type RegType is record
-      state         : StateType;
-      opCode        : slv(2 downto 0);
-      keep          : sl;
-      compWrite     : sl;
-      compChan      : slv(CHAN_BITS_C-1 downto 0);
-      compData      : slv(31 downto 1);
-      rdError       : sl;
-      wrError       : sl;
-      frameError    : sl;
-      overFlow      : sl;
-      ibAxiError    : sl;
-      ibFreeWrite   : sl;
-      ibFreeDin     : slv(17 downto 4);
-      ibWorkRead    : sl;
-      rdReq         : AxiReadDmaReqType;
-      wrReq         : AxiWriteDmaReqType;
+      state          : StateType;
+      opCode         : slv(2 downto 0);
+      keep           : sl;
+      compWrite      : sl;
+      compChan       : slv(CHAN_BITS_C-1 downto 0);
+      compData       : slv(31 downto 1);
+      rdError        : sl;
+      wrError        : sl;
+      frameError     : sl;
+      overFlow       : sl;
+      ibAxiError     : sl;
+      ibFreeWrite    : sl;
+      ibFreeDin      : slv(17 downto 4);
+      ibWorkRead     : sl;
+      rdReq          : AxiReadDmaReqType;
+      wrReq          : AxiWriteDmaReqType;
+      ibPayloadDebug : Slv32Array(2 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      state         => IDLE_S,
-      opCode        => (others=>'0'),
-      keep          => '0',
-      compWrite     => '0',
-      compChan      => (others=>'0'),
-      compData      => (others=>'0'),
-      rdError       => '0',
-      wrError       => '0',
-      frameError    => '0',
-      overFlow      => '0',
-      ibAxiError    => '0',
-      ibFreeWrite   => '0',
-      ibFreeDin     => (others=>'0'),
-      ibWorkRead    => '0',
-      rdReq         => AXI_READ_DMA_REQ_INIT_C,
-      wrReq         => AXI_WRITE_DMA_REQ_INIT_C
+      state          => IDLE_S,
+      opCode         => (others=>'0'),
+      keep           => '0',
+      compWrite      => '0',
+      compChan       => (others=>'0'),
+      compData       => (others=>'0'),
+      rdError        => '0',
+      wrError        => '0',
+      frameError     => '0',
+      overFlow       => '0',
+      ibAxiError     => '0',
+      ibFreeWrite    => '0',
+      ibFreeDin      => (others=>'0'),
+      ibWorkRead     => '0',
+      rdReq          => AXI_READ_DMA_REQ_INIT_C,
+      wrReq          => AXI_WRITE_DMA_REQ_INIT_C,
+      ibPayloadDebug => (others=>(others=>'0'))
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -162,6 +167,8 @@ begin
       v.ibWorkRead  := '0';
       v.ibAxiError  := '0';
       v.compWrite   := '0';
+
+      v.ibPayloadDebug(0)(3 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 4);
 
       case r.state is
 
@@ -233,7 +240,12 @@ begin
                end if;
             end if;
 
+            v.ibPayloadDebug(2) := r.rdReq.address;
+
          when WAIT_S =>
+
+            v.ibPayloadDebug(1) := r.wrReq.address;
+
             if wrAck.done = '1' then 
                v.wrReq.request := '0';
                v.wrError       := wrAck.writeError;
@@ -314,8 +326,9 @@ begin
       ibFreeDin   <= r.ibFreeDin;
       ibWorkRead  <= r.ibWorkRead;
       ibAxiError  <= r.ibAxiError;
-
       compWrite   <= r.compWrite;
+
+      ibPayloadDebug <= r.ibPayloadDebug;
 
       compDin(COMP_BITS_C-1 downto 31) <= r.compChan;
       compDin(30 downto  0)            <= r.compData;

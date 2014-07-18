@@ -140,6 +140,7 @@ architecture structure of PpiSocket is
    signal ibFreeDin           : slv(17 downto 4);
    signal ibFreeAFull         : sl;
    signal counters            : SlVectorArray(3 downto 0, COUNT_WIDTH_C-1 downto 0);
+   signal debug               : Slv32Array(8 downto 0);
 
    type RegType is record
       dmaState       : RceDmaStateType;
@@ -173,7 +174,7 @@ begin
    end process;
 
    -- Async
-   process (r, axiRst, axilReadMaster, axilWriteMaster, counters ) is
+   process (r, axiRst, axilReadMaster, axilWriteMaster, counters, debug ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
@@ -203,21 +204,25 @@ begin
       if (axiStatus.readEnable = '1') then
          v.axilReadSlave.rdata := (others=>'0');
 
-         case axilReadMaster(0).araddr(7 downto 0) is
-            when x"00" =>
-               v.axilReadSlave.rdata(0) := r.dmaState.enable;
-               v.axilReadSlave.rdata(1) := r.dmaState.online;
-            when x"10" =>
-               v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 0); -- obHeadAxiError
-            when x"14" =>
-               v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 1); -- obPayAxiError
-            when x"18" =>
-               v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 2); -- ibHeadAxiError
-            when x"1C" =>
-               v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 3); -- ibPayAxiError
-            when others =>
-               null;
-         end case;
+         if axilReadMaster(0).araddr(7) = '1' then
+            v.axilReadSlave.rdata := debug(conv_integer(axilReadMaster(0).araddr(5 downto 2)));
+         else 
+            case axilReadMaster(0).araddr(7 downto 0) is
+               when x"00" =>
+                  v.axilReadSlave.rdata(0) := r.dmaState.enable;
+                  v.axilReadSlave.rdata(1) := r.dmaState.online;
+               when x"10" =>
+                  v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 0); -- obHeadAxiError
+               when x"14" =>
+                  v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 1); -- obPayAxiError
+               when x"18" =>
+                  v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 2); -- ibHeadAxiError
+               when x"1C" =>
+                  v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 3); -- ibPayAxiError
+               when others =>
+                  null;
+            end case;
+         end if;
 
          -- Send Axi Response
          axiSlaveReadResponse(v.axilReadSlave);
@@ -351,7 +356,8 @@ begin
          obWorkDout      => pushFifoDout(0),
          obWorkRead      => pushFifoRead(0),
          obPendMaster    => obPendMaster,
-         obPendSlave     => obPendSlave
+         obPendSlave     => obPendSlave,
+         obHeaderDebug   => debug(1 downto 0)
       );
 
 
@@ -375,7 +381,8 @@ begin
          dmaClk          => dmaClk,
          dmaClkRst       => dmaClkRst,
          dmaObMaster     => dmaObMaster,
-         dmaObSlave      => dmaObSlave
+         dmaObSlave      => dmaObSlave,
+         obPayloadDebug  => debug(3 downto 2)
       );
 
 
@@ -417,7 +424,8 @@ begin
          dmaClk          => dmaClk,
          dmaClkRst       => dmaClkRst,
          headIbMaster    => headIbMaster,
-         headIbSlave     => headIbSlave
+         headIbSlave     => headIbSlave,
+         ibHeaderDebug   => debug(5 downto 4)
       );
 
 
@@ -448,7 +456,8 @@ begin
          dmaClk          => dmaClk,
          dmaClkRst       => dmaClkRst,
          payIbMaster     => payIbMaster,
-         payIbSlave      => payIbSlave
+         payIbSlave      => payIbSlave,
+         ibPayloadDebug  => debug(8 downto 6)
       );
 
 end structure;

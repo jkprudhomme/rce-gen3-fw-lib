@@ -61,7 +61,10 @@ entity PpiIbHeader is
       dmaClk          : in  sl;
       dmaClkRst       : in  sl;
       headIbMaster    : in  AxiStreamMasterType;
-      headIbSlave     : out AxiStreamSlaveType
+      headIbSlave     : out AxiStreamSlaveType;
+
+      -- Debug Vectors
+      ibHeaderDebug   : out Slv32Array(1 downto 0)
    );
 end PpiIbHeader;
 
@@ -76,6 +79,7 @@ architecture structure of PpiIbHeader is
       ibPendDin     : slv(31 downto 0);
       ibFreeRead    : sl;
       ibError       : sl;
+      ibHeaderDebug : Slv32Array(1 downto 0);
       dmaReq        : AxiWriteDmaReqType;
    end record RegType;
 
@@ -86,6 +90,7 @@ architecture structure of PpiIbHeader is
       ibPendDin     => (others=>'0'),
       ibFreeRead    => '0',
       ibError       => '0',
+      ibHeaderDebug => (others=>(others=>'0')),
       dmaReq        => AXI_WRITE_DMA_REQ_INIT_C
    );
 
@@ -123,6 +128,8 @@ begin
       v.ibFreeRead  := '0';
       v.ibError     := '0';
 
+      v.ibHeaderDebug(0)(2 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 3);
+
       case r.state is
 
          when IDLE_S =>
@@ -152,6 +159,8 @@ begin
                   v.ibPendDin(30) := '0';
                end if;
             end if;
+
+            v.ibHeaderDebug(1) := r.dmaReq.address;
       end case;
 
       if axiRst = '1' then
@@ -167,11 +176,12 @@ begin
       rin <= v;
 
       -- Outputs
-      dmaReq      <= r.dmaReq;
-      ibPendWrite <= r.ibPendWrite;
-      ibPendDin   <= r.ibPendDin;
-      ibFreeRead  <= r.ibFreeRead;
-      ibAxiError  <= r.ibError;
+      dmaReq        <= r.dmaReq;
+      ibPendWrite   <= r.ibPendWrite;
+      ibPendDin     <= r.ibPendDin;
+      ibFreeRead    <= r.ibFreeRead;
+      ibAxiError    <= r.ibError;
+      ibHeaderDebug <= r.ibHeaderDebug;
 
    end process;
 
