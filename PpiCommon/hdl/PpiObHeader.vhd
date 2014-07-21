@@ -112,7 +112,7 @@ begin
    end process;
 
    -- Async
-   process (r, axiRst, dmaAck, obFreeAFull, obWorkValid, obWorkDout ) is
+   process (r, axiRst, dmaAck, obFreeAFull, obWorkValid, obWorkDout, intAxisCtrl ) is
       variable v : RegType;
    begin
       v := r;
@@ -122,6 +122,9 @@ begin
       v.obError     := '0';
 
       v.obHeaderDebug(0)(2 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 3);
+      v.obHeaderDebug(0)(4)          := r.dmaReq.request;
+      v.obHeaderDebug(0)(5)          := dmaAck.done;
+      v.obHeaderDebug(0)(6)          := intAxisCtrl.pause;
 
       case r.state is
 

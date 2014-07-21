@@ -228,6 +228,10 @@ begin
                v.rdError       := rdAck.readError;
                v.ibAxiError    := rdAck.readError;
 
+               if rdAck.readError = '1' then 
+                  v.ibPayloadDebug(0)(8) := '1';
+               end if;
+
                -- Return completion
                if r.opCode = 4 then
                   v.state := COMP_S;
@@ -252,6 +256,11 @@ begin
                v.ibAxiError    := wrAck.writeError;
                v.frameError    := wrAck.lastUser(PPI_ERR_C);
                v.overFlow      := wrAck.overflow;
+
+               if wrAck.writeError = '1' then 
+                  v.ibPayloadDebug(0)(7) := '1';
+                  v.ibPayloadDebug(0)(31 downto 30) := wrAck.errorValue;
+               end if;
 
                -- Do we populate completion
                if r.opCode = 6 then

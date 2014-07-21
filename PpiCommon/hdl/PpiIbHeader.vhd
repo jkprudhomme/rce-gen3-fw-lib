@@ -129,6 +129,8 @@ begin
       v.ibError     := '0';
 
       v.ibHeaderDebug(0)(2 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 3);
+      v.ibHeaderDebug(0)(4)          := r.dmaReq.request;
+      v.ibHeaderDebug(0)(5)          := dmaAck.done;
 
       case r.state is
 
