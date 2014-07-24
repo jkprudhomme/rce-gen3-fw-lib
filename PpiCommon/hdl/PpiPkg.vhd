@@ -56,7 +56,7 @@ package PpiPkg is
 
    -- A default PPI config is useful to have
    constant PPI_AXIS_CONFIG_INIT_C : AxiStreamConfigType := ppiAxiStreamConfig(PPI_TDATA_BYTES_C,PPI_TKEEP_MODE_C);
-   constant PPI_AXIS_HEADER_INIT_C : AxiStreamConfigType := ppiAxiStreamConfig(PPI_TDATA_BYTES_C,TKEEP_UNUSED_C);
+   constant PPI_AXIS_HEADER_INIT_C : AxiStreamConfigType := ppiAxiStreamConfig(PPI_TDATA_BYTES_C,TKEEP_COMP_C);
 
 
    -------------------------------------------------------------------------------------------------
