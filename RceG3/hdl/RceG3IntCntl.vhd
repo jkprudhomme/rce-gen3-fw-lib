@@ -162,6 +162,14 @@ begin
                   v.intEnable(conv_integer(icAxilWriteMaster.awaddr(GROUP_COUNT_BITS_C+3 downto 4)),i) := '1';
                end if;
             end loop;
+
+         -- Status/Disable Registers, 0x8xx8
+         elsif icAxilWriteMaster.awaddr(3 downto 2) = "10" then
+            for i in 0 to GROUP_SIZE_C-1 loop
+               if icAxilWriteMaster.wdata(i) = '1' then
+                  v.intEnable(conv_integer(icAxilWriteMaster.awaddr(GROUP_COUNT_BITS_C+3 downto 4)),i) := '0';
+               end if;
+            end loop;
          end if;
 
          -- Send Axi Response
