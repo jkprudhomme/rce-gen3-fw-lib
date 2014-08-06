@@ -17,8 +17,8 @@ entity tb is end tb;
 -- Define architecture
 architecture tb of tb is
 
-   --constant RCE_DMA_MODE_C        : RceDmaModeType      := RCE_DMA_AXIS_C;
-   constant RCE_DMA_MODE_C        : RceDmaModeType      := RCE_DMA_PPI_C;
+   constant RCE_DMA_MODE_C        : RceDmaModeType      := RCE_DMA_AXIS_C;
+   --constant RCE_DMA_MODE_C        : RceDmaModeType      := RCE_DMA_PPI_C;
 
    signal i2cSda                   : sl;
    signal i2cScl                   : sl;
@@ -101,7 +101,6 @@ begin
    extAxilWriteSlave   <= AXI_LITE_WRITE_SLAVE_INIT_C;
    coreAxilReadSlave   <= AXI_LITE_READ_SLAVE_INIT_C;
    coreAxilWriteSlave  <= AXI_LITE_WRITE_SLAVE_INIT_C;
-
 
 end tb;
 

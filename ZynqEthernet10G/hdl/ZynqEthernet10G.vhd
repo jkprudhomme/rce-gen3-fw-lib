@@ -82,12 +82,14 @@ architecture structure of ZynqEthernet10G is
    signal locObSlave          : AxiStreamSlaveType;
    signal statusWord          : slv(63 downto 0);
    signal statusSend          : sl;
+   signal xmacRst             : sl;
 
 begin
 
    -- Select PPI clock
    ppiClk    <= sysClk200;
    ppiClkRst <= sysClk200Rst;
+   xmacRst   <= not ppiState.online;
 
    -- PPI Crossbar
    U_PpiInterconnect : entity work.PpiInterconnect
@@ -170,6 +172,7 @@ begin
          HEADER_SIZE_G    => 16,
          AXIS_CONFIG_G    => PPI_AXIS_CONFIG_INIT_C
       ) port map (
+         xmacRst          => xmacRst,
          dmaClk           => sysClk200,
          dmaClkRst        => sysClk200Rst,
          dmaIbMaster      => locIbMaster,

@@ -59,8 +59,9 @@ entity XMacImport is
       phyRxc           : in  slv(7  downto 0);
       phyReady         : in  sl;
 
-      -- Local mac address
+      -- Configuration
       macAddress       : in  slv(47 downto 0);
+      byteSwap         : in  sl;
 
       -- Pause Values
       rxPauseReq       : out sl;
@@ -121,6 +122,52 @@ architecture XMacImport of XMacImport is
    signal macData          : slv(63 downto 0);
    signal macSize          : slv(2 downto 0);
    signal writeCount       : slv(15 downto 0);
+
+   -- Debug Signals
+   attribute dont_touch : string;
+
+   attribute dont_touch of frameShift0      : signal is "true";
+   attribute dont_touch of frameShift1      : signal is "true";
+   attribute dont_touch of frameShift2      : signal is "true";
+   attribute dont_touch of frameShift3      : signal is "true";
+   attribute dont_touch of frameShift4      : signal is "true";
+   attribute dont_touch of frameShift5      : signal is "true";
+   attribute dont_touch of rxdAlign         : signal is "true";
+   attribute dont_touch of dlyRxd           : signal is "true";
+   attribute dont_touch of crcDataWidth     : signal is "true";
+   attribute dont_touch of nxtCrcWidth      : signal is "true";
+   attribute dont_touch of nxtCrcValid      : signal is "true";
+   attribute dont_touch of crcDataValid     : signal is "true";
+   attribute dont_touch of crcFifoIn        : signal is "true";
+   attribute dont_touch of crcFifoOut       : signal is "true";
+   attribute dont_touch of phyRxcDly        : signal is "true";
+   attribute dont_touch of crcWidthDly0     : signal is "true";
+   attribute dont_touch of crcWidthDly1     : signal is "true";
+   attribute dont_touch of crcWidthDly2     : signal is "true";
+   attribute dont_touch of crcWidthDly3     : signal is "true";
+   attribute dont_touch of crcShift0        : signal is "true";
+   attribute dont_touch of crcShift1        : signal is "true";
+   attribute dont_touch of endDetect        : signal is "true";
+   attribute dont_touch of endShift0        : signal is "true";
+   attribute dont_touch of endShift1        : signal is "true";
+   attribute dont_touch of pauseShift2      : signal is "true";
+   attribute dont_touch of pauseShift3      : signal is "true";
+   attribute dont_touch of crcGood          : signal is "true";
+   attribute dont_touch of intLastLine      : signal is "true";
+   attribute dont_touch of intAdvance       : signal is "true";
+   attribute dont_touch of lastSOF          : signal is "true";
+   attribute dont_touch of pauseDet         : signal is "true";
+   attribute dont_touch of dlyPause         : signal is "true";
+   attribute dont_touch of intPause         : signal is "true";
+   attribute dont_touch of crcIn            : signal is "true";
+   attribute dont_touch of crcInit          : signal is "true";
+   attribute dont_touch of crcReset         : signal is "true";
+   attribute dont_touch of crcOut           : signal is "true";
+   attribute dont_touch of intIbMaster      : signal is "true";
+   attribute dont_touch of intIbCtrl        : signal is "true";
+   attribute dont_touch of macData          : signal is "true";
+   attribute dont_touch of macSize          : signal is "true";
+   attribute dont_touch of writeCount       : signal is "true";
 
 begin
 
@@ -446,14 +493,18 @@ begin
             pauseShift3 <= pauseShift2                               after TPD_G;
 
             -- Output data
-            macData(63 downto 56) <= crcFifoOut(39 downto 32) after TPD_G;
-            macData(55 downto 48) <= crcFifoOut(47 downto 40) after TPD_G;
-            macData(47 downto 40) <= crcFifoOut(55 downto 48) after TPD_G;
-            macData(39 downto 32) <= crcFifoOut(63 downto 56) after TPD_G;
-            macData(31 downto 24) <= crcFifoOut( 7 downto  0) after TPD_G;
-            macData(23 downto 16) <= crcFifoOut(15 downto  8) after TPD_G;
-            macData(15 downto  8) <= crcFifoOut(23 downto 16) after TPD_G;
-            macData( 7 downto  0) <= crcFifoOut(31 downto 24) after TPD_G;
+            if byteSwap = '1' then
+               macData(63 downto 56) <= crcFifoOut(39 downto 32) after TPD_G;
+               macData(55 downto 48) <= crcFifoOut(47 downto 40) after TPD_G;
+               macData(47 downto 40) <= crcFifoOut(55 downto 48) after TPD_G;
+               macData(39 downto 32) <= crcFifoOut(63 downto 56) after TPD_G;
+               macData(31 downto 24) <= crcFifoOut( 7 downto  0) after TPD_G;
+               macData(23 downto 16) <= crcFifoOut(15 downto  8) after TPD_G;
+               macData(15 downto  8) <= crcFifoOut(23 downto 16) after TPD_G;
+               macData( 7 downto  0) <= crcFifoOut(31 downto 24) after TPD_G;
+            else
+               macData <= crcFifoOut after TPD_G;
+            end if;
 
             -- Pause Frame Received, assert for two clocks
             intPause   <= intLastLine and crcGood and (pauseShift2 or pauseShift3) after TPD_G;
@@ -520,17 +571,17 @@ begin
    crcGood <= '1' when crcOut = X"E320BBDE" else '0';
 
    -- CRC
---   U_Crc32 : entity work.Crc32
---      generic map (
---         BYTE_WIDTH_G => 8
---      ) port map (
---         crcOut        => crcOut,
---         crcClk        => phyClk,
---         crcDataValid  => crcDataValid,
---         crcDataWidth  => crcDataWidth,
---         crcIn         => crcIn,
---         crcReset      => crcReset
---      ); 
+   U_Crc32 : entity work.Crc32
+      generic map (
+         BYTE_WIDTH_G => 8
+      ) port map (
+         crcOut        => crcOut,
+         crcClk        => phyClk,
+         crcDataValid  => crcDataValid,
+         crcDataWidth  => crcDataWidth,
+         crcIn         => crcIn,
+         crcReset      => crcReset
+      ); 
 
 end XMacImport;
 

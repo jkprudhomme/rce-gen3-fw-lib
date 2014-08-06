@@ -40,6 +40,7 @@ entity XMac is
    port (
 
       -- PPI Interface
+      xmacRst                 : in  sl;
       dmaClk                  : in  sl;
       dmaClkRst               : in  sl;
       dmaIbMaster             : out AxiStreamMasterType;
@@ -126,6 +127,7 @@ architecture structure of XMac is
    signal txCountEn         : sl;
    signal cntOutA           : SlVectorArray(11 downto 0,  7 downto 0);
    signal cntOutB           : SlVectorArray(1  downto 0, 31 downto 0);
+   signal phyReset          : sl;
 
    type RegType is record
       countReset        : sl;
@@ -135,6 +137,7 @@ architecture structure of XMac is
       pauseTime         : slv(15 downto 0);
       macAddress        : slv(47 downto 0);
       autoStatus        : slv(11 downto 0);
+      byteSwap          : sl;
       axilReadSlave     : AxiLiteReadSlaveType;
       axilWriteSlave    : AxiLiteWriteSlaveType;
    end record RegType;
@@ -147,6 +150,7 @@ architecture structure of XMac is
       pauseTime         => (others=>'0'),
       macAddress        => (others=>'0'),
       autoStatus        => (others=>'0'),
+      byteSwap          => '0',
       axilReadSlave     => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave    => AXI_LITE_WRITE_SLAVE_INIT_C
    );
@@ -159,11 +163,12 @@ begin
    -------------------------------------------
    -- XAUI
    -------------------------------------------
+   phyReset <= r.phyReset or xmacRst;
 
    U_ZynqXaui: zynq_10g_xaui
       PORT map (
          dclk                  => axilClk,
-         reset                 => r.phyReset,
+         reset                 => phyReset,
          clk156_out            => ethClk,
          refclk_p              => ethRefClkP,
          refclk_n              => ethRefClkM,
@@ -251,6 +256,7 @@ begin
          phyRxc        => xauiRxc,
          phyReady      => phyStatus(7),
          macAddress    => r.macAddress,
+         byteSwap      => r.byteSwap,
          rxPauseReq    => rxPauseReq,
          rxPauseSet    => rxPauseSet,
          rxPauseValue  => rxPauseValue,
@@ -284,6 +290,7 @@ begin
          interFrameGap     => r.interFrameGap,
          pauseTime         => r.pauseTime,
          macAddress        => r.macAddress,
+         byteSwap          => r.byteSwap,
          txCountEn         => txCountEn,
          txUnderRun        => txUnderRun,
          txLinkNotReady    => txLinkNotReady
@@ -413,7 +420,10 @@ begin
                v.macAddress(47 downto 32) := axilWriteMaster.wdata(15 downto 0);
 
             when x"001C" => 
-               v.autoStatus(3 downto 0) := axilWriteMaster.wdata(3 downto 0);
+               v.autoStatus := axilWriteMaster.wdata(11 downto 0);
+
+            when x"0028" => 
+               v.byteSwap := axilWriteMaster.wdata(0);
 
             when others => null;
          end case;
@@ -460,6 +470,10 @@ begin
 
                   when X"24" =>
                      v.axilReadSlave.rdata(5 downto 0) := phyDebug;
+
+                  when X"28" =>
+                     v.axilReadSlave.rdata(0) := r.byteSwap;
+
                   when others => null;
                end case;
 

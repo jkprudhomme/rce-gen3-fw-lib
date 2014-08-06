@@ -65,6 +65,7 @@ entity XMacExport is
       interFrameGap    : in  slv(3  downto 0);
       pauseTime        : in  slv(15 downto 0);
       macAddress       : in  slv(47 downto 0);
+      byteSwap         : in  sl;
 
       -- Errors
       txCountEn        : out sl;
@@ -131,6 +132,51 @@ architecture XMacExport of XMacExport is
    constant ST_PAUSE_C  : slv(2 downto 0) := "101";
    constant ST_PAD_C    : slv(2 downto 0) := "110";
 
+   -- Debug Signals
+   attribute dont_touch : string;
+
+   attribute dont_touch of intAdvance       : signal is "true";
+   attribute dont_touch of intDump          : signal is "true";
+   attribute dont_touch of intRunt          : signal is "true";
+   attribute dont_touch of intPad           : signal is "true";
+   attribute dont_touch of intLastLine      : signal is "true";
+   attribute dont_touch of intLastValidByte : signal is "true";
+   attribute dont_touch of frameShift0      : signal is "true";
+   attribute dont_touch of frameShift1      : signal is "true";
+   attribute dont_touch of txEnable0        : signal is "true";
+   attribute dont_touch of txEnable1        : signal is "true";
+   attribute dont_touch of txEnable2        : signal is "true";
+   attribute dont_touch of txEnable3        : signal is "true";
+   attribute dont_touch of txEnable4        : signal is "true";
+   attribute dont_touch of nxtMaskIn        : signal is "true";
+   attribute dont_touch of nxtEOF           : signal is "true";
+   attribute dont_touch of intData          : signal is "true";
+   attribute dont_touch of stateCount       : signal is "true";
+   attribute dont_touch of stateCountRst    : signal is "true";
+   attribute dont_touch of pausePreCnt      : signal is "true";
+   attribute dont_touch of importPauseCnt   : signal is "true";
+   attribute dont_touch of exportPauseCnt   : signal is "true";
+   attribute dont_touch of exportWordCnt    : signal is "true";
+   attribute dont_touch of pauseTx          : signal is "true";
+   attribute dont_touch of pausePrst        : signal is "true";
+   attribute dont_touch of pauseLast        : signal is "true";
+   attribute dont_touch of pauseData        : signal is "true";
+   attribute dont_touch of crcFifoIn        : signal is "true";
+   attribute dont_touch of crcFifoOut       : signal is "true";
+   attribute dont_touch of crcInv           : signal is "true";
+   attribute dont_touch of crcIn            : signal is "true";
+   attribute dont_touch of crcInit          : signal is "true";
+   attribute dont_touch of crcMaskIn        : signal is "true";
+   attribute dont_touch of crcInAdj         : signal is "true";
+   attribute dont_touch of crcDataWidth     : signal is "true";
+   attribute dont_touch of crcDataValid     : signal is "true";
+   attribute dont_touch of crcReset         : signal is "true";
+   attribute dont_touch of crcOut           : signal is "true";
+   attribute dont_touch of intObMaster      : signal is "true";
+   attribute dont_touch of intObSlave       : signal is "true";
+   attribute dont_touch of intError         : signal is "true";
+   attribute dont_touch of nxtError         : signal is "true";
+
 begin
 
    ------------------------------------------
@@ -175,14 +221,20 @@ begin
    intObSlave.tReady <= (intAdvance and (not intPad)) or intDump;
 
    -- Re-Order Bytes
-   intData(63 downto 56) <= intObMaster.tData(39 downto 32);
-   intData(55 downto 48) <= intObMaster.tData(47 downto 40);
-   intData(47 downto 40) <= intObMaster.tData(55 downto 48);
-   intData(39 downto 32) <= intObMaster.tData(63 downto 56);
-   intData(31 downto 24) <= intObMaster.tData(7  downto  0);
-   intData(23 downto 16) <= intObMaster.tData(15 downto  8);
-   intData(15 downto  8) <= intObMaster.tData(23 downto 16);
-   intData(7  downto  0) <= intObMaster.tData(31 downto 24);
+   process ( intObMaster, byteSwap ) begin
+      if byteSwap = '1' then
+         intData(63 downto 56) <= intObMaster.tData(39 downto 32);
+         intData(55 downto 48) <= intObMaster.tData(47 downto 40);
+         intData(47 downto 40) <= intObMaster.tData(55 downto 48);
+         intData(39 downto 32) <= intObMaster.tData(63 downto 56);
+         intData(31 downto 24) <= intObMaster.tData(7  downto  0);
+         intData(23 downto 16) <= intObMaster.tData(15 downto  8);
+         intData(15 downto  8) <= intObMaster.tData(23 downto 16);
+         intData(7  downto  0) <= intObMaster.tData(31 downto 24);
+      else
+         intData <= intObmaster.tData(63 downto 0);
+      end if;
+   end process;
 
    -- State machine logic
    process ( phyClk ) begin
@@ -724,17 +776,17 @@ begin
    crcInAdj(7  downto  0) <= crcIn(63 downto 56);
 
    -- CRC
---   U_Crc32 : entity work.Crc32
---      generic map (
---         BYTE_WIDTH_G => 8
---      ) port map (
---         crcOut        => crcOut,
---         crcClk        => phyClk,
---         crcDataValid  => crcDataValid,
---         crcDataWidth  => crcDataWidth,
---         crcIn         => crcInAdj,
---         crcReset      => crcReset
---      ); 
+   U_Crc32 : entity work.Crc32
+      generic map (
+         BYTE_WIDTH_G => 8
+      ) port map (
+         crcOut        => crcOut,
+         crcClk        => phyClk,
+         crcDataValid  => crcDataValid,
+         crcDataWidth  => crcDataWidth,
+         crcIn         => crcInAdj,
+         crcReset      => crcReset
+      ); 
 
    -- Invert CRC for transmission
    crcInv(31 downto 24) <= not crcOut(7  downto  0);
