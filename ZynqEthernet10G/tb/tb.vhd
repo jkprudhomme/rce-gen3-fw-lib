@@ -47,6 +47,10 @@ architecture tb of tb is
    signal armEthRx                 : ArmEthRxArray(1 downto 0);
    signal clkSelA                  : slv(1 downto 0);
    signal clkSelB                  : slv(1 downto 0);
+   signal ethRxP                   : slv(3 downto 0);
+   signal ethRxM                   : slv(3 downto 0);
+   signal ethRefClkP               : sl;
+   signal ethRefClkM               : sl;
 
 begin
 
@@ -91,16 +95,59 @@ begin
    i2cSda <= '1';
    i2cScl <= '1';
 
-   dmaClk    <= (others=>sysClk125);
-   dmaClkRst <= (others=>sysClk125Rst);
+   dmaClk    <= (others=>sysClk200);
+   dmaClkRst <= (others=>sysClk200Rst);
 
-   dmaIbMaster <= dmaObMaster;
-   dmaObSlave  <= dmaIbSlave;
+   dmaIbMaster(3 downto 1) <= dmaObMaster(3 downto 1);
+   dmaObSlave(3 downto 1)  <= dmaIbSlave(3 downto 1);
 
-   extAxilReadSlave    <= AXI_LITE_READ_SLAVE_INIT_C;
-   extAxilWriteSlave   <= AXI_LITE_WRITE_SLAVE_INIT_C;
    coreAxilReadSlave   <= AXI_LITE_READ_SLAVE_INIT_C;
    coreAxilWriteSlave  <= AXI_LITE_WRITE_SLAVE_INIT_C;
+
+
+   process begin
+      ethRefClkP  <= '0';
+      ethRefClkM  <= '1';
+      wait for 3.2 ns;
+      ethRefClkP  <= '1';
+      ethRefClkM  <= '0';
+      wait for 3.2 ns;
+   end process;
+
+   U_XMac : XMac is
+      generic map (
+         TPD_G            => 1 ns,
+         IB_ADDR_WIDTH_G  => 9,
+         OB_ADDR_WIDTH_G  => 9,
+         PAUSE_THOLD_G    => 255,
+         VALID_THOLD_G    => 0,
+         EOH_BIT_G        => 0,
+         ERR_BIT_G        => 0,
+         HEADER_SIZE_G    => 16,
+         AXIS_CONFIG_G    => AXI_STREAM_CONFIG_INIT_C
+      ) port map (
+         xmacRst          => '0',
+         dmaClk           => sysClk200,
+         dmaClkRst        => sysClk200Rst,
+         dmaIbMaster      => dmaIbMaster(0),
+         dmaIbSlave       => dmaIbSlave(0),
+         dmaObMaster      => dmaObMaster(0),
+         dmaObSlave       => dmaObSlave(0),
+         axilClk          => axilClk,
+         axilClkRst       => axilClkRst,
+         axilWriteMaster  => extAxilWriteMaster,
+         axilWriteSlave   => extAxilWriteSlave,
+         axilReadMaster   => extAxilReadMaster,
+         axilReadSlave    => extAxilReadSlave,
+         statusWord       => open,
+         statusSend       => open,
+         ethRefClkP       => ethRefClkP,
+         ethRefClkM       => ethRefClkM,
+         ethRxP           => ethTxP,
+         ethRxM           => ethTxM,
+         ethTxP           => ethTxP,
+         ethTxM           => ethTxM
+      );
 
 end tb;
 
