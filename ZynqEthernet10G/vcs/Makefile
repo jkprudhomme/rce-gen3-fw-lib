@@ -105,10 +105,10 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3IntCntl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Top.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/simlink/rtl/RceG3CpuSim.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/zynq_10g_xaui.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacImport.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacExport.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMac.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/ZynqEthernet10G.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/tb.vhd
 
 # VHPI Library

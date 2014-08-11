@@ -114,7 +114,7 @@ begin
       wait for 3.2 ns;
    end process;
 
-   U_XMac : XMac is
+   U_XMac : entity work.XMac
       generic map (
          TPD_G            => 1 ns,
          IB_ADDR_WIDTH_G  => 9,
@@ -133,8 +133,8 @@ begin
          dmaIbSlave       => dmaIbSlave(0),
          dmaObMaster      => dmaObMaster(0),
          dmaObSlave       => dmaObSlave(0),
-         axilClk          => axilClk,
-         axilClkRst       => axilClkRst,
+         axilClk          => axiClk,
+         axilClkRst       => axiClkRst,
          axilWriteMaster  => extAxilWriteMaster,
          axilWriteSlave   => extAxilWriteSlave,
          axilReadMaster   => extAxilReadMaster,
@@ -143,10 +143,10 @@ begin
          statusSend       => open,
          ethRefClkP       => ethRefClkP,
          ethRefClkM       => ethRefClkM,
-         ethRxP           => ethTxP,
-         ethRxM           => ethTxM,
-         ethTxP           => ethTxP,
-         ethTxM           => ethTxM
+         ethRxP           => ethRxP,
+         ethRxM           => ethRxM,
+         ethTxP           => ethRxP,
+         ethTxM           => ethRxM
       );
 
 end tb;
