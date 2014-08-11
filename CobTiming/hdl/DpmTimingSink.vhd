@@ -282,7 +282,6 @@ begin
 
       v.cfgReset  := '0';
       v.cfgSet    := '0';
-      v.cfgDelay  := axiWriteMaster.wdata(4 downto 0);
       v.ocFifoRd  := '0';
 
       axiSlaveWaitTxn(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave, axiStatus);
@@ -300,7 +299,8 @@ begin
 
          -- OC Delay configuration
          elsif axiWriteMaster.awaddr(11 downto 0) = x"008" then
-            v.cfgSet := '1';
+            v.cfgSet   := '1';
+            v.cfgDelay := axiWriteMaster.wdata(4 downto 0);
          end if;
 
          -- Send Axi response
@@ -315,6 +315,10 @@ begin
          -- OC Fifo Write Enable
          if axiReadMaster.araddr(11 downto 0) = x"004" then
             v.axiReadSlave.rdata(0) := r.ocFifoWrEn;
+
+         -- OC Delay configuration
+         elsif axiReadMaster.araddr(11 downto 0) = x"008" then
+            v.axiReadSlave.rdata(4 downto 0) := r.cfgDelay;
 
          -- OC FIFO status
          elsif axiReadMaster.araddr(11 downto 0) = x"00C" then

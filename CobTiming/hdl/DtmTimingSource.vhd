@@ -96,7 +96,7 @@ architecture STRUCTURE of DtmTimingSource is
 
    type RegType is record
       fbCfgSet          : slv(7 downto 0);
-      fbCfgDelay        : slv(4 downto 0);
+      fbCfgDelay        : Slv5Array(7 downto 0);
       cmdCode           : slv(7 downto 0);
       cmdCodeEn         : sl;
       ocFifoRd          : sl;
@@ -109,7 +109,7 @@ architecture STRUCTURE of DtmTimingSource is
 
    constant REG_INIT_C : RegType := (
       fbCfgSet          => (others=>'0'),
-      fbCfgDelay        => (others=>'0'),
+      fbCfgDelay        => (others=>(others=>'0')),
       cmdCode           => (others=>'0'),
       cmdCodeEn         => '0',
       ocFifoRd          => '0',
@@ -284,7 +284,7 @@ begin
             configClk       => axiClk,
             configClkRst    => axiClkRst,
             configSet       => r.fbCfgSet(i),
-            configDelay     => r.fbCfgDelay,
+            configDelay     => r.fbCfgDelay(i),
             statusIdleCnt   => fbStatusIdleCnt(i),
             statusErrorCnt  => fbStatusErrorCnt(i)
          );
@@ -361,7 +361,6 @@ begin
       v := r;
 
       v.fbCfgSet   := (others=>'0');
-      v.fbCfgDelay := axiWriteMaster.wdata(4 downto 0);
       v.cmdCodeEn  := '0';
       v.ocFifoRd   := '0';
       v.fbFifoRd   := (others=>'0');
@@ -377,7 +376,8 @@ begin
 
          -- FB Delay configuration, one per FIFO
          elsif axiWriteMaster.awaddr(11 downto 8)  = x"1" then
-            v.fbCfgSet(conv_integer(axiWriteMaster.awaddr(5 downto 2))) := '1';
+            v.fbCfgSet(conv_integer(axiWriteMaster.awaddr(5 downto 2)))   := '1';
+            v.fbCfgDelay(conv_integer(axiWriteMaster.awaddr(5 downto 2))) := axiWriteMaster.wdata(4 downto 0);
 
          -- OC Opcode Generation
          elsif axiWriteMaster.awaddr(11 downto 0)  = x"400" then
@@ -400,6 +400,10 @@ begin
          -- FB Fifo Write Enable, one per FIFO
          if axiReadMaster.araddr(11 downto 0)  = x"000" then
             v.axiReadSlave.rdata(7 downto 0) := r.fbFifoWrEn;
+
+         -- FB Delay configuration, one per FIFO
+         elsif axiReadMaster.araddr(11 downto 8)  = x"1" then
+            v.axiReadSlave.rdata(4 downto 0) := r.fbCfgDelay(conv_integer(axiReadMaster.araddr(5 downto 2)));
 
          -- Feedback FIFO read
          elsif axiReadMaster.araddr(11 downto 8)  = x"2" then
