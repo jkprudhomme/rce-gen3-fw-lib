@@ -10,6 +10,9 @@
 --
 -- Outbound PPI Message Format
 --    Word 0:
+--       31:00 = Context Value (echoed)
+--       63:32 = Unused (echoed)
+--    Word 1:
 --       31:00 = Base Address
 --       35:32 = First Word Byte Enables (write)
 --       39:36 = Last  Word Byte Enables (write) (ignored for length = 0)
@@ -17,13 +20,16 @@
 --          43 = Write Bit (set to 1 for writes) 
 --       60:56 = Burst length, 0 = 1x32, 1 = 2x32, ... (up to 32)
 --       63:61 = Unused
---    Word 1:
+--    Word 2:
 --       31:00 = Value 0 (if write)
 --       63:32 = Value 1 (if write)
 --    (data continues for writes depending on burst length)
 --
 -- Inbound PPI Message Format
---    Word 0: (echoed from outbound frame)
+--    Word 0:
+--       31:00 = Context Value (echoed)
+--       63:32 = Unused (echoed)
+--    Word 1: (echoed from outbound frame)
 --       31:00 = Base Address
 --       35:32 = First Word Byte Enables (write)
 --       39:36 = Last  Word Byte Enables (write)
@@ -31,7 +37,7 @@
 --          43 = Write Bit (set to 1 for writes) (echoed)
 --       60:56 = Burst length, 0 = 1x32, 1 = 2x32, ... (up to 32)
 --       63:61 = Unused
---    Word 1:
+--    Word 2:
 --       31:00 = Value 0 (if read)
 --       63:32 = Value 1 (if read)
 --    (data continues for reads depending on burst length)
@@ -92,8 +98,10 @@ architecture structure of PpiToAxiLite is
    signal intObMaster      : AxiStreamMasterType;
    signal intObSlave       : AxiStreamSlaveType;
 
-   type StateType is (S_IDLE_C, S_START_C, S_WRITE_C, S_WRITE_AXI_C, 
-                      S_READ_C, S_READ_AXI_C, S_STATUS_C, S_DUMP_C );
+   type StateType is (S_IDLE_C, S_CTX_C, S_ADDR_C, S_START_C, 
+                      S_WRITE_C, S_WRITE_AXI_C, 
+                      S_READ_C, S_READ_AXI_C, 
+                      S_STATUS_C, S_DUMP_C );
 
    type RegType is record
       address         : slv(31 downto 0);
@@ -236,6 +244,31 @@ begin
 
             -- Value is ready on PPI interface
             if intObMaster.tValid = '1' and intIbCtrl.pause = '0' then
+               v.state := S_CTX_C;
+            end if;
+
+         when S_CTX_C =>
+
+            -- Echo Transaction Data
+            v.intIbMaster       := intObMaster;
+            v.intIbMaster.tLast := '0';
+            v.intIbMaster.tUser := (others=>'0');
+            v.intObSlave.tReady := '1';
+
+            -- Should not be EOF
+            if intObMaster.tLast = '1' then
+               v.state              := S_IDLE_C;
+               v.intIbMaster.tValid := '0';
+            else
+               v.state := S_ADDR_C;
+            end if;
+
+         when S_ADDR_C =>
+            v.intIbMaster := AXI_STREAM_MASTER_INIT_C;
+            v.intObSlave  := AXI_STREAM_SLAVE_INIT_C;
+
+            -- Value is ready on PPI interface
+            if intObMaster.tValid = '1' then
                v.address   := intObMaster.tData(31 downto  0);
                v.firstStrb := intObMaster.tData(35 downto 32);
                v.lastStrb  := intObMaster.tData(39 downto 36);
