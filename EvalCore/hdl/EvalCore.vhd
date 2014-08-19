@@ -117,6 +117,7 @@ begin
          userInterrupt       => userInterrupt,
          armEthTx            => open,
          armEthRx            => (others=>ARM_ETH_RX_INIT_C),
+         armEthMode          => (others=>'0'),
          clkSelA             => open,
          clkSelB             => open
       );

@@ -80,6 +80,11 @@ entity RceG3AxiCntl is
       coreAxilWriteMaster  : out    AxiLiteWriteMasterType;
       coreAxilWriteSlave   : in     AxiLiteWriteSlaveType;
 
+      -- Ethernet Mode
+      armEthMode           : in     slv(31 downto 0);
+      eFuseValue           : out    slv(31 downto 0);
+      deviceDna            : out    slv(63 downto 0);
+
       -- Clock Select Lines
       clkSelA              : out    slv(1 downto 0);
       clkSelB              : out    slv(1 downto 0)
@@ -389,6 +394,8 @@ begin
                   v.intReadSlave.rdata := dnaValue(31 downto 0);
                when X"0030" =>
                   v.intReadSlave.rdata := eFuseUsr;
+               when X"0034" =>
+                  v.intReadSlave.rdata := armEthMode;
                when others => null;
             end case;
          else
@@ -435,7 +442,7 @@ begin
          dnaValue => dnaValue,
          dnaValid => dnaValid
       );
-
+   deviceDna <= dnaValue;
 
    -------------------------------------
    -- EFuse
@@ -444,5 +451,6 @@ begin
       port map (
          EFUSEUSR => eFuseUsr
       );
+   eFuseValue <= eFuseUsr;
 
 end architecture structure;

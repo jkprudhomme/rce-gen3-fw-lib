@@ -131,6 +131,7 @@ architecture STRUCTURE of DtmCore is
    signal pcieAxilWriteSlave  : AxiLiteWriteSlaveType;
    signal armEthTx            : ArmEthTxArray(1 downto 0);
    signal armEthRx            : ArmEthRxArray(1 downto 0);
+   signal armEthMode          : slv(31 downto 0);
 
    attribute KEEP_HIERARCHY : string;
    attribute KEEP_HIERARCHY of
@@ -198,6 +199,7 @@ begin
          userInterrupt       => userInterrupt,
          armEthTx            => armEthTx,
          armEthRx            => armEthRx,
+         armEthMode          => armEthMode,
          clkSelA             => open,
          clkSelB             => open
       );
@@ -280,6 +282,7 @@ begin
    idmaClkRst(3)   <= isysClk125Rst;
    idmaObSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;
    idmaIbMaster(3) <= AXI_STREAM_MASTER_INIT_C;
+   armEthMode      <= x"00000001"; -- 1 Gig on lane 0
 
 
    --------------------------------------------------

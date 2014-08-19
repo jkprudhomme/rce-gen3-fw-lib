@@ -78,6 +78,7 @@ entity RceG3Top is
       -- Ethernet
       armEthTx                 : out   ArmEthTxArray(1 downto 0);
       armEthRx                 : in    ArmEthRxArray(1 downto 0);
+      armEthMode               : in    slv(31 downto 0);
 
       -- Programmable Clock Select
       clkSelA                  : out   slv(1 downto 0);
@@ -173,6 +174,8 @@ architecture structure of RceG3Top is
    signal armInterrupt        : slv(15 downto 0);
    signal dmaInterrupt        : slv(DMA_INT_COUNT_C-1 downto 0);
    signal bsiInterrupt        : sl;
+   signal eFuseValue          : slv(31 downto 0);
+   signal deviceDna           : slv(63 downto 0);
 
    attribute KEEP_HIERARCHY : string;
    attribute KEEP_HIERARCHY of
@@ -309,7 +312,10 @@ begin
          coreAxilWriteMaster  => coreAxilWriteMaster,
          coreAxilWriteSlave   => coreAxilWriteSlave,
          clkSelA              => clkSelA,
-         clkSelB              => clkSelB
+         clkSelB              => clkSelB,
+         armEthMode           => armEthMode,
+         eFuseValue           => eFuseValue,
+         deviceDna            => deviceDna
       );
 
 
@@ -331,6 +337,9 @@ begin
          acpWriteMaster   => bsiAcpWriteMaster,
          acpWriteSlave    => bsiAcpWriteSlave,
          bsiInterrupt     => bsiInterrupt,
+         armEthMode       => armEthMode,
+         eFuseValue       => eFuseValue,
+         deviceDna        => deviceDna,
          i2cSda           => i2cSda,
          i2cScl           => i2cScl
       );

@@ -97,6 +97,7 @@ architecture STRUCTURE of DpmCore is
    signal coreAxilWriteSlave  : AxiLiteWriteSlaveType;
    signal armEthTx            : ArmEthTxArray(1 downto 0);
    signal armEthRx            : ArmEthRxArray(1 downto 0);
+   signal armEthMode          : slv(31 downto 0);
 
 begin
 
@@ -156,6 +157,7 @@ begin
          userInterrupt       => userInterrupt,
          armEthTx            => armEthTx,
          armEthRx            => armEthRx,
+         armEthMode          => armEthMode,
          clkSelA             => open,
          clkSelB             => open
       );
@@ -193,6 +195,7 @@ begin
       ethTxP(3 downto 1) <= (others=>'0');
       ethTxM(3 downto 1) <= (others=>'0');
       armEthRx(1)        <= ARM_ETH_RX_INIT_C;
+      armEthMode         <= x"00000001"; -- 1 Gig on lane 0
 
       U_AxiLiteEmpty : entity work.AxiLiteEmpty
          generic map (
@@ -235,7 +238,8 @@ begin
             ethTxM             => ethTxM
          );
 
-      armEthRx <= (others=>ARM_ETH_RX_INIT_C);
+      armEthRx   <= (others=>ARM_ETH_RX_INIT_C);
+      armEthMode <= x"03030303"; -- XAUI on lanes 3:0
 
    end generate;
 

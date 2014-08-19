@@ -52,6 +52,9 @@ entity RceG3Bsi is
 
       -- Interrupt
       bsiInterrupt    : out sl;
+      armEthMode      : in  slv(31 downto 0);
+      eFuseValue      : in  slv(31 downto 0);
+      deviceDna       : in  slv(63 downto 0);
 
       -- IIC Interface
       i2cSda          : inout sl;
@@ -210,8 +213,32 @@ begin
          WEA   => i2cBramWr
       );
 
-   -- Mux high order address, output almost full state at address 2048 (0x0800)
-   i2cBramDout <= aFullData when i2cBramAddr(11) = '1' else locBramDout;
+   -- Mux I2C Output Data
+   process ( i2cBramAddr, aFullData, armEthMode, eFuseValue, deviceDna, locBramDout ) begin
+      case i2cBramAddr(11 downto 0) is 
+         when x"800" => i2cBramDout <= aFullData; -- Bit 0 = AFULL
+         when x"801" => i2cBramDout <= (others=>'0');
+         when x"802" => i2cBramDout <= (others=>'0');
+         when x"803" => i2cBramDout <= (others=>'0');
+         when x"804" => i2cBramDout <= armEthMode(7  downto  0);
+         when x"805" => i2cBramDout <= armEthMode(15 downto  8);
+         when x"806" => i2cBramDout <= armEthMode(23 downto 16);
+         when x"807" => i2cBramDout <= armEthMode(31 downto 24);
+         when x"808" => i2cBramDout <= eFuseValue(7  downto  0);
+         when x"809" => i2cBramDout <= eFuseValue(15 downto  8);
+         when x"80A" => i2cBramDout <= eFuseValue(23 downto 16);
+         when x"80B" => i2cBramDout <= eFuseValue(31 downto 24);
+         when x"80C" => i2cBramDout <= deviceDna(7  downto  0);
+         when x"80D" => i2cBramDout <= deviceDna(15 downto  8);
+         when x"80E" => i2cBramDout <= deviceDna(23 downto 16);
+         when x"80F" => i2cBramDout <= deviceDna(31 downto 24);
+         when x"810" => i2cBramDout <= deviceDna(39 downto 32);
+         when x"811" => i2cBramDout <= deviceDna(47 downto 40);
+         when x"812" => i2cBramDout <= deviceDna(55 downto 48);
+         when x"813" => i2cBramDout <= deviceDna(63 downto 56);
+         when others => i2cBramDout <= locBramDout; -- DPRAM 0x000 - 0x7FF
+      end case;
+   end process;
 
    -- Register almost full data
    process ( axiClk ) begin
