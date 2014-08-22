@@ -183,7 +183,7 @@ begin
          TPD_G                => TPD_G,
          PIPE_STAGES_G        => 0,
          SLAVE_READY_EN_G     => false,
-         VALID_THOLD_G        => 0,
+         VALID_THOLD_G        => 1,
          BRAM_EN_G            => true,
          XIL_DEVICE_G         => "7SERIES",
          USE_BUILT_IN_G       => false,
@@ -316,7 +316,6 @@ begin
             rxdAlign       <= '0'           after TPD_G;
             lastSOF        <= '0'           after TPD_G;
             dlyRxd         <= (others=>'0') after TPD_G;
-            crcInit        <= '0'           after TPD_G;
             crcDataValid   <= '0'           after TPD_G;
             crcDataWidth   <= "000"         after TPD_G;
             endDetect      <= '0'           after TPD_G;
@@ -364,11 +363,9 @@ begin
 
             -- CRC Valid Signal
             if frameShift0 = '1' and frameShift1 = '0' then
-               crcInit      <= '1'   after TPD_G;
                crcDataValid <= '1'   after TPD_G;
                crcDataWidth <= "111" after TPD_G;
             else
-               crcInit <= '0' after TPD_G;
 
                -- Clear valid when width is not zero
                if crcDataWidth /= 7 then
@@ -410,6 +407,8 @@ begin
       end if;
    end process;
 
+   -- Generate init
+   crcInit <= frameShift0 and (not frameShift1);
 
    -- CRC Delay FIFO
    U_CrcFifo: entity work.Fifo
@@ -546,7 +545,7 @@ begin
                macSize     <= "011" after TPD_G;
                intLastLine <= '1'   after TPD_G;
             else
-               macSize     <= "000" after TPD_G;
+               macSize     <= "111" after TPD_G;
                intLastLine <= '0'   after TPD_G;
             end if;
          end if;
@@ -570,7 +569,8 @@ begin
    crcIn(7  downto  0) <= crcFifoIn(63 downto 56);
 
    -- Detect good CRC
-   crcGood <= '1' when crcOut = X"E320BBDE" else '0';
+   --crcGood <= '1' when crcOut = X"E320BBDE" else '0';
+   crcGood <= '1' when crcOut = X"1cdf4421" else '0';
 
    -- CRC
    U_Crc32 : entity work.Crc32

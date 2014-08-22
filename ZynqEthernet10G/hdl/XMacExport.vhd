@@ -481,7 +481,6 @@ begin
             txEnable2      <= '0'           after TPD_G;
             txEnable3      <= '0'           after TPD_G;
             txEnable4      <= '0'           after TPD_G;
-            crcInit        <= '0'           after TPD_G;
             crcDataValid   <= '0'           after TPD_G;
             crcDataWidth   <= (others=>'0') after TPD_G;
             crcMaskIn      <= (others=>'0') after TPD_G;
@@ -520,13 +519,9 @@ begin
             -- CRC Input Control. 
             -- Assert init after shift 1, before shift 2
             if frameShift0 = '1' and frameShift1 = '0' then
-               crcInit      <= '1'   after TPD_G;
                crcDataValid <= '1'   after TPD_G;
                crcDataWidth <= "111" after TPD_G;
             else
-
-               -- Init asserted for one pulse
-               crcInit        <= '0'         after TPD_G;
                crcDataValid <= frameShift0 after TPD_G;
 
                -- Last line
@@ -566,6 +561,9 @@ begin
          end if;
       end if;
    end process;
+
+   -- Generate init
+   crcInit <= frameShift0 and (not frameShift1);
 
    -- Select CRC FIFO Data
    crcFifoIn(71 downto 64) <= crcMaskIn;
