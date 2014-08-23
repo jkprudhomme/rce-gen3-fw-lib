@@ -569,7 +569,6 @@ begin
    crcIn(7  downto  0) <= crcFifoIn(63 downto 56);
 
    -- Detect good CRC
-   --crcGood <= '1' when crcOut = X"E320BBDE" else '0';
    crcGood <= '1' when crcOut = X"1cdf4421" else '0';
 
    -- CRC

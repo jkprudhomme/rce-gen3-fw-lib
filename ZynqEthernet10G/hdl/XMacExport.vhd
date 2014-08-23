@@ -107,7 +107,7 @@ architecture XMacExport of XMacExport is
    signal pauseData        : slv(63 downto 0);
    signal crcFifoIn        : slv(71 downto 0);
    signal crcFifoOut       : slv(71 downto 0);
-   signal crcInv           : slv(31 downto 0);
+   signal crcTx            : slv(31 downto 0);
    signal crcIn            : slv(63 downto 0);
    signal crcInit          : sl;
    signal crcMaskIn        : slv(7  downto 0);
@@ -163,7 +163,7 @@ architecture XMacExport of XMacExport is
    attribute dont_touch of pauseData        : signal is "true";
    attribute dont_touch of crcFifoIn        : signal is "true";
    attribute dont_touch of crcFifoOut       : signal is "true";
-   attribute dont_touch of crcInv           : signal is "true";
+   attribute dont_touch of crcTx            : signal is "true";
    attribute dont_touch of crcIn            : signal is "true";
    attribute dont_touch of crcInit          : signal is "true";
    attribute dont_touch of crcMaskIn        : signal is "true";
@@ -644,56 +644,56 @@ begin
                      phyTxd <= crcFifoOut(63 downto 0)               after TPD_G;
                      phyTxc <= x"00"                                 after TPD_G;
                   when x"80" => 
-                     phyTxd(63 downto 56) <= crcInv(7  downto 0)     after TPD_G;
+                     phyTxd(63 downto 56) <= crcTx(7  downto 0)      after TPD_G;
                      phyTxd(55 downto  0) <= crcFifoOut(55 downto 0) after TPD_G;
                      phyTxc               <= x"00"                   after TPD_G;
                   when x"07" => 
                      phyTxd(63 downto 24) <= x"BCBCBCBCFD"           after TPD_G;
-                     phyTxd(23 downto  0) <= crcInv(31 downto 8)     after TPD_G;
+                     phyTxd(23 downto  0) <= crcTx(31 downto 8)      after TPD_G;
                      phyTxc               <= x"F8"                   after TPD_G;
                   when x"0F" => 
                      phyTxd(63 downto 32) <= x"BCBCBCFD"             after TPD_G;
-                     phyTxd(31 downto  0) <= crcInv                  after TPD_G;
+                     phyTxd(31 downto  0) <= crcTx                   after TPD_G;
                      phyTxc               <= x"F0"                   after TPD_G;
                   when x"1E" => 
                      phyTxd(63 downto 40) <= x"BCBCFD"               after TPD_G;
-                     phyTxd(39 downto  8) <= crcInv                  after TPD_G;
+                     phyTxd(39 downto  8) <= crcTx                   after TPD_G;
                      phyTxd(7  downto  0) <= crcFifoOut(7 downto 0)  after TPD_G;
                      phyTxc               <= x"E0"                   after TPD_G;
                   when x"3C" => 
                      phyTxd(63 downto 48) <= x"BCFD"                 after TPD_G;
-                     phyTxd(47 downto 16) <= crcInv                  after TPD_G;
+                     phyTxd(47 downto 16) <= crcTx                   after TPD_G;
                      phyTxd(15 downto  0) <= crcFifoOut(15 downto 0) after TPD_G;
                      phyTxc               <= x"C0"                   after TPD_G;
                   when x"78" => 
                      phyTxd(63 downto 56) <= x"FD"                   after TPD_G;
-                     phyTxd(55 downto 24) <= crcInv                  after TPD_G;
+                     phyTxd(55 downto 24) <= crcTx                   after TPD_G;
                      phyTxd(23 downto  0) <= crcFifoOut(23 downto 0) after TPD_G;
                      phyTxc               <= x"80"                   after TPD_G;
                   when x"F0" => 
-                     phyTxd(63 downto 32) <= crcInv                  after TPD_G;
+                     phyTxd(63 downto 32) <= crcTx                   after TPD_G;
                      phyTxd(31 downto  0) <= crcFifoOut(31 downto 0) after TPD_G;
                      phyTxc               <= x"00"                   after TPD_G;
                      nxtEOF               <= '1'                     after TPD_G;
                   when x"E0" => 
-                     phyTxd(63 downto 40) <= crcInv(23 downto 0)     after TPD_G;
+                     phyTxd(63 downto 40) <= crcTx(23 downto 0)      after TPD_G;
                      phyTxd(39 downto  0) <= crcFifoOut(39 downto 0) after TPD_G;
                      phyTxc               <= x"00"                   after TPD_G;
                   when x"01" => 
                      phyTxd(63 downto  8) <= x"BCBCBCBCBCBCFD"       after TPD_G;
-                     phyTxd(7  downto  0) <= crcInv(31 downto 24)    after TPD_G;
+                     phyTxd(7  downto  0) <= crcTx(31 downto 24)     after TPD_G;
                      phyTxc               <= x"FE"                   after TPD_G;
                   when x"C0" => 
-                     phyTxd(63 downto 48) <= crcInv(15 downto 0)     after TPD_G;
+                     phyTxd(63 downto 48) <= crcTx(15 downto 0)      after TPD_G;
                      phyTxd(47 downto  0) <= crcFifoOut(47 downto 0) after TPD_G;
                      phyTxc               <= x"00"                   after TPD_G;
                   when x"03" => 
                      phyTxd(63 downto 16) <= x"BCBCBCBCBCFD"         after TPD_G;
-                     phyTxd(15 downto  0) <= crcInv(31 downto 16)    after TPD_G;
+                     phyTxd(15 downto  0) <= crcTx(31 downto 16)     after TPD_G;
                      phyTxc               <= x"FC"                   after TPD_G;
                   when x"FF" => 
                      phyTxd(63 downto 32) <= x"BCBCBCFD"             after TPD_G;
-                     phyTxd(31 downto  0) <= not crcInv              after TPD_G;
+                     phyTxd(31 downto  0) <= not crcTx               after TPD_G;
                      phyTxc               <= x"F0"                   after TPD_G;
                   when others => 
                      phyTxd <= x"0707070707070707"                   after TPD_G;
@@ -786,11 +786,11 @@ begin
          crcReset      => crcReset
       ); 
 
-   -- Invert CRC for transmission
-   crcInv(31 downto 24) <= not crcOut(7  downto  0);
-   crcInv(23 downto 16) <= not crcOut(15 downto  8);
-   crcInv(15 downto  8) <= not crcOut(23 downto 16);
-   crcInv(7  downto  0) <= not crcOut(31 downto 24);
+   -- CRC for transmission
+   crcTx(31 downto 24) <= crcOut(7  downto  0);
+   crcTx(23 downto 16) <= crcOut(15 downto  8);
+   crcTx(15 downto  8) <= crcOut(23 downto 16);
+   crcTx(7  downto  0) <= crcOut(31 downto 24);
 
 end XMacExport;
 
