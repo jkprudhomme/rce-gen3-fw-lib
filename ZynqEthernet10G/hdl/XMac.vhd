@@ -137,6 +137,8 @@ architecture structure of XMac is
       pauseTime         : slv(15 downto 0);
       macAddress        : slv(47 downto 0);
       autoStatus        : slv(11 downto 0);
+      scratchA          : slv(31 downto 0);
+      scratchB          : slv(31 downto 0);
       byteSwap          : sl;
       axilReadSlave     : AxiLiteReadSlaveType;
       axilWriteSlave    : AxiLiteWriteSlaveType;
@@ -150,6 +152,8 @@ architecture structure of XMac is
       pauseTime         => (others=>'0'),
       macAddress        => (others=>'0'),
       autoStatus        => (others=>'0'),
+      scratchA          => (others=>'0'),
+      scratchB          => (others=>'0'),
       byteSwap          => '0',
       axilReadSlave     => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave    => AXI_LITE_WRITE_SLAVE_INIT_C
@@ -425,6 +429,12 @@ begin
             when x"0028" => 
                v.byteSwap := axilWriteMaster.wdata(0);
 
+            when x"0030" => 
+               v.scratchA := axilWriteMaster.wdata;
+
+            when x"0034" => 
+               v.scratchB := axilWriteMaster.wdata;
+
             when others => null;
          end case;
 
@@ -473,6 +483,12 @@ begin
 
                   when X"28" =>
                      v.axilReadSlave.rdata(0) := r.byteSwap;
+
+                  when X"30" =>
+                     v.axilReadSlave.rdata := r.scratchA;
+
+                  when X"34" =>
+                     v.axilReadSlave.rdata := r.scratchB;
 
                   when others => null;
                end case;

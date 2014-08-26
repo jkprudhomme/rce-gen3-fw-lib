@@ -774,7 +774,7 @@ begin
    crcInAdj(7  downto  0) <= crcIn(63 downto 56);
 
    -- CRC
-   U_Crc32 : entity work.Crc32
+   U_Crc32 : entity work.Crc32Parallel
       generic map (
          BYTE_WIDTH_G => 8
       ) port map (

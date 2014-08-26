@@ -572,7 +572,7 @@ begin
    crcGood <= '1' when crcOut = X"1cdf4421" else '0';
 
    -- CRC
-   U_Crc32 : entity work.Crc32
+   U_Crc32 : entity work.Crc32Parallel
       generic map (
          BYTE_WIDTH_G => 8
       ) port map (
