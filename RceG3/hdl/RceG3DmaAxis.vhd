@@ -122,10 +122,6 @@ begin
    ------------------------------------------
    U_DmaChanGen : for i in 0 to 3 generate
 
-      -- Always online
-      dmaState(i).online <= not dmaClkRst(i);
-      dmaState(i).enable <= not dmaClkRst(i);
-
       -- DMA Core
       U_AxiStreamDma : entity work.AxiStreamDma
          generic map (
@@ -146,6 +142,8 @@ begin
             axilWriteMaster => axilWriteMaster((i*2)+1 downto i*2),
             axilWriteSlave  => axilWriteSlave((i*2)+1 downto i*2),
             interrupt       => open,
+            online          => dmaState(i).online,
+            enabled         => dmaState(i).enable,
             sAxisMaster     => sAxisMaster(i),
             sAxisSlave      => sAxisSlave(i),
             mAxisMaster     => mAxisMaster(i),
