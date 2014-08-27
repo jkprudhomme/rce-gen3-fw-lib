@@ -136,7 +136,7 @@ begin
    ----------------------------------------
    process ( distClk ) begin
       if rising_edge(distClk) then
-         if distClkRst = '1' then
+         if distClkRst = '1' or delayLd = '1' then
             intIdleCnt    <= (others=>'0') after TPD_G;
             statusIdleCnt <= (others=>'0') after TPD_G;
          else
@@ -160,7 +160,7 @@ begin
    ----------------------------------------
    process ( distClk ) begin
       if rising_edge(distClk) then
-         if distClkRst = '1' then
+         if distClkRst = '1' or delayLd = '1' then
             intCode        <= (others=>'0') after TPD_G;
             intCodeEn      <= '0'           after TPD_G;
             intCodeErr     <= '0'           after TPD_G;
