@@ -623,7 +623,7 @@ begin
             -- EOF Charactor Required If CRC was in last word and there was
             -- not enough space for EOF
             if nxtEOF = '1' then
-               phyTxd <= X"BCBCBCBCBCBCBCFD" after TPD_G;
+               phyTxd <= X"07070707070707FD" after TPD_G;
                phyTxc <= x"FF"               after TPD_G;
                nxtEOF <= '0'                 after TPD_G;
 
@@ -648,20 +648,20 @@ begin
                      phyTxd(55 downto  0) <= crcFifoOut(55 downto 0) after TPD_G;
                      phyTxc               <= x"00"                   after TPD_G;
                   when x"07" => 
-                     phyTxd(63 downto 24) <= x"BCBCBCBCFD"           after TPD_G;
+                     phyTxd(63 downto 24) <= x"07070707FD"           after TPD_G;
                      phyTxd(23 downto  0) <= crcTx(31 downto 8)      after TPD_G;
                      phyTxc               <= x"F8"                   after TPD_G;
                   when x"0F" => 
-                     phyTxd(63 downto 32) <= x"BCBCBCFD"             after TPD_G;
+                     phyTxd(63 downto 32) <= x"070707FD"             after TPD_G;
                      phyTxd(31 downto  0) <= crcTx                   after TPD_G;
                      phyTxc               <= x"F0"                   after TPD_G;
                   when x"1E" => 
-                     phyTxd(63 downto 40) <= x"BCBCFD"               after TPD_G;
+                     phyTxd(63 downto 40) <= x"0707FD"               after TPD_G;
                      phyTxd(39 downto  8) <= crcTx                   after TPD_G;
                      phyTxd(7  downto  0) <= crcFifoOut(7 downto 0)  after TPD_G;
                      phyTxc               <= x"E0"                   after TPD_G;
                   when x"3C" => 
-                     phyTxd(63 downto 48) <= x"BCFD"                 after TPD_G;
+                     phyTxd(63 downto 48) <= x"07FD"                 after TPD_G;
                      phyTxd(47 downto 16) <= crcTx                   after TPD_G;
                      phyTxd(15 downto  0) <= crcFifoOut(15 downto 0) after TPD_G;
                      phyTxc               <= x"C0"                   after TPD_G;
@@ -680,7 +680,7 @@ begin
                      phyTxd(39 downto  0) <= crcFifoOut(39 downto 0) after TPD_G;
                      phyTxc               <= x"00"                   after TPD_G;
                   when x"01" => 
-                     phyTxd(63 downto  8) <= x"BCBCBCBCBCBCFD"       after TPD_G;
+                     phyTxd(63 downto  8) <= x"070707070707FD"       after TPD_G;
                      phyTxd(7  downto  0) <= crcTx(31 downto 24)     after TPD_G;
                      phyTxc               <= x"FE"                   after TPD_G;
                   when x"C0" => 
@@ -688,11 +688,11 @@ begin
                      phyTxd(47 downto  0) <= crcFifoOut(47 downto 0) after TPD_G;
                      phyTxc               <= x"00"                   after TPD_G;
                   when x"03" => 
-                     phyTxd(63 downto 16) <= x"BCBCBCBCBCFD"         after TPD_G;
+                     phyTxd(63 downto 16) <= x"0707070707FD"         after TPD_G;
                      phyTxd(15 downto  0) <= crcTx(31 downto 16)     after TPD_G;
                      phyTxc               <= x"FC"                   after TPD_G;
                   when x"FF" => 
-                     phyTxd(63 downto 32) <= x"BCBCBCFD"             after TPD_G;
+                     phyTxd(63 downto 32) <= x"070707FD"             after TPD_G;
                      phyTxd(31 downto  0) <= not crcTx               after TPD_G;
                      phyTxc               <= x"F0"                   after TPD_G;
                   when others => 

@@ -155,7 +155,7 @@ begin
                v.state                   := IDLE_S;
 
                -- Errors
-               if dmaAck.overflow = '1' or dmaAck.lastUser(PPI_ERR_C) = '1' or dmaAck.size(2 downto 0) /= 0 then
+               if dmaAck.overflow = '1' or dmaAck.lastUser(PPI_ERR_C) = '1' then
                   v.ibPendDin(30) := '1';
                else
                   v.ibPendDin(30) := '0';
