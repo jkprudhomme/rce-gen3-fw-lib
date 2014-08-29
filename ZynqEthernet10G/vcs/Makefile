@@ -69,6 +69,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/xilinx7/rtl/DeviceDna.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/CrcPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/Crc32.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../StdLib/general/rtl/Crc32Parallel.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/stdlib.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cPkg.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../i2c_core/rtl/I2cSlave.vhd
@@ -106,8 +107,8 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/hdl/RceG3Top.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../../RceG3/simlink/rtl/RceG3CpuSim.vhd
 	#cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/zynq_10g_xaui.vhd
-	#cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacImport.vhd
-	#cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacExport.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacImport.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacExport.vhd
 	#cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMac.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/crc_tb.vhd
 

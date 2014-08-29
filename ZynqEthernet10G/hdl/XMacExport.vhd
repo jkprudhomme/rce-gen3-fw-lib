@@ -91,7 +91,6 @@ architecture XMacExport of XMacExport is
    signal txEnable1        : sl;
    signal txEnable2        : sl;
    signal txEnable3        : sl;
-   signal txEnable4        : sl;
    signal nxtMaskIn        : slv(7  downto 0);
    signal nxtEOF           : sl;
    signal intData          : slv(63 downto 0);
@@ -147,7 +146,6 @@ architecture XMacExport of XMacExport is
    attribute dont_touch of txEnable1        : signal is "true";
    attribute dont_touch of txEnable2        : signal is "true";
    attribute dont_touch of txEnable3        : signal is "true";
-   attribute dont_touch of txEnable4        : signal is "true";
    attribute dont_touch of nxtMaskIn        : signal is "true";
    attribute dont_touch of nxtEOF           : signal is "true";
    attribute dont_touch of intData          : signal is "true";
@@ -280,6 +278,7 @@ begin
       txUnderRun     <= '0';
       txLinkNotReady <= '0';
       nxtError       <= intError;
+      crcInit        <= '0';
 
       case curState is 
 
@@ -289,13 +288,14 @@ begin
             pauseLast     <= '0';
             stateCountRst <= '1';
             intPad        <= '0';
+            intAdvance    <= '0';
             intLastLine   <= '0';
             nxtError      <= '0';
+            intDump       <= '0';
+            crcInit       <= '1';
             
             -- Pause frame is required
             if rxPauseReq = '1' and importPauseCnt = 0 then
-               intAdvance <= '0';   
-               intDump    <= '0';   
                pausePrst  <= '1';
                nxtState   <= ST_PAUSE_C;
 
@@ -305,20 +305,14 @@ begin
 
                -- Phy is ready
                if phyReady = '1' then
-                  intAdvance <= '1';
-                  intDump    <= '0';
-                  nxtState   <= ST_READ_C;
+                  nxtState <= ST_READ_C;
 
                -- Phy is not ready dump data
                else
-                  intAdvance     <= '0';
-                  intDump        <= '1';
                   nxtState       <= ST_DUMP_C;
                   txLinkNotReady <= '1';
                end if;
             else
-               intAdvance <= '0';
-               intDump    <= '0';
                pausePrst  <= '0';
                nxtState   <= curState;
             end if;
@@ -355,7 +349,7 @@ begin
             intLastLine   <= '0';
             
             -- Wait for gap
-            if stateCount = 2 then
+            if stateCount = 3 then
                nxtState <= ST_IDLE_C;
             else
                nxtState <= curState;
@@ -370,17 +364,15 @@ begin
             pausePrst     <= '0';
             intLastLine   <= '0';
             intPad        <= '0';
+            intAdvance    <= '1';
             nxtState      <= curState;
 
             -- Read until we get last
             if intObMaster.tLast = '1' and intRunt = '1' then
-               intAdvance <= '1';
-               intPad     <= '1';
                nxtState   <= ST_PAD_C;
                txCountEn  <= '1';
 
             elsif intObMaster.tLast ='1' and intRunt = '0' then
-               intAdvance  <= '0';
                intLastLine <= '1';
                nxtState    <= ST_WAIT_C;
                txCountEn   <= '1';
@@ -429,8 +421,8 @@ begin
             intPad        <= '0';
             intLastLine   <= '0';
             
-            -- Wait for gap
-            if stateCount = interFrameGap then
+            -- Wait for gap, min 3 clocks
+            if stateCount >= interFrameGap and stateCount >= 3 then
                nxtState <= ST_IDLE_C;
             else
                nxtState <= curState;
@@ -443,17 +435,15 @@ begin
             pauseLast     <= '0';
             stateCountRst <= '0';
             pausePrst     <= '0';
+            intAdvance    <= '1';
+            intPad        <= '1';
 
             if intRunt = '1' then
-              intAdvance  <= '1';
-              intPad      <= '1';
-              intLastLine <= '0';
-              nxtState    <= curState;
+               intLastLine<= '0';
+               nxtState   <= curState;
             else
-              intAdvance  <= '0';
-              intPad      <= '0';
-              intLastLine <= '1';
-              nxtState    <= ST_WAIT_C;
+               intLastLine<= '1';
+               nxtState   <= ST_WAIT_C;
             end if;
 
         when others =>
@@ -480,12 +470,11 @@ begin
             txEnable1      <= '0'           after TPD_G;
             txEnable2      <= '0'           after TPD_G;
             txEnable3      <= '0'           after TPD_G;
-            txEnable4      <= '0'           after TPD_G;
-            crcDataValid   <= '0'           after TPD_G;
             crcDataWidth   <= (others=>'0') after TPD_G;
             crcMaskIn      <= (others=>'0') after TPD_G;
             nxtMaskIn      <= (others=>'0') after TPD_G;
             crcIn          <= (others=>'0') after TPD_G;
+            crcDataValid   <= '0'           after TPD_G;
          else 
 
             -- Shift register to track frame state
@@ -507,7 +496,9 @@ begin
             txEnable1 <= txEnable0 after TPD_G;
             txEnable2 <= txEnable1 after TPD_G;
             txEnable3 <= txEnable2 after TPD_G;
-            txEnable4 <= txEnable3 after TPD_G;
+
+            -- CRC Valid
+            crcDataValid <= intAdvance or pauseTx after TPD_G;
 
             -- CRC Input
             if pauseTx = '1' then
@@ -516,20 +507,11 @@ begin
                crcIn <= intData after TPD_G;
             end if;
 
-            -- CRC Input Control. 
-            -- Assert init after shift 1, before shift 2
-            if frameShift0 = '1' and frameShift1 = '0' then
-               crcDataValid <= '1'   after TPD_G;
-               crcDataWidth <= "111" after TPD_G;
+            -- Last line
+            if intLastLine = '1' and pauseTx = '0' then
+               crcDataWidth <= intLastValidByte after TPD_G;
             else
-               crcDataValid <= frameShift0 after TPD_G;
-
-               -- Last line
-               if intLastLine = '1' and pauseTx = '0' then
-                  crcDataWidth <= intLastValidByte after TPD_G;
-               else
-                  crcDataWidth <= "111" after TPD_G;
-               end if;
+               crcDataWidth <= "111" after TPD_G;
             end if;
 
             -- Generate CRC Mask Value for CRC append after delay buffer.
@@ -562,9 +544,6 @@ begin
       end if;
    end process;
 
-   -- Generate init
-   crcInit <= frameShift0 and (not frameShift1);
-
    -- Select CRC FIFO Data
    crcFifoIn(71 downto 64) <= crcMaskIn;
    crcFifoIn(63 downto  0) <= crcIn;
@@ -575,7 +554,7 @@ begin
          TPD_G              => TPD_G,
          RST_POLARITY_G     => '1',
          RST_ASYNC_G        => false,
-         GEN_SYNC_FIFO_G    => false,
+         GEN_SYNC_FIFO_G    => true,
          BRAM_EN_G          => false,
          FWFT_EN_G          => false,
          USE_DSP48_G        => "no",
@@ -628,12 +607,12 @@ begin
                nxtEOF <= '0'                 after TPD_G;
 
             -- Not transmitting
-            elsif txEnable3 = '0' then 
+            elsif txEnable2 = '0' and txEnable3 = '0' then 
                phyTxd  <= X"0707070707070707" after TPD_G;
                phyTxc  <= x"FF"               after TPD_G;
 
             -- Pre-amble word
-            elsif txEnable4 = '0' then
+            elsif txEnable2 = '1' and txEnable3 = '0' then
                phyTxd  <= X"D5555555555555FB" after TPD_G;
                phyTxc  <= x"01"               after TPD_G;
 
