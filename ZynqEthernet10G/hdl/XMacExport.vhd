@@ -373,9 +373,10 @@ begin
                txCountEn  <= '1';
 
             elsif intObMaster.tLast ='1' and intRunt = '0' then
-               intLastLine <= '1';
-               nxtState    <= ST_WAIT_C;
-               txCountEn   <= '1';
+               intLastLine   <= '1';
+               nxtState      <= ST_WAIT_C;
+               txCountEn     <= '1';
+               stateCountRst <= '1';
 
             -- Detect underflow
             elsif intObMaster.tValid = '0' then
@@ -399,9 +400,10 @@ begin
             
             -- Read until we get last
             if intObMaster.tLast = '1' then
-               intDump     <= '0';
-               intLastLine <= '1';
-               nxtState    <= ST_WAIT_C;
+               intDump       <= '0';
+               intLastLine   <= '1';
+               nxtState      <= ST_WAIT_C;
+               stateCountRst <= '1';
 
             -- Keep reading
             else
@@ -442,8 +444,9 @@ begin
                intLastLine<= '0';
                nxtState   <= curState;
             else
-               intLastLine<= '1';
-               nxtState   <= ST_WAIT_C;
+               intLastLine   <= '1';
+               nxtState      <= ST_WAIT_C;
+               stateCountRst <= '1';
             end if;
 
         when others =>
