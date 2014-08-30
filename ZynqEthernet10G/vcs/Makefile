@@ -1,4 +1,5 @@
-TOP=crc_tb
+#TOP=crc_tb
+TOP=ppi_axi_tb
 
 # Set Default Output
 SIM_DIR=$(PWD)/out
@@ -111,6 +112,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMacExport.vhd
 	#cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/XMac.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/crc_tb.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/ppi_axi_tb.vhd
 
 # VHPI Library
 vhpi_src:
