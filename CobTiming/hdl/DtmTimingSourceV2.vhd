@@ -95,7 +95,7 @@ architecture STRUCTURE of DtmTimingSourceV2 is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      countReset        => (others=>'0'),
+      countReset        => '0',
       fbCfgSet          => (others=>'0'),
       fbCfgDelay        => (others=>(others=>'0')),
       cmdCode           => (others=>(others=>'0')),
@@ -174,7 +174,7 @@ begin
       end process;
 
       -- Module
-      U_CobDataSource : entity work.CobOpCodeSource8Bit 
+      U_CobDataSource : entity work.CobDataSource10b
          generic map (
             TPD_G => TPD_G
          ) port map (
@@ -183,7 +183,7 @@ begin
             txData          => intTxData(i),
             txDataEn        => intTxDataEn(i),
             txReady         => txReady(i),
-            serialCode      => dpmClk(i+1)
+            serialData      => dpmClk(i+1)
          );
 
       U_OpCodeClkBuf : OBUFDS
@@ -386,7 +386,7 @@ begin
    end process;
 
    -- Command code synchronizer
-   U_CmdDataSync : entity work.SynchronizerVector 
+   U_CmdDataSyncA : entity work.SynchronizerVector 
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '1',
@@ -397,11 +397,11 @@ begin
       ) port map (
          clk     => distClk,
          rst     => distClkRst,
-         dataIn  => r.cmdCode,
-         dataOut => regCode
+         dataIn  => r.cmdCode(0),
+         dataOut => regCode(0)
       );
 
-   U_CmdSync : entity work.SynchronizerEdge 
+   U_CmdSyncA : entity work.SynchronizerEdge 
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '1',
@@ -411,9 +411,42 @@ begin
       ) port map (
          clk         => distClk,
          rst         => distClkRst,
-         dataIn      => r.cmdCodeEn,
+         dataIn      => r.cmdCodeEn(0),
          dataOut     => open,
-         risingEdge  => regCodeEn,
+         risingEdge  => regCodeEn(0),
+         fallingEdge => open
+      );
+
+
+   -- Command code synchronizer
+   U_CmdDataSyncB : entity work.SynchronizerVector 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 2, 
+         WIDTH_G        => 10,
+         INIT_G         => "0"
+      ) port map (
+         clk     => distClk,
+         rst     => distClkRst,
+         dataIn  => r.cmdCode(1),
+         dataOut => regCode(1)
+      );
+
+   U_CmdSyncB : entity work.SynchronizerEdge 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 3,
+         INIT_G         => "0"
+      ) port map (
+         clk         => distClk,
+         rst         => distClkRst,
+         dataIn      => r.cmdCodeEn(1),
+         dataOut     => open,
+         risingEdge  => regCodeEn(1),
          fallingEdge => open
       );
 
