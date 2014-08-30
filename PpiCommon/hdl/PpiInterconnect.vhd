@@ -33,7 +33,8 @@ entity PpiInterconnect is
       NUM_PPI_SLOTS_G     : natural range 1 to 16 := 1;
       NUM_AXI_SLOTS_G     : natural range 1 to 16 := 1;
       NUM_STATUS_WORDS_G  : natural range 1 to 30 := 1;
-      STATUS_SEND_WIDTH_G : natural               := 1
+      STATUS_SEND_WIDTH_G : natural               := 1;
+      AXIL_BASEADDR_G     : slv(31 downto 0)      := X"00000000"
    );
    port (
 
@@ -84,7 +85,7 @@ architecture structure of PpiInterconnect is
    signal iaxilReadSlave    : AxiLiteReadSlaveType;
 
    constant MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray := 
-      genAxiLiteConfig ( NUM_AXI_SLOTS_G, x"00000000", 32, 24 );
+      genAxiLiteConfig ( NUM_AXI_SLOTS_G, AXIL_BASEADDR_G, 32, 24 );
 
 begin
 
