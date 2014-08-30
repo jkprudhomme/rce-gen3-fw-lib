@@ -58,6 +58,7 @@ entity DpmTimingSink is
       -- Feedback information, synchronous to distClk
       fbCode                   : in  slv(7 downto 0);
       fbCodeEn                 : in  sl;
+      fbCodeReady              : out sl;
 
       -- Debug
       led                      : out slv(1 downto 0)
@@ -250,6 +251,7 @@ begin
          distClkRst      => intClkRst,
          timingCode      => fbCode,
          timingCodeEn    => fbCodeEn,
+         timingCodeReady => fbCodeReady,
          serialCode      => dtmFb
       );
 

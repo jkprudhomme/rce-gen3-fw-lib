@@ -54,6 +54,7 @@ entity DtmTimingSource is
       -- Opcode information
       timingCode               : in  slv(7 downto 0);
       timingCodeEn             : in  sl;
+      timingCodeReady          : out sl;
 
       -- Feedback information
       fbCode                   : out Slv8Array(7 downto 0);
@@ -202,6 +203,7 @@ begin
          distClkRst      => distClkRst,
          timingCode      => intCode,
          timingCodeEn    => intCodeEn,
+         timingCodeReady => timingCodeReady,
          serialCode      => dpmClk(2)
       );
 

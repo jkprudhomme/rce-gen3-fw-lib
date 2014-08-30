@@ -46,6 +46,7 @@ entity CobOpCodeSource8Bit is
       -- Opcode information
       timingCode               : in  slv(7 downto 0);
       timingCodeEn             : in  sl;
+      timingCodeReady          : out sl;
 
       -- Timing bus
       serialCode               : out sl
@@ -62,6 +63,8 @@ architecture STRUCTURE of CobOpCodeSource8Bit is
    signal codeVal  : slv(31 downto 0);
 
 begin
+
+   timingCodeReady <= not txEnable;
 
    ----------------------------------------
    -- Sync Data Generator
