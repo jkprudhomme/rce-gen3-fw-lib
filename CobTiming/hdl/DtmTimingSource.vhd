@@ -6,12 +6,6 @@
 -------------------------------------------------------------------------------
 -- Description:
 -- Clock & Trigger source module for DTM
---
--- The following lines are required in the XDC file:
---
---set_property IODELAY_GROUP "DtmTimingGrp" [get_cells {U_DtmTimingSource/U_DlyCntrl}]
---set_property IODELAY_GROUP "DtmTimingGrp" [get_cells -hier -filter {name =~ *U_OpCodeSink/IDELAYE2_inst}]
---
 -------------------------------------------------------------------------------
 -- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -31,7 +25,8 @@ use work.AxiLitePkg.all;
 
 entity DtmTimingSource is
    generic (
-      TPD_G        : time    := 1 ns
+      TPD_G           : time   := 1 ns;
+      IODELAY_GROUP_G : string := "DtmTimingGrp"
    );
    port (
 
@@ -123,6 +118,9 @@ architecture STRUCTURE of DtmTimingSource is
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
+
+   attribute IODELAY_GROUP               : string;
+   attribute IODELAY_GROUP of U_DlyCntrl : label is IODELAY_GROUP_G;   
 
 begin
 
@@ -276,7 +274,8 @@ begin
       -- Input processor
       U_OpCodeSink : entity work.CobOpCodeSink8Bit
          generic map (
-            TPD_G => TPD_G
+            TPD_G           => TPD_G,
+            IODELAY_GROUP_G => IODELAY_GROUP_G
          ) port map (
             serialCode      => dpmFb(i),
             distClk         => distClk,

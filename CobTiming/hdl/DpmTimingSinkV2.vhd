@@ -6,10 +6,6 @@
 -------------------------------------------------------------------------------
 -- Description:
 -- Clock & Trigger sink module for COB
---
---set_property IODELAY_GROUP "DpmTimingGrp" [get_cells -heir -filter {name =~ *U_DpmTimingDlyCntrl}]
---set_property IODELAY_GROUP "DpmTimingGrp" [get_cells -hier -filter {name =~ *U_CobDataSink/IDELAYE2_inst}]
---
 -------------------------------------------------------------------------------
 -- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
 -------------------------------------------------------------------------------
@@ -29,7 +25,8 @@ use work.AxiLitePkg.all;
 
 entity DpmTimingSinkV2 is
    generic (
-      TPD_G        : time    := 1 ns
+      TPD_G           : time   := 1 ns;
+      IODELAY_GROUP_G : string := "DtmTimingGrp"
    );
    port (
 
@@ -105,6 +102,9 @@ architecture STRUCTURE of DpmTimingSinkV2 is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
+   attribute IODELAY_GROUP                        : string;
+   attribute IODELAY_GROUP of U_DpmTimingDlyCntrl : label is IODELAY_GROUP_G;   
+
 begin
 
    -- Clock and reset out
@@ -170,7 +170,8 @@ begin
       -- Input processor
       U_CobDataSink : entity work.CobDataSink10b 
          generic map (
-            TPD_G => TPD_G
+            TPD_G           => TPD_G,
+            IODELAY_GROUP_G => IODELAY_GROUP_G
          ) port map (
             serialData      => dtmClk(i),
             distClk         => intClk,

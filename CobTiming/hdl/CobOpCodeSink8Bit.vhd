@@ -33,7 +33,8 @@ use work.StdRtlPkg.all;
 
 entity CobOpCodeSink8Bit is
    generic (
-      TPD_G        : time    := 1 ns
+      TPD_G           : time   := 1 ns;
+      IODELAY_GROUP_G : string := "DtmTimingGrp"
    );
    port (
 
@@ -70,6 +71,9 @@ architecture STRUCTURE of CobOpCodeSink8Bit is
    signal intCode     : slv(7 downto 0);
    signal intCodeEn   : sl;
    signal intCodeErr  : sl;
+
+   attribute IODELAY_GROUP                    : string;
+   attribute IODELAY_GROUP of IDELAYE2_inst : label is IODELAY_GROUP_G;   
 
 begin
 

@@ -38,7 +38,8 @@ use work.StdRtlPkg.all;
 
 entity CobDataSink10b is
    generic (
-      TPD_G        : time    := 1 ns
+      TPD_G           : time   := 1 ns;
+      IODELAY_GROUP_G : string := "DtmTimingGrp"
    );
    port (
 
@@ -76,6 +77,9 @@ architecture STRUCTURE of CobDataSink10b is
    signal intDataEn    : sl;
    signal intDataErr   : sl;
    signal dataBlockCnt : slv(15 downto 0);
+   
+   attribute IODELAY_GROUP                    : string;
+   attribute IODELAY_GROUP of IDELAYE2_inst : label is IODELAY_GROUP_G;   
 
 begin
 
