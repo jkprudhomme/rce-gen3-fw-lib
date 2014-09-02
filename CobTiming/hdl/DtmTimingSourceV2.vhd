@@ -69,10 +69,11 @@ architecture STRUCTURE of DtmTimingSourceV2 is
    signal dpmClk              : slv(2 downto 0);
    signal intTxData           : Slv10Array(1 downto 0);
    signal intTxDataEn         : slv(1 downto 0);
-   signal txDataCnt           : Slv32Array(1 downto 0);
+   signal intTxReady          : slv(1 downto 0);
+   signal txCount             : Slv32Array(1 downto 0);
    signal intRxData           : Slv10Array(7 downto 0);
    signal intRxDataEn         : slv(7 downto 0);
-   signal rxDataCnt           : Slv32Array(7 downto 0);
+   signal rxCount             : Slv32Array(7 downto 0);
    signal fbStatusIdleCnt     : Slv16Array(7 downto 0);
    signal fbStatusErrorCnt    : Slv16Array(7 downto 0);
    signal regCode             : Slv10Array(1 downto 0);
@@ -150,24 +151,15 @@ begin
    U_OutGen : for i in 0 to 1 generate
 
       -- Select source
-      process ( distClk ) begin
-         if rising_edge(distClk) then
-            if distClkRst = '1' then
-               intTxDataEn(i) <= '0'           after TPD_G;
-               intTxData(i)   <= (others=>'0') after TPD_G;
-
-            elsif txDataEn(i) = '1' then
-               intTxDataEn(i) <= '1'        after TPD_G;
-               intTxData(i)   <= txData(i)  after TPD_G;
-
-            elsif regCodeEn(i) = '1' then
-               intTxDataEn(i) <= '1'        after TPD_G;
-               intTxData(i)   <= regCode(i) after TPD_G;
-
-            else
-               intTxDataEn(i) <= '0'           after TPD_G;
-               intTxData(i)   <= (others=>'0') after TPD_G;
-            end if;
+      process ( txDataEn, txData, regCodeEn, regCode, intTxReady ) begin
+         if regCodeEn(i) = '1' then
+            intTxDataEn(i) <= '1';
+            intTxData(i)   <= regCode(i);
+            txReady(i)     <= '0';
+         else
+            intTxDataEn(i) <= txDataEn(i);
+            intTxData(i)   <= txData(i);
+            txReady(i)     <= intTxReady(i);
          end if;
       end process;
 
@@ -180,7 +172,7 @@ begin
             distClkRst      => distClkRst,
             txData          => intTxData(i),
             txDataEn        => intTxDataEn(i),
-            txReady         => txReady(i),
+            txReady         => intTxReady(i),
             serialData      => dpmClk(i+1)
          );
 
@@ -194,9 +186,9 @@ begin
       process ( distClk ) begin
          if rising_edge(distClk) then
             if distClkRst = '1' or r.countReset = '1' then
-               txDataCnt(i) <= (others=>'0') after TPD_G;
-            elsif intTxDataEn(i) = '1' then
-               txDataCnt(i) <= txDataCnt(i) + 1 after TPD_G;
+               txCount(i) <= (others=>'0') after TPD_G;
+            elsif intTxDataEn(i) = '1' and intTxReady(i) = '1' then
+               txCount(i) <= txCount(i) + 1 after TPD_G;
             end if;
          end if;
       end process;
@@ -238,9 +230,9 @@ begin
       process ( distClk ) begin
          if rising_edge(distClk) then
             if distClkRst = '1' or r.countReset = '1' then
-               rxDataCnt(i) <= (others=>'0') after TPD_G;
+               rxCount(i) <= (others=>'0') after TPD_G;
             elsif intRxDataEn(i) = '1' then
-               rxDataCnt(i) <= rxDataCnt(i) + 1 after TPD_G;
+               rxCount(i) <= rxCount(i) + 1 after TPD_G;
             end if;
          end if;
       end process;
@@ -265,7 +257,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, axiReadMaster, axiWriteMaster, r, fbStatusErrorCnt, fbStatusIdleCnt, rxDataCnt, txDataCnt) is
+   process (axiClkRst, axiReadMaster, axiWriteMaster, r, fbStatusErrorCnt, fbStatusIdleCnt, rxCount, txCount) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
@@ -352,17 +344,17 @@ begin
 
          -- Tx Data A Count, 0x414
          elsif axiReadMaster.araddr(11 downto 0)  = x"414" then
-            v.axiReadSlave.rdata := txDataCnt(0);
+            v.axiReadSlave.rdata := txCount(0);
 
          -- Tx Data B Count, 0x418
          elsif axiReadMaster.araddr(11 downto 0)  = x"418" then
-            v.axiReadSlave.rdata := txDataCnt(0);
+            v.axiReadSlave.rdata := txCount(1);
 
          -- Counter Reset, 0x41C
 
          -- Rx Data Count, 0x5xx
          elsif axiReadMaster.araddr(11 downto 8)  = x"5" then
-            v.axiReadSlave.rdata := rxDataCnt(conv_integer(axiReadMaster.araddr(5 downto 2)));
+            v.axiReadSlave.rdata := rxCount(conv_integer(axiReadMaster.araddr(5 downto 2)));
 
          end if;
 

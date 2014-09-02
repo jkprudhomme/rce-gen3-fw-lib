@@ -76,7 +76,7 @@ architecture STRUCTURE of CobDataSink10b is
    signal intData      : slv(9 downto 0);
    signal intDataEn    : sl;
    signal intDataErr   : sl;
-   signal dataBlockCnt : slv(15 downto 0);
+   signal dataBlockCnt : slv(3 downto 0);
    
    attribute IODELAY_GROUP                    : string;
    attribute IODELAY_GROUP of IDELAYE2_inst : label is IODELAY_GROUP_G;   

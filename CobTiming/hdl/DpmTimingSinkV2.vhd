@@ -80,6 +80,7 @@ architecture STRUCTURE of DpmTimingSinkV2 is
    signal intClk              : sl;
    signal intClkRst           : sl;
    signal intReset            : sl;
+   signal intRxEcho           : slv(1 downto 0);
 
    type RegType is record
       cfgReset          : sl;
@@ -203,11 +204,15 @@ begin
    -- Feedback Output
    ----------------------------------------
 
-   -- Enable data echo
-   intTxDataEn <= txDataEn or intRxDataEn(0) or intRxDataEn(1);
+   -- Determine Echo 
+   intRxEcho(0) <= '1' when intRxDataEn(0) = '1' and intRxData(0)(9 downto 8) = "01" else '0';
+   intRxEcho(1) <= '1' when intRxDataEn(1) = '1' and intRxData(1)(9 downto 8) = "01" else '0';
+
+   -- Mux TX Data
+   intTxDataEn <= txDataEn or intRxEcho(0) or intRxEcho(1);
    intTxData   <= txData       when txDataEn = '1' else
-                  intRxData(0) when intRxDataEn(0) = '1' and intRxData(0)(9 downto 8) = "01" else
-                  intRxData(1) when intRxDataEn(1) = '1' and intRxData(1)(9 downto 8) = "01" else
+                  intRxData(0) when intRxEcho(0) = '1' else
+                  intRxData(1) when intRxEcho(1) = '1' else
                   (others=>'0');
 
    -- Module
