@@ -74,15 +74,6 @@ end RceG3DmaAxis;
 
 architecture structure of RceG3DmaAxis is 
 
-   constant DMA_AXIS_CONFIG_G : AxiStreamConfigType := (
-      TSTRB_EN_C    => false,
-      TDATA_BYTES_C => 8,
-      TDEST_BITS_C  => 8,
-      TID_BITS_C    => 0,
-      TKEEP_MODE_C  => TKEEP_COMP_C,
-      TUSER_BITS_C  => 2,
-      TUSER_MODE_C  => TUSER_FIRST_LAST_C);
-
    signal locReadMaster    : AxiReadMasterArray(3 downto 0);
    signal locReadSlave     : AxiReadSlaveArray(3 downto 0);
    signal locWriteMaster   : AxiWriteMasterArray(3 downto 0);
@@ -130,7 +121,7 @@ begin
             AXIL_BASE_ADDR_G => x"00000000",
             AXI_READY_EN_G   => false,
             AXIS_READY_EN_G  => false,
-            AXIS_CONFIG_G    => DMA_AXIS_CONFIG_G,
+            AXIS_CONFIG_G    => RCEG3_AXIS_DMA_CONFIG_C,
             AXI_CONFIG_G     => AXI_HP_INIT_C,
             AXI_BURST_G      => "01",
             AXI_CACHE_G      => "1111"
@@ -174,8 +165,8 @@ begin
             FIFO_ADDR_WIDTH_G   => 9,
             FIFO_FIXED_THRESH_G => true,
             FIFO_PAUSE_THRESH_G => 500,
-            SLAVE_AXI_CONFIG_G  => DMA_AXIS_CONFIG_G,
-            MASTER_AXI_CONFIG_G => DMA_AXIS_CONFIG_G
+            SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
+            MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C
          ) port map (
             sAxisClk        => dmaClk(i),
             sAxisRst        => dmaClkRst(i),
@@ -206,8 +197,8 @@ begin
             FIFO_ADDR_WIDTH_G   => 9,
             FIFO_FIXED_THRESH_G => true,
             FIFO_PAUSE_THRESH_G => 475,
-            SLAVE_AXI_CONFIG_G  => DMA_AXIS_CONFIG_G,
-            MASTER_AXI_CONFIG_G => DMA_AXIS_CONFIG_G
+            SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
+            MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C
          ) port map (
             sAxisClk        => axiDmaClk,
             sAxisRst        => axiDmaRst,

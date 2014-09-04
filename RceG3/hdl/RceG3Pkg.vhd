@@ -19,6 +19,7 @@ use IEEE.numeric_std.all;
 
 use work.StdRtlPkg.all;
 use work.AxiPkg.all;
+use work.AxiStreamPkg.all;
 
 package RceG3Pkg is
 
@@ -65,6 +66,18 @@ package RceG3Pkg is
       DATA_BYTES_C      => 8,
       ID_BITS_C         => 6);
 
+   --------------------------------------------------------
+   -- AXIS Configuration Constants
+   --------------------------------------------------------
+
+   constant RCEG3_AXIS_DMA_CONFIG_C : AxiStreamConfigType := (
+      TSTRB_EN_C    => false,
+      TDATA_BYTES_C => 8,
+      TDEST_BITS_C  => 4,
+      TID_BITS_C    => 0,
+      TKEEP_MODE_C  => TKEEP_COMP_C,
+      TUSER_BITS_C  => 4,
+      TUSER_MODE_C  => TUSER_FIRST_LAST_C);
 
    --------------------------------------------------------
    -- Ethernet Types
