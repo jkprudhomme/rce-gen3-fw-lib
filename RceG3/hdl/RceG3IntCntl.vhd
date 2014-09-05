@@ -103,7 +103,10 @@ begin
          if axiDmaRst = '1' then
             locSources <= (others=>'0') after TPD_G;
          else
-            locSources(DMA_INT_COUNT_C-1 downto 0)             <= dmaInterrupt  after TPD_G;
+
+            if RCE_DMA_MODE_G = RCE_DMA_PPI_C then
+               locSources(DMA_INT_COUNT_C-1 downto 0)          <= dmaInterrupt  after TPD_G;
+            end if;
             locSources(DMA_INT_COUNT_C)                        <= bsiInterrupt  after TPD_G;
             locSources(SRC_COUNT_C-1 downto DMA_INT_COUNT_C+1) <= userInterrupt after TPD_G;
          end if;
@@ -227,6 +230,10 @@ begin
       armInterrupt     <= (others=>'0');
 
       armInterrupt(GROUP_COUNT_C-1 downto 0) <= r.intOutput;
+
+      if RCE_DMA_MODE_G = RCE_DMA_AXIS_C then
+         armInterrupt(15 downto 12) <= dmaInterrupt(3 downto 0) after TPD_G;
+      end if;
       
    end process;
 

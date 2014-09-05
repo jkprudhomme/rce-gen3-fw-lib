@@ -92,7 +92,7 @@ begin
    acpReadMaster  <= AXI_READ_MASTER_INIT_C;
 
    -- Unused Interrupts
-   interrupt <= (others=>'0');
+   interrupt(DMA_INT_COUNT_C-1 downto 4) <= (others=>'0');
 
    -- Terminate Unused AXI-Lite Interface
    U_AxiLiteEmpty : entity work.AxiLiteEmpty
@@ -132,7 +132,7 @@ begin
             axilReadSlave   => axilReadSlave((i*2)+1 downto i*2),
             axilWriteMaster => axilWriteMaster((i*2)+1 downto i*2),
             axilWriteSlave  => axilWriteSlave((i*2)+1 downto i*2),
-            interrupt       => open,
+            interrupt       => interrupt(i),
             online          => dmaState(i).online,
             enabled         => dmaState(i).enable,
             sAxisMaster     => sAxisMaster(i),
