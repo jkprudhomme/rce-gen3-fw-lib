@@ -85,6 +85,13 @@ architecture structure of RceG3DmaAxis is
    signal mAxisSlave       : AxiStreamSlaveArray(3 downto 0);
    signal mAxisCtrl        : AxiStreamCtrlArray(3 downto 0);
 
+   attribute dont_touch : string;
+   attribute dont_touch of hpWriteSlave      : signal is "true";
+   attribute dont_touch of hpWriteMaster     : signal is "true";
+   attribute dont_touch of locWriteMaster    : signal is "true";
+   attribute dont_touch of locWriteSlave     : signal is "true";
+   attribute dont_touch of locWriteCtrl      : signal is "true";
+
 begin
 
    -- AXI ACP Slave Unused
@@ -124,7 +131,7 @@ begin
             AXIS_CONFIG_G    => RCEG3_AXIS_DMA_CONFIG_C,
             AXI_CONFIG_G     => AXI_HP_INIT_C,
             AXI_BURST_G      => "01",
-            AXI_CACHE_G      => "1111"
+            AXI_CACHE_G      => "0000"
          ) port map (
             axiClk          => axiDmaClk,
             axiRst          => axiDmaRst,
