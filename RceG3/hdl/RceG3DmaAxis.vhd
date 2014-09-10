@@ -123,15 +123,16 @@ begin
       -- DMA Core
       U_AxiStreamDma : entity work.AxiStreamDma
          generic map (
-            TPD_G            => TPD_G,
-            AXIL_COUNT_G     => 2,
-            AXIL_BASE_ADDR_G => x"00000000",
-            AXI_READY_EN_G   => false,
-            AXIS_READY_EN_G  => false,
-            AXIS_CONFIG_G    => RCEG3_AXIS_DMA_CONFIG_C,
-            AXI_CONFIG_G     => AXI_HP_INIT_C,
-            AXI_BURST_G      => "01",
-            AXI_CACHE_G      => "0000"
+            TPD_G             => TPD_G,
+            FREE_ADDR_WIDTH_G => 12, -- 4096 entries
+            AXIL_COUNT_G      => 2,
+            AXIL_BASE_ADDR_G  => x"00000000",
+            AXI_READY_EN_G    => false,
+            AXIS_READY_EN_G   => false,
+            AXIS_CONFIG_G     => RCEG3_AXIS_DMA_CONFIG_C,
+            AXI_CONFIG_G      => AXI_HP_INIT_C,
+            AXI_BURST_G       => "01",
+            AXI_CACHE_G       => "1111"
          ) port map (
             axiClk          => axiDmaClk,
             axiRst          => axiDmaRst,
