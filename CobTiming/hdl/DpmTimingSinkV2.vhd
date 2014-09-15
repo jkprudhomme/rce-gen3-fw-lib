@@ -43,14 +43,13 @@ entity DpmTimingSinkV2 is
       sysClk200Rst             : in  sl;
 
       -- Timing bus, Ref Clock Receiver Is External
-      dtmRefClk                : in  sl;
       dtmClkP                  : in  slv(1 downto 0);
       dtmClkM                  : in  slv(1 downto 0);
       dtmFbP                   : out sl;
       dtmFbM                   : out sl;
 
-      -- Clock output   
-      distClk                  : out sl;
+      -- Clock and reset
+      distClk                  : in  sl;
       distClkRst               : out sl;
       
       -- Received Data, synchronous to distClk
@@ -77,7 +76,6 @@ architecture STRUCTURE of DpmTimingSinkV2 is
    signal txDataCnt           : slv(31 downto 0);
    signal dtmFb               : sl;
    signal dtmClk              : slv(1 downto 0);
-   signal intClk              : sl;
    signal intClkRst           : sl;
    signal intReset            : sl;
    signal intRxEcho           : slv(1 downto 0);
@@ -109,7 +107,6 @@ architecture STRUCTURE of DpmTimingSinkV2 is
 begin
 
    -- Clock and reset out
-   distClk      <= intClk;
    distClkRst   <= intClkRst;
    rxData       <= intRxData;
    rxDataEn     <= intRxDataEn;
@@ -129,13 +126,6 @@ begin
    -- Incoming global clock
    ----------------------------------------
 
-   -- DTM Clock 0
-   U_Bufg : BUFG
-      port map (
-         I => dtmRefClk,
-         O => intClk
-      );
-
    intReset <= axiClkRst or r.cfgReset;
 
    -- Reset gen
@@ -147,7 +137,7 @@ begin
          RELEASE_DELAY_G  => 16
       )
       port map (
-        clk      => intClk,
+        clk      => distClk,
         asyncRst => intReset,
         syncRst  => intClkRst
       );
@@ -175,7 +165,7 @@ begin
             IODELAY_GROUP_G => IODELAY_GROUP_G
          ) port map (
             serialData      => dtmClk(i),
-            distClk         => intClk,
+            distClk         => distClk,
             distClkRst      => intClkRst,
             rxData          => intRxData(i),
             rxDataEn        => intRxDataEn(i),
@@ -187,8 +177,8 @@ begin
             statusErrorCnt  => statusErrorCnt(i)
          );
 
-      process ( intClk ) begin
-         if rising_edge(intClk) then
+      process ( distClk ) begin
+         if rising_edge(distClk) then
             if intClkRst = '1' or r.countReset = '1' then
                rxDataCnt(i) <= (others=>'0') after TPD_G;
             elsif intRxDataEn(i) = '1' then
@@ -220,7 +210,7 @@ begin
       generic map (
          TPD_G => TPD_G
       ) port map (
-         distClk         => intClk,
+         distClk         => distClk,
          distClkRst      => intClkRst,
          txData          => intTxData,
          txDataEn        => intTxDataEn,
@@ -236,8 +226,8 @@ begin
          I  => dtmFb
       );
 
-   process ( intClk ) begin
-      if rising_edge(intClk) then
+   process ( distClk ) begin
+      if rising_edge(distClk) then
          if intClkRst = '1' or r.countReset = '1' then
             txDataCnt <= (others=>'0') after TPD_G;
          elsif intTxDataEn = '1' then
