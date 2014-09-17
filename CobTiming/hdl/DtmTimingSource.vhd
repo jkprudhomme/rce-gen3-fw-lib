@@ -141,27 +141,14 @@ begin
    -- Clock outputs
    U_ClkOut : for i in 0 to 1 generate
 
-      U_ClkGen: ODDR
-         generic map(
-            DDR_CLK_EDGE => "OPPOSITE_EDGE", -- "OPPOSITE_EDGE" or "SAME_EDGE"
-            INIT         => '0',             -- Initial value for Q port ('1' or '0')
-            SRTYPE       => "SYNC"           -- Reset Type ("ASYNC" or "SYNC")
-         ) port map (
-            Q  => dpmClk(i),  -- 1-bit DDR output
-            C  => distClk,    -- 1-bit clock input
-            CE => '1',        -- 1-bit clock enable input
-            D1 => '1',        -- 1-bit data input (positive edge)
-            D2 => '0',        -- 1-bit data input (negative edge)
-            R  => distClkRst, -- 1-bit reset input
-            S  => '0'         -- 1-bit set input
-         );
-
-      U_DpmClkOut : OBUFDS
-         port map(
-            O      => dpmClkP(i),
-            OB     => dpmClkM(i),
-            I      => dpmClk(i)
-         );
+      ClkOutBufDiff_1: entity work.ClkOutBufDiff
+         generic map (
+            INVERT_G => INVERT_G)
+         port map (
+            clkIn   => distClk(i),
+            clkOutP => dpmClkP(i),
+            clkOutN => dpmClkN(i));
+      
 
    end generate;
 
