@@ -15,16 +15,16 @@
 
 # CPU Clock
 set fclk0Pin [get_pins U_DpmCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
-create_clock -name fclk0 -period 10 fclk0Pin
+create_clock -name fclk0 -period 10 $fclk0Pin
 
 # Arm Core Clocks
-create_generated_clock -name dmaClk -source fclk0Pin \
+create_generated_clock -name dmaClk -source $fclk0Pin \
     -multiply_by 2 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]
 
-create_generated_clock -name sysClk200 -source fclk0Pin \   
+create_generated_clock -name sysClk200 -source $fclk0Pin \   
     -multiply_by 2 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]
 
-create_generated_clock -name sysClk125 -source fclk0Pin \
+create_generated_clock -name sysClk125 -source $fclk0Pin \
     -multiply_by 2 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]
 
 set_clock_groups -asynchronous \
@@ -37,14 +37,14 @@ create_clock -name ethRefClk -period 6.4 [get_ports ethRefClkP]
 
 # Local 1G Ethernet Clocks
 set eth_txoutclk_pin    [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
-create_clock -name eth_txoutclk -period 16 eth_txoutclk_pin
+create_clock -name eth_txoutclk -period 16 $eth_txoutclk_pin
 
 create_generated_clock -name intEthClk0 \
-    -source eth_txoutclk_pin \
+    -source $eth_txoutclk_pin \
     -multiply_by 2 [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]
 
 create_generated_clock -name intEthClk1 \
-    -source eth_txoutclk_pin \
+    -source $eth_txoutclk_pin \
     -multiply_by 1 [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]
 
 
