@@ -55,7 +55,10 @@ create_clock -name eth10GClk -period 6.4 \
 # Set Asynchronous Paths
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks fclk0] \
-    -group [get_clocks -include_generated_clocks eth_txoutclk] \
+    -group [get_clocks -include_generated_clocks eth_txoutclk]
+
+set_clock_groups -asynchronous \
+    -group [get_clocks -include_generated_clocks fclk0] \
     -group [get_clocks -include_generated_clocks eth10GClk]
 
 
