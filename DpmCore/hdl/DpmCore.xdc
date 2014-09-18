@@ -25,7 +25,7 @@ create_generated_clock -name sysClk200 -source $fclk0Pin \
     -multiply_by 2 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]
 
 create_generated_clock -name sysClk125 -source $fclk0Pin \
-    -multiply_by 2 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]
+    -multiply_by 5 -divide_by 4 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]
 
 set_clock_groups -asynchronous \
     -group [get_clocks fclk0] \
