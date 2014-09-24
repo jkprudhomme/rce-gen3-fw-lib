@@ -71,14 +71,17 @@ architecture STRUCTURE of DtmTimingSourceV2 is
    signal intTxDataEn         : slv(1 downto 0);
    signal intTxReady          : slv(1 downto 0);
    signal txCount             : Slv32Array(1 downto 0);
+   signal txCountSync         : Slv32Array(1 downto 0);
    signal intRxData           : Slv10Array(7 downto 0);
    signal intRxDataEn         : slv(7 downto 0);
    signal rxCount             : Slv32Array(7 downto 0);
+   signal rxCountSync         : Slv32Array(7 downto 0);
    signal fbStatusIdleCnt     : Slv16Array(7 downto 0);
    signal fbStatusErrorCnt    : Slv16Array(7 downto 0);
    signal regCode             : Slv10Array(1 downto 0);
    signal regCodeEn           : slv(1 downto 0);
    signal dpmFb               : slv(7 downto 0);
+   signal countReset          : sl;
 
    type RegType is record
       countReset        : sl;
@@ -185,13 +188,37 @@ begin
 
       process ( distClk ) begin
          if rising_edge(distClk) then
-            if distClkRst = '1' or r.countReset = '1' then
+            if distClkRst = '1' or countReset = '1' then
                txCount(i) <= (others=>'0') after TPD_G;
             elsif intTxDataEn(i) = '1' and intTxReady(i) = '1' then
                txCount(i) <= txCount(i) + 1 after TPD_G;
             end if;
          end if;
       end process;
+
+      -- Tx data count sync
+      U_TxDataCntSync : entity work.SynchronizerFifo
+         generic map (
+            TPD_G         => 1 ns,
+            COMMON_CLK_G  => false,
+            BRAM_EN_G     => false,
+            ALTERA_SYN_G  => false,
+            ALTERA_RAM_G  => "M9K",
+            SYNC_STAGES_G => 3,
+            DATA_WIDTH_G  => 32,
+            ADDR_WIDTH_G  => 4,
+            INIT_G        => "0"
+         ) port map (
+            rst                => axiClkRst,
+            wr_clk             => distClk,
+            wr_en              => '1',
+            din                => txCount(i),
+            rd_clk             => axiClk,
+            rd_en              => '1',
+            valid              => open,
+            dout               => txCountSync(i)
+         );
+
    end generate;
 
 
@@ -229,13 +256,36 @@ begin
 
       process ( distClk ) begin
          if rising_edge(distClk) then
-            if distClkRst = '1' or r.countReset = '1' then
+            if distClkRst = '1' or countReset = '1' then
                rxCount(i) <= (others=>'0') after TPD_G;
             elsif intRxDataEn(i) = '1' then
                rxCount(i) <= rxCount(i) + 1 after TPD_G;
             end if;
          end if;
       end process;
+
+      -- Rx data count sync
+      U_RxDataCntSync : entity work.SynchronizerFifo
+         generic map (
+            TPD_G         => 1 ns,
+            COMMON_CLK_G  => false,
+            BRAM_EN_G     => false,
+            ALTERA_SYN_G  => false,
+            ALTERA_RAM_G  => "M9K",
+            SYNC_STAGES_G => 3,
+            DATA_WIDTH_G  => 32,
+            ADDR_WIDTH_G  => 4,
+            INIT_G        => "0"
+         ) port map (
+            rst                => axiClkRst,
+            wr_clk             => distClk,
+            wr_en              => '1',
+            din                => rxCount(i),
+            rd_clk             => axiClk,
+            rd_en              => '1',
+            valid              => open,
+            dout               => rxCountSync(i)
+         );
 
    end generate;
 
@@ -257,7 +307,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, axiReadMaster, axiWriteMaster, r, fbStatusErrorCnt, fbStatusIdleCnt, rxCount, txCount) is
+   process (axiClkRst, axiReadMaster, axiWriteMaster, r, fbStatusErrorCnt, fbStatusIdleCnt, rxCountSync, txCountSync ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
@@ -344,17 +394,17 @@ begin
 
          -- Tx Data A Count, 0x414
          elsif axiReadMaster.araddr(11 downto 0)  = x"414" then
-            v.axiReadSlave.rdata := txCount(0);
+            v.axiReadSlave.rdata := txCountSync(0);
 
          -- Tx Data B Count, 0x418
          elsif axiReadMaster.araddr(11 downto 0)  = x"418" then
-            v.axiReadSlave.rdata := txCount(1);
+            v.axiReadSlave.rdata := txCountSync(1);
 
          -- Counter Reset, 0x41C
 
          -- Rx Data Count, 0x5xx
          elsif axiReadMaster.araddr(11 downto 8)  = x"5" then
-            v.axiReadSlave.rdata := rxCount(conv_integer(axiReadMaster.araddr(5 downto 2)));
+            v.axiReadSlave.rdata := rxCountSync(conv_integer(axiReadMaster.araddr(5 downto 2)));
 
          end if;
 
@@ -375,6 +425,21 @@ begin
       axiWriteSlave <= r.axiWriteSlave;
       
    end process;
+
+   -- Count Reset gen
+   U_CountRstGen : entity work.RstSync
+      generic map (
+         TPD_G            => TPD_G,
+         IN_POLARITY_G    => '1',
+         OUT_POLARITY_G   => '1',
+         RELEASE_DELAY_G  => 16
+      )
+      port map (
+        clk      => distClk,
+        asyncRst => r.countReset,
+        syncRst  => countReset
+      );
+
 
    -- Command code synchronizer
    U_CmdDataSyncA : entity work.SynchronizerVector 
@@ -440,7 +505,6 @@ begin
          risingEdge  => regCodeEn(1),
          fallingEdge => open
       );
-
 
 end architecture STRUCTURE;
 

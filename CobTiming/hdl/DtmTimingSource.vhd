@@ -84,11 +84,14 @@ architecture STRUCTURE of DtmTimingSource is
    signal fbFifoValid         : slv(7 downto 0);
    signal fbFifoData          : Slv8Array(7 downto 0);
    signal ledCountA           : slv(31 downto 0);
+   signal ledCountASync       : slv(31 downto 0);
    signal ledCountB           : slv(15 downto 0);
    signal dpmClk              : slv(2 downto 0);
    signal dpmFb               : slv(7 downto 0);
    signal fbFifoRd            : slv(7 downto 0);
    signal ocFifoRd            : sl;
+   signal fbFifoWrEn          : slv(7 downto 0);
+   signal ocFifoWrEn          : sl;
 
    type RegType is record
       fbCfgSet          : slv(7 downto 0);
@@ -244,6 +247,23 @@ begin
    -- Control writes
    ocFifoWr <= r.ocFifoWrEn and intCodeEn;
 
+   -- Sync write enable
+   U_WrEnSync : entity work.Synchronizer
+      generic map (
+         TPD_G          => 1 ns,
+         RST_POLARITY_G => '1',
+         OUT_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 2,
+         BYPASS_SYNC_G  => false,
+         INIT_G         => "0"
+      ) port map (
+         clk     => intClk,
+         rst     => intClkRst,
+         dataIn  => r.ocFifoWrEn,
+         dataOut => ocFifoWrEn
+      );
+
 
    ----------------------------------------
    -- Feedback Inputs
@@ -319,9 +339,25 @@ begin
          );
 
       -- Control writes
-      fbFifoWr(i) <= r.fbFifoWrEn(i) and ifbCodeEn(i);
+      fbFifoWr(i) <= fbFifoWrEn(i) and ifbCodeEn(i);
 
    end generate;
+
+   -- FB Fifo Write Enable Sync
+   U_FbFifoWrEnSync : entity work.SynchronizerVector 
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 2, 
+         WIDTH_G        => 8,
+         INIT_G         => "0"
+      ) port map (
+         clk     => distClk,
+         rst     => distClkRst,
+         dataIn  => r.fbFifoWrEn,
+         dataOut => fbFifoWrEn
+      );
 
    -- Outputs
    fbCode   <= ifbCode;
@@ -342,7 +378,7 @@ begin
 
    -- Async
    process (axiClkRst, axiReadMaster, axiWriteMaster, r, fbStatusErrorCnt, fbStatusIdleCnt, 
-            fbFifoValid, fbFifoData, ocFifoValid, ocFifoData, ledCountA) is
+            fbFifoValid, fbFifoData, ocFifoValid, ocFifoData, ledCountASync) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
@@ -417,7 +453,7 @@ begin
 
          -- Debug counter
          elsif axiReadMaster.araddr(11 downto 0)  = x"40C" then
-            v.axiReadSlave.rdata := ledCountA;
+            v.axiReadSlave.rdata := ledCountASync;
          end if;
 
          -- Send Axi Response
@@ -493,6 +529,29 @@ begin
 
    led(0) <= ledCountA(26);
    led(1) <= ledCountB(15);
+
+   -- Sync Led Count
+   U_LedCntSync : entity work.SynchronizerFifo
+      generic map (
+         TPD_G         => 1 ns,
+         COMMON_CLK_G  => false,
+         BRAM_EN_G     => false,
+         ALTERA_SYN_G  => false,
+         ALTERA_RAM_G  => "M9K",
+         SYNC_STAGES_G => 3,
+         DATA_WIDTH_G  => 32,
+         ADDR_WIDTH_G  => 4,
+         INIT_G        => "0"
+      ) port map (
+         rst                => configClkRst,
+         wr_clk             => distClk,
+         wr_en              => '1',
+         din                => ledCountA,
+         rd_clk             => configClk,
+         rd_en              => '1',
+         valid              => open,
+         dout               => ledCountASync
+      );
 
 end architecture STRUCTURE;
 

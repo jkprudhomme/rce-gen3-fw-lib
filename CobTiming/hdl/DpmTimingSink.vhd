@@ -82,8 +82,10 @@ architecture STRUCTURE of DpmTimingSink is
    signal ocFifoValid         : sl;
    signal ocFifoData          : slv(7 downto 0);
    signal ledCountA           : slv(31 downto 0);
+   signal ledCountASync       : slv(31 downto 0);
    signal ledCountB           : slv(31 downto 0);
    signal ocFifoRd            : sl;
+   signal ocFifoWrEn          : sl;
 
    type RegType is record
       cfgReset          : sl;
@@ -240,7 +242,24 @@ begin
       );
 
    -- Control writes
-   ocFifoWr <= r.ocFifoWrEn and intCodeEn;
+   ocFifoWr <= ocFifoWrEn and intCodeEn;
+
+   -- Sync write enable
+   U_WrEnSync : entity work.Synchronizer
+      generic map (
+         TPD_G          => 1 ns,
+         RST_POLARITY_G => '1',
+         OUT_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 2,
+         BYPASS_SYNC_G  => false,
+         INIT_G         => "0"
+      ) port map (
+         clk     => intClk,
+         rst     => intClkRst,
+         dataIn  => r.ocFifoWrEn,
+         dataOut => ocFifoWrEn
+      );
 
 
    ----------------------------------------
@@ -281,7 +300,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, axiReadMaster, axiWriteMaster, r, statusErrorCnt, statusIdleCnt, ocFifoValid, ocFifoData, ledCountA ) is
+   process (axiClkRst, axiReadMaster, axiWriteMaster, r, statusErrorCnt, statusIdleCnt, ocFifoValid, ocFifoData, ledCountASync ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
@@ -341,7 +360,7 @@ begin
 
          -- Clock Count
          elsif axiReadMaster.araddr(11 downto 0) = x"014" then
-            v.axiReadSlave.rdata := ledCountA;
+            v.axiReadSlave.rdata := ledCountASync;
           end if;
 
          -- Send Axi Response
@@ -385,6 +404,29 @@ begin
 
    led(0) <= ledCountA(26);
    led(1) <= ledCountB(15);
+
+   -- Sync Led Count
+   U_LedCntSync : entity work.SynchronizerFifo
+      generic map (
+         TPD_G         => 1 ns,
+         COMMON_CLK_G  => false,
+         BRAM_EN_G     => false,
+         ALTERA_SYN_G  => false,
+         ALTERA_RAM_G  => "M9K",
+         SYNC_STAGES_G => 3,
+         DATA_WIDTH_G  => 32,
+         ADDR_WIDTH_G  => 4,
+         INIT_G        => "0"
+      ) port map (
+         rst                => configClkRst,
+         wr_clk             => distClk,
+         wr_en              => '1',
+         din                => ledCountA,
+         rd_clk             => configClk,
+         rd_en              => '1',
+         valid              => open,
+         dout               => ledCountASync
+      );
 
 end architecture STRUCTURE;
 

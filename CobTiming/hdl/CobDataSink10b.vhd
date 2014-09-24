@@ -68,6 +68,7 @@ architecture STRUCTURE of CobDataSink10b is
 
    -- Local Signals
    signal delayLd      : sl;
+   signal delayLdRst   : sl;
    signal delayValue   : slv(4 downto 0);
    signal inBit        : sl;
    signal shiftReg     : slv(15 downto 0);
@@ -84,10 +85,34 @@ architecture STRUCTURE of CobDataSink10b is
 begin
 
    -- Outputs
-   rxData         <= intData;
-   rxDataEn       <= intDataEn;
-   statusErrorCnt <= intErrorCnt;
-   statusIdleCnt  <= intIdleCnt;
+   rxData   <= intData;
+   rxDataEn <= intDataEn;
+
+   -- Sync status
+   U_StatusSync : entity work.SynchronizerFifo
+      generic map (
+         TPD_G         => 1 ns,
+         COMMON_CLK_G  => false,
+         BRAM_EN_G     => false,
+         ALTERA_SYN_G  => false,
+         ALTERA_RAM_G  => "M9K",
+         SYNC_STAGES_G => 3,
+         DATA_WIDTH_G  => 32,
+         ADDR_WIDTH_G  => 4,
+         INIT_G        => "0"
+      ) port map (
+         rst                => configClkRst,
+         wr_clk             => distClk,
+         wr_en              => '1',
+         din(15 downto  0)  => intErrorCnt,
+         din(31 downto 16)  => intIdleCnt,
+         rd_clk             => configClk,
+         rd_en              => '1',
+         valid              => open,
+         dout(15 downto  0) => statusErrorCnt,
+         dout(31 downto 16) => statusIdleCnt
+      );
+
 
    ----------------------------------------
    -- Incoming Sync Stream
@@ -131,6 +156,21 @@ begin
          REGRST      => configClkRst -- 1-bit input: Active-high reset tap-delay input
       );
 
+   -- Reset gen
+   U_LdRstGen : entity work.RstSync
+      generic map (
+         TPD_G            => TPD_G,
+         IN_POLARITY_G    => '1',
+         OUT_POLARITY_G   => '1',
+         RELEASE_DELAY_G  => 16
+      )
+      port map (
+        clk      => distClk,
+        asyncRst => delayLd,
+        syncRst  => delayLdRst
+      );
+
+
    ----------------------------------------
    -- Shift Register 
    ----------------------------------------
@@ -152,7 +192,7 @@ begin
    ----------------------------------------
    process ( distClk ) begin
       if rising_edge(distClk) then
-         if distClkRst = '1' or delayLd = '1' then
+         if distClkRst = '1' or delayLdRst = '1' then
             intIdleCnt    <= (others=>'0') after TPD_G;
          else
             if shiftReg = x"AAAA" or shiftReg = x"5555" then
@@ -172,7 +212,7 @@ begin
    ----------------------------------------
    process ( distClk ) begin
       if rising_edge(distClk) then
-         if distClkRst = '1' or delayLd = '1' then
+         if distClkRst = '1' or delayLdRst = '1' then
             intData        <= (others=>'0') after TPD_G;
             intDataEn      <= '0'           after TPD_G;
             intDataErr     <= '0'           after TPD_G;
