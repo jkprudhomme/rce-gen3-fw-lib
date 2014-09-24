@@ -129,7 +129,6 @@ begin
          ppiIbSlave        => intIbSlave(NUM_INT_SLOTS_C-1),
          ppiObMaster       => intObMaster(NUM_INT_SLOTS_C-1),
          ppiObSlave        => intObSlave(NUM_INT_SLOTS_C-1),
-         ppiState          => ppiState,
          statusClk         => statusClk,
          statusClkRst      => statusClkRst,
          statusWords       => statusWords,

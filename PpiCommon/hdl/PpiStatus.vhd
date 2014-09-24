@@ -96,8 +96,8 @@ begin
    U_SwSync : entity work.SynchronizerOneShotVector
       generic map (
          TPD_G          => TPD_G,
-         IN_POLARITY_G  => '1',
-         OUT_POLARITY_G => '1',
+         IN_POLARITY_G  => "111",
+         OUT_POLARITY_G => "111",
          WIDTH_G        => 3
       ) port map (
          clk        => statusClk,
