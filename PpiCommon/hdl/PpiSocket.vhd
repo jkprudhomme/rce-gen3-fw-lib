@@ -14,7 +14,7 @@
 --
 -- Base + 0x00000 :
 --    Bit 0 : PPI Online Bit
---    Bit 1 : PPI Enable Bit
+--    Bit 1 : PPI User   Bit
 -- Base + 0x0000C :
 --    Bit 0 : Count reset (auto clear)
 -- Base + 0x00010 :
@@ -190,7 +190,7 @@ begin
          case axilWriteMaster(0).awaddr(7 downto 0) is
             when x"00" =>
                v.dmaState.online := axilWriteMaster(0).wdata(0);
-               v.dmaState.enable := axilWriteMaster(0).wdata(1);
+               v.dmaState.user   := axilWriteMaster(0).wdata(1);
             when x"0C" =>
                v.countReset := axilWriteMaster(0).wdata(0);
             when others =>
@@ -209,8 +209,8 @@ begin
          else 
             case axilReadMaster(0).araddr(7 downto 0) is
                when x"00" =>
-                  v.axilReadSlave.rdata(0) := r.dmaState.enable;
-                  v.axilReadSlave.rdata(1) := r.dmaState.online;
+                  v.axilReadSlave.rdata(0) := r.dmaState.online;
+                  v.axilReadSlave.rdata(1) := r.dmaState.user;
                when x"10" =>
                   v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 0); -- obHeadAxiError
                when x"14" =>
