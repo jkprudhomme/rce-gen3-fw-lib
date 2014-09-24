@@ -20,8 +20,6 @@ create_clock -name fclk0 -period 10 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Cpu/U_
 # Arm Core Clocks
 set fclk0Group     [get_clocks -of_objects \
    [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKIN1]]
-set dmaClkGroup    [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]]
 set sysClk200Group [get_clocks -of_objects \
    [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]]
 set sysClk125Group [get_clocks -of_objects \
@@ -47,31 +45,10 @@ set pcieUser1Group  [get_clocks -of_objects \
 set pcieUser2Group  [get_clocks -of_objects \
    [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3]]
 
-# External 1G Ethernet Clocks
-create_clock -name ethRxClk0 -period 8 [get_ports ethRxClk[0]]
-create_clock -name ethRxClk1 -period 8 [get_ports ethRxClk[1]]
-set extEthClk125Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]]
-set extEthClk25Group  [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]]
-set extEthClk2_5Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]]
-
 # Set Asynchronous Paths
 set_clock_groups -asynchronous -group ${fclk0Group} \
-                               -group ${dmaClkGroup} \
                                -group ${sysClk200Group} \
                                -group ${sysClk125Group} 
-
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk0Group}
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk1Group}
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${pcieClk125Group}
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${pcieClk250Group}
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${pcieUser1Group}
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${pcieUser2Group}
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${extEthClk125Group}
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${extEthClk25Group}
-set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${extEthClk2_5Group}
 
 set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk0Group}
 set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk1Group}
@@ -79,9 +56,6 @@ set_clock_groups -asynchronous -group ${sysClk125Group} -group ${pcieClk125Group
 set_clock_groups -asynchronous -group ${sysClk125Group} -group ${pcieClk250Group}
 set_clock_groups -asynchronous -group ${sysClk125Group} -group ${pcieUser1Group}
 set_clock_groups -asynchronous -group ${sysClk125Group} -group ${pcieUser2Group}
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${extEthClk125Group}
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${extEthClk25Group}
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${extEthClk2_5Group}
 
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk0Group}
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk1Group}
@@ -89,9 +63,6 @@ set_clock_groups -asynchronous -group ${sysClk200Group} -group ${pcieClk125Group
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${pcieClk250Group}
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${pcieUser1Group}
 set_clock_groups -asynchronous -group ${sysClk200Group} -group ${pcieUser2Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${extEthClk125Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${extEthClk25Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${extEthClk2_5Group}
 
 # PCI-Express Timing
 set_false_path -through [get_pins  -hier -filter {name =~ *pcie_block_i/PLPHYLNKUPN*}]

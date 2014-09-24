@@ -170,8 +170,7 @@ begin
       generic map (
          TPD_G          => TPD_G,
          RCE_DMA_MODE_G => RCE_DMA_MODE_G,
-         OLD_BSI_MODE_G => OLD_BSI_MODE_G,
-         DMA_CLKDIV_G   => 5.0
+         OLD_BSI_MODE_G => OLD_BSI_MODE_G
       ) port map (
          i2cSda              => i2cSda,
          i2cScl              => i2cScl,
@@ -283,36 +282,8 @@ begin
    idmaObSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;
    idmaIbMaster(3) <= AXI_STREAM_MASTER_INIT_C;
    armEthMode      <= x"00000001"; -- 1 Gig on lane 0
+   armEthRx(1)     <= ARM_ETH_RX_INIT_C;
 
-
-   --------------------------------------------------
-   -- Base Ethernet
-   --------------------------------------------------
-   
-   U_GmiiToRgmiiSwitch : entity work.GmiiToRgmiiSwitch 
-      generic map (
-         SELECT_CH1_G => false
-      ) port map (
-         sysClk200    => isysClk200,
-         sysClk200Rst => isysClk200Rst,
-         armEthTx     => armEthTx(1),
-         armEthRx     => armEthRx(1),
-         ethRxCtrl    => ethRxCtrl,
-         ethRxClk     => ethRxClk,
-         ethRxDataA   => ethRxDataA,
-         ethRxDataB   => ethRxDataB,
-         ethRxDataC   => ethRxDataC,
-         ethRxDataD   => ethRxDataD,
-         ethTxCtrl    => ethTxCtrl,
-         ethTxClk     => ethTxClk,
-         ethTxDataA   => ethTxDataA,
-         ethTxDataB   => ethTxDataB,
-         ethTxDataC   => ethTxDataC,
-         ethTxDataD   => ethTxDataD,
-         ethMdc       => ethMdc,
-         ethMio       => ethMio,
-         ethResetL    => ethResetL
-      );      
 
    --------------------------------------------------
    -- Unused

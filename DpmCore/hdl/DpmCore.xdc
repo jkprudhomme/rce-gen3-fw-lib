@@ -18,9 +18,6 @@ set fclk0Pin [get_pins U_DpmCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[
 create_clock -name fclk0 -period 10 $fclk0Pin
 
 # Arm Core Clocks
-create_generated_clock -name dmaClk -source $fclk0Pin \
-    -multiply_by 2 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]
-
 create_generated_clock -name sysClk200 -source $fclk0Pin \   
     -multiply_by 2 [get_pins U_DpmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]
 
@@ -29,7 +26,6 @@ create_generated_clock -name sysClk125 -source $fclk0Pin \
 
 set_clock_groups -asynchronous \
     -group [get_clocks fclk0] \
-    -group [get_clocks -include_generated_clocks dmaClk] \
     -group [get_clocks -include_generated_clocks sysClk200] \
     -group [get_clocks -include_generated_clocks sysClk125] \
 
@@ -61,10 +57,6 @@ set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks fclk0] \
     -group [get_clocks -include_generated_clocks eth10GClk]
 
-
-# set_clock_groups -asynchronous -group ${dmaClkGroup}    -group [get_clocks {eth10GClk}]
-# set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk0Group}
-# set_clock_groups -asynchronous -group ${dmaClkGroup}    -group ${intEthClk1Group}
 
 # set_clock_groups -asynchronous -group ${sysClk125Group} -group [get_clocks {eth10GClk}]
 # set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk0Group}
