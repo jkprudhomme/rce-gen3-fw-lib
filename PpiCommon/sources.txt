@@ -12,4 +12,4 @@ vhdl work hdl/PpiStatus.vhd
 vhdl work hdl/PpiInterconnect.vhd
 vhdl work hdl/AxisToPpi.vhd
 vhdl work hdl/PpiToAxis.vhd
-
+vhdl work hdl/PpiOnlineMonitor.vhd
