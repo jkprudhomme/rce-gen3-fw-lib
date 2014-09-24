@@ -135,7 +135,7 @@ begin
             axilWriteSlave  => axilWriteSlave((i*2)+1 downto i*2),
             interrupt       => interrupt(i),
             online          => dmaState(i).online,
-            enabled         => dmaState(i).enable,
+            acknowledge     => dmaState(i).user,
             sAxisMaster     => sAxisMaster(i),
             sAxisSlave      => sAxisSlave(i),
             mAxisMaster     => mAxisMaster(i),

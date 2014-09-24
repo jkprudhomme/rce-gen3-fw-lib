@@ -31,7 +31,8 @@ use work.AxiPkg.all;
 entity RceG3Top is
    generic (
       TPD_G                 : time                  := 1 ns;
-      DMA_CLKDIV_G          : real                  := 4.5;
+      DMA_CLKDIV_EN_G       : boolean               := false;
+      DMA_CLKDIV_G          : real                  := 5.0;
       RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C;
       OLD_BSI_MODE_G        : boolean               := false
    );
@@ -247,8 +248,9 @@ begin
    --------------------------------------------
    U_RceG3Clocks: entity work.RceG3Clocks
       generic map (
-         TPD_G        => TPD_G,
-         DMA_CLKDIV_G => DMA_CLKDIV_G
+         TPD_G            => TPD_G,
+         DMA_CLKDIV_EN_G  => DMA_CLKDIV_EN_G,
+         DMA_CLKDIV_G     => DMA_CLKDIV_G
       ) port map (
          fclkClk3                 => fclkClk3,
          fclkClk2                 => fclkClk2,

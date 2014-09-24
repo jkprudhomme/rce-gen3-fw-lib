@@ -26,8 +26,9 @@ use work.StdRtlPkg.all;
 
 entity RceG3Clocks is
    generic (
-      DMA_CLKDIV_G : real  := 4.5;
-      TPD_G        : time  := 1 ns
+      DMA_CLKDIV_EN_G   : boolean  := false;
+      DMA_CLKDIV_G      : real     := 4.5;
+      TPD_G             : time     := 1 ns
    );
    port (
 
@@ -170,11 +171,17 @@ begin
          RST                  => ponReset
       );
 
-   U_DmaClkBuf : BUFG
-      port map (
-         I     => ddmaClk,
-         O     => idmaClk
-      );
+   U_DmaClkEnGen : if DMA_CLKDIV_EN_G = true generate
+      U_DmaClkBuf : BUFG
+         port map (
+            I     => ddmaClk,
+            O     => idmaClk
+         );
+   end generate;
+
+   U_DmaClkDisGen : if DMA_CLKDIV_EN_G = false generate
+      idmaClk <= isysClk200;
+   end generate;
 
    U_sysClk200Buf : BUFG
       port map (

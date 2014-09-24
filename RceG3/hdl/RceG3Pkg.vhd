@@ -36,12 +36,12 @@ package RceG3Pkg is
 
    type RceDmaStateType is record
       online : sl;
-      enable : sl;
+      user   : sl;
    end record;
 
    constant RCE_DMA_STATE_INIT_C : RceDmaStateType := ( 
       online => '0',
-      enable => '0'
+      user   => '0'
    );
 
    type RceDmaStateArray is array (natural range<>) of RceDmaStateType;
