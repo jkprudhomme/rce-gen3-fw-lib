@@ -68,14 +68,6 @@ end ZynqEthernet10G;
 
 architecture structure of ZynqEthernet10G is
 
-   signal intAxilWriteMaster  : AxiLiteWriteMasterType;
-   signal intAxilWriteSlave   : AxiLiteWriteSlaveType;
-   signal intAxilReadMaster   : AxiLiteReadMasterType;
-   signal intAxilReadSlave    : AxiLiteReadSlaveType;
-   signal muxAxilWriteMasters : AxiLiteWriteMasterArray(1 downto 0);
-   signal muxAxilWriteSlaves  : AxiLiteWriteSlaveArray(1 downto 0);
-   signal muxAxilReadMasters  : AxiLiteReadMasterArray(1 downto 0);
-   signal muxAxilReadSlaves   : AxiLiteReadSlaveArray(1 downto 0);
    signal locIbMaster         : AxiStreamMasterType;
    signal locIbSlave          : AxiStreamSlaveType;
    signal locObMaster         : AxiStreamMasterType;
@@ -96,7 +88,6 @@ begin
       generic map (
          TPD_G               => TPD_G,
          NUM_PPI_SLOTS_G     => 1,
-         NUM_AXI_SLOTS_G     => 1,
          NUM_STATUS_WORDS_G  => 1,
          STATUS_SEND_WIDTH_G => 1
       ) port map (
@@ -111,52 +102,11 @@ begin
          locIbSlave(0)       => locIbSlave,
          locObMaster(0)      => locObMaster,
          locObSlave(0)       => locObSlave,
-         axilClk             => axilClk,
-         axilClkRst          => axilClkRst,
-         axilWriteMasters(0) => muxAxilWriteMasters(0),
-         axilWriteSlaves(0)  => muxAxilWriteSlaves(0),
-         axilReadMasters(0)  => muxAxilReadMasters(0),
-         axilReadSlaves(0)   => muxAxilReadSlaves(0),
          statusClk           => axilClk,
          statusClkRst        => axilClkRst,
          statusWords(0)      => statusWord,
-         statusSend(0)       => statusSend
-      );
-
-   -- Connect external axi-lite to MUX, mask out upper address bits
-   process (axilWriteMaster,axilReadMaster) begin
-      muxAxilWriteMasters(1) <= axilWriteMaster;
-      muxAxilReadMasters(1)  <= axilReadMaster;
-
-      muxAxilWriteMasters(1).awaddr(31 downto 16) <= (others=>'0');
-      muxAxilReadMasters(1).araddr(31 downto 16)  <= (others=>'0');
-   end process;
-   axilWriteSlave <= muxAxilWriteSlaves(1);
-   axilReadSlave  <= muxAxilReadSlaves(1);
-
-   -- AXI Crossbar
-   U_AxiCrossbar : entity work.AxiLiteCrossbar 
-      generic map (
-         TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 2,
-         NUM_MASTER_SLOTS_G => 1,
-         DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
-         MASTERS_CONFIG_G   => (
-            0 => ( baseAddr     => x"00000000",
-                   addrBits     => 16,
-                   connectivity => x"FFFF")
-         )
-      ) port map (
-         axiClk              => axilClk,
-         axiClkRst           => axilClkRst,
-         sAxiWriteMasters    => muxAxilWriteMasters,
-         sAxiWriteSlaves     => muxAxilWriteSlaves,
-         sAxiReadMasters     => muxAxilReadMasters,
-         sAxiReadSlaves      => muxAxilReadSlaves,
-         mAxiWriteMasters(0) => intAxilWriteMaster,
-         mAxiWriteSlaves(0)  => intAxilWriteSlave,
-         mAxiReadMasters(0)  => intAxilReadMaster,
-         mAxiReadSlaves(0)   => intAxilReadSlave
+         statusSend(0)       => statusSend,
+         offlineAck          => '0'
       );
 
    -- 10G Mac
@@ -181,10 +131,10 @@ begin
          dmaObSlave       => locObSlave,
          axilClk          => axilClk,
          axilClkRst       => axilClkRst,
-         axilWriteMaster  => intAxilWriteMaster,
-         axilWriteSlave   => intAxilWriteSlave,
-         axilReadMaster   => intAxilReadMaster,
-         axilReadSlave    => intAxilReadSlave,
+         axilWriteMaster  => axilWriteMaster,
+         axilWriteSlave   => axilWriteSlave,
+         axilReadMaster   => axilReadMaster,
+         axilReadSlave    => axilReadSlave,
          statusWord       => statusWord,
          statusSend       => statusSend,
          ethRefClkP       => ethRefClkP,
