@@ -30,13 +30,9 @@ use work.AxiStreamPkg.all;
 entity PpiInterconnect is
    generic (
       TPD_G               : time                  := 1 ns;
-      NUM_PPI_SLOTS_G     : natural range 1 to 16 := 1;
-      NUM_AXI_SLOTS_G     : natural range 1 to 16 := 1;
+      NUM_PPI_SLOTS_G     : natural range 1 to 15 := 1;
       NUM_STATUS_WORDS_G  : natural range 1 to 30 := 1;
-      STATUS_SEND_WIDTH_G : natural               := 1;
-      AXIL_BASEADDR_G     : slv(31 downto 0)      := X"00000000";
-      AXIL_BASEBOT_G      : natural range 0 to 32 := 32;
-      AXIL_ADDRBITS_G     : natural range 0 to 32 := 24
+      STATUS_SEND_WIDTH_G : natural               := 1
    );
    port (
 
@@ -57,37 +53,23 @@ entity PpiInterconnect is
       locObMaster      : out AxiStreamMasterArray(NUM_PPI_SLOTS_G-1 downto 0);
       locObSlave       : in  AxiStreamSlaveArray(NUM_PPI_SLOTS_G-1 downto 0);
 
-      -- AXI Lite Busses
-      axilClk          : in  sl;
-      axilClkRst       : in  sl;
-      axilWriteMasters : out AxiLiteWriteMasterArray(NUM_AXI_SLOTS_G-1 downto 0);
-      axilWriteSlaves  : in  AxiLiteWriteSlaveArray(NUM_AXI_SLOTS_G-1 downto 0);
-      axilReadMasters  : out AxiLiteReadMasterArray(NUM_AXI_SLOTS_G-1 downto 0);
-      axilReadSlaves   : in  AxiLiteReadSlaveArray(NUM_AXI_SLOTS_G-1 downto 0);
-
       -- Status Bus
       statusClk        : in  sl;
       statusClkRst     : in  sl;
       statusWords      : in  Slv64Array(NUM_STATUS_WORDS_G-1 downto 0);
-      statusSend       : in  slv(STATUS_SEND_WIDTH_G-1 downto 0)
+      statusSend       : in  slv(STATUS_SEND_WIDTH_G-1 downto 0);
+      offlineAck       : in  sl
    );
 end PpiInterconnect;
 
 architecture structure of PpiInterconnect is
 
-   constant NUM_INT_SLOTS_C : natural := NUM_PPI_SLOTS_G + 2;
+   constant NUM_INT_SLOTS_C : natural := 16;
 
-   signal intIbMaster       : AxiStreamMasterArray(NUM_INT_SLOTS_C-1 downto 0);
-   signal intIbSlave        : AxiStreamSlaveArray(NUM_INT_SLOTS_C-1 downto 0);
-   signal intObMaster       : AxiStreamMasterArray(NUM_INT_SLOTS_C-1 downto 0);
-   signal intObSlave        : AxiStreamSlaveArray(NUM_INT_SLOTS_C-1 downto 0);
-   signal iaxilWriteMaster  : AxiLiteWriteMasterType;
-   signal iaxilWriteSlave   : AxiLiteWriteSlaveType;
-   signal iaxilReadMaster   : AxiLiteReadMasterType;
-   signal iaxilReadSlave    : AxiLiteReadSlaveType;
-
-   constant MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray := 
-      genAxiLiteConfig ( NUM_AXI_SLOTS_G, AXIL_BASEADDR_G, AXIL_BASEBOT_G, AXIL_ADDRBITS_G );
+   signal intIbMaster : AxiStreamMasterArray(NUM_INT_SLOTS_C-1 downto 0);
+   signal intIbSlave  : AxiStreamSlaveArray(NUM_INT_SLOTS_C-1 downto 0);
+   signal intObMaster : AxiStreamMasterArray(NUM_INT_SLOTS_C-1 downto 0);
+   signal intObSlave  : AxiStreamSlaveArray(NUM_INT_SLOTS_C-1 downto 0);
 
 begin
 
@@ -98,6 +80,12 @@ begin
    -- Outputs
    locIbSlave  <= intIbSlave(NUM_PPI_SLOTS_G-1 downto 0);
    locObMaster <= intObMaster(NUM_PPI_SLOTS_G-1 downto 0);
+
+   -- Unused slots
+   U_UnusedPpiGen : if NUM_PPI_SLOTS_G /= 15 generate
+      intIbMaster(14 downto NUM_PPI_SLOTS_G) <= (others=>AXI_STREAM_MASTER_INIT_C);
+      intObSlave(14 downto NUM_PPI_SLOTS_G)  <= (others=>AXI_STREAM_SLAVE_INIT_C);
+   end generate;
 
    -- Outbound DeMux
    U_ObDeMux : entity work.AxiStreamDeMux
@@ -128,46 +116,6 @@ begin
 
       );
 
-   -- AXI Bridge
-   U_PpiToAxi : entity work.PpiToAxiLite
-      generic map (
-         TPD_G  => TPD_G 
-      ) port map (
-         ppiClk            => ppiClk,
-         ppiClkRst         => ppiClkRst,
-         ppiIbMaster       => intIbMaster(NUM_INT_SLOTS_C-2),
-         ppiIbSlave        => intIbSlave(NUM_INT_SLOTS_C-2),
-         ppiObMaster       => intObMaster(NUM_INT_SLOTS_C-2),
-         ppiObSlave        => intObSlave(NUM_INT_SLOTS_C-2),
-         axilClk           => axilClk,
-         axilClkRst        => axilClkRst,
-         axilWriteMaster   => iaxilWriteMaster,
-         axilWriteSlave    => iaxilWriteSlave,
-         axilReadMaster    => iaxilReadMaster,
-         axilReadSlave     => iaxilReadSlave
-      );
-
-   -- AXI Crossbar
-   U_AxiCrossbar : entity work.AxiLiteCrossbar 
-      generic map (
-         TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => NUM_AXI_SLOTS_G,
-         DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
-         MASTERS_CONFIG_G   => MASTERS_CONFIG_C
-      ) port map (
-         axiClk              => axilClk,
-         axiClkRst           => axilClkRst,
-         sAxiWriteMasters(0) => iaxilWriteMaster,
-         sAxiWriteSlaves(0)  => iaxilWriteSlave,
-         sAxiReadMasters(0)  => iaxilReadMaster,
-         sAxiReadSlaves(0)   => iaxilReadSlave,
-         mAxiWriteMasters    => axilWriteMasters,
-         mAxiWriteSlaves     => axilWriteSlaves,
-         mAxiReadMasters     => axilReadMasters,
-         mAxiReadSlaves      => axilReadSlaves
-      );
-
    -- Status Bridge
    U_PpiStatus : entity work.PpiStatus
       generic map (
@@ -185,7 +133,8 @@ begin
          statusClk         => statusClk,
          statusClkRst      => statusClkRst,
          statusWords       => statusWords,
-         statusSend        => statusSend
+         statusSend        => statusSend,
+         offlineAck        => offlineAck
       );
 
 end architecture structure;

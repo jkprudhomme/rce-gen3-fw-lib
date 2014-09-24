@@ -42,13 +42,13 @@ entity PpiStatus is
       ppiIbSlave       : in  AxiStreamSlaveType;
       ppiObMaster      : in  AxiStreamMasterType;
       ppiObSlave       : out AxiStreamSlaveType;
-      ppiState         : in  RceDmaStateType;
 
       -- Status Busses
       statusClk        : in  sl;
       statusClkRst     : in  sl;
       statusWords      : in  Slv64Array(NUM_STATUS_WORDS_G-1 downto 0);
-      statusSend       : in  slv(STATUS_SEND_WIDTH_G-1 downto 0)
+      statusSend       : in  slv(STATUS_SEND_WIDTH_G-1 downto 0);
+      offlineAck       : in  sl
    );
 end PpiStatus;
 
@@ -61,12 +61,13 @@ architecture structure of PpiStatus is
    signal intIbCtrl        : AxiStreamCtrlType;
    signal statusSendGen    : sl;
    signal statusSendEdge   : sl;
-   signal intState         : RceDmaStateType;
+   signal offlineAckEdge   : sl;
 
    type StateType is (S_IDLE_C, S_WAIT_C, S_FIRST_C, S_MESSAGE_C, S_LAST_C );
 
    type RegType is record
       statusWords     : Slv64Array(NUM_STATUS_WORDS_G-1 downto 0);
+      statusCause     : slv(2 downto 0);
       count           : slv(4 downto 0);
       state           : StateType;
       intIbMaster     : AxiStreamMasterType;
@@ -74,6 +75,7 @@ architecture structure of PpiStatus is
 
    constant REG_INIT_C : RegType := (
       statusWords     => (others=>(others=>'0')),
+      statusCause     => (others=>'0'),
       count           => (others=>'0'),
       state           => S_IDLE_C,
       intIbMaster     => AXI_STREAM_MASTER_INIT_C
@@ -87,43 +89,24 @@ begin
    ------------------------------------
    -- Generate status request pulse
    ------------------------------------
-   swReqIn    <= ppiObMaster.tValid and ppiObMaster.tlast;
-   ppiObSlave <= AXI_STREAM_SLAVE_FORCE_C;
-
-   U_SwSync : entity work.SynchronizerOneShot
-      generic map (
-         TPD_G          => TPD_G,
-         IN_POLARITY_G  => '1',
-         OUT_POLARITY_G => '1'
-      ) port map (
-         clk     => statusClk,
-         dataIn  => swReqIn,
-         dataOut => swReqEdge
-      );
-
-   -- Sync State
-   U_StateSync: entity work.PpiStateSync
-      generic map (
-         TPD_G => TPD_G
-      ) port map (
-         ppiState  => ppiState,
-         locClk    => statusClk,
-         locClkRst => statusClkRst,
-         locState  => intState
-      );
-
+   swReqIn       <= ppiObMaster.tValid and ppiObMaster.tlast;
+   ppiObSlave    <= AXI_STREAM_SLAVE_FORCE_C;
    statusSendGen <= uor(statusSend);
 
-   -- Request edge detect
-   U_ReqSync : entity work.SynchronizerOneShot
+   U_SwSync : entity work.SynchronizerOneShotVector
       generic map (
          TPD_G          => TPD_G,
          IN_POLARITY_G  => '1',
-         OUT_POLARITY_G => '1'
+         OUT_POLARITY_G => '1',
+         WIDTH_G        => 3
       ) port map (
-         clk     => statusClk,
-         dataIn  => statusSendGen,
-         dataOut => statusSendEdge
+         clk        => statusClk,
+         dataIn(0)  => swReqIn,
+         dataIn(1)  => statusSendGen,
+         dataIn(2)  => offlineAck,
+         dataOut(0) => swReqEdge,
+         dataOut(1) => statusSendEdge,
+         dataOut(2) => offlineAckEdge
       );
 
 
@@ -172,7 +155,7 @@ begin
    end process;
 
    -- Async
-   process (statusClkRst, r, intIbCtrl, swReqEdge, statusSendEdge, intState, statusWords ) is
+   process (statusClkRst, r, intIbCtrl, swReqEdge, statusSendEdge, offlineAckEdge, statusWords ) is
       variable v : RegType;
    begin
       v := r;
@@ -188,9 +171,12 @@ begin
             v.intIbMaster    := AXI_STREAM_MASTER_INIT_C;
             v.count          := (others=>'0');
             v.statusWords    := statusWords;
+            v.statusCause(2) := swReqEdge;
+            v.statusCause(1) := statusSendEdge;
+            v.statusCause(0) := offlineAckEdge;
 
             -- When to send a message, transition to online, sw request or firmware request
-            if swReqEdge = '1' or (statusSendEdge = '1' and intState.online = '1') then
+            if swReqEdge = '1' or statusSendEdge = '1' or offlineAckEdge = '1' then
                v.state := S_WAIT_C;
             end if;
 
@@ -204,10 +190,11 @@ begin
 
          -- First Word
          when S_FIRST_C =>
-            v.intIbMaster.tData    := (others=>'0');
-            v.intIbMaster.tValid   := '1';
-            v.intIbMaster.tLast    := '0';
-            v.state                := S_MESSAGE_C;
+            v.intIbMaster.tData             := (others=>'0');
+            v.intIbMaster.tData(2 downto 0) := r.statusCause;
+            v.intIbMaster.tValid            := '1';
+            v.intIbMaster.tLast             := '0';
+            v.state                         := S_MESSAGE_C;
 
          -- Status message
          when S_MESSAGE_C =>
