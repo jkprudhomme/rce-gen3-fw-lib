@@ -14,23 +14,25 @@
 #-------------------------------------------------------------------------------
 
 # CPU Clock
-create_clock -name fclk0 -period 10 [get_pins U_EvalCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
+set fclk0Pin [get_pins U_EvalCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
+create_clock -name fclk0 -period 10 $fclk0Pin
 
 # Arm Core Clocks
-set fclk0Group     [get_clocks -of_objects \
-   [get_pins U_EvalCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKIN1]]
-set dmaClkGroup    [get_clocks -of_objects \
-   [get_pins U_EvalCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]]
-set sysClk200Group [get_clocks -of_objects \
-   [get_pins U_EvalCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]]
-set sysClk125Group [get_clocks -of_objects \
-   [get_pins U_EvalCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]]
+create_generated_clock -name dmaClk -source $fclk0Pin \
+    -multiply_by 1 [get_pins U_EvalCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]
+
+create_generated_clock -name sysClk200 -source $fclk0Pin \   
+    -multiply_by 2 [get_pins U_EvalCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]
+
+create_generated_clock -name sysClk125 -source $fclk0Pin \
+    -multiply_by 5 -divide_by 4 [get_pins U_EvalCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]
 
 # Set Asynchronous Paths
-set_clock_groups -asynchronous -group ${fclk0Group} \
-                               -group ${dmaClkGroup} \
-                               -group ${sysClk200Group} \
-                               -group ${sysClk125Group} 
+set_clock_groups -asynchronous \
+    -group [get_clocks fclk0] \
+    -group [get_clocks -include_generated_clocks sysClk200] \
+    -group [get_clocks -include_generated_clocks sysClk125] \
+    -group [get_clocks -include_generated_clocks dmaClk]
 
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
