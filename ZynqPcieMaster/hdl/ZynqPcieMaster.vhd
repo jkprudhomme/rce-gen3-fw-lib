@@ -14,8 +14,8 @@
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
-use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.all;
+use IEEE.STD_LOGIC_ARITH.all;
 use IEEE.numeric_std.all;
 
 library unisim;
@@ -28,79 +28,125 @@ use work.AxiLitePkg.all;
 entity ZynqPcieMaster is
    generic (
       TPD_G : time := 1 ns
-   );
+      );
    port (
 
       -- Local Bus
-      axiClk                  : in  sl;
-      axiClkRst               : in  sl;
-      axiReadMaster           : in  AxiLiteReadMasterType;
-      axiReadSlave            : out AxiLiteReadSlaveType;
-      axiWriteMaster          : in  AxiLiteWriteMasterType;
-      axiWriteSlave           : out AxiLiteWriteSlaveType;
+      axiClk         : in  sl;
+      axiClkRst      : in  sl;
+      axiReadMaster  : in  AxiLiteReadMasterType;
+      axiReadSlave   : out AxiLiteReadSlaveType;
+      axiWriteMaster : in  AxiLiteWriteMasterType;
+      axiWriteSlave  : out AxiLiteWriteSlaveType;
 
       -- Master clock and reset
-      pciRefClkP              : in  sl;
-      pciRefClkM              : in  sl;
+      pciRefClkP : in sl;
+      pciRefClkM : in sl;
 
       -- Reset output
-      pcieResetL              : out sl;
+      pcieResetL : out sl;
 
       -- PCIE Lines
-      pcieRxP                 : in  sl;
-      pcieRxM                 : in  sl;
-      pcieTxP                 : out sl;
-      pcieTxM                 : out sl
-   );
+      pcieRxP : in  sl;
+      pcieRxM : in  sl;
+      pcieTxP : out sl;
+      pcieTxM : out sl
+      );
 end ZynqPcieMaster;
 
 architecture structure of ZynqPcieMaster is
 
+   type PcieCfgOutType is record
+      status             : slv(15 downto 0);
+      command            : slv(15 downto 0);
+      dStatus            : slv(15 downto 0);
+      dCommand           : slv(15 downto 0);
+      dCommand2          : slv(15 downto 0);
+      lStatus            : slv(15 downto 0);
+      lCommand           : slv(15 downto 0);
+      pcieLinkState      : slv(2 downto 0);
+      pmcsrPmeEn         : sl;
+      pmcsrPowerstate    : slv(1 downto 0);
+      pmcsrPmeStatus     : sl;
+      receivedFuncLvlRst : sl;
+   end record PcieCfgOutType;
+
+   constant PCIE_CFG_OUT_SIZE_C : integer := 120;
+
+   function toSlv (cfg : PcieCfgOutType) return slv is
+      variable vector : slv(PCIE_CFG_OUT_SIZE_C-1 downto 0);
+      variable i      : integer := 0;
+   begin
+      assignSlv(i, vector, cfg.status);
+      assignSlv(i, vector, cfg.command);
+      assignSlv(i, vector, cfg.dStatus);
+      assignSlv(i, vector, cfg.dCommand);
+      assignSlv(i, vector, cfg.dCommand2);
+      assignSlv(i, vector, cfg.lStatus);
+      assignSlv(i, vector, cfg.lCommand);
+      assignSlv(i, vector, cfg.pcieLinkState);
+      assignSlv(i, vector, cfg.pmcsrPmeEn);
+      assignSlv(i, vector, cfg.pmcsrPowerstate);
+      assignSlv(i, vector, cfg.pmcsrPmeStatus);
+      assignSlv(i, vector, cfg.receivedFuncLvlRst);
+      return vector;
+   end function;
+
+   function toPcieCfgOutType (vector : slv(PCIE_CFG_OUT_SIZE_C-1 downto 0)) return PcieCfgOutType is
+      variable cfg : PcieCfgOutType;
+      variable i   : integer := 0;
+   begin
+      assignRecord(i, vector, cfg.status);
+      assignRecord(i, vector, cfg.command);
+      assignRecord(i, vector, cfg.dStatus);
+      assignRecord(i, vector, cfg.dCommand);
+      assignRecord(i, vector, cfg.dCommand2);
+      assignRecord(i, vector, cfg.lStatus);
+      assignRecord(i, vector, cfg.lCommand);
+      assignRecord(i, vector, cfg.pcieLinkState);
+      assignRecord(i, vector, cfg.pmcsrPmeEn);
+      assignRecord(i, vector, cfg.pmcsrPowerstate);
+      assignRecord(i, vector, cfg.pmcsrPmeStatus);
+      assignRecord(i, vector, cfg.receivedFuncLvlRst);
+      return cfg;
+   end function toPcieCfgOutType;
+
    -- Local signals
-   signal pciRefClk              : sl;
-   signal wrFifoDout             : slv(94 downto 0);
-   signal wrFifoRdEn             : sl;
-   signal wrFifoValid            : sl;
-   signal rdFifoDin              : slv(94 downto 0);
-   signal rdFifoDout             : slv(94 downto 0);
-   signal rdFifoWrEn             : sl;
-   signal rdFifoFull             : sl;
-   signal rdFifoValid            : sl;
-   signal pciClk                 : sl;
-   signal pciClkRst              : sl;
-   signal txBufAv                : slv(5 downto 0);
-   signal txReady                : sl;
-   signal txValid                : sl;
-   signal rxReady                : sl;
-   signal rxValid                : sl;
-   signal linkUp                 : sl;
-   signal cfgStatus              : slv(15 downto 0);
-   signal cfgCommand             : slv(15 downto 0);
-   signal cfgDStatus             : slv(15 downto 0);
-   signal cfgDCommand            : slv(15 downto 0);
-   signal cfgDCommand2           : slv(15 downto 0);
-   signal cfgLStatus             : slv(15 downto 0);
-   signal cfgLCommand            : slv(15 downto 0);
-   signal cfgPcieLinkState       : slv(2  downto 0);
-   signal cfgPmcsrPmeEn          : sl;
-   signal cfgPmcsrPowerstate     : slv(1  downto 0);
-   signal cfgPmcsrPmeStatus      : sl;
-   signal cfgReceivedFuncLvlRst  : sl;
-   signal phyLinkUp              : sl;
-   signal pciExpTxP              : slv(0  downto 0);
-   signal pciExpTxN              : slv(0  downto 0);
-   signal pciExpRxP              : slv(0  downto 0);
-   signal pciExpRxN              : slv(0  downto 0);
-   signal intResetL              : sl;
-   signal axiClkRstInt           : sl := '1';
+   signal pciRefClk    : sl;
+   signal wrFifoDout   : slv(94 downto 0);
+   signal wrFifoRdEn   : sl;
+   signal wrFifoValid  : sl;
+   signal rdFifoDin    : slv(94 downto 0);
+   signal rdFifoDout   : slv(94 downto 0);
+   signal rdFifoWrEn   : sl;
+   signal rdFifoFull   : sl;
+   signal rdFifoValid  : sl;
+   signal pciClk       : sl;
+   signal pciClkRst    : sl;
+   signal txBufAv      : slv(5 downto 0);
+   signal txReady      : sl;
+   signal txValid      : sl;
+   signal rxReady      : sl;
+   signal rxValid      : sl;
+   signal linkUp       : sl;
+   signal cfg          : PcieCfgOutType;
+   signal cfgSync      : PcieCfgOutType;
+   signal cfgSyncSlv   : slv(PCIE_CFG_OUT_SIZE_C-1 downto 0);
+   signal phyLinkUp    : sl;
+   signal pciExpTxP    : slv(0 downto 0);
+   signal pciExpTxN    : slv(0 downto 0);
+   signal pciExpRxP    : slv(0 downto 0);
+   signal pciExpRxN    : slv(0 downto 0);
+   signal intResetL    : sl;
+   signal axiClkRstInt : sl := '1';
 
    type RegType is record
       wrFifoDin         : slv(94 downto 0);
       wrFifoWrEn        : sl;
       rdFifoRdEn        : sl;
-      cfgBusNumber      : slv(7  downto 0);
-      cfgDeviceNumber   : slv(4  downto 0);
-      cfgFunctionNumber : slv(2  downto 0);
+      cfgBusNumber      : slv(7 downto 0);
+      cfgDeviceNumber   : slv(4 downto 0);
+      cfgFunctionNumber : slv(2 downto 0);
       remResetL         : sl;
       pcieEnable        : sl;
       axiReadSlave      : AxiLiteReadSlaveType;
@@ -108,50 +154,124 @@ architecture structure of ZynqPcieMaster is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      wrFifoDin         => (others=>'0'),
+      wrFifoDin         => (others => '0'),
       wrFifoWrEn        => '0',
       rdFifoRdEn        => '0',
-      cfgBusNumber      => (others=>'0'),
-      cfgDeviceNumber   => (others=>'0'),
-      cfgFunctionNumber => (others=>'0'),
+      cfgBusNumber      => (others => '0'),
+      cfgDeviceNumber   => (others => '0'),
+      cfgFunctionNumber => (others => '0'),
       remResetL         => '0',
       pcieEnable        => '0',
       axiReadSlave      => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave     => AXI_LITE_WRITE_SLAVE_INIT_C
-   );
+      );
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   attribute mark_debug : string;
+   signal phyLinkUpSync         : sl;
+   signal linkUpSync            : sl;
+   signal pciClkRstSync         : sl;
+   signal cfgBusNumberSync      : slv(7 downto 0);
+   signal cfgDeviceNumberSync   : slv(4 downto 0);
+   signal cfgFunctionNumberSync : slv(2 downto 0);
+
+   attribute mark_debug                 : string;
    attribute mark_debug of axiClkRstInt : signal is "true";
 
-   attribute INIT : string;
+   attribute INIT                 : string;
    attribute INIT of axiClkRstInt : signal is "1";
 
 begin
 
    -- Reset registration
-   process ( axiClk ) begin
+   process (axiClk)
+   begin
       if rising_edge(axiClk) then
          axiClkRstInt <= axiClkRst after TPD_G;
       end if;
    end process;
 
    -- Outputs
-   pcieResetL    <= r.remResetL;
-   intResetL     <= r.pcieEnable;
+   pcieResetL <= r.remResetL;
+
+
 
    -- PCI Ref Clk 
    U_PciRefClk : IBUFDS_GTE2
       port map(
-         O       => pciRefClk,
-         ODIV2   => open,
-         I       => pciRefClkP,
-         IB      => pciRefClkM,
-         CEB     => '0'
-      );
+         O     => pciRefClk,
+         ODIV2 => open,
+         I     => pciRefClkP,
+         IB    => pciRefClkM,
+         CEB   => '0'
+         );
 
+   -------------------------------------------------------------------------------------------------
+   -- Sync signals to pciClk
+   -------------------------------------------------------------------------------------------------
+   RstSync_1 : entity work.RstSync
+      generic map (
+         TPD_G          => TPD_G,
+         IN_POLARITY_G  => '0',
+         OUT_POLARITY_G => '0')
+      port map (
+         clk      => pciClk,
+         asyncRst => r.pcieEnable,
+         syncRst  => intResetL);
+
+   SynchronizerFifo_2 : entity work.SynchronizerFifo
+      generic map (
+         TPD_G        => TPD_G,
+         DATA_WIDTH_G => 16)
+      port map (
+         rst                => axiClkRstInt,
+         wr_clk             => axiClk,
+         din(7 downto 0)    => r.cfgBusNumber,
+         din(12 downto 8)   => r.cfgDeviceNumber,
+         din(15 downto 13)  => r.cfgFunctionNumber,
+         rd_clk             => pciClk,
+         dout(7 downto 0)   => cfgBusNumberSync,
+         dout(12 downto 8)  => cfgDeviceNumberSync,
+         dout(15 downto 13) => cfgFunctionNumberSync);
+
+   -------------------------------------------------------------------------------------------------
+   -- Some signals need to be sync'd to AxiClk
+   -------------------------------------------------------------------------------------------------
+   -- pcieClk125
+   Synchronizer_1 : entity work.Synchronizer
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk     => axiClk,
+         rst     => axiClkRstInt,
+         dataIn  => phyLinkUp,
+         dataOut => phyLinkUpSync);
+
+   -- pcieUserClk2
+   SynchronizerVector_1 : entity work.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 2)
+      port map (
+         clk        => axiClk,
+         rst        => axiClkRstInt,
+         dataIn(0)  => linkUp,
+         dataIn(1)  => pciClkRst,
+         dataOut(0) => linkUpSync,
+         dataOut(1) => pciClkRstSync);  
+
+   SynchronizerFifo_1 : entity work.SynchronizerFifo
+      generic map (
+         TPD_G        => TPD_G,
+         DATA_WIDTH_G => PCIE_CFG_OUT_SIZE_C)
+      port map (
+         rst    => axiClkRstInt,
+         wr_clk => pciClk,
+         din    => toSlv(cfg),
+         rd_clk => axiClk,
+         dout   => cfgSyncSlv);
+   cfgSync <= toPcieCfgOutType(cfgSyncSlv);
 
    --------------------------------------------
    -- Registers: 0x0000 - 0xFFFF
@@ -166,10 +286,8 @@ begin
    end process;
 
    -- Async
-   process (axiClkRstInt, axiReadMaster, axiWriteMaster, r, rdFifoValid, rdFifoDout, cfgStatus, 
-            cfgCommand, cfgDStatus, cfgDCommand, cfgDCommand2, cfgLStatus, cfgLCommand,
-            cfgPcieLinkState, linkUp, phyLinkUp, cfgPmcsrPowerstate, cfgPmcsrPmeEn, 
-            cfgPmcsrPmeStatus, cfgReceivedFuncLvlRst, pciClkRst, intResetL ) is
+   process (axiClkRstInt, axiReadMaster, axiWriteMaster, cfgSync, intResetL, linkUpSync,
+            pciClkRstSync, phyLinkUpSync, r, rdFifoDout, rdFifoValid) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
@@ -187,32 +305,32 @@ begin
          case (axiWriteMaster.awaddr(15 downto 0)) is
 
             -- Write FIFO QWord0, - 0x1000
-            when x"1000" => 
-               v.wrFifoDin(31 downto  0) := axiWriteMaster.wdata;
+            when x"1000" =>
+               v.wrFifoDin(31 downto 0) := axiWriteMaster.wdata;
 
             -- Write FIFO QWord1, - 0x1004
-            when x"1004" => 
+            when x"1004" =>
                v.wrFifoDin(63 downto 32) := axiWriteMaster.wdata;
 
             -- Write FIFO QWord2, - 0x1008
-            when x"1008" => 
+            when x"1008" =>
                v.wrFifoDin(94 downto 64) := axiWriteMaster.wdata(30 downto 0);
                v.wrFifoWrEn              := '1';
 
             -- Config Bus Number, - 0x1018
-            when x"1018" => 
+            when x"1018" =>
                v.cfgBusNumber := axiWriteMaster.wdata(7 downto 0);
 
             -- Config Device Number, - 0x101C
-            when x"101C" => 
+            when x"101C" =>
                v.cfgDeviceNumber := axiWriteMaster.wdata(4 downto 0);
 
             -- Config Function Number, - 0x1020
-            when x"1020" => 
+            when x"1020" =>
                v.cfgFunctionNumber := axiWriteMaster.wdata(2 downto 0);
 
             -- Enable Register - 0x1044
-            when x"1044" => 
+            when x"1044" =>
                v.pcieEnable := axiWriteMaster.wdata(0);
                v.remResetL  := axiWriteMaster.wdata(1);
 
@@ -259,48 +377,48 @@ begin
 
             -- Config Status, - 0x1024
             when X"1024" =>
-               v.axiReadSlave.rdata(15 downto 0) := cfgStatus;
+               v.axiReadSlave.rdata(15 downto 0) := cfgSync.Status;
 
             -- Config Status, - 0x1028
             when X"1028" =>
-               v.axiReadSlave.rdata(15 downto 0) := cfgCommand;
+               v.axiReadSlave.rdata(15 downto 0) := cfgSync.Command;
 
             -- Config DStatus, - 0x102C
             when X"102C" =>
-               v.axiReadSlave.rdata(15 downto 0) := cfgDStatus;
+               v.axiReadSlave.rdata(15 downto 0) := cfgSync.DStatus;
 
             -- Config DStatus, - 0x1030
             when X"1030" =>
-               v.axiReadSlave.rdata(15 downto 0) := cfgDCommand;
+               v.axiReadSlave.rdata(15 downto 0) := cfgSync.DCommand;
 
             -- Config DStatus, - 0x1034
             when X"1034" =>
-               v.axiReadSlave.rdata(15 downto 0) := cfgDCommand2;
+               v.axiReadSlave.rdata(15 downto 0) := cfgSync.DCommand2;
 
             -- Config LStatus, - 0x1038
             when X"1038" =>
-               v.axiReadSlave.rdata(15 downto 0) := cfgLStatus;
+               v.axiReadSlave.rdata(15 downto 0) := cfgSync.LStatus;
 
             -- Config LStatus, - 0x103C
             when X"103C" =>
-               v.axiReadSlave.rdata(15 downto 0) := cfgLCommand;
+               v.axiReadSlave.rdata(15 downto 0) := cfgSync.LCommand;
 
             -- Other Status, - 0x1040
             when X"1040" =>
-               v.axiReadSlave.rdata(2 downto 0)   := cfgPcieLinkState;
-               v.axiReadSlave.rdata(3)            := linkUp;
-               v.axiReadSlave.rdata(4)            := phyLinkUp;
-               v.axiReadSlave.rdata(6 downto 5)   := cfgPmcsrPowerstate;
-               v.axiReadSlave.rdata(7)            := cfgPmcsrPmeEn;
-               v.axiReadSlave.rdata(8)            := cfgPmcsrPmeStatus;
-               v.axiReadSlave.rdata(9)            := cfgReceivedFuncLvlRst;
-               v.axiReadSlave.rdata(12)           := pciClkRst;
+               v.axiReadSlave.rdata(2 downto 0) := cfgSync.PcieLinkState;
+               v.axiReadSlave.rdata(3)          := linkUpSync;
+               v.axiReadSlave.rdata(4)          := phyLinkUpSync;
+               v.axiReadSlave.rdata(6 downto 5) := cfgSync.PmcsrPowerstate;
+               v.axiReadSlave.rdata(7)          := cfgSync.PmcsrPmeEn;
+               v.axiReadSlave.rdata(8)          := cfgSync.PmcsrPmeStatus;
+               v.axiReadSlave.rdata(9)          := cfgSync.ReceivedFuncLvlRst;
+               v.axiReadSlave.rdata(12)         := pciClkRstSync;
 
             -- Enable Register - 0x1044
             when X"1044" =>
-               v.axiReadSlave.rdata(0)            := v.pcieEnable;
-               v.axiReadSlave.rdata(1)            := v.remResetL;
-               v.axiReadSlave.rdata(4)            := intResetL;
+               v.axiReadSlave.rdata(0) := v.pcieEnable;
+               v.axiReadSlave.rdata(1) := v.remResetL;
+               v.axiReadSlave.rdata(4) := intResetL;
 
             when others => null;
          end case;
@@ -332,8 +450,8 @@ begin
          TPD_G           => TPD_G,
          RST_POLARITY_G  => '1',
          RST_ASYNC_G     => false,
-         GEN_SYNC_FIFO_G => false,  -- Async FIFO
-         BRAM_EN_G       => false,  -- Use Dist Ram
+         GEN_SYNC_FIFO_G => false,      -- Async FIFO
+         BRAM_EN_G       => false,      -- Use Dist Ram
          FWFT_EN_G       => true,
          USE_DSP48_G     => "no",
          ALTERA_SYN_G    => false,
@@ -346,28 +464,28 @@ begin
          INIT_G          => "0",
          FULL_THRES_G    => 15,
          EMPTY_THRES_G   => 1
-      ) port map (
-         rst                => axiClkRstInt,
-         wr_clk             => axiClk,
-         wr_en              => r.wrFifoWrEn,
-         din                => r.wrFifoDin,
-         wr_data_count      => open,
-         wr_ack             => open,
-         overflow           => open,
-         prog_full          => open,
-         almost_full        => open,
-         full               => open,
-         not_full           => open,
-         rd_clk             => pciClk,
-         rd_en              => wrFifoRdEn,
-         dout               => wrFifoDout,
-         rd_data_count      => open,
-         valid              => wrFifoValid,
-         underflow          => open,
-         prog_empty         => open,
-         almost_empty       => open,
-         empty              => open
-      );
+         ) port map (
+            rst           => axiClkRstInt,
+            wr_clk        => axiClk,
+            wr_en         => r.wrFifoWrEn,
+            din           => r.wrFifoDin,
+            wr_data_count => open,
+            wr_ack        => open,
+            overflow      => open,
+            prog_full     => open,
+            almost_full   => open,
+            full          => open,
+            not_full      => open,
+            rd_clk        => pciClk,
+            rd_en         => wrFifoRdEn,
+            dout          => wrFifoDout,
+            rd_data_count => open,
+            valid         => wrFifoValid,
+            underflow     => open,
+            prog_empty    => open,
+            almost_empty  => open,
+            empty         => open
+            );
 
    wrFifoRdEn <= txReady and txValid;
    txValid    <= wrFifoValid when txBufAv > 1 else '0';
@@ -377,8 +495,8 @@ begin
          TPD_G           => TPD_G,
          RST_POLARITY_G  => '1',
          RST_ASYNC_G     => false,
-         GEN_SYNC_FIFO_G => false,  -- Async FIFO
-         BRAM_EN_G       => false,  -- Use Dist Ram
+         GEN_SYNC_FIFO_G => false,      -- Async FIFO
+         BRAM_EN_G       => false,      -- Use Dist Ram
          FWFT_EN_G       => true,
          USE_DSP48_G     => "no",
          ALTERA_SYN_G    => false,
@@ -391,28 +509,29 @@ begin
          INIT_G          => "0",
          FULL_THRES_G    => 15,
          EMPTY_THRES_G   => 1
-      ) port map (
-         rst                => axiClkRstInt,
-         wr_clk             => pciClk,
-         wr_en              => rdFifoWrEn,
-         din                => rdFifoDin,
-         wr_data_count      => open,
-         wr_ack             => open,
-         overflow           => open,
-         prog_full          => open,
-         almost_full        => open,
-         full               => rdFifoFull,
-         not_full           => open,
-         rd_clk             => axiClk,
-         rd_en              => r.rdFifoRdEn,
-         dout               => rdFifoDout,
-         rd_data_count      => open,
-         valid              => rdFifoValid,
-         underflow          => open,
-         prog_empty         => open,
-         almost_empty       => open,
-         empty              => open
-      );
+         )
+      port map (
+         rst           => axiClkRstInt,
+         wr_clk        => pciClk,
+         wr_en         => rdFifoWrEn,
+         din           => rdFifoDin,
+         wr_data_count => open,
+         wr_ack        => open,
+         overflow      => open,
+         prog_full     => open,
+         almost_full   => open,
+         full          => rdFifoFull,
+         not_full      => open,
+         rd_clk        => axiClk,
+         rd_en         => r.rdFifoRdEn,
+         dout          => rdFifoDout,
+         rd_data_count => open,
+         valid         => rdFifoValid,
+         underflow     => open,
+         prog_empty    => open,
+         almost_empty  => open,
+         empty         => open
+         );
 
    rxReady    <= not rdFifoFull;
    rdFifoWrEn <= rxReady and rxValid;
@@ -427,17 +546,18 @@ begin
    pciExpRxP(0) <= pcieRxP;
    pciExpRxN(0) <= pcieRxM;
 
-   U_Pcie: entity work.pcie_7x_v1_9 
+   U_Pcie : entity work.pcie_7x_v1_9
       generic map (
-         PCIE_EXT_CLK                               => "FALSE"
-      ) port map (
+         PCIE_EXT_CLK => "FALSE"
+         )
+      port map (
          pci_exp_txp                                => pciExpTxP,
          pci_exp_txn                                => pciExpTxN,
          pci_exp_rxp                                => pciExpRxP,
          pci_exp_rxn                                => pciExpRxN,
          PIPE_PCLK_IN                               => '0',
          PIPE_RXUSRCLK_IN                           => '0',
-         PIPE_RXOUTCLK_IN                           => (others=>'0'),
+         PIPE_RXOUTCLK_IN                           => (others => '0'),
          PIPE_DCLK_IN                               => '0',
          PIPE_USERCLK1_IN                           => '0',
          PIPE_USERCLK2_IN                           => '0',
@@ -477,21 +597,21 @@ begin
          fc_sel                                     => "000",
          cfg_mgmt_do                                => open,
          cfg_mgmt_rd_wr_done                        => open,
-         cfg_status                                 => cfgStatus,
-         cfg_command                                => cfgCommand,
-         cfg_dstatus                                => cfgDstatus,
-         cfg_dcommand                               => cfgDcommand,
-         cfg_lstatus                                => cfgLstatus,
-         cfg_lcommand                               => cfgLcommand,
-         cfg_dcommand2                              => cfgDcommand2,
-         cfg_pcie_link_state                        => cfgPcieLinkState,
-         cfg_pmcsr_pme_en                           => cfgPmcsrPmeEn,
-         cfg_pmcsr_powerstate                       => cfgPmcsrPowerstate,
-         cfg_pmcsr_pme_status                       => cfgPmcsrPmeStatus,
-         cfg_received_func_lvl_rst                  => cfgReceivedFuncLvlRst,
-         cfg_mgmt_di                                => (others=>'0'),
+         cfg_status                                 => cfg.status,
+         cfg_command                                => cfg.command,
+         cfg_dstatus                                => cfg.dStatus,
+         cfg_dcommand                               => cfg.dCommand,
+         cfg_lstatus                                => cfg.lStatus,
+         cfg_lcommand                               => cfg.lCommand,
+         cfg_dcommand2                              => cfg.dCommand2,
+         cfg_pcie_link_state                        => cfg.pcieLinkState,
+         cfg_pmcsr_pme_en                           => cfg.pmcsrPmeEn,
+         cfg_pmcsr_powerstate                       => cfg.pmcsrPowerstate,
+         cfg_pmcsr_pme_status                       => cfg.pmcsrPmeStatus,
+         cfg_received_func_lvl_rst                  => cfg.receivedFuncLvlRst,
+         cfg_mgmt_di                                => (others => '0'),
          cfg_mgmt_byte_en                           => "1111",
-         cfg_mgmt_dwaddr                            => (others=>'0'),
+         cfg_mgmt_dwaddr                            => (others => '0'),
          cfg_mgmt_wr_en                             => '0',
          cfg_mgmt_rd_en                             => '0',
          cfg_mgmt_wr_readonly                       => '0',
@@ -508,7 +628,7 @@ begin
          cfg_err_mc_blocked                         => '0',
          cfg_err_poisoned                           => '0',
          cfg_err_norecovery                         => '0',
-         cfg_err_tlp_cpl_header                     => (others=>'0'),
+         cfg_err_tlp_cpl_header                     => (others => '0'),
          cfg_err_cpl_rdy                            => open,
          cfg_err_locked                             => '0',
          cfg_err_acs                                => '0',
@@ -517,19 +637,19 @@ begin
          cfg_pm_halt_aspm_l0s                       => '0',
          cfg_pm_halt_aspm_l1                        => '0',
          cfg_pm_force_state_en                      => '0',
-         cfg_pm_force_state                         => (others=>'0'),
-         cfg_dsn                                    => (others=>'0'),
+         cfg_pm_force_state                         => (others => '0'),
+         cfg_dsn                                    => (others => '0'),
          cfg_interrupt                              => '0',
-         cfg_interrupt_rdy                          => open, 
+         cfg_interrupt_rdy                          => open,
          cfg_interrupt_assert                       => '0',
-         cfg_interrupt_di                           => (others=>'0'),
+         cfg_interrupt_di                           => (others => '0'),
          cfg_interrupt_do                           => open,
          cfg_interrupt_mmenable                     => open,
          cfg_interrupt_msienable                    => open,
          cfg_interrupt_msixenable                   => open,
          cfg_interrupt_msixfm                       => open,
          cfg_interrupt_stat                         => '0',
-         cfg_pciecap_interrupt_msgnum               => (others=>'0'),
+         cfg_pciecap_interrupt_msgnum               => (others => '0'),
          cfg_to_turnoff                             => open,
          cfg_turnoff_ok                             => '0',
          cfg_bus_number                             => open,
@@ -537,9 +657,9 @@ begin
          cfg_function_number                        => open,
          cfg_pm_wake                                => '0',
          cfg_pm_send_pme_to                         => '0',
-         cfg_ds_bus_number                          => r.cfgBusNumber,
-         cfg_ds_device_number                       => r.cfgDeviceNumber,
-         cfg_ds_function_number                     => r.cfgFunctionNumber,
+         cfg_ds_bus_number                          => cfgBusNumberSync,
+         cfg_ds_device_number                       => cfgDeviceNumberSync,
+         cfg_ds_function_number                     => cfgFunctionNumberSync,
          cfg_mgmt_wr_rw1c_as_rw                     => '0',
          cfg_msg_received                           => open,
          cfg_msg_data                               => open,
@@ -590,8 +710,8 @@ begin
          pl_received_hot_rst                        => open,
          pl_transmit_hot_rst                        => '0',
          pl_downstream_deemph_source                => '0',
-         cfg_err_aer_headerlog                      => (others=>'0'),
-         cfg_aer_interrupt_msgnum                   => (others=>'0'),
+         cfg_err_aer_headerlog                      => (others => '0'),
+         cfg_aer_interrupt_msgnum                   => (others => '0'),
          cfg_err_aer_headerlog_set                  => open,
          cfg_aer_ecrc_check_en                      => open,
          cfg_aer_ecrc_gen_en                        => open,
@@ -599,7 +719,7 @@ begin
          PIPE_MMCM_RST_N                            => '1',
          sys_clk                                    => pciRefClk,
          sys_rst_n                                  => intResetL
-      );
+         );
 
 end architecture structure;
 
