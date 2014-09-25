@@ -84,7 +84,7 @@ begin
    -- Unused slots
    U_UnusedPpiGen : if NUM_PPI_SLOTS_G /= 15 generate
       intIbMaster(14 downto NUM_PPI_SLOTS_G) <= (others=>AXI_STREAM_MASTER_INIT_C);
-      intObSlave(14 downto NUM_PPI_SLOTS_G)  <= (others=>AXI_STREAM_SLAVE_INIT_C);
+      intObSlave(14 downto NUM_PPI_SLOTS_G)  <= (others=>AXI_STREAM_SLAVE_FORCE_C);
    end generate;
 
    -- Outbound DeMux
