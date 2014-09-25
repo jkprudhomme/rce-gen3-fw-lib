@@ -158,7 +158,7 @@ begin
 
 
    -- Async
-   process (r, axiRst, rdAck, wrAck, ibWorkValid, ibWorkDout, ibFreeAFull, rdAxisMaster, compAFull ) is
+   process (r, axiRst, rdAck, wrAck, ibWorkValid, ibWorkDout, ibFreeAFull, rdAxisMaster, compAFull, wrAxisMaster, wrAxisSlave ) is
       variable v : RegType;
    begin
       v := r;
@@ -169,6 +169,8 @@ begin
       v.compWrite   := '0';
 
       v.ibPayloadDebug(0)(3 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 4);
+      v.ibPayloadDebug(0)(4)          := wrAxisMaster.tValid;
+      v.ibPayloadDebug(0)(5)          := wrAxisSlave.tReady;
 
       case r.state is
 

@@ -119,7 +119,7 @@ begin
    end process;
 
    -- Async
-   process (r, axiRst, dmaAck, ibPendAFull, ibFreeDout, ibFreeValid ) is
+   process (r, axiRst, dmaAck, ibPendAFull, ibFreeDout, ibFreeValid, intAxisMaster, intAxisSlave ) is
       variable v : RegType;
    begin
       v := r;
@@ -128,9 +128,13 @@ begin
       v.ibFreeRead  := '0';
       v.ibError     := '0';
 
-      v.ibHeaderDebug(0)(2 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 3);
-      v.ibHeaderDebug(0)(4)          := r.dmaReq.request;
-      v.ibHeaderDebug(0)(5)          := dmaAck.done;
+      v.ibHeaderDebug(0)(0) := conv_std_logic_vector(StateType'pos(r.state), 1);
+      v.ibHeaderDebug(0)(4) := r.dmaReq.request;
+      v.ibHeaderDebug(0)(5) := dmaAck.done;
+      v.ibHeaderDebug(0)(8) := intAxisMaster.tValid;
+      v.ibHeaderDebug(0)(9) := intAxisSlave.tReady;
+
+      v.ibHeaderDebug(0)(31 downto 16) := dmaAck.size(15 downto 0);
 
       case r.state is
 
