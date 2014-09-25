@@ -58,9 +58,9 @@ begin
          clk        => locClk,
          rst        => locClkRst,
          dataIn(0)  => ppiState.online,
-         dataIn(1)  => ppiState.enable,
+         dataIn(1)  => ppiState.user,
          dataOut(0) => locState.online,
-         dataOut(1) => locState.enable
+         dataOut(1) => locState.user
       );
 
 end architecture structure;

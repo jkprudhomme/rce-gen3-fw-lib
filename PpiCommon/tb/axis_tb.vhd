@@ -142,7 +142,7 @@ begin
          mAxisSlave   => prbsTxSlave
       );
 
-   ppiState.enable <= '1';
+   ppiState.user   <= '1';
    ppiState.online <= '1';
 
    U_AxisToPpi : entity work.AxisToPpi

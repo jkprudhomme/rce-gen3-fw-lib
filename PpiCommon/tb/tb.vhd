@@ -110,12 +110,7 @@ begin
       generic map (
          TPD_G               => 1 ns,
          NUM_PPI_SLOTS_G     => 1,
-         NUM_AXI_SLOTS_G     => 1,
-         NUM_STATUS_WORDS_G  => 1,
-         STATUS_SEND_WIDTH_G => 1,
-         AXIL_BASEADDR_G     => X"00000000",
-         AXIL_BASEBOT_G      => 32,
-         AXIL_ADDRBITS_G     => 24
+         STATUS_SEND_WIDTH_G => 1
       ) port map (
          ppiClk            => sysClk125,
          ppiClkRst         => sysClk125Rst,
@@ -128,16 +123,11 @@ begin
          locIbSlave        => locIbSlave,
          locObMaster       => open,
          locObSlave        => (others=>AXI_STREAM_SLAVE_INIT_C),
-         axilClk           => sysClk125,
-         axilClkRst        => sysClk125Rst,
-         axilWriteMasters  => open,
-         axilWriteSlaves   => (others=>AXI_LITE_WRITE_SLAVE_INIT_C),
-         axilReadMasters   => open,
-         axilReadSlaves    => (others=>AXI_LITE_READ_SLAVE_INIT_C),
          statusClk         => sysClk125,
          statusClkRst      => sysClk125Rst,
          statusWords       => (others=>(others=>'0')),
-         statusSend        => (others=>'0')
+         statusSend        => (others=>'0'),
+         offlineAck        => '0'
       );
 
    U_SsiPrbsTx : entity work.SsiPrbsTx

@@ -128,11 +128,11 @@ begin
       v.ibFreeRead  := '0';
       v.ibError     := '0';
 
-      v.ibHeaderDebug(0)(0) := conv_std_logic_vector(StateType'pos(r.state), 1);
-      v.ibHeaderDebug(0)(4) := r.dmaReq.request;
-      v.ibHeaderDebug(0)(5) := dmaAck.done;
-      v.ibHeaderDebug(0)(8) := intAxisMaster.tValid;
-      v.ibHeaderDebug(0)(9) := intAxisSlave.tReady;
+      v.ibHeaderDebug(0)(3 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 4);
+      v.ibHeaderDebug(0)(4)          := r.dmaReq.request;
+      v.ibHeaderDebug(0)(5)          := dmaAck.done;
+      v.ibHeaderDebug(0)(8)          := intAxisMaster.tValid;
+      v.ibHeaderDebug(0)(9)          := intAxisSlave.tReady;
 
       v.ibHeaderDebug(0)(31 downto 16) := dmaAck.size(15 downto 0);
 
