@@ -15,54 +15,85 @@
 #-------------------------------------------------------------------------------
 
 # CPU Clock
-create_clock -name fclk0 -period 10 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
+set fclk0Pin [get_pins U_DtmCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
+create_clock -name fclk0 -period 10 ${fclk0Pin}
 
 # Arm Core Clocks
-set fclk0Group     [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKIN1]]
-set sysClk200Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]]
-set sysClk125Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]]
+create_generated_clock -name dmaClk -source ${fclk0Pin} \
+    -multiply_by 2 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]
+
+create_generated_clock -name sysClk200 -source ${fclk0Pin} \
+    -multiply_by 2 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]
+
+create_generated_clock -name sysClk125 -source ${fclk0Pin} \
+    -multiply_by 5 -divide_by 4 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]
+
+# Arm Core clocks are treated as asynchronous to each other
+set_clock_groups -asynchronous \
+    -group [get_clocks fclk0] \
+    -group [get_clocks -include_generated_clocks dmaClk] \
+    -group [get_clocks -include_generated_clocks sysClk200] \
+    -group [get_clocks -include_generated_clocks sysClk125] \
 
 # Local 1G Ethernet Clocks
-create_clock -name eth_txoutclk -period 16 \
-   [get_pins U_DtmCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
-set intEthClk0Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]]
-set intEthClk1Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]]
+set eth_txoutclk_pin [get_pins U_DtmCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
+create_clock -name eth_txoutclk -period 16 ${eth_txoutclk_pin}
+
+create_generated_clock -name intEthClk0 -source ${eth_txoutclk_pin} \
+    -multiply_by 2 [get_pins U_DtmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]
+
+create_generated_clock -name intEthClk1 -source ${eth_txoutclk_pin} \
+    -multiply_by 1 [get_pins U_DtmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]
 
 # PCI Express Clocks
-create_clock -name pci_txoutclk -period 10 \
-   [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK]
-set pcieClk125Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0]]
-set pcieClk250Group [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1]]
-set pcieUser1Group  [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2]]
-set pcieUser2Group  [get_clocks -of_objects \
-   [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3]]
+set pci_txoutclk_pin [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK]
+create_clock -name pci_txoutclk -period 10 ${pci_txoutclk_pin}
 
-# Set Asynchronous Paths
-set_clock_groups -asynchronous -group ${fclk0Group} \
-                               -group ${sysClk200Group} \
-                               -group ${sysClk125Group} 
+create_generated_clock -name pcieClk125 -source ${pci_txoutclk_pin} \
+    -multiply_by 5 -divide_by 4 \
+    [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0]
 
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk0Group}
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk1Group}
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${pcieClk125Group}
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${pcieClk250Group}
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${pcieUser1Group}
-set_clock_groups -asynchronous -group ${sysClk125Group} -group ${pcieUser2Group}
+create_generated_clock -name pcieClk250 -source ${pci_txoutclk_pin} \
+    -multiply_by 5 -divide_by 2 \
+    [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1]
 
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk0Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk1Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${pcieClk125Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${pcieClk250Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${pcieUser1Group}
-set_clock_groups -asynchronous -group ${sysClk200Group} -group ${pcieUser2Group}
+create_generated_clock -name pcieUserClk1 -source ${pci_txoutclk_pin} \ 
+    -multiply_by 5 -divide_by 8 \
+    [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2]
+
+create_generated_clock -name pcieUserClk2 -source ${pci_txoutclk_pin} \
+    -multiply_by 5 -divide_by 8 \
+    [get_pins U_DtmCore/U_ZynqPcieMaster/U_Pcie/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3]
+
+set_clock_groups -asynchronous \
+    -group [get_clocks -include_generated_clocks fclk0] \
+    -group [get_clocks -include_generated_clocks eth_txoutclk] \
+    -group [get_clocks -include_generated_clocks pci_txoutclk]
+
+# External 1G Ethernet Clocks
+create_clock -name ethRxClk0 -period 8 [get_ports ethRxClk[0]]
+create_clock -name ethRxClk1 -period 8 [get_ports ethRxClk[1]]
+
+set sysClk200Pin [get_pins -of_objects [get_clocks sysClk200]]
+# create_generated_clock -name extEthClk125 -source ${sysClk200Pin} \
+#     -multiply_by 5 -divide_by 8 \
+#     [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
+
+# create_generated_clock -name extEthClk25 -source ${sysClk200Pin} \
+#     -divide_by 8 \
+#     [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
+
+# create_generated_clock -name extEthClk10 -source ${sysClk200Pin} \
+#     -divide_by 20 \
+#     [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
+
+# create_generated_clock -name extEthClk2_5 -source [get_pins -of_objects [get_clocks extEthClk10]] \
+#     -divide_by 4 \
+#     [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
+
+# set_max_delay 10 -datapath_only -from [get_clocks -include_generated_clocks {ethRxClk0}] \
+#     -to [get_clocks -include_generated_clocks {sysClk200}]
+
 
 # PCI-Express Timing
 set_false_path -through [get_pins  -hier -filter {name =~ *pcie_block_i/PLPHYLNKUPN*}]
@@ -75,28 +106,28 @@ set_false_path -through [get_nets  -hier -filter {name =~ *pipe_wrapper_i/pipe_c
 
 # GMII To RGMII 
 # Set the select line for the clock muxes so that the timing analysis is done on the fastest clock
-set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE0}]
-set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S0}]
-set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE1}]
-set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S1}]
+# set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE0}]
+# set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S0}]
+# set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE1}]
+# set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S1}]
 
 # GMII To RGMII 
 # False path constraints to async inputs coming directly to synchronizer
-set_false_path -to [get_pins -of [get_cells -hier -filter { name =~ *i_MANAGEMENT/SYNC_*/data_sync* } ]  -filter { name =~ *D } ]
-set_false_path -to [get_pins -hier -filter {name =~ *reset_sync*/PRE }]
-set_false_path -to [get_pins -hier -filter {name =~ *idelayctrl_reset_gen/*reset_sync*/PRE }]
+# set_false_path -to [get_pins -of [get_cells -hier -filter { name =~ *i_MANAGEMENT/SYNC_*/data_sync* } ]  -filter { name =~ *D } ]
+# set_false_path -to [get_pins -hier -filter {name =~ *reset_sync*/PRE }]
+# set_false_path -to [get_pins -hier -filter {name =~ *idelayctrl_reset_gen/*reset_sync*/PRE }]
 
 # GMII To RGMII 
 # False path constraints from Control Register outputs
-set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/DUPLEX_MODE_REG*/C }]
-set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/SPEED_SELECTION_REG*/C }]
+# set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/DUPLEX_MODE_REG*/C }]
+# set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/SPEED_SELECTION_REG*/C }]
 
 # GMII-To-RGMII IODELAY Groups
-set_property IDELAY_VALUE  "0"              [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
-set_property IDELAY_VALUE  "0"              [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *i_GmiiToRgmiiCore_idelayctrl}]
+# set_property IDELAY_VALUE  "0"              [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
+# set_property IDELAY_VALUE  "0"              [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
+# set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
+# set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
+# set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *i_GmiiToRgmiiCore_idelayctrl}]
 
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
