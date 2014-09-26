@@ -145,13 +145,10 @@ begin
    U_ClkOut : for i in 0 to 1 generate
 
       ClkOutBufDiff_1: entity work.ClkOutBufDiff
-         generic map (
-            INVERT_G => INVERT_G)
          port map (
-            clkIn   => distClk(i),
+            clkIn   => distClk,
             clkOutP => dpmClkP(i),
-            clkOutN => dpmClkN(i));
-      
+            clkOutN => dpmClkM(i));
 
    end generate;
 
@@ -258,8 +255,8 @@ begin
          BYPASS_SYNC_G  => false,
          INIT_G         => "0"
       ) port map (
-         clk     => intClk,
-         rst     => intClkRst,
+         clk     => distClk,
+         rst     => distClkRst,
          dataIn  => r.ocFifoWrEn,
          dataOut => ocFifoWrEn
       );
@@ -543,11 +540,11 @@ begin
          ADDR_WIDTH_G  => 4,
          INIT_G        => "0"
       ) port map (
-         rst                => configClkRst,
+         rst                => axiClkRst,
          wr_clk             => distClk,
          wr_en              => '1',
          din                => ledCountA,
-         rd_clk             => configClk,
+         rd_clk             => axiClk,
          rd_en              => '1',
          valid              => open,
          dout               => ledCountASync

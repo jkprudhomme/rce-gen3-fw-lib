@@ -73,7 +73,6 @@ architecture structure of RceG3Clocks is
    attribute KEEP_HIERARCHY : string;
    attribute KEEP_HIERARCHY of
       U_ClockGen,
-      U_DmaClkBuf,
       U_sysClk200Buf,
       U_sysClk125Buf,
       U_dmaClkRstGen,
