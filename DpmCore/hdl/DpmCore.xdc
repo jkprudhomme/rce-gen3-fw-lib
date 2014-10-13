@@ -41,13 +41,15 @@ create_generated_clock -name intEthClk1 \
     -source $eth_txoutclk_pin \
     -multiply_by 1 [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]
 
-
 # Local 10G Ethernet Clock
 create_clock -name ethRefClk -period 6.4 [get_ports ethRefClkP]
 
 create_clock -name eth10GClk -period 6.4 \
    [get_pins U_DpmCore/U_Eth10gGen.U_ZynqEthernet10G/U_XMac/U_ZynqXaui/U0/xaui_block_i/gt_wrapper_i/gt0_zynq_10g_xaui_gt_wrapper_i/gtxe2_i/TXOUTCLK]
 
+# DNA Primitive Clock
+create_clock -period 64.000 -name dnaClk [get_pins  {U_DpmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/BUFR_Inst/O}]
+   
 # Set Asynchronous Paths
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks fclk0] \
@@ -56,6 +58,10 @@ set_clock_groups -asynchronous \
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks fclk0] \
     -group [get_clocks -include_generated_clocks eth10GClk]
+    
+set_clock_groups -asynchronous \
+    -group [get_clocks dnaClk] \
+    -group [get_clocks sysClk125]    
 
 # set_clock_groups -asynchronous -group ${sysClk125Group} -group [get_clocks {eth10GClk}]
 # set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk0Group}

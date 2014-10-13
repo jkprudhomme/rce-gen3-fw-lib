@@ -94,6 +94,11 @@ set sysClk200Pin [get_pins -of_objects [get_clocks sysClk200]]
 # set_max_delay 10 -datapath_only -from [get_clocks -include_generated_clocks {ethRxClk0}] \
 #     -to [get_clocks -include_generated_clocks {sysClk200}]
 
+# DNA Primitive Clock
+create_clock -period 64.000 -name dnaClk [get_pins  {U_DtmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/BUFR_Inst/O}]
+set_clock_groups -asynchronous \
+    -group [get_clocks dnaClk] \
+    -group [get_clocks sysClk125] 
 
 # PCI-Express Timing
 set_false_path -through [get_pins  -hier -filter {name =~ *pcie_block_i/PLPHYLNKUPN*}]
