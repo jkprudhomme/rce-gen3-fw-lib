@@ -101,8 +101,11 @@ set_property PACKAGE_PIN AK2  [get_ports ethTxP[3]]
 set_property PACKAGE_PIN AK1  [get_ports ethTxM[3]]
 
 set_property PACKAGE_PIN AA8 [get_ports ethRefClkP]
+set_property PACKAGE_PIN AA7 [get_ports ethRefClkM]
 set_property PACKAGE_PIN U8  [get_ports locRefClkP]
+set_property PACKAGE_PIN U7  [get_ports locRefClkM]
 set_property PACKAGE_PIN W8  [get_ports dtmRefClkP]
+set_property PACKAGE_PIN W7  [get_ports dtmRefClkM]
 
 set_property PACKAGE_PIN AE28 [get_ports dtmClkP[0]]
 set_property PACKAGE_PIN AF28 [get_ports dtmClkM[0]]
