@@ -418,11 +418,11 @@ begin
          ADDR_WIDTH_G  => 4,
          INIT_G        => "0"
       ) port map (
-         rst                => configClkRst,
-         wr_clk             => distClk,
+         rst                => axiClkRst,
+         wr_clk             => intClk,
          wr_en              => '1',
          din                => ledCountA,
-         rd_clk             => configClk,
+         rd_clk             => axiClk,
          rd_en              => '1',
          valid              => open,
          dout               => ledCountASync
