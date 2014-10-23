@@ -127,7 +127,7 @@ begin
    end process;
 
    -- Async
-   process (r, axiDmaRst, icAxilReadMaster, icAxilWriteMaster, locSources ) is
+   process (axiDmaRst, dmaInterrupt, icAxilReadMaster, icAxilWriteMaster, locSources, r) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin

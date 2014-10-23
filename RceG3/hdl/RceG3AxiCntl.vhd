@@ -338,7 +338,7 @@ begin
    end process;
 
    -- Async
-   process (axiClkRst, intReadMaster, intWriteMaster, dnaValid, dnaValue, r, eFuseUsr ) is
+   process (armEthMode, axiClkRst, dnaValid, dnaValue, eFuseUsr, intReadMaster, intWriteMaster, r) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
       variable c         : character;
