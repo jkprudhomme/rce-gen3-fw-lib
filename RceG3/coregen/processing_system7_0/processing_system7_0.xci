@@ -530,6 +530,7 @@
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_TRACE_GRP_16BIT_IO">&lt;Select></spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_TRACE_GRP_32BIT_ENABLE">0</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_TRACE_GRP_32BIT_IO">&lt;Select></spirit:configurableElementValue>
+        <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_TRACE_INTERNAL_WIDTH">2</spirit:configurableElementValue>        
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_WDT_PERIPHERAL_ENABLE">1</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_WDT_WDT_IO">EMIO</spirit:configurableElementValue>
         <spirit:configurableElementValue spirit:referenceId="PARAM_VALUE.PCW_TTC0_PERIPHERAL_ENABLE">1</spirit:configurableElementValue>
