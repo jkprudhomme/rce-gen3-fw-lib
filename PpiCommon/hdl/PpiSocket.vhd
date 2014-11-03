@@ -159,8 +159,29 @@ architecture structure of PpiSocket is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-begin
+   attribute dont_touch : string;
+   attribute dont_touch of debug : signal is "true";
 
+   COMPONENT ppi_debug
+     PORT (
+       clk : IN STD_LOGIC;
+       probe0 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+       probe1 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+       probe2 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+       probe3 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+       probe4 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+       probe5 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+       probe6 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+       probe7 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+       probe8 : IN STD_LOGIC_VECTOR(31 DOWNTO 0)
+     );
+   END COMPONENT;
+   ATTRIBUTE SYN_BLACK_BOX : BOOLEAN;
+   ATTRIBUTE SYN_BLACK_BOX OF ppi_debug : COMPONENT IS TRUE;
+   ATTRIBUTE BLACK_BOX_PAD_PIN : STRING;
+   ATTRIBUTE BLACK_BOX_PAD_PIN OF ppi_debug : COMPONENT IS "clk,probe0[31:0],probe1[31:0],probe2[31:0],probe3[31:0],probe4[31:0],probe5[31:0],probe6[31:0],probe7[31:0],probe8[31:0]";
+
+begin
 
    ---------------------------------------
    -- Local Registers
@@ -459,6 +480,20 @@ begin
          payIbSlave      => payIbSlave,
          ibPayloadDebug  => debug(8 downto 6)
       );
+
+   U_PpiDebug : ppi_debug
+     PORT MAP (
+       clk    => axiClk,
+       probe0 => debug(0),
+       probe1 => debug(1),
+       probe2 => debug(2),
+       probe3 => debug(3),
+       probe4 => debug(4),
+       probe5 => debug(5),
+       probe6 => debug(6),
+       probe7 => debug(7),
+       probe8 => debug(8)
+     );
 
 end structure;
 

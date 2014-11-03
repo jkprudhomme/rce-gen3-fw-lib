@@ -68,12 +68,6 @@ end ZynqEthernet10G;
 
 architecture structure of ZynqEthernet10G is
 
-   signal locIbMaster         : AxiStreamMasterType;
-   signal locIbSlave          : AxiStreamSlaveType;
-   signal locObMaster         : AxiStreamMasterType;
-   signal locObSlave          : AxiStreamSlaveType;
-   signal statusWord          : slv(63 downto 0);
-   signal statusSend          : sl;
    signal xmacRst             : sl;
 
 begin
@@ -82,32 +76,6 @@ begin
    ppiClk    <= sysClk200;
    ppiClkRst <= sysClk200Rst;
    xmacRst   <= not ppiState.online;
-
-   -- PPI Crossbar
-   U_PpiInterconnect : entity work.PpiInterconnect
-      generic map (
-         TPD_G               => TPD_G,
-         NUM_PPI_SLOTS_G     => 1,
-         NUM_STATUS_WORDS_G  => 1,
-         STATUS_SEND_WIDTH_G => 1
-      ) port map (
-         ppiClk              => sysClk200,
-         ppiClkRst           => sysClk200Rst,
-         ppiState            => ppiState,
-         ppiIbMaster         => ppiIbMaster,
-         ppiIbSlave          => ppiIbSlave,
-         ppiObMaster         => ppiObMaster,
-         ppiObSlave          => ppiObSlave,
-         locIbMaster(0)      => locIbMaster,
-         locIbSlave(0)       => locIbSlave,
-         locObMaster(0)      => locObMaster,
-         locObSlave(0)       => locObSlave,
-         statusClk           => axilClk,
-         statusClkRst        => axilClkRst,
-         statusWords(0)      => statusWord,
-         statusSend(0)       => statusSend,
-         offlineAck          => '0'
-      );
 
    -- 10G Mac
    U_XMac : entity work.XMac 
@@ -125,18 +93,16 @@ begin
          xmacRst          => xmacRst,
          dmaClk           => sysClk200,
          dmaClkRst        => sysClk200Rst,
-         dmaIbMaster      => locIbMaster,
-         dmaIbSlave       => locIbSlave,
-         dmaObMaster      => locObMaster,
-         dmaObSlave       => locObSlave,
+         dmaIbMaster      => ppiIbMaster,
+         dmaIbSlave       => ppiIbSlave,
+         dmaObMaster      => ppiObMaster,
+         dmaObSlave       => ppiObSlave,
          axilClk          => axilClk,
          axilClkRst       => axilClkRst,
          axilWriteMaster  => axilWriteMaster,
          axilWriteSlave   => axilWriteSlave,
          axilReadMaster   => axilReadMaster,
          axilReadSlave    => axilReadSlave,
-         statusWord       => statusWord,
-         statusSend       => statusSend,
          ethRefClkP       => ethRefClkP,
          ethRefClkM       => ethRefClkM,
          ethRxP           => ethRxP,

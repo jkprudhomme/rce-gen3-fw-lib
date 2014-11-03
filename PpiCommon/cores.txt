@@ -1,0 +1,1 @@
+coregen/ppi_debug/ppi_debug.xci

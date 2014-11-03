@@ -55,8 +55,6 @@ entity XMac is
       axilWriteSlave          : out AxiLiteWriteSlaveType;
       axilReadMaster          : in  AxiLiteReadMasterType;
       axilReadSlave           : out AxiLiteReadSlaveType;
-      statusWord              : out slv(63 downto 0);
-      statusSend              : out sl;
 
       -- Ref Clock
       ethRefClkP              : in  sl;
@@ -329,7 +327,7 @@ begin
          rollOverEnIn           => (others=>'0'),
          cntOut                 => cntOutA,
          irqEnIn                => r.autoStatus,
-         irqOut                 => statusSend,
+         irqOut                 => open,
          wrClk                  => ethClk,
          wrRst                  => ethClkRst,
          rdClk                  => axilClk,
@@ -364,16 +362,6 @@ begin
          rdClk           => axilClk,
          rdRst           => axilClkRst
       );
-
-   -------------------------------------------
-   -- Status
-   -------------------------------------------
-   statusWord(63 downto 40) <= (others=>'0');
-   statusWord(39 downto 32) <= muxSlVectorArray(cntOutA,0);
-   statusWord(31 downto 24) <= muxSlVectorArray(cntOutA,1);
-   statusWord(23 downto 16) <= muxSlVectorArray(cntOutA,2);
-   statusWord(15 downto  8) <= muxSlVectorArray(cntOutA,3);
-   statusWord(7  downto  0) <= phyStatus;
 
 
    -------------------------------------------
