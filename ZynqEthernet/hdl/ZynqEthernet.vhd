@@ -166,7 +166,8 @@ begin
          RST                  => mmcm_reset
       );
 
-   mmcm_reset <= sysClk200Rst or (not resetdone);
+   --mmcm_reset <= sysClk200Rst or (not resetdone);
+   mmcm_reset <= sysClk200Rst;
 
    -- This 62.5MHz clock is placed onto global clock routing and is then used
    -- for tranceiver TXUSRCLK/RXUSRCLK.
@@ -204,47 +205,43 @@ begin
    -- Instantiate the Core Block (core wrapper).
    ------------------------------------------------------------------------------
    core_wrapper : entity work.zynq_gige_block
-      generic map (
-         EXAMPLE_SIMULATION   =>  0 
-      )
       port map (
-         drpaddr_in             => (others => '0') , 
-         drpclk_in              => userclk2, 
-         drpdi_in               => (others => '0') , 
-         drpdo_out              => open , 
-         drpen_in               => '0', 
-         drprdy_out             => open, 
-         drpwe_in               => '0', 
          gtrefclk               => sysClk125,
-         txp                    => ethTxP,
          txn                    => ethTxM,
+         txp                    => ethTxP,
+         rxn                    => ethRxM,         
          rxp                    => ethRxP,
-         rxn                    => ethRxM,
+         independent_clock_bufg => sysClk200,
          txoutclk               => txoutclk,
+         rxoutclk               => open,
          resetdone              => resetdone,
-         mmcm_locked            => mmcm_locked,
+         cplllock               => open,
          userclk                => userclk,
          userclk2               => userclk2,
-         independent_clock_bufg => sysClk200,
          pma_reset              => pma_reset,
+         mmcm_locked            => mmcm_locked,
+         rxuserclk              => userclk,
+         rxuserclk2             => userclk,
+         gmii_txclk             => open,
+         gmii_rxclk             => open,
          gmii_txd               => armEthTx.enetGmiiTxD,
          gmii_tx_en             => armEthTx.enetGmiiTxEn,
          gmii_tx_er             => armEthTx.enetGmiiTxEr,
          gmii_rxd               => armEthRx.enetGmiiRxd,
          gmii_rx_dv             => armEthRx.enetGmiiRxDv,
          gmii_rx_er             => armEthRx.enetGmiiRxEr,
-         gmii_isolate           => open,
+         gmii_isolate           => open,                  
          mdc                    => armEthTx.enetMdioMdc,
          mdio_i                 => armEthTx.enetMdioO,
          mdio_o                 => armEthRx.enetMdioI,
          mdio_t                 => open,
-         phyad                  => (others=>'0'),
          configuration_vector   => "00000",
-         configuration_valid    => confValid, 
+         configuration_valid    => confValid,
          status_vector          => open,
          reset                  => sysClk200Rst,
-         signal_detect          => '1'
-      );
+         signal_detect          => '1',
+         gt0_qplloutclk_in      => '0',-- QPLL not used
+         gt0_qplloutrefclk_in   => '0');-- QPLL not used
 
    -- Force configuration set
    process(userclk2, sysClk200Rst)

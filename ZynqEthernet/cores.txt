@@ -1,1 +1,1 @@
-coregen/zynq_gige.ngc
+ 
