@@ -481,19 +481,19 @@ begin
          ibPayloadDebug  => debug(8 downto 6)
       );
 
-   U_PpiDebug : ppi_debug
-     PORT MAP (
-       clk    => axiClk,
-       probe0 => debug(0),
-       probe1 => debug(1),
-       probe2 => debug(2),
-       probe3 => debug(3),
-       probe4 => debug(4),
-       probe5 => debug(5),
-       probe6 => debug(6),
-       probe7 => debug(7),
-       probe8 => debug(8)
-     );
+--   U_PpiDebug : ppi_debug
+--     PORT MAP (
+--       clk    => axiClk,
+--       probe0 => debug(0),
+--       probe1 => debug(1),
+--       probe2 => debug(2),
+--       probe3 => debug(3),
+--       probe4 => debug(4),
+--       probe5 => debug(5),
+--       probe6 => debug(6),
+--       probe7 => debug(7),
+--       probe8 => debug(8)
+--     );
 
 end structure;
 
