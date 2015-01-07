@@ -185,6 +185,7 @@ begin
    U_InFifo : entity work.AxiStreamFifo 
       generic map (
          TPD_G                => TPD_G,
+         INT_PIPE_STAGES_G    => 0,
          PIPE_STAGES_G        => 0,
          SLAVE_READY_EN_G     => true,
          VALID_THOLD_G        => VALID_THOLD_G,

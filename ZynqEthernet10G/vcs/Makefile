@@ -1,5 +1,5 @@
-#TOP=crc_tb
-TOP=ppi_axi_tb
+TOP=crc_tb
+#TOP=ppi_axi_tb
 
 # Set Default Output
 SIM_DIR=$(PWD)/out
