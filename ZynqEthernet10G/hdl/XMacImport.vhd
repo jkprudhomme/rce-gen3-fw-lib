@@ -171,7 +171,7 @@ architecture XMacImport of XMacImport is
 
 begin
 
-   rxOverflow <= intIbCtrl.overflow;
+   rxOverFlow <= intIbCtrl.overflow;
 
    ------------------------------------------
    -- PPI FIFO

@@ -77,13 +77,18 @@ begin
    ppiClkRst <= sysClk200Rst;
    xmacRst   <= not ppiState.online;
 
+   --
+   -- 9 bits = 4kbytes
+   -- 255 x 8 = 2kbytes (not enough for pause)
+   -- 11 bits = 16kbytes
+
    -- 10G Mac
    U_XMac : entity work.XMac 
       generic map (
          TPD_G            => TPD_G,
-         IB_ADDR_WIDTH_G  => 9,
+         IB_ADDR_WIDTH_G  => 11,
          OB_ADDR_WIDTH_G  => 9,
-         PAUSE_THOLD_G    => 255,
+         PAUSE_THOLD_G    => 512,
          VALID_THOLD_G    => 255,
          EOH_BIT_G        => PPI_EOH_C,
          ERR_BIT_G        => PPI_ERR_C,

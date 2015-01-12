@@ -115,6 +115,8 @@ architecture XMacExport of XMacExport is
    signal crcDataValid     : sl;
    signal crcReset         : sl;
    signal crcOut           : slv(31 downto 0);
+   signal sftObMaster      : AxiStreamMasterType;
+   signal sftObSlave       : AxiStreamSlaveType;
    signal intObMaster      : AxiStreamMasterType;
    signal intObSlave       : AxiStreamSlaveType;
    signal intError         : sl;
@@ -180,6 +182,9 @@ begin
    ------------------------------------------
    -- PPI FIFO
    ------------------------------------------
+
+
+
 
    -- PPI FIFO
    U_InFifo : entity work.AxiStreamFifo 
