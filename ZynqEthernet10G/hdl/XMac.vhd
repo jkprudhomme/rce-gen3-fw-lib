@@ -124,7 +124,7 @@ architecture structure of XMac is
    signal rxCountEn         : sl;
    signal txCountEn         : sl;
    signal cntOutA           : SlVectorArray(11 downto 0,  7 downto 0);
-   signal cntOutB           : SlVectorArray(1  downto 0, 31 downto 0);
+   signal cntOutB           : SlVectorArray(3 downto 0, 31 downto 0);
    signal phyReset          : sl;
 
    type RegType is record
@@ -138,6 +138,10 @@ architecture structure of XMac is
       scratchA          : slv(31 downto 0);
       scratchB          : slv(31 downto 0);
       byteSwap          : sl;
+      rxShift           : slv(3 downto 0);
+      txShift           : slv(3 downto 0);
+      txShiftEn         : sl;
+      rxShiftEn         : sl;
       axilReadSlave     : AxiLiteReadSlaveType;
       axilWriteSlave    : AxiLiteWriteSlaveType;
    end record RegType;
@@ -153,6 +157,10 @@ architecture structure of XMac is
       scratchA          => (others=>'0'),
       scratchB          => (others=>'0'),
       byteSwap          => '0',
+      rxShift           => (others=>'0'),
+      txShift           => (others=>'0'),
+      rxShiftEn         => '0',
+      txShiftEn         => '0',
       axilReadSlave     => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave    => AXI_LITE_WRITE_SLAVE_INIT_C
    );
@@ -258,6 +266,8 @@ begin
          phyRxc        => xauiRxc,
          phyReady      => phyStatus(7),
          macAddress    => r.macAddress,
+         rxShift       => r.rxShift,
+         rxShiftEn     => r.rxShiftEn,
          byteSwap      => r.byteSwap,
          rxPauseReq    => rxPauseReq,
          rxPauseSet    => rxPauseSet,
@@ -293,6 +303,8 @@ begin
          pauseTime         => r.pauseTime,
          macAddress        => r.macAddress,
          byteSwap          => r.byteSwap,
+         txShift           => r.txShift,
+         txShiftEn         => r.txShiftEn,
          txCountEn         => txCountEn,
          txUnderRun        => txUnderRun,
          txLinkNotReady    => txLinkNotReady
@@ -347,13 +359,15 @@ begin
          SYNTH_CNT_G     => "1",
          CNT_RST_EDGE_G  => false,
          CNT_WIDTH_G     => 32,
-         WIDTH_G         => 2
+         WIDTH_G         => 4
       ) port map (
          statusIn(0)     => rxCountEn,
          statusIn(1)     => txCountEn,
+         statusIn(2)     => rxPauseReq,
+         statusIn(3)     => rxPauseSet,
          statusOut       => open,
          cntRstIn        => r.countReset,
-         rollOverEnIn    => (others=>'1'),
+         rollOverEnIn    => "0011",
          cntOut          => cntOutB,
          irqEnIn         => (others=>'0'),
          irqOut          => open,
@@ -423,6 +437,12 @@ begin
             when x"0034" => 
                v.scratchB := axilWriteMaster.wdata;
 
+            when x"0038" => 
+               v.txShift   := axilWriteMaster.wdata(3 downto 0);
+               v.rxShift   := axilWriteMaster.wdata(7 downto 4);
+               v.txShiftEn := axilWriteMaster.wdata(8);
+               v.rxShiftEn := axilWriteMaster.wdata(9);
+
             when others => null;
          end case;
 
@@ -478,13 +498,21 @@ begin
                   when X"34" =>
                      v.axilReadSlave.rdata := r.scratchB;
 
+                  when x"38" => 
+                     v.axilReadSlave.rdata(3 downto 0) := r.txShift;
+                     v.axilReadSlave.rdata(7 downto 4) := r.rxShift;
+                     v.axilReadSlave.rdata(8)          := r.txShiftEn;
+                     v.axilReadSlave.rdata(9)          := r.rxShiftEn;
+
                   when others => null;
                end case;
 
             when X"01" =>
-               v.axilReadSlave.rdata := muxSlVectorArray(cntOutB,conv_integer(axilReadMaster.araddr(2)));
+               v.axilReadSlave.rdata := muxSlVectorArray(cntOutB,conv_integer(axilReadMaster.araddr(3 downto 2)));
                -- 0x0100 = rxCount
                -- 0x0104 = txCount
+               -- 0x0108 = pauseReqCnt
+               -- 0x010C = pauseSetCnt
 
             when X"02" =>
                v.axilReadSlave.rdata(7 downto 0) := muxSlVectorArray(cntOutA,conv_integer(axilReadMaster.araddr(3 downto 2)));

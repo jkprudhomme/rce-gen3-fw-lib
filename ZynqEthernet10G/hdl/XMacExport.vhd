@@ -66,6 +66,8 @@ entity XMacExport is
       pauseTime        : in  slv(15 downto 0);
       macAddress       : in  slv(47 downto 0);
       byteSwap         : in  sl;
+      txShift          : in  slv(3 downto 0);
+      txShiftEn        : in  sl;
 
       -- Errors
       txCountEn        : out sl;
@@ -121,6 +123,7 @@ architecture XMacExport of XMacExport is
    signal intObSlave       : AxiStreamSlaveType;
    signal intError         : sl;
    signal nxtError         : sl;
+   signal txShiftEnSync    : sl;
 
    -- MAC States
    signal   curState    : slv(2 downto 0);
@@ -129,9 +132,8 @@ architecture XMacExport of XMacExport is
    constant ST_DUMP_C   : slv(2 downto 0) := "001";
    constant ST_READ_C   : slv(2 downto 0) := "010";
    constant ST_WAIT_C   : slv(2 downto 0) := "011";
-   constant ST_PWAIT_C  : slv(2 downto 0) := "100";
-   constant ST_PAUSE_C  : slv(2 downto 0) := "101";
-   constant ST_PAD_C    : slv(2 downto 0) := "110";
+   constant ST_PAUSE_C  : slv(2 downto 0) := "100";
+   constant ST_PAD_C    : slv(2 downto 0) := "101";
 
    -- Debug Signals
    attribute dont_touch : string;
@@ -183,8 +185,43 @@ begin
    -- PPI FIFO
    ------------------------------------------
 
+   -- Shift enable sync
+   U_EnSync: entity work.Synchronizer
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         OUT_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 4,
+         BYPASS_SYNC_G  => false,
+         INIT_G         => "0"
+      ) port map (
+         clk     => dmaClk,
+         rst     => dmaClkRst,
+         dataIn  => txShiftEn,
+         dataOut => txShiftEnSync
+      );
 
-
+   -- Shift outbound data 2 bytes to the right.
+   -- This removes two bytes of data at start 
+   -- of the packet. These were added by software
+   -- to create a software friendly alignment of 
+   -- outbound data.
+   U_FrameShift : entity work.AxiStreamShift
+      generic map (
+         TPD_G         => TPD_G,
+         AXIS_CONFIG_G => AXIS_CONFIG_G
+      ) port map (
+         axisClk     => dmaClk,
+         axisRst     => dmaClkRst,
+         axiStart    => txShiftEnSync,
+         axiShiftDir => '1', -- 1 = right (msb to lsb)
+         axiShiftCnt => txShift,
+         sAxisMaster => dmaObMaster,
+         sAxisSlave  => dmaObSlave,
+         mAxisMaster => sftObMaster,
+         mAxisSlave  => sftObSlave
+      );
 
    -- PPI FIFO
    U_InFifo : entity work.AxiStreamFifo 
@@ -207,8 +244,8 @@ begin
       ) port map (
          sAxisClk        => dmaClk,
          sAxisRst        => dmaClkRst,
-         sAxisMaster     => dmaObMaster,
-         sAxisSlave      => dmaObSlave,
+         sAxisMaster     => sftObMaster,
+         sAxisSlave      => sftObSlave,
          sAxisCtrl       => open,
          mAxisClk        => phyClk,
          mAxisRst        => phyRst,
@@ -336,29 +373,11 @@ begin
             if stateCount = 8 then
                stateCountRst <= '1';
                pauseLast     <= '1';
-               nxtState      <= ST_PWAIT_C;
+               nxtState      <= ST_WAIT_C;
             else
                stateCountRst <= '0';
                pauseLast     <= '0';
                nxtState      <= curState;
-            end if;
-
-         -- Wait following pause frame TX
-         when ST_PWAIT_C =>
-            intDump       <= '0';
-            intAdvance    <= '0';
-            pauseTx       <= '0';
-            pauseLast     <= '0';
-            stateCountRst <= '0';
-            pausePrst     <= '0';
-            intPad        <= '0';
-            intLastLine   <= '0';
-            
-            -- Wait for gap
-            if stateCount = 3 then
-               nxtState <= ST_IDLE_C;
-            else
-               nxtState <= curState;
             end if;
 
          -- Reading from PIC

@@ -62,6 +62,8 @@ entity XMacImport is
       -- Configuration
       macAddress       : in  slv(47 downto 0);
       byteSwap         : in  sl;
+      rxShift          : in  slv(3  downto 0);
+      rxShiftEn        : in  sl;
 
       -- Pause Values
       rxPauseReq       : out sl;
@@ -119,9 +121,12 @@ architecture XMacImport of XMacImport is
    signal crcOut           : slv(31 downto 0); 
    signal intIbMaster      : AxiStreamMasterType;
    signal intIbCtrl        : AxiStreamCtrlType;
+   signal sftIbMaster      : AxiStreamMasterType;
+   signal sftIbSlave       : AxiStreamSlaveType;
    signal macData          : slv(63 downto 0);
    signal macSize          : slv(2 downto 0);
    signal writeCount       : slv(15 downto 0);
+   signal rxShiftEnSync    : sl;
 
    -- Debug Signals
    attribute dont_touch : string;
@@ -177,6 +182,43 @@ begin
    -- PPI FIFO
    ------------------------------------------
 
+   -- Shift enable sync
+   U_EnSync: entity work.Synchronizer
+      generic map (
+         TPD_G          => TPD_G,
+         RST_POLARITY_G => '1',
+         OUT_POLARITY_G => '1',
+         RST_ASYNC_G    => false,
+         STAGES_G       => 4,
+         BYPASS_SYNC_G  => false,
+         INIT_G         => "0"
+      ) port map (
+         clk     => dmaClk,
+         rst     => dmaClkRst,
+         dataIn  => rxShiftEn,
+         dataOut => rxShiftEnSync
+      );
+
+   -- Shift inbound data 2 bytes to the left.
+   -- This adds two bytes of data at start 
+   -- of the packet. 
+   U_FrameShift : entity work.AxiStreamShift
+      generic map (
+         TPD_G          => TPD_G,
+         AXIS_CONFIG_G  => AXIS_CONFIG_G,
+         ADD_VALID_EN_G => true
+      ) port map (
+         axisClk     => dmaClk,
+         axisRst     => dmaClkRst,
+         axiStart    => rxShiftEnSync,
+         axiShiftDir => '0', -- 0 = left (lsb to msb)
+         axiShiftCnt => rxShift,
+         sAxisMaster => sftIbMaster,
+         sAxisSlave  => sftIbSlave,
+         mAxisMaster => dmaIbMaster,
+         mAxisSlave  => dmaIbSlave
+      );
+
    -- PPI FIFO
    U_OutFifo : entity work.AxiStreamFifo 
       generic map (
@@ -202,8 +244,8 @@ begin
          sAxisCtrl       => intIbCtrl,
          mAxisClk        => dmaClk,
          mAxisRst        => dmaClkRst,
-         mAxisMaster     => dmaIbMaster,
-         mAxisSlave      => dmaIbSlave
+         mAxisMaster     => sftIbMaster,
+         mAxisSlave      => sftIbSlave
       );
 
 
@@ -393,7 +435,7 @@ begin
             end if;
 
             -- Pause frame detection
-            if frameShift2 = '1' and frameShift3 = '0' and crcFifoIn(63 downto 32) = x"01000888" then
+            if frameShift3 = '1' and frameShift4 = '0' and crcFifoIn(63 downto 32) = x"01000888" then
                pauseDet <= '1' after TPD_G;
             else
                pauseDet <= '0' after TPD_G;

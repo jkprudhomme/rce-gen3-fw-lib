@@ -59,23 +59,33 @@ begin
       if rising_edge(phyClk) then
          if phyClkRst = '1' then
             dmaObmaster  <= AXI_STREAM_MASTER_INIT_C;
+            rxPauseReq   <= '0';
          else
             case txCount is 
+               when x"00F0" =>
+                  dmaObMaster.tValid             <= '0';
+                  dmaObMaster.tData(63 downto 0) <= (others=>'0');
+                  dmaObMaster.tLast              <= '0';
+                  dmaObMaster.tKeep              <= (others=>'1');
+                  rxPauseReq <= '1';
                when x"0100" =>
                   dmaObMaster.tValid             <= '1';
                   dmaObMaster.tLast              <= '0';
                   dmaObMaster.tKeep              <= (others=>'1');
                   dmaObMaster.tData(63 downto 0) <= x"2222222211111111";  -- 8
+                  rxPauseReq <= '0';
                when x"0102" =>
                   dmaObMaster.tValid             <= '1';
                   dmaObMaster.tData(63 downto 0) <= x"4444444433333333";  -- 16
                   dmaObMaster.tLast              <= '0';
                   dmaObMaster.tKeep              <= (others=>'1');
+                  rxPauseReq <= '0';
                when x"0104" =>
                   dmaObMaster.tValid             <= '1';
                   dmaObMaster.tData(63 downto 0) <= x"6666666655555555";  -- 24
                   dmaObMaster.tLast              <= '0';
                   dmaObMaster.tKeep              <= (others=>'1');
+                  rxPauseReq <= '0';
                when x"0108" =>
                   dmaObMaster.tValid             <= '1';
                   dmaObMaster.tData(63 downto 0) <= x"8888888877777777"; -- 32
@@ -112,6 +122,7 @@ begin
                   dmaObMaster.tValid             <= '0';
                   dmaObMaster.tData(63 downto 0) <= (others=>'0');
                   dmaObMaster.tLast              <= '0';
+                  rxPauseReq <= '0';
             end case;
          end if;
       end if;
@@ -129,7 +140,7 @@ begin
 
    phyReady      <= '1';
    interFrameGap <= "0011";
-   pauseTime     <= (others=>'1');
+   pauseTime     <= x"000F";
    macAddress    <= (others=>'0');
    byteSwap      <= '0';
 
@@ -154,6 +165,7 @@ begin
          rxPauseValue     => rxPauseValue,
          interFrameGap    => interFrameGap,
          pauseTime        => pauseTime,
+         txShift          => (others=>'0'),
          macAddress       => macAddress,
          byteSwap         => byteSwap,
          txCountEn        => txCountEn,
@@ -185,7 +197,8 @@ begin
          phyReady         => phyReady,
          macAddress       => macAddress,
          byteSwap         => byteSwap,
-         rxPauseReq       => rxPauseReq,
+         rxShift          => (others=>'0'),
+         rxPauseReq       => open,
          rxPauseSet       => rxPauseSet,
          rxPauseValue     => rxPauseValue,
          rxCountEn        => rxCountEn,
