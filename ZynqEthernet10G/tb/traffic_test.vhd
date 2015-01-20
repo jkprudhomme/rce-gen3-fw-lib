@@ -32,6 +32,7 @@ architecture traffic_test of traffic_test is
    signal txUnderRun     : sl;
    signal txLinkNotReady : sl;
    signal dmaObMaster    : AxiStreamMasterType;
+   signal dmaObSlave     : AxiStreamSlaveType;
    signal dmaIbMaster    : AxiStreamMasterType;
    signal phyRxd         : slv(63 downto 0);
    signal phyRxc         : slv(7  downto 0);
@@ -60,83 +61,100 @@ begin
          if phyClkRst = '1' then
             dmaObmaster  <= AXI_STREAM_MASTER_INIT_C;
             rxPauseReq   <= '0';
+            txCount      <= (others=>'0');
          else
-            case txCount is 
-               when x"00F0" =>
-                  dmaObMaster.tValid             <= '0';
-                  dmaObMaster.tData(63 downto 0) <= (others=>'0');
-                  dmaObMaster.tLast              <= '0';
-                  dmaObMaster.tKeep              <= (others=>'1');
-                  rxPauseReq <= '1';
-               when x"0100" =>
-                  dmaObMaster.tValid             <= '1';
-                  dmaObMaster.tLast              <= '0';
-                  dmaObMaster.tKeep              <= (others=>'1');
-                  dmaObMaster.tData(63 downto 0) <= x"2222222211111111";  -- 8
-                  rxPauseReq <= '0';
-               when x"0102" =>
-                  dmaObMaster.tValid             <= '1';
-                  dmaObMaster.tData(63 downto 0) <= x"4444444433333333";  -- 16
-                  dmaObMaster.tLast              <= '0';
-                  dmaObMaster.tKeep              <= (others=>'1');
-                  rxPauseReq <= '0';
-               when x"0104" =>
-                  dmaObMaster.tValid             <= '1';
-                  dmaObMaster.tData(63 downto 0) <= x"6666666655555555";  -- 24
-                  dmaObMaster.tLast              <= '0';
-                  dmaObMaster.tKeep              <= (others=>'1');
-                  rxPauseReq <= '0';
-               when x"0108" =>
-                  dmaObMaster.tValid             <= '1';
-                  dmaObMaster.tData(63 downto 0) <= x"8888888877777777"; -- 32
-                  dmaObMaster.tLast              <= '1';
-                  dmaObMaster.tKeep              <= (others=>'1');
-     --          when x"0104" =>
-     --             dmaObMaster.tValid             <= '1';
-     --             dmaObMaster.tData(63 downto 0) <= x"AAAAAAAA99999999"; -- 40
-     --             dmaObMaster.tLast              <= '0';
-     --             dmaObMaster.tKeep              <= (others=>'1');
-     --          when x"0105" =>
-     --             dmaObMaster.tValid             <= '1';
-     --             dmaObMaster.tData(63 downto 0) <= x"CCCCCCCCBBBBBBBB"; -- 48
-     --             dmaObMaster.tLast              <= '0';
-     --             dmaObMaster.tKeep              <= (others=>'1');
-     --          when x"0106" =>
-     --             dmaObMaster.tValid             <= '1';
-     --             dmaObMaster.tData(63 downto 0) <= x"EEEEEEEEDDDDDDDD"; -- 56
-     --             dmaObMaster.tLast              <= '0';
-     --             dmaObMaster.tKeep              <= (others=>'1');
-     --          when x"0107" =>
-     --             dmaObMaster.tValid             <= '1';
-     --             dmaObMaster.tData(63 downto 0) <= x"1111111100000000"; -- 64
-     --             dmaObMaster.tLast              <= '1';
-     --             --dmaObMaster.tKeep(7 downto 0)  <= "11111111";
-     --             dmaObMaster.tKeep(7 downto 0)  <= "01111111";
-     --             --dmaObMaster.tKeep(7 downto 0)  <= "00111111";
-     --             --dmaObMaster.tKeep(7 downto 0)  <= "00011111";
-     --             --dmaObMaster.tKeep(7 downto 0)  <= "00001111";
-     --             --dmaObMaster.tKeep(7 downto 0)  <= "00000111";
-     --             --dmaObMaster.tKeep(7 downto 0)  <= "00000011";
-     --             --dmaObMaster.tKeep(7 downto 0)  <= "00000001";
-               when others =>
-                  dmaObMaster.tValid             <= '0';
-                  dmaObMaster.tData(63 downto 0) <= (others=>'0');
-                  dmaObMaster.tLast              <= '0';
-                  rxPauseReq <= '0';
-            end case;
+            txCount <= txCount + 1;
+ 
+            if txCount < 5 then
+               dmaObMaster.tValid             <= '0';
+               dmaObMaster.tData(63 downto 0) <= (others=>'1');
+               dmaObMaster.tLast              <= '0';
+               dmaObMaster.tKeep              <= (others=>'1');
+            elsif txCount <= 17 then
+               dmaObMaster.tValid             <= '1';
+               dmaObMaster.tData(63 downto 0) <= (others=>'1');
+               dmaObMaster.tLast              <= '0';
+               dmaObMaster.tKeep              <= (others=>'1');
+            elsif txCount = 18 then
+               dmaObMaster.tValid             <= '1';
+               dmaObMaster.tData(63 downto 0) <= (others=>'1');
+               dmaObMaster.tLast              <= '1';
+               dmaObMaster.tKeep              <= (others=>'1');
+            else
+               dmaObMaster.tValid             <= '0';
+               dmaObMaster.tData(63 downto 0) <= (others=>'1');
+               dmaObMaster.tLast              <= '1';
+               dmaObMaster.tKeep              <= (others=>'1');
+               txCount <= (others=>'0');
+            end if;
+
+--            case txCount is 
+--               when x"00F0" =>
+--                  dmaObMaster.tValid             <= '0';
+--                  dmaObMaster.tData(63 downto 0) <= (others=>'0');
+--                  dmaObMaster.tLast              <= '0';
+--                  dmaObMaster.tKeep              <= (others=>'1');
+--                  rxPauseReq <= '1';
+--               when x"0100" =>
+--                  dmaObMaster.tValid             <= '1';
+--                  dmaObMaster.tLast              <= '0';
+--                  dmaObMaster.tKeep              <= (others=>'1');
+--                  dmaObMaster.tData(63 downto 0) <= x"2222222211111111";  -- 8
+--                  rxPauseReq <= '0';
+--               when x"0102" =>
+--                  dmaObMaster.tValid             <= '1';
+--                  dmaObMaster.tData(63 downto 0) <= x"4444444433333333";  -- 16
+--                  dmaObMaster.tLast              <= '0';
+--                  dmaObMaster.tKeep              <= (others=>'1');
+--                  rxPauseReq <= '0';
+--               when x"0104" =>
+--                  dmaObMaster.tValid             <= '1';
+--                  dmaObMaster.tData(63 downto 0) <= x"6666666655555555";  -- 24
+--                  dmaObMaster.tLast              <= '0';
+--                  dmaObMaster.tKeep              <= (others=>'1');
+--                  rxPauseReq <= '0';
+--               when x"0108" =>
+--                  dmaObMaster.tValid             <= '1';
+--                  dmaObMaster.tData(63 downto 0) <= x"8888888877777777"; -- 32
+--                  dmaObMaster.tLast              <= '1';
+--                  dmaObMaster.tKeep              <= (others=>'1');
+--     --          when x"0104" =>
+--     --             dmaObMaster.tValid             <= '1';
+--     --             dmaObMaster.tData(63 downto 0) <= x"AAAAAAAA99999999"; -- 40
+--     --             dmaObMaster.tLast              <= '0';
+--     --             dmaObMaster.tKeep              <= (others=>'1');
+--     --          when x"0105" =>
+--     --             dmaObMaster.tValid             <= '1';
+--     --             dmaObMaster.tData(63 downto 0) <= x"CCCCCCCCBBBBBBBB"; -- 48
+--     --             dmaObMaster.tLast              <= '0';
+--     --             dmaObMaster.tKeep              <= (others=>'1');
+--     --          when x"0106" =>
+--     --             dmaObMaster.tValid             <= '1';
+--     --             dmaObMaster.tData(63 downto 0) <= x"EEEEEEEEDDDDDDDD"; -- 56
+--     --             dmaObMaster.tLast              <= '0';
+--     --             dmaObMaster.tKeep              <= (others=>'1');
+--     --          when x"0107" =>
+--     --             dmaObMaster.tValid             <= '1';
+--     --             dmaObMaster.tData(63 downto 0) <= x"1111111100000000"; -- 64
+--     --             dmaObMaster.tLast              <= '1';
+--     --             --dmaObMaster.tKeep(7 downto 0)  <= "11111111";
+--     --             dmaObMaster.tKeep(7 downto 0)  <= "01111111";
+--     --             --dmaObMaster.tKeep(7 downto 0)  <= "00111111";
+--     --             --dmaObMaster.tKeep(7 downto 0)  <= "00011111";
+--     --             --dmaObMaster.tKeep(7 downto 0)  <= "00001111";
+--     --             --dmaObMaster.tKeep(7 downto 0)  <= "00000111";
+--     --             --dmaObMaster.tKeep(7 downto 0)  <= "00000011";
+--     --             --dmaObMaster.tKeep(7 downto 0)  <= "00000001";
+--               when others =>
+--                  dmaObMaster.tValid             <= '0';
+--                  dmaObMaster.tData(63 downto 0) <= (others=>'0');
+--                  dmaObMaster.tLast              <= '0';
+--                  rxPauseReq <= '0';
+--            end case;
          end if;
       end if;
    end process;
 
-   process ( phyClk ) begin
-      if rising_edge(phyClk) then
-         if phyClkRst = '1' then
-            txCount <= (others=>'0');
-         else
-            txCount <= txCount + 1;
-         end if;
-      end if;
-   end process;
 
    phyReady      <= '1';
    interFrameGap <= "0011";
@@ -154,7 +172,7 @@ begin
          dmaClk           => phyClk,
          dmaClkRst        => phyClkRst,
          dmaObMaster      => dmaObMaster,
-         dmaObSlave       => open,
+         dmaObSlave       => dmaObSlave,
          phyClk           => phyClk,
          phyRst           => phyClkRst,
          phyTxd           => phyTxd,
@@ -165,7 +183,8 @@ begin
          rxPauseValue     => rxPauseValue,
          interFrameGap    => interFrameGap,
          pauseTime        => pauseTime,
-         txShift          => (others=>'0'),
+         txShiftEn        => '1',
+         txShift          => "0010",
          macAddress       => macAddress,
          byteSwap         => byteSwap,
          txCountEn        => txCountEn,
@@ -197,7 +216,8 @@ begin
          phyReady         => phyReady,
          macAddress       => macAddress,
          byteSwap         => byteSwap,
-         rxShift          => (others=>'0'),
+         rxShiftEn        => '1',
+         rxShift          => "0010",
          rxPauseReq       => open,
          rxPauseSet       => rxPauseSet,
          rxPauseValue     => rxPauseValue,
