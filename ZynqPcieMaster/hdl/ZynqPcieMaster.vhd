@@ -27,7 +27,8 @@ use work.AxiLitePkg.all;
 
 entity ZynqPcieMaster is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G       : time    := 1 ns;
+      HSIO_MODE_G : boolean := false
       );
    port (
 
@@ -195,17 +196,20 @@ begin
    -- Outputs
    pcieResetL <= r.remResetL;
 
+   U_PciClkEnGen: if HSIO_MODE_G = false generate
+      U_PciRefClk : IBUFDS_GTE2
+         port map(
+            O     => pciRefClk,
+            ODIV2 => open,
+            I     => pciRefClkP,
+            IB    => pciRefClkM,
+            CEB   => '0'
+            );
+   end generate;
 
-
-   -- PCI Ref Clk 
-   U_PciRefClk : IBUFDS_GTE2
-      port map(
-         O     => pciRefClk,
-         ODIV2 => open,
-         I     => pciRefClkP,
-         IB    => pciRefClkM,
-         CEB   => '0'
-         );
+   U_PciClkDisGen: if HSIO_MODE_G = true generate
+      pciRefClk <= axiClk;
+   end generate;
 
    -------------------------------------------------------------------------------------------------
    -- Sync signals to pciClk
@@ -541,185 +545,221 @@ begin
    -- PCI Express Core
    -----------------------------------------
 
-   pcieTxP      <= pciExpTxP(0);
-   pcieTxM      <= pciExpTxN(0);
-   pciExpRxP(0) <= pcieRxP;
-   pciExpRxN(0) <= pcieRxM;
+   U_PciCoreEnGen: if HSIO_MODE_G = false generate
 
-   U_Pcie : entity work.pcie_7x_v1_9
-      generic map (
-         PCIE_EXT_CLK => "FALSE"
-         )
-      port map (
-         pci_exp_txp                                => pciExpTxP,
-         pci_exp_txn                                => pciExpTxN,
-         pci_exp_rxp                                => pciExpRxP,
-         pci_exp_rxn                                => pciExpRxN,
-         PIPE_PCLK_IN                               => '0',
-         PIPE_RXUSRCLK_IN                           => '0',
-         PIPE_RXOUTCLK_IN                           => (others => '0'),
-         PIPE_DCLK_IN                               => '0',
-         PIPE_USERCLK1_IN                           => '0',
-         PIPE_USERCLK2_IN                           => '0',
-         PIPE_OOBCLK_IN                             => '0',
-         PIPE_MMCM_LOCK_IN                          => '0',
-         PIPE_TXOUTCLK_OUT                          => open,
-         PIPE_RXOUTCLK_OUT                          => open,
-         PIPE_PCLK_SEL_OUT                          => open,
-         PIPE_GEN3_OUT                              => open,
-         user_clk_out                               => pciClk,
-         user_reset_out                             => pciClkRst,
-         user_lnk_up                                => linkUp,
-         tx_buf_av                                  => txBufAv,
-         tx_cfg_req                                 => open,
-         tx_err_drop                                => open,
-         s_axis_tx_tready                           => txReady,
-         s_axis_tx_tdata                            => wrFifoDout(63 downto 0),
-         s_axis_tx_tkeep                            => wrFifoDout(71 downto 64),
-         s_axis_tx_tlast                            => wrFifoDout(94),
-         s_axis_tx_tvalid                           => txValid,
-         s_axis_tx_tuser                            => wrFifoDout(75 downto 72),
-         tx_cfg_gnt                                 => '1',
-         m_axis_rx_tdata                            => rdFifoDin(63 downto 0),
-         m_axis_rx_tkeep                            => rdFifoDin(71 downto 64),
-         m_axis_rx_tlast                            => rdFifoDin(94),
-         m_axis_rx_tvalid                           => rxValid,
-         m_axis_rx_tready                           => rxReady,
-         m_axis_rx_tuser                            => rdFifoDin(93 downto 72),
-         rx_np_ok                                   => '1',
-         rx_np_req                                  => '1',
-         fc_cpld                                    => open,
-         fc_cplh                                    => open,
-         fc_npd                                     => open,
-         fc_nph                                     => open,
-         fc_pd                                      => open,
-         fc_ph                                      => open,
-         fc_sel                                     => "000",
-         cfg_mgmt_do                                => open,
-         cfg_mgmt_rd_wr_done                        => open,
-         cfg_status                                 => cfg.status,
-         cfg_command                                => cfg.command,
-         cfg_dstatus                                => cfg.dStatus,
-         cfg_dcommand                               => cfg.dCommand,
-         cfg_lstatus                                => cfg.lStatus,
-         cfg_lcommand                               => cfg.lCommand,
-         cfg_dcommand2                              => cfg.dCommand2,
-         cfg_pcie_link_state                        => cfg.pcieLinkState,
-         cfg_pmcsr_pme_en                           => cfg.pmcsrPmeEn,
-         cfg_pmcsr_powerstate                       => cfg.pmcsrPowerstate,
-         cfg_pmcsr_pme_status                       => cfg.pmcsrPmeStatus,
-         cfg_received_func_lvl_rst                  => cfg.receivedFuncLvlRst,
-         cfg_mgmt_di                                => (others => '0'),
-         cfg_mgmt_byte_en                           => "1111",
-         cfg_mgmt_dwaddr                            => (others => '0'),
-         cfg_mgmt_wr_en                             => '0',
-         cfg_mgmt_rd_en                             => '0',
-         cfg_mgmt_wr_readonly                       => '0',
-         cfg_err_ecrc                               => '0',
-         cfg_err_ur                                 => '0',
-         cfg_err_cpl_timeout                        => '0',
-         cfg_err_cpl_unexpect                       => '0',
-         cfg_err_cpl_abort                          => '0',
-         cfg_err_posted                             => '0',
-         cfg_err_cor                                => '0',
-         cfg_err_atomic_egress_blocked              => '0',
-         cfg_err_internal_cor                       => '0',
-         cfg_err_malformed                          => '0',
-         cfg_err_mc_blocked                         => '0',
-         cfg_err_poisoned                           => '0',
-         cfg_err_norecovery                         => '0',
-         cfg_err_tlp_cpl_header                     => (others => '0'),
-         cfg_err_cpl_rdy                            => open,
-         cfg_err_locked                             => '0',
-         cfg_err_acs                                => '0',
-         cfg_err_internal_uncor                     => '0',
-         cfg_trn_pending                            => '0',
-         cfg_pm_halt_aspm_l0s                       => '0',
-         cfg_pm_halt_aspm_l1                        => '0',
-         cfg_pm_force_state_en                      => '0',
-         cfg_pm_force_state                         => (others => '0'),
-         cfg_dsn                                    => (others => '0'),
-         cfg_interrupt                              => '0',
-         cfg_interrupt_rdy                          => open,
-         cfg_interrupt_assert                       => '0',
-         cfg_interrupt_di                           => (others => '0'),
-         cfg_interrupt_do                           => open,
-         cfg_interrupt_mmenable                     => open,
-         cfg_interrupt_msienable                    => open,
-         cfg_interrupt_msixenable                   => open,
-         cfg_interrupt_msixfm                       => open,
-         cfg_interrupt_stat                         => '0',
-         cfg_pciecap_interrupt_msgnum               => (others => '0'),
-         cfg_to_turnoff                             => open,
-         cfg_turnoff_ok                             => '0',
-         cfg_bus_number                             => open,
-         cfg_device_number                          => open,
-         cfg_function_number                        => open,
-         cfg_pm_wake                                => '0',
-         cfg_pm_send_pme_to                         => '0',
-         cfg_ds_bus_number                          => cfgBusNumberSync,
-         cfg_ds_device_number                       => cfgDeviceNumberSync,
-         cfg_ds_function_number                     => cfgFunctionNumberSync,
-         cfg_mgmt_wr_rw1c_as_rw                     => '0',
-         cfg_msg_received                           => open,
-         cfg_msg_data                               => open,
-         cfg_bridge_serr_en                         => open,
-         cfg_slot_control_electromech_il_ctl_pulse  => open,
-         cfg_root_control_syserr_corr_err_en        => open,
-         cfg_root_control_syserr_non_fatal_err_en   => open,
-         cfg_root_control_syserr_fatal_err_en       => open,
-         cfg_root_control_pme_int_en                => open,
-         cfg_aer_rooterr_corr_err_reporting_en      => open,
-         cfg_aer_rooterr_non_fatal_err_reporting_en => open,
-         cfg_aer_rooterr_fatal_err_reporting_en     => open,
-         cfg_aer_rooterr_corr_err_received          => open,
-         cfg_aer_rooterr_non_fatal_err_received     => open,
-         cfg_aer_rooterr_fatal_err_received         => open,
-         cfg_msg_received_err_cor                   => open,
-         cfg_msg_received_err_non_fatal             => open,
-         cfg_msg_received_err_fatal                 => open,
-         cfg_msg_received_pm_as_nak                 => open,
-         cfg_msg_received_pm_pme                    => open,
-         cfg_msg_received_pme_to_ack                => open,
-         cfg_msg_received_assert_int_a              => open,
-         cfg_msg_received_assert_int_b              => open,
-         cfg_msg_received_assert_int_c              => open,
-         cfg_msg_received_assert_int_d              => open,
-         cfg_msg_received_deassert_int_a            => open,
-         cfg_msg_received_deassert_int_b            => open,
-         cfg_msg_received_deassert_int_c            => open,
-         cfg_msg_received_deassert_int_d            => open,
-         cfg_msg_received_setslotpowerlimit         => open,
-         pl_directed_link_change                    => "00",
-         pl_directed_link_width                     => "00",
-         pl_directed_link_speed                     => '0',
-         pl_directed_link_auton                     => '0',
-         pl_upstream_prefer_deemph                  => '0',
-         pl_sel_lnk_rate                            => open,
-         pl_sel_lnk_width                           => open,
-         pl_ltssm_state                             => open,
-         pl_lane_reversal_mode                      => open,
-         pl_phy_lnk_up                              => phyLinkUp,
-         pl_tx_pm_state                             => open,
-         pl_rx_pm_state                             => open,
-         pl_link_upcfg_cap                          => open,
-         pl_link_gen2_cap                           => open,
-         pl_link_partner_gen2_supported             => open,
-         pl_initial_link_width                      => open,
-         pl_directed_change_done                    => open,
-         pl_received_hot_rst                        => open,
-         pl_transmit_hot_rst                        => '0',
-         pl_downstream_deemph_source                => '0',
-         cfg_err_aer_headerlog                      => (others => '0'),
-         cfg_aer_interrupt_msgnum                   => (others => '0'),
-         cfg_err_aer_headerlog_set                  => open,
-         cfg_aer_ecrc_check_en                      => open,
-         cfg_aer_ecrc_gen_en                        => open,
-         cfg_vc_tcvc_map                            => open,
-         PIPE_MMCM_RST_N                            => '1',
-         sys_clk                                    => pciRefClk,
-         sys_rst_n                                  => intResetL
-         );
+      pcieTxP      <= pciExpTxP(0);
+      pcieTxM      <= pciExpTxN(0);
+      pciExpRxP(0) <= pcieRxP;
+      pciExpRxN(0) <= pcieRxM;
+      pciClkRst    <= axiClkRst;
+
+      U_Pcie : entity work.pcie_7x_v1_9
+         generic map (
+            PCIE_EXT_CLK => "FALSE"
+            )
+         port map (
+            pci_exp_txp                                => pciExpTxP,
+            pci_exp_txn                                => pciExpTxN,
+            pci_exp_rxp                                => pciExpRxP,
+            pci_exp_rxn                                => pciExpRxN,
+            PIPE_PCLK_IN                               => '0',
+            PIPE_RXUSRCLK_IN                           => '0',
+            PIPE_RXOUTCLK_IN                           => (others => '0'),
+            PIPE_DCLK_IN                               => '0',
+            PIPE_USERCLK1_IN                           => '0',
+            PIPE_USERCLK2_IN                           => '0',
+            PIPE_OOBCLK_IN                             => '0',
+            PIPE_MMCM_LOCK_IN                          => '0',
+            PIPE_TXOUTCLK_OUT                          => open,
+            PIPE_RXOUTCLK_OUT                          => open,
+            PIPE_PCLK_SEL_OUT                          => open,
+            PIPE_GEN3_OUT                              => open,
+            user_clk_out                               => pciClk,
+            user_reset_out                             => pciClkRst,
+            user_lnk_up                                => linkUp,
+            tx_buf_av                                  => txBufAv,
+            tx_cfg_req                                 => open,
+            tx_err_drop                                => open,
+            s_axis_tx_tready                           => txReady,
+            s_axis_tx_tdata                            => wrFifoDout(63 downto 0),
+            s_axis_tx_tkeep                            => wrFifoDout(71 downto 64),
+            s_axis_tx_tlast                            => wrFifoDout(94),
+            s_axis_tx_tvalid                           => txValid,
+            s_axis_tx_tuser                            => wrFifoDout(75 downto 72),
+            tx_cfg_gnt                                 => '1',
+            m_axis_rx_tdata                            => rdFifoDin(63 downto 0),
+            m_axis_rx_tkeep                            => rdFifoDin(71 downto 64),
+            m_axis_rx_tlast                            => rdFifoDin(94),
+            m_axis_rx_tvalid                           => rxValid,
+            m_axis_rx_tready                           => rxReady,
+            m_axis_rx_tuser                            => rdFifoDin(93 downto 72),
+            rx_np_ok                                   => '1',
+            rx_np_req                                  => '1',
+            fc_cpld                                    => open,
+            fc_cplh                                    => open,
+            fc_npd                                     => open,
+            fc_nph                                     => open,
+            fc_pd                                      => open,
+            fc_ph                                      => open,
+            fc_sel                                     => "000",
+            cfg_mgmt_do                                => open,
+            cfg_mgmt_rd_wr_done                        => open,
+            cfg_status                                 => cfg.status,
+            cfg_command                                => cfg.command,
+            cfg_dstatus                                => cfg.dStatus,
+            cfg_dcommand                               => cfg.dCommand,
+            cfg_lstatus                                => cfg.lStatus,
+            cfg_lcommand                               => cfg.lCommand,
+            cfg_dcommand2                              => cfg.dCommand2,
+            cfg_pcie_link_state                        => cfg.pcieLinkState,
+            cfg_pmcsr_pme_en                           => cfg.pmcsrPmeEn,
+            cfg_pmcsr_powerstate                       => cfg.pmcsrPowerstate,
+            cfg_pmcsr_pme_status                       => cfg.pmcsrPmeStatus,
+            cfg_received_func_lvl_rst                  => cfg.receivedFuncLvlRst,
+            cfg_mgmt_di                                => (others => '0'),
+            cfg_mgmt_byte_en                           => "1111",
+            cfg_mgmt_dwaddr                            => (others => '0'),
+            cfg_mgmt_wr_en                             => '0',
+            cfg_mgmt_rd_en                             => '0',
+            cfg_mgmt_wr_readonly                       => '0',
+            cfg_err_ecrc                               => '0',
+            cfg_err_ur                                 => '0',
+            cfg_err_cpl_timeout                        => '0',
+            cfg_err_cpl_unexpect                       => '0',
+            cfg_err_cpl_abort                          => '0',
+            cfg_err_posted                             => '0',
+            cfg_err_cor                                => '0',
+            cfg_err_atomic_egress_blocked              => '0',
+            cfg_err_internal_cor                       => '0',
+            cfg_err_malformed                          => '0',
+            cfg_err_mc_blocked                         => '0',
+            cfg_err_poisoned                           => '0',
+            cfg_err_norecovery                         => '0',
+            cfg_err_tlp_cpl_header                     => (others => '0'),
+            cfg_err_cpl_rdy                            => open,
+            cfg_err_locked                             => '0',
+            cfg_err_acs                                => '0',
+            cfg_err_internal_uncor                     => '0',
+            cfg_trn_pending                            => '0',
+            cfg_pm_halt_aspm_l0s                       => '0',
+            cfg_pm_halt_aspm_l1                        => '0',
+            cfg_pm_force_state_en                      => '0',
+            cfg_pm_force_state                         => (others => '0'),
+            cfg_dsn                                    => (others => '0'),
+            cfg_interrupt                              => '0',
+            cfg_interrupt_rdy                          => open,
+            cfg_interrupt_assert                       => '0',
+            cfg_interrupt_di                           => (others => '0'),
+            cfg_interrupt_do                           => open,
+            cfg_interrupt_mmenable                     => open,
+            cfg_interrupt_msienable                    => open,
+            cfg_interrupt_msixenable                   => open,
+            cfg_interrupt_msixfm                       => open,
+            cfg_interrupt_stat                         => '0',
+            cfg_pciecap_interrupt_msgnum               => (others => '0'),
+            cfg_to_turnoff                             => open,
+            cfg_turnoff_ok                             => '0',
+            cfg_bus_number                             => open,
+            cfg_device_number                          => open,
+            cfg_function_number                        => open,
+            cfg_pm_wake                                => '0',
+            cfg_pm_send_pme_to                         => '0',
+            cfg_ds_bus_number                          => cfgBusNumberSync,
+            cfg_ds_device_number                       => cfgDeviceNumberSync,
+            cfg_ds_function_number                     => cfgFunctionNumberSync,
+            cfg_mgmt_wr_rw1c_as_rw                     => '0',
+            cfg_msg_received                           => open,
+            cfg_msg_data                               => open,
+            cfg_bridge_serr_en                         => open,
+            cfg_slot_control_electromech_il_ctl_pulse  => open,
+            cfg_root_control_syserr_corr_err_en        => open,
+            cfg_root_control_syserr_non_fatal_err_en   => open,
+            cfg_root_control_syserr_fatal_err_en       => open,
+            cfg_root_control_pme_int_en                => open,
+            cfg_aer_rooterr_corr_err_reporting_en      => open,
+            cfg_aer_rooterr_non_fatal_err_reporting_en => open,
+            cfg_aer_rooterr_fatal_err_reporting_en     => open,
+            cfg_aer_rooterr_corr_err_received          => open,
+            cfg_aer_rooterr_non_fatal_err_received     => open,
+            cfg_aer_rooterr_fatal_err_received         => open,
+            cfg_msg_received_err_cor                   => open,
+            cfg_msg_received_err_non_fatal             => open,
+            cfg_msg_received_err_fatal                 => open,
+            cfg_msg_received_pm_as_nak                 => open,
+            cfg_msg_received_pm_pme                    => open,
+            cfg_msg_received_pme_to_ack                => open,
+            cfg_msg_received_assert_int_a              => open,
+            cfg_msg_received_assert_int_b              => open,
+            cfg_msg_received_assert_int_c              => open,
+            cfg_msg_received_assert_int_d              => open,
+            cfg_msg_received_deassert_int_a            => open,
+            cfg_msg_received_deassert_int_b            => open,
+            cfg_msg_received_deassert_int_c            => open,
+            cfg_msg_received_deassert_int_d            => open,
+            cfg_msg_received_setslotpowerlimit         => open,
+            pl_directed_link_change                    => "00",
+            pl_directed_link_width                     => "00",
+            pl_directed_link_speed                     => '0',
+            pl_directed_link_auton                     => '0',
+            pl_upstream_prefer_deemph                  => '0',
+            pl_sel_lnk_rate                            => open,
+            pl_sel_lnk_width                           => open,
+            pl_ltssm_state                             => open,
+            pl_lane_reversal_mode                      => open,
+            pl_phy_lnk_up                              => phyLinkUp,
+            pl_tx_pm_state                             => open,
+            pl_rx_pm_state                             => open,
+            pl_link_upcfg_cap                          => open,
+            pl_link_gen2_cap                           => open,
+            pl_link_partner_gen2_supported             => open,
+            pl_initial_link_width                      => open,
+            pl_directed_change_done                    => open,
+            pl_received_hot_rst                        => open,
+            pl_transmit_hot_rst                        => '0',
+            pl_downstream_deemph_source                => '0',
+            cfg_err_aer_headerlog                      => (others => '0'),
+            cfg_aer_interrupt_msgnum                   => (others => '0'),
+            cfg_err_aer_headerlog_set                  => open,
+            cfg_aer_ecrc_check_en                      => open,
+            cfg_aer_ecrc_gen_en                        => open,
+            cfg_vc_tcvc_map                            => open,
+            PIPE_MMCM_RST_N                            => '1',
+            sys_clk                                    => pciRefClk,
+            sys_rst_n                                  => intResetL
+            );
+   end generate;
+
+   U_PciCoreDisGen: if HSIO_MODE_G = true generate
+      pciExpTxP              <= (others=>'0');
+      pciExpTxN              <= (others=>'0');
+      pciExpRxP              <= (others=>'0');
+      pciExpRxN              <= (others=>'0');
+      pcieTxP                <= '1';
+      pcieTxM                <= '0';
+      pciClk                 <= axiClk;
+      pciClkRst              <= axiClkRst;
+      linkUp                 <= '1';
+      txBufAv                <= (others=>'0');
+      txReady                <= '0';
+      rdFifoDin              <= (others=>'0');
+      rxValid                <= '0';
+      phyLinkUp              <= '0';
+      cfg.status             <= (others=>'0');
+      cfg.command            <= (others=>'0');
+      cfg.dStatus            <= (others=>'0');
+      cfg.dCommand           <= (others=>'0');
+      cfg.lStatus            <= (others=>'0');
+      cfg.lCommand           <= (others=>'0');
+      cfg.dCommand2          <= (others=>'0');
+      cfg.pcieLinkState      <= (others=>'0');
+      cfg.pmcsrPmeEn         <= '0';
+      cfg.pmcsrPowerstate    <= (others=>'0');
+      cfg.pmcsrPmeStatus     <= '0';
+      cfg.receivedFuncLvlRst <= '0';
+      cfgBusNumberSync       <= (others=>'0');
+      cfgDeviceNumberSync    <= (others=>'0');
+      cfgFunctionNumberSync  <= (others=>'0');
+   end generate;
 
 end architecture structure;
 
