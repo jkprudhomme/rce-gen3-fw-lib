@@ -71,28 +71,48 @@ set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks pci_txoutclk]
 
 # External 1G Ethernet Clocks
-create_clock -name ethRxClk0 -period 8 [get_ports ethRxClk[0]]
-create_clock -name ethRxClk1 -period 8 [get_ports ethRxClk[1]]
-
-set sysClk200Pin [get_pins -of_objects [get_clocks sysClk200]]
-# create_generated_clock -name extEthClk125 -source ${sysClk200Pin} \
-#     -multiply_by 5 -divide_by 8 \
-#     [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
-
-# create_generated_clock -name extEthClk25 -source ${sysClk200Pin} \
-#     -divide_by 8 \
-#     [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
-
-# create_generated_clock -name extEthClk10 -source ${sysClk200Pin} \
-#     -divide_by 20 \
-#     [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
-
-# create_generated_clock -name extEthClk2_5 -source [get_pins -of_objects [get_clocks extEthClk10]] \
-#     -divide_by 4 \
-#     [get_pins U_DtmCore/U_GmiiToRgmiiSwitch/GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
-
-# set_max_delay 10 -datapath_only -from [get_clocks -include_generated_clocks {ethRxClk0}] \
-#     -to [get_clocks -include_generated_clocks {sysClk200}]
+#create_clock -name ethRxClk0 -period 8 [get_ports ethRxClk[0]]
+#create_clock -name ethRxClk1 -period 8 [get_ports ethRxClk[1]]
+#
+#set sysClk200Pin [get_pins -of_objects [get_clocks sysClk200]]
+#
+#create_generated_clock -name extEthClk125A -source ${sysClk200Pin} \
+#    -multiply_by 5 -divide_by 8 \
+#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
+#
+#create_generated_clock -name extEthClk125B -source ${sysClk200Pin} \
+#    -multiply_by 5 -divide_by 8 \
+#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
+#
+#create_generated_clock -name extEthClk25A -source ${sysClk200Pin} \
+#    -divide_by 8 \
+#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
+#
+#create_generated_clock -name extEthClk25B -source ${sysClk200Pin} \
+#    -divide_by 8 \
+#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
+#
+#create_generated_clock -name extEthClk10A -source ${sysClk200Pin} \
+#    -divide_by 20 \
+#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
+#
+#create_generated_clock -name extEthClk10B -source ${sysClk200Pin} \
+#    -divide_by 20 \
+#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
+#
+#create_generated_clock -name extEthClk2_5A -source [get_pins -of_objects [get_clocks extEthClk10]] \
+#    -divide_by 4 \
+#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
+#
+#create_generated_clock -name extEthClk2_5B -source [get_pins -of_objects [get_clocks extEthClk10]] \
+#    -divide_by 4 \
+#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
+#
+#set_max_delay 10 -datapath_only -from [get_clocks -include_generated_clocks {ethRxClk0}] \
+#    -to [get_clocks -include_generated_clocks {sysClk200}]
+#
+#set_max_delay 10 -datapath_only -from [get_clocks -include_generated_clocks {ethRxClk1}] \
+#    -to [get_clocks -include_generated_clocks {sysClk200}]
 
 # DNA Primitive Clock
 create_clock -period 64.000 -name dnaClk [get_pins  {U_DtmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/BUFR_Inst/O}]
@@ -111,28 +131,31 @@ set_false_path -through [get_nets  -hier -filter {name =~ *pipe_wrapper_i/pipe_c
 
 # GMII To RGMII 
 # Set the select line for the clock muxes so that the timing analysis is done on the fastest clock
-# set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE0}]
-# set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S0}]
-# set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE1}]
-# set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S1}]
+#set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE0}]
+#set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S0}]
+#set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE1}]
+#set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S1}]
 
 # GMII To RGMII 
 # False path constraints to async inputs coming directly to synchronizer
-# set_false_path -to [get_pins -of [get_cells -hier -filter { name =~ *i_MANAGEMENT/SYNC_*/data_sync* } ]  -filter { name =~ *D } ]
-# set_false_path -to [get_pins -hier -filter {name =~ *reset_sync*/PRE }]
-# set_false_path -to [get_pins -hier -filter {name =~ *idelayctrl_reset_gen/*reset_sync*/PRE }]
+#set_false_path -to [get_pins -of [get_cells -hier -filter { name =~ *i_MANAGEMENT/SYNC_*/data_sync* } ]  -filter { name =~ *D } ]
+#set_false_path -to [get_pins -hier -filter {name =~ *reset_sync*/PRE }]
+#set_false_path -to [get_pins -hier -filter {name =~ *idelayctrl_reset_gen/*reset_sync*/PRE }]
 
 # GMII To RGMII 
 # False path constraints from Control Register outputs
-# set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/DUPLEX_MODE_REG*/C }]
-# set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/SPEED_SELECTION_REG*/C }]
+#set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/DUPLEX_MODE_REG*/C }]
+#set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/SPEED_SELECTION_REG*/C }]
 
 # GMII-To-RGMII IODELAY Groups
-# set_property IDELAY_VALUE  "0"              [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
-# set_property IDELAY_VALUE  "0"              [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
-# set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
-# set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
-# set_property IODELAY_GROUP "GmiiToRgmiiGrp" [get_cells -hier -filter {name =~ *i_GmiiToRgmiiCore_idelayctrl}]
+#set_property IDELAY_VALUE  "0"               [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
+#set_property IDELAY_VALUE  "0"               [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
+#set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
+#set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
+#set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*i_GmiiToRgmiiCore_idelayctrl}]
+#set_property IODELAY_GROUP "GmiiToRgmiiGrpB" [get_cells -hier -filter {name =~ *U_CoreGen[1]*GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
+#set_property IODELAY_GROUP "GmiiToRgmiiGrpB" [get_cells -hier -filter {name =~ *U_CoreGen[1]*GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
+#set_property IODELAY_GROUP "GmiiToRgmiiGrpB" [get_cells -hier -filter {name =~ *U_CoreGen[1]*i_GmiiToRgmiiCore_idelayctrl}]
 
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
