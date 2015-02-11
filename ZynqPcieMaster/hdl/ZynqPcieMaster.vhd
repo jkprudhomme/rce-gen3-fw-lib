@@ -551,7 +551,6 @@ begin
       pcieTxM      <= pciExpTxN(0);
       pciExpRxP(0) <= pcieRxP;
       pciExpRxN(0) <= pcieRxM;
-      pciClkRst    <= axiClkRst;
 
       U_Pcie : entity work.pcie_7x_v1_9
          generic map (
