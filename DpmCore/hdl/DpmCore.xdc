@@ -31,7 +31,8 @@ set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks sysClk125] \
 
 # Local 1G Ethernet Clocks
-set eth_txoutclk_pin    [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
+set eth_txoutclk_pin [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/U0/gtwizard_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
+#set eth_txoutclk_pin [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
 create_clock -name eth_txoutclk -period 16 $eth_txoutclk_pin
 
 create_generated_clock -name intEthClk0 \
