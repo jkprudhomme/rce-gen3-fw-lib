@@ -140,7 +140,7 @@ architecture structure of PpiSocket is
    signal ibFreeDin           : slv(17 downto 4);
    signal ibFreeAFull         : sl;
    signal counters            : SlVectorArray(3 downto 0, COUNT_WIDTH_C-1 downto 0);
-   signal debug               : Slv32Array(8 downto 0);
+   signal debug               : Slv32Array(10 downto 0);
 
    type RegType is record
       dmaState       : RceDmaStateType;
@@ -394,7 +394,7 @@ begin
          axiReadMaster   => hpReadMaster,
          axiReadSlave    => hpReadSlave,
          obCompValid     => compValid(0),
-         obCompSel       => CompSel(0),
+         obCompSel       => CompSel(0), 
          obCompDin       => compDin(0),
          obCompRead      => compRead(0),
          obPendMaster    => obPendMaster,
@@ -403,9 +403,8 @@ begin
          dmaClkRst       => dmaClkRst,
          dmaObMaster     => dmaObMaster,
          dmaObSlave      => dmaObSlave,
-         obPayloadDebug  => debug(3 downto 2)
-      );
-
+         obPayloadDebug(1 downto 0)  => debug(3 downto 2), 
+         obPayloadDebug(3 downto 2)  => debug(10 downto 9));
 
    ---------------------------------------
    -- Inbound

@@ -65,7 +65,7 @@ entity PpiObPayload is
       dmaObSlave      : in  AxiStreamSlaveType;
 
       -- Debug Vectors
-      obPayloadDebug  : out Slv32Array(1 downto 0)
+      obPayloadDebug  : out Slv32Array(3 downto 0)
    );
 end PpiObPayload;
 
@@ -88,8 +88,9 @@ architecture structure of PpiObPayload is
       fAxisMaster    : AxiStreamMasterType;
       hAxisSlave     : AxiStreamSlaveType;
       dmaReq         : AxiReadDmaReqType;
-      obPayloadDebug : Slv32Array(1 downto 0);
-
+      sizeMax        : slv(31 downto 0);
+      sizeMin        : slv(31 downto 0);
+      obPayloadDebug : Slv32Array(3 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -104,6 +105,8 @@ architecture structure of PpiObPayload is
       fAxisMaster    => AXI_STREAM_MASTER_INIT_C,
       hAxisSlave     => AXI_STREAM_SLAVE_INIT_C,
       dmaReq         => AXI_READ_DMA_REQ_INIT_C,
+      sizeMax        => (others=>'0'),
+      sizeMin        => (others=>'1'),     
       obPayloadDebug => (others=>(others=>'0'))
    );
 
@@ -123,6 +126,10 @@ architecture structure of PpiObPayload is
    signal intReadMaster : AxiReadMasterType;
    signal intReadSlave  : AxiReadSlaveType;
 
+   -- Attribute for XST
+   attribute use_dsp48      : string;
+   attribute use_dsp48 of r : signal is "yes";     
+   
 begin
 
    -- Sync
@@ -183,6 +190,14 @@ begin
             v.hAxisSlave.tReady       := '1';
             v.noHeader                := '0';
             v.state                   := DESCB_S;
+            -- Update the Max. Size
+            if obPendMaster.tData(63 downto 32) > r.sizeMax then
+               v.sizeMax := obPendMaster.tData(63 downto 32);
+            end if;
+            -- Update the Min. Size
+            if obPendMaster.tData(63 downto 32) < r.sizeMin then
+               v.sizeMin := obPendMaster.tData(63 downto 32);
+            end if;                        
 
          -- get completion descriptor portion of header
          when DESCB_S =>
@@ -216,6 +231,8 @@ begin
                end if;
             end if;
 
+            v.obPayloadDebug(3)               := r.sizeMin;
+            v.obPayloadDebug(2)               := r.sizeMax;
             v.obPayloadDebug(1)               := r.dmaReq.address;
             v.obPayloadDebug(0)(31 downto 16) := r.dmaReq.size(15 downto 0);
 
