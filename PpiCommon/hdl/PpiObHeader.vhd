@@ -62,7 +62,7 @@ entity PpiObHeader is
       obPendSlave     : in  AxiStreamSlaveType;
 
       -- Debug Vectors
-      obHeaderDebug   : out Slv32Array(1 downto 0)
+      obHeaderDebug   : out Slv32Array(3 downto 0)
    );
 end PpiObHeader;
 
@@ -76,7 +76,9 @@ architecture structure of PpiObHeader is
       obFreeDin     : slv(31 downto 0);
       obWorkRead    : sl;
       obError       : sl;
-      obHeaderDebug : Slv32Array(1 downto 0);
+      obHeaderDebug : Slv32Array(3 downto 0);
+      sizeMax       : slv(7 downto 0);
+      sizeMin       : slv(7 downto 0);      
       dmaReq        : AxiReadDmaReqType;
    end record RegType;
 
@@ -87,6 +89,8 @@ architecture structure of PpiObHeader is
       obWorkRead    => '0',
       obError       => '0',
       obHeaderDebug => (others=>(others=>'0')),
+      sizeMax       => (others=>'0'),
+      sizeMin       => (others=>'1'),         
       dmaReq        => AXI_READ_DMA_REQ_INIT_C
    );
 
@@ -134,6 +138,15 @@ begin
             v.dmaReq.size(10 downto 3)     := obWorkDout(25 downto 18) + 2; -- Size is in units of 8 bytes
             v.dmaReq.address(17 downto  4) := obWorkDout(17 downto  4);
 
+            -- Update the Max. Size
+            if (obWorkDout(25 downto 18) + 2) > r.sizeMax then
+               v.sizeMax := (obWorkDout(25 downto 18) + 2);
+            end if;
+            -- Update the Min. Size
+            if (obWorkDout(25 downto 18) + 2) < r.sizeMin then
+               v.sizeMin := (obWorkDout(25 downto 18) + 2);
+            end if;             
+            
             if obWorkValid = '1' and obFreeAFull = '0' then
                v.obWorkRead := '1';
 
@@ -152,9 +165,11 @@ begin
                v.obError        := dmaAck.readError;
                v.state          := FREE_S;
             end if;
+            v.obHeaderDebug(3)(7 downto 0)   := r.sizeMin;
+            v.obHeaderDebug(2)(7 downto 0)   := r.sizeMax;
+            v.obHeaderDebug(1)               := r.dmaReq.address;
             v.obHeaderDebug(0)(31 downto 16) := r.dmaReq.size(15 downto 0);
             v.obHeaderDebug(0)(15 downto 14) := r.dmaReq.lastUser(1 downto 0); -- Opcode
-            v.obHeaderDebug(1)               := r.dmaReq.address;
 
          when FREE_S =>
             v.obFreeDin(17 downto 0) := r.dmaReq.address(17 downto 0);
