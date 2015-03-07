@@ -35,6 +35,7 @@ entity XMac is
       EOH_BIT_G        : integer             := 0;
       ERR_BIT_G        : integer             := 0;
       HEADER_SIZE_G    : integer             := 16;
+      SHIFT_EN_G       : boolean             := false;
       AXIS_CONFIG_G    : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C
    );
    port (
@@ -124,8 +125,11 @@ architecture structure of XMac is
    signal rxCountEn         : sl;
    signal txCountEn         : sl;
    signal cntOutA           : SlVectorArray(11 downto 0,  7 downto 0);
-   signal cntOutB           : SlVectorArray(3 downto 0, 31 downto 0);
+   signal cntOutB           : SlVectorArray(4 downto 0, 31 downto 0);
    signal phyReset          : sl;
+   signal fifoWrCntEn       : sl;
+   signal fifoWrEofCntEn    : sl;
+   signal fifoCount         : slv(31 downto 0);
 
    type RegType is record
       countReset        : sl;
@@ -209,14 +213,14 @@ begin
          status_vector         => phyStatus
       );
 
-   -- Status Vector
+   -- Status Vector 0x20
    -- 0   = Tx Local Fault
    -- 1   = Rx Local Fault
    -- 5:2 = Sync Status
    -- 6   = Alignment
    -- 7   = Rx Link Status
 
-   -- Config Vector
+   -- Config Vector 0x8
    -- 0   = Loopback
    -- 1   = Power Down
    -- 2   = Reset Local Fault
@@ -224,7 +228,7 @@ begin
    -- 4   = Test Enable
    -- 6:5 = Test Pattern
 
-   -- Debug  Vector
+   -- Debug  Vector 0x24
    -- 5   = Align Status
    -- 4:1 = Sync Status
    -- 0   = TX Phase Complete
@@ -254,27 +258,30 @@ begin
          EOH_BIT_G      => EOH_BIT_G,
          ERR_BIT_G      => ERR_BIT_G,
          HEADER_SIZE_G  => HEADER_SIZE_G,
+         SHIFT_EN_G     => SHIFT_EN_G,
          AXIS_CONFIG_G  => AXIS_CONFIG_G
       ) port map ( 
-         dmaClk        => dmaClk,
-         dmaClkRst     => dmaClkRst,
-         dmaIbMaster   => dmaIbMaster,
-         dmaIbSlave    => dmaIbSlave,
-         phyClk        => ethClk,
-         phyRst        => ethClkRst,
-         phyRxd        => xauiRxd,
-         phyRxc        => xauiRxc,
-         phyReady      => phyStatus(7),
-         macAddress    => r.macAddress,
-         rxShift       => r.rxShift,
-         rxShiftEn     => r.rxShiftEn,
-         byteSwap      => r.byteSwap,
-         rxPauseReq    => rxPauseReq,
-         rxPauseSet    => rxPauseSet,
-         rxPauseValue  => rxPauseValue,
-         rxCountEn     => rxCountEn,
-         rxOverFlow    => rxOverFlow,
-         rxCrcError    => rxCrcError
+         dmaClk         => dmaClk,
+         dmaClkRst      => dmaClkRst,
+         dmaIbMaster    => dmaIbMaster,
+         dmaIbSlave     => dmaIbSlave,
+         phyClk         => ethClk,
+         phyRst         => ethClkRst,
+         phyRxd         => xauiRxd,
+         phyRxc         => xauiRxc,
+         phyReady       => phyStatus(7),
+         macAddress     => r.macAddress,
+         rxShift        => r.rxShift,
+         rxShiftEn      => r.rxShiftEn,
+         byteSwap       => r.byteSwap,
+         rxPauseReq     => rxPauseReq,
+         rxPauseSet     => rxPauseSet,
+         rxPauseValue   => rxPauseValue,
+         rxCountEn      => rxCountEn,
+         rxOverFlow     => rxOverFlow,
+         rxCrcError     => rxCrcError,
+         fifoWrCntEn    => fifoWrCntEn,
+         fifoWrEofCntEn => fifoWrEofCntEn
       );
 
    -------------------------------------------
@@ -285,6 +292,7 @@ begin
          TPD_G          => TPD_G,
          ADDR_WIDTH_G   => OB_ADDR_WIDTH_G,
          VALID_THOLD_G  => VALID_THOLD_G,
+         SHIFT_EN_G     => SHIFT_EN_G,
          AXIS_CONFIG_G  => AXIS_CONFIG_G
       ) port map ( 
          dmaClk            => dmaClk,
@@ -359,15 +367,16 @@ begin
          SYNTH_CNT_G     => "1",
          CNT_RST_EDGE_G  => false,
          CNT_WIDTH_G     => 32,
-         WIDTH_G         => 4
+         WIDTH_G         => 5
       ) port map (
          statusIn(0)     => rxCountEn,
          statusIn(1)     => txCountEn,
          statusIn(2)     => rxPauseReq,
          statusIn(3)     => rxPauseSet,
+         statusIn(4)     => fifoWrEofCntEn,
          statusOut       => open,
          cntRstIn        => r.countReset,
-         rollOverEnIn    => "0011",
+         rollOverEnIn    => "00011",
          cntOut          => cntOutB,
          irqEnIn         => (others=>'0'),
          irqOut          => open,
@@ -376,6 +385,18 @@ begin
          rdClk           => axilClk,
          rdRst           => axilClkRst
       );
+
+
+   process ( ethClk) begin
+      if rising_edge(ethClk) then
+         if ethClkRst = '1' or r.countReset = '1' then
+            fifoCount <= (others=>'0') after TPD_G;
+         elsif fifoWrCntEn = '1' and fifoCount /= x"FFFFFFFF" then
+            fifoCount <= fifoCount + 1 after TPD_G;
+         end if;
+      end if;
+   end process;
+
 
 
    -------------------------------------------
@@ -391,7 +412,7 @@ begin
    end process;
 
    -- Async
-   process (axilClkRst, axilReadMaster, axilWriteMaster, r, phyStatus, phyDebug, cntOutA, cntOutB ) is
+   process (axilClkRst, axilReadMaster, axilWriteMaster, r, phyStatus, phyDebug, cntOutA, cntOutB, fifoCount ) is
       variable v         : RegType;
       variable axiStatus : AxiLiteStatusType;
    begin
@@ -504,15 +525,19 @@ begin
                      v.axilReadSlave.rdata(8)          := r.txShiftEn;
                      v.axilReadSlave.rdata(9)          := r.rxShiftEn;
 
+                  when x"40" => 
+                     v.axilReadSlave.rdata := fifoCount;
+
                   when others => null;
                end case;
 
             when X"01" =>
-               v.axilReadSlave.rdata := muxSlVectorArray(cntOutB,conv_integer(axilReadMaster.araddr(3 downto 2)));
+               v.axilReadSlave.rdata := muxSlVectorArray(cntOutB,conv_integer(axilReadMaster.araddr(4 downto 2)));
                -- 0x0100 = rxCount
                -- 0x0104 = txCount
                -- 0x0108 = pauseReqCnt
                -- 0x010C = pauseSetCnt
+               -- 0x0110 = fifoFrameWrite
 
             when X"02" =>
                v.axilReadSlave.rdata(7 downto 0) := muxSlVectorArray(cntOutA,conv_integer(axilReadMaster.araddr(3 downto 2)));

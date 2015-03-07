@@ -42,6 +42,7 @@ entity XMacImport is
       EOH_BIT_G     : integer             := 0;
       ERR_BIT_G     : integer             := 0;
       HEADER_SIZE_G : integer             := 16; -- Number of 64-bit values to include in the header
+      SHIFT_EN_G    : boolean             := false;
       AXIS_CONFIG_G : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C
    );
    port ( 
@@ -73,7 +74,9 @@ entity XMacImport is
       -- Status
       rxCountEn        : out sl;
       rxOverFlow       : out sl;
-      rxCrcError       : out sl
+      rxCrcError       : out sl;
+      fifoWrCntEn      : out sl;
+      fifoWrEofCntEn   : out sl
    );
 end XMacImport;
 
@@ -199,25 +202,34 @@ begin
          dataOut => rxShiftEnSync
       );
 
-   -- Shift inbound data 2 bytes to the left.
-   -- This adds two bytes of data at start 
-   -- of the packet. 
-   U_FrameShift : entity work.AxiStreamShift
-      generic map (
-         TPD_G          => TPD_G,
-         AXIS_CONFIG_G  => AXIS_CONFIG_G,
-         ADD_VALID_EN_G => true
-      ) port map (
-         axisClk     => dmaClk,
-         axisRst     => dmaClkRst,
-         axiStart    => rxShiftEnSync,
-         axiShiftDir => '0', -- 0 = left (lsb to msb)
-         axiShiftCnt => rxShift,
-         sAxisMaster => sftIbMaster,
-         sAxisSlave  => sftIbSlave,
-         mAxisMaster => dmaIbMaster,
-         mAxisSlave  => dmaIbSlave
-      );
+   U_ShiftEnGen: if SHIFT_EN_G = true generate
+
+      -- Shift inbound data 2 bytes to the left.
+      -- This adds two bytes of data at start 
+      -- of the packet. 
+      U_FrameShift : entity work.AxiStreamShift
+         generic map (
+            TPD_G          => TPD_G,
+            AXIS_CONFIG_G  => AXIS_CONFIG_G,
+            ADD_VALID_EN_G => true
+         ) port map (
+            axisClk     => dmaClk,
+            axisRst     => dmaClkRst,
+            axiStart    => rxShiftEnSync,
+            axiShiftDir => '0', -- 0 = left (lsb to msb)
+            axiShiftCnt => rxShift,
+            sAxisMaster => sftIbMaster,
+            sAxisSlave  => sftIbSlave,
+            mAxisMaster => dmaIbMaster,
+            mAxisSlave  => dmaIbSlave
+         );
+   end generate;
+
+   U_ShiftDisGen: if SHIFT_EN_G = false generate
+      dmaIbMaster <= sftIbMaster;
+      sftIbSlave  <= dmaIbSlave;
+   end generate;
+
 
    -- PPI FIFO
    U_OutFifo : entity work.AxiStreamFifo 
@@ -247,6 +259,10 @@ begin
          mAxisMaster     => sftIbMaster,
          mAxisSlave      => sftIbSlave
       );
+
+
+   fifoWrCntEn    <= intIbMaster.tValid;
+   fifoWrEofCntEn <= intIbMaster.tValid and intIbMaster.tLast;
 
 
    -- Register stage and EOH generation
@@ -435,7 +451,7 @@ begin
             end if;
 
             -- Pause frame detection
-            if frameShift3 = '1' and frameShift4 = '0' and crcFifoIn(63 downto 32) = x"01000888" then
+            if frameShift2 = '1' and frameShift3 = '0' and crcFifoIn(63 downto 32) = x"01000888" then
                pauseDet <= '1' after TPD_G;
             else
                pauseDet <= '0' after TPD_G;

@@ -64,28 +64,27 @@ begin
             txCount      <= (others=>'0');
          else
             txCount <= txCount + 1;
+
+            --rxPauseReq         <= '0';
+            dmaObMaster.tValid <= '0';
  
             if txCount < 5 then
-               dmaObMaster.tValid             <= '0';
+               --dmaObMaster.tValid             <= '0';
                dmaObMaster.tData(63 downto 0) <= (others=>'1');
                dmaObMaster.tLast              <= '0';
                dmaObMaster.tKeep              <= (others=>'1');
             elsif txCount <= 17 then
-               dmaObMaster.tValid             <= '1';
+               --dmaObMaster.tValid             <= '1';
                dmaObMaster.tData(63 downto 0) <= (others=>'1');
                dmaObMaster.tLast              <= '0';
                dmaObMaster.tKeep              <= (others=>'1');
             elsif txCount = 18 then
-               dmaObMaster.tValid             <= '1';
+               --dmaObMaster.tValid             <= '1';
                dmaObMaster.tData(63 downto 0) <= (others=>'1');
                dmaObMaster.tLast              <= '1';
                dmaObMaster.tKeep              <= (others=>'1');
-            else
-               dmaObMaster.tValid             <= '0';
-               dmaObMaster.tData(63 downto 0) <= (others=>'1');
-               dmaObMaster.tLast              <= '1';
-               dmaObMaster.tKeep              <= (others=>'1');
-               txCount <= (others=>'0');
+            elsif txCount = 19 then
+               rxPauseReq <= '1';
             end if;
 
 --            case txCount is 
@@ -158,7 +157,7 @@ begin
 
    phyReady      <= '1';
    interFrameGap <= "0011";
-   pauseTime     <= x"000F";
+   pauseTime     <= x"FFFF";
    macAddress    <= (others=>'0');
    byteSwap      <= '0';
 

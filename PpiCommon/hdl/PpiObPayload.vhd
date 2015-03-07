@@ -74,7 +74,7 @@ architecture structure of PpiObPayload is
    constant CHAN_BITS_C : integer := bitSize(PPI_COMP_CNT_C-1);
    constant COMP_BITS_C : integer := CHAN_BITS_C + 31;
 
-   type StateType is (IDLE_S, DESCA_S, DESCB_S, HEAD_S, WAIT_S, COMP_S, ERR_S);
+   type StateType is (DESCA_S, DESCB_S, HEAD_S, PAUSE_S, WAIT_S, COMP_S, ERR_S);
 
    type RegType is record
       state          : StateType;
@@ -94,7 +94,7 @@ architecture structure of PpiObPayload is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      state          => IDLE_S,
+      state          => DESCA_S,
       compWrite      => '0',
       compChan       => (others=>'0'),
       compData       => (others=>'0'),
@@ -176,12 +176,6 @@ begin
 
       case r.state is
 
-         when IDLE_S =>
-            if obPendMaster.tValid = '1' then
-               v.state             := DESCA_S;
-               v.hAxisSlave.tReady := '1';
-            end if;
-
          -- get payload descriptor portion of header
          when DESCA_S =>
             v.dmaReq.address          := obPendMaster.tData(31 downto 0);
@@ -189,7 +183,6 @@ begin
             v.dmaReq.dest(3 downto 0) := obPendMaster.tDest(3 downto 0);
             v.hAxisSlave.tReady       := '1';
             v.noHeader                := '0';
-            v.state                   := DESCB_S;
             -- Update the Max. Size
             if obPendMaster.tData(63 downto 32) > r.sizeMax then
                v.sizeMax := obPendMaster.tData(63 downto 32);
@@ -198,6 +191,10 @@ begin
             if obPendMaster.tData(63 downto 32) < r.sizeMin then
                v.sizeMin := obPendMaster.tData(63 downto 32);
             end if;                        
+
+            if obPendMaster.tValid = '1' then
+               v.state := DESCB_S;
+            end if;
 
          -- get completion descriptor portion of header
          when DESCB_S =>
@@ -216,7 +213,7 @@ begin
                   -- Oops. Zero header and zero payload. Just drop it!
                   if v.headOnly = '1' then
                      v.dmaReq.request := '0';
-                     v.state          := IDLE_S;
+                     v.state          := DESCA_S;
 
                   -- No header. EOH not asserted
                   else
@@ -226,8 +223,7 @@ begin
 
                -- Pass along header data
                else
-                  v.hAxisSlave.tReady := not intAxisCtrl.pause;
-                  v.state             := HEAD_S;
+                  v.state := HEAD_S;
                end if;
             end if;
 
@@ -238,21 +234,19 @@ begin
 
          -- Header data, send out
          when HEAD_S =>
-            v.hAxisSlave.tReady  := not intAxisCtrl.pause;
+            v.hAxisSlave.tReady  := '1';
             v.fAxisMaster        := obPendMaster;
             v.fAxisMaster.tUser  := (others=>'0'); -- Clear user field
-            v.fAxisMaster.tValid := obPendMaster.tValid and r.hAxisSlave.tReady;
 
             -- End of frame
-            if obPendMaster.tValid = '1' and r.hAxisSlave.tReady = '1' and obPendMaster.tLast = '1' then
-               v.hAxisSlave.tReady := '0';
+            if obPendMaster.tValid = '1' and obPendMaster.tLast = '1' then
 
                -- Set end of header
                axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, v.fAxisMaster, PPI_EOH_C,'1');
 
                -- Header only, we are done
                if v.headOnly = '1' then
-                  v.state := IDLE_S;
+                  v.state := DESCA_S;
 
                -- Payload Enable, start DMA
                else
@@ -260,6 +254,16 @@ begin
                   v.fAxisMaster.tLast := '0'; -- not end of frame yet
                   v.dmaReq.request    := '1';
                end if;
+
+            -- Pause asserted
+            elsif intAxisCtrl.pause = '1' then
+               v.state := PAUSE_S;
+            end if;
+
+         -- Pause is asserted while moving header data
+         when PAUSE_S => 
+            if intAxisCtrl.pause = '0' then
+               v.state := HEAD_S;
             end if;
 
          -- Wait for DMA to complete
@@ -278,7 +282,7 @@ begin
                elsif dmaAck.readError = '1' then
                   v.state := ERR_S;
                else
-                  v.state := IDLE_S;
+                  v.state := DESCA_S;
                end if;
             end if;
 
@@ -290,7 +294,7 @@ begin
                if r.compData(1) = '1' then
                   v.state := ERR_S;
                else
-                  v.state := IDLE_S;
+                  v.state := DESCA_S;
                end if;
             end if;
 
@@ -304,7 +308,7 @@ begin
 
             if compAFull = '0' then
                v.compWrite := '1';
-               v.state     := IDLE_S;
+               v.state     := DESCA_S;
             end if;
 
       end case;
@@ -320,7 +324,7 @@ begin
       -- Outputs
       dmaReq         <= r.dmaReq;
       obAxiError     <= r.rdError;
-      obPendSlave    <= r.hAxisSlave;
+      obPendSlave    <= v.hAxisSlave;
       intAxisMaster  <= r.fAxisMaster;
       compWrite      <= r.compWrite;
       obPayloadDebug <= r.obPayloadDebug;

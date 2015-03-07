@@ -39,6 +39,7 @@ entity XMacExport is
       TPD_G         : time                := 1 ns;
       ADDR_WIDTH_G  : integer             := 9;
       VALID_THOLD_G : integer             := 0;
+      SHIFT_EN_G    : boolean             := false;
       AXIS_CONFIG_G : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C
    );
    port ( 
@@ -202,26 +203,34 @@ begin
          dataOut => txShiftEnSync
       );
 
-   -- Shift outbound data 2 bytes to the right.
-   -- This removes two bytes of data at start 
-   -- of the packet. These were added by software
-   -- to create a software friendly alignment of 
-   -- outbound data.
-   U_FrameShift : entity work.AxiStreamShift
-      generic map (
-         TPD_G         => TPD_G,
-         AXIS_CONFIG_G => AXIS_CONFIG_G
-      ) port map (
-         axisClk     => dmaClk,
-         axisRst     => dmaClkRst,
-         axiStart    => txShiftEnSync,
-         axiShiftDir => '1', -- 1 = right (msb to lsb)
-         axiShiftCnt => txShift,
-         sAxisMaster => dmaObMaster,
-         sAxisSlave  => dmaObSlave,
-         mAxisMaster => sftObMaster,
-         mAxisSlave  => sftObSlave
-      );
+   U_ShiftEnGen: if SHIFT_EN_G = true generate
+
+      -- Shift outbound data 2 bytes to the right.
+      -- This removes two bytes of data at start 
+      -- of the packet. These were added by software
+      -- to create a software friendly alignment of 
+      -- outbound data.
+      U_FrameShift : entity work.AxiStreamShift
+         generic map (
+            TPD_G         => TPD_G,
+            AXIS_CONFIG_G => AXIS_CONFIG_G
+         ) port map (
+            axisClk     => dmaClk,
+            axisRst     => dmaClkRst,
+            axiStart    => txShiftEnSync,
+            axiShiftDir => '1', -- 1 = right (msb to lsb)
+            axiShiftCnt => txShift,
+            sAxisMaster => dmaObMaster,
+            sAxisSlave  => dmaObSlave,
+            mAxisMaster => sftObMaster,
+            mAxisSlave  => sftObSlave
+         );
+   end generate;
+
+   U_ShiftDisGen: if SHIFT_EN_G = false generate
+      sftObMaster <= dmaObMaster;
+      dmaObSlave  <= sftObSlave;
+   end generate;
 
    -- PPI FIFO
    U_InFifo : entity work.AxiStreamFifo 
@@ -370,7 +379,7 @@ begin
             intLastLine <= '0';
             
             -- Pause Frame Is Finished
-            if stateCount = 8 then
+            if stateCount = 7 then
                stateCountRst <= '1';
                pauseLast     <= '1';
                nxtState      <= ST_WAIT_C;
@@ -720,16 +729,16 @@ begin
    with stateCount select
      pauseData <=
        -- Preamble
-       (others => '0') when "0000", 
+       --(others => '0') when "0000", 
        -- Src Id, Upper 2 Bytes + Dest Id, All 6 bytes
-       (macAddress(39 downto 32) & macAddress(47 downto 40) & x"010000C28001") when "0001",
+       (macAddress(39 downto 32) & macAddress(47 downto 40) & x"010000C28001") when "0000",
        -- Pause Opcode + Length/Type Field + Src Id, Lower 4 bytes
        (x"0100" & x"0888" & macAddress( 7 downto 0) &
                             macAddress(15 downto  8) &
                             macAddress(23 downto 16) &
-                            macAddress(31 downto 24)) when "0010",
+                            macAddress(31 downto 24)) when "0001",
        -- Pause length
-       (x"000000000000" & pauseTime( 7 downto 0) & pauseTime(15 downto 8)) when "0011",
+       (x"000000000000" & pauseTime( 7 downto 0) & pauseTime(15 downto 8)) when "0010",
        (others=>'0') when others;
 
 

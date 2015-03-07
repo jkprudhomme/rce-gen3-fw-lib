@@ -93,6 +93,7 @@ begin
          EOH_BIT_G        => PPI_EOH_C,
          ERR_BIT_G        => PPI_ERR_C,
          HEADER_SIZE_G    => 16,
+         SHIFT_EN_G       => false,
          AXIS_CONFIG_G    => PPI_AXIS_CONFIG_INIT_C
       ) port map (
          xmacRst          => xmacRst,
