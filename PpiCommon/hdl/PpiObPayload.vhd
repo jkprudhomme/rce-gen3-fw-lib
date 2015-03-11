@@ -41,8 +41,9 @@ entity PpiObPayload is
       axiClk          : in  sl;
       axiRst          : in  sl;
 
-      -- Enable and error pulse
+      -- Enable and error pulses
       obAxiError      : out sl;
+      reqError        : out sl;
 
       -- AXI Interface
       axiReadMaster   : out AxiReadMasterType;
@@ -85,6 +86,7 @@ architecture structure of PpiObPayload is
       rdError        : sl;
       headOnly       : sl;
       noHeader       : sl;
+      reqError       : sl;
       fAxisMaster    : AxiStreamMasterType;
       hAxisSlave     : AxiStreamSlaveType;
       dmaReq         : AxiReadDmaReqType;
@@ -101,6 +103,7 @@ architecture structure of PpiObPayload is
       compEnable     => '0',
       rdError        => '0',
       headOnly       => '0',
+      reqError       => '0',
       noHeader       => '0',
       fAxisMaster    => AXI_STREAM_MASTER_INIT_C,
       hAxisSlave     => AXI_STREAM_SLAVE_INIT_C,
@@ -150,6 +153,7 @@ begin
       v.hAxisSlave.tReady  := '0';
       v.fAxisMaster.tValid := '0';
       v.compWrite          := '0';
+      v.reqError           := '0';
 
       v.obPayloadDebug(0)(2 downto 0) := conv_std_logic_vector(StateType'pos(r.state), 3);
       v.obPayloadDebug(0)(4)          := r.noHeader;
@@ -211,9 +215,10 @@ begin
                   v.fAxisMaster.tLast := '0'; -- not end of frame yet
 
                   -- Oops. Zero header and zero payload. Just drop it!
-                  if v.headOnly = '1' then
+                  if v.headOnly = '1' or r.dmaReq.size = 0 then
                      v.dmaReq.request := '0';
                      v.state          := DESCA_S;
+                     v.reqError       := '1';
 
                   -- No header. EOH not asserted
                   else
@@ -245,8 +250,9 @@ begin
                axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, v.fAxisMaster, PPI_EOH_C,'1');
 
                -- Header only, we are done
-               if v.headOnly = '1' then
-                  v.state := DESCA_S;
+               if v.headOnly = '1' or r.dmaReq.size = 0 then
+                  v.state    := DESCA_S;
+                  v.reqError := not v.headOnly; -- Bad request
 
                -- Payload Enable, start DMA
                else
@@ -328,6 +334,7 @@ begin
       intAxisMaster  <= r.fAxisMaster;
       compWrite      <= r.compWrite;
       obPayloadDebug <= r.obPayloadDebug;
+      reqError       <= r.reqError;
 
       compDin(COMP_BITS_C-1 downto 31) <= r.compChan;
       compDin(30 downto  0)            <= r.compData;

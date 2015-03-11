@@ -50,6 +50,11 @@ architecture tb of tb is
    signal armEthRx                 : ArmEthRxArray(1 downto 0);
    signal clkSelA                  : slv(1 downto 0);
    signal clkSelB                  : slv(1 downto 0);
+   signal rxCount                  : slv(7 downto 0);
+   signal rxError                  : sl;
+   signal outClk                   : sl;
+   signal outClkRst                : sl;
+   signal outCount                 : slv(7 downto 0);
 
 begin
 
@@ -95,71 +100,56 @@ begin
    i2cSda <= '1';
    i2cScl <= '1';
 
-   dmaClk    <= (others=>sysClk125);
-   dmaClkRst <= (others=>sysClk125Rst);
+   dmaClk    <= (others=>outClk);
+   dmaClkRst <= (others=>outClkRst);
 
-   dmaIbMaster(2 downto 1) <= dmaObMaster(2 downto 1);
-   dmaObSlave(2 downto 1)  <= dmaIbSlave(2 downto 1);
+   --dmaIbMaster(2 downto 0) <= dmaObMaster(2 downto 0);
+   --dmaObSlave(2 downto 0)  <= dmaIbSlave(2 downto 0);
+   dmaIbMaster(2 downto 0) <= (others=>AXI_STREAM_MASTER_INIT_C);
+   dmaObSlave(2 downto 0)  <= (others=>AXI_STREAM_SLAVE_FORCE_C) when outCount(7 downto 6) = 0 else 
+                              (others=>AXI_STREAM_SLAVE_INIT_C);
+
+   process ( outClk ) begin
+      if rising_edge(outClk) then
+         if outClkRst = '1' then
+            rxCount  <= (others=>'0') after 1 ns;
+            rxError  <= '0' after 1 ns;
+            outCount <= (others=>'0') after 1 ns;
+         else
+            outCount <= outCount + 1 after 1 ns;
+
+            if dmaObMaster(0).tValid = '1' and dmaObSlave(0).tReady = '1' then
+               if dmaObMaster(0).tLast = '1' then
+                  rxCount <= (others=>'0') after 1 ns;
+                  if rxCount /= 9 then
+                     rxError <= '1' after 1 ns;
+                  end if;
+               else
+                  rxCount <= rxCount + 1 after 1 ns;
+               end if;
+            end if;
+         end if;
+      end if;
+   end process;
 
    extAxilReadSlave    <= AXI_LITE_READ_SLAVE_INIT_C;
    extAxilWriteSlave   <= AXI_LITE_WRITE_SLAVE_INIT_C;
    coreAxilReadSlave   <= AXI_LITE_READ_SLAVE_INIT_C;
    coreAxilWriteSlave  <= AXI_LITE_WRITE_SLAVE_INIT_C;
 
-   U_PpiInterconnect : entity work.PpiInterconnect 
-      generic map (
-         TPD_G               => 1 ns,
-         NUM_PPI_SLOTS_G     => 1,
-         STATUS_SEND_WIDTH_G => 1
-      ) port map (
-         ppiClk            => sysClk125,
-         ppiClkRst         => sysClk125Rst,
-         ppiState          => dmaState(0),
-         ppiIbMaster       => dmaIbMaster(0),
-         ppiIbSlave        => dmaIbSlave(0),
-         ppiObMaster       => dmaObMaster(0),
-         ppiObSlave        => dmaObSlave(0),
-         locIbMaster       => locIbMaster,
-         locIbSlave        => locIbSlave,
-         locObMaster       => open,
-         locObSlave        => (others=>AXI_STREAM_SLAVE_INIT_C),
-         statusClk         => sysClk125,
-         statusClkRst      => sysClk125Rst,
-         statusWords       => (others=>(others=>'0')),
-         statusSend        => (others=>'0'),
-         offlineAck        => '0'
-      );
+   process begin
+      outClk <= '0';
+      wait for 8 ns;
+      outClk <= '1';
+      wait for 8 ns;
+   end process;
 
-   U_SsiPrbsTx : entity work.SsiPrbsTx
-      generic map (
-         TPD_G                      => 1 ns,
-         ALTERA_SYN_G               => false,
-         ALTERA_RAM_G               => "M9K",
-         XIL_DEVICE_G               => "7SERIES",  --Xilinx only generic parameter    
-         BRAM_EN_G                  => true,
-         USE_BUILT_IN_G             => false,  --if set to true, this module is only Xilinx compatible only!!!
-         GEN_SYNC_FIFO_G            => false,
-         CASCADE_SIZE_G             => 1,
-         PRBS_SEED_SIZE_G           => 32,
-         PRBS_TAPS_G                => (0 => 16),
-         FIFO_ADDR_WIDTH_G          => 9,
-         FIFO_PAUSE_THRESH_G        => 256,    -- Almost full at 1/2 capacity
-         MASTER_AXI_STREAM_CONFIG_G => PPI_AXIS_CONFIG_INIT_C,
-         MASTER_AXI_PIPE_STAGES_G   => 0
-      ) port map (
-
-         mAxisClk     => sysClk125,
-         mAxisRst     => sysClk125,
-         mAxisSlave   => locIbSlave(0),
-         mAxisMaster  => locIbMaster(0),
-         locClk       => sysClk125,
-         locRst       => sysClk125Rst,
-         trig         => '1',
-         packetLength => x"00000100",
-         busy         => open,
-         tDest        => (others=>'0'),
-         tId          => (others=>'0')
-      );
+   process begin
+      outClkRst <= '1';
+      wait for 100 ns;
+      outClkRst <= '0';
+      wait;
+   end process;
 
 end tb;
 

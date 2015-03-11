@@ -54,31 +54,34 @@ int main(int argc, char **argv) {
 
    dma = new PpiDmaSim(0,rce,mem,memSize);
 
-   txHdrSize = 0;
-   txPaySize = 128;
-   txType    = 3;
+   txHdrSize = 80;
+   txPaySize = 0;
+   //txType    = 1;
+   txType    = 2;
 
    for (x=0; x < (txHdrSize+txPaySize); x++) txData[x] = x;
 
-   for (y=0; y < 2; y++) {
+   for (y=0; y < 1000; y++) {
 
       printf("Write\n");
-      ret = dma->write(txData,txHdrSize,txPaySize,txType);
+      while ( (ret = dma->write(txData,txHdrSize,txPaySize,txType)) == 0) sleep(1);
       printf("Write Done. Ret=%i\n",ret);
 
-      printf("Read\n");
-      while (dma->read(rxData,buffSize,&rxType,&rxErr,&rxHdrSize,&rxPaySize) == 0 ) usleep(100);
-      printf("Read Done\n");
+      //printf("Read\n");
+      //while (dma->read(rxData,buffSize,&rxType,&rxErr,&rxHdrSize,&rxPaySize) == 0 ) usleep(100);
+      //printf("Read Done\n");
 
-      if ( rxHdrSize != txHdrSize ) printf("Header size mismatch!\n");
-      if ( rxPaySize != txPaySize ) printf("Payload size mismatch!\n");
+      //if ( rxHdrSize != txHdrSize ) printf("Header size mismatch!\n");
+      //if ( rxPaySize != txPaySize ) printf("Payload size mismatch!\n");
 
-      for (x=0; x < (txHdrSize+txPaySize); x++) {
-         if ( txData[x] != rxData[x] ) printf("Data mismatch. Idx=%i Got=0x%08x Exp=0x%08x\n",x,rxData[x],txData[x]);
-      }
+      //for (x=0; x < (txHdrSize+txPaySize); x++) {
+         //if ( txData[x] != rxData[x] ) printf("Data mismatch. Idx=%i Got=0x%08x Exp=0x%08x\n",x,rxData[x],txData[x]);
+      //}
 
       printf("\n\n\n ------------ Loop %i DOne --------------------\n\n\n",y);
    }
+
+   while(1) sleep(1);
 
    ret = rce->read(0x40008008);
    printf("Int status = 0x%08x\n",ret);

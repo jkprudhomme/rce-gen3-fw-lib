@@ -27,8 +27,10 @@ PpiDmaSim::PpiDmaSim (uint idx, RceG3CpuSim *cpu, unsigned char *mem, uint memSi
 
    printf("Write to ob free list : 0x%08x\n",_obHdrAddr);
    _cpuSim->write(_baseAddr[idx]+_obWork,_obHdrAddr);
-   printf("Write to ib free list : 0x%08x\n",_ibHdrAddr);
-   _cpuSim->write(_baseAddr[idx]+_ibWork,_ibHdrAddr);
+   printf("Write to ob free list : 0x%08x\n",_ibHdrAddr);
+   _cpuSim->write(_baseAddr[idx]+_obWork,_ibHdrAddr);
+   //printf("Write to ib free list : 0x%08x\n",_ibHdrAddr);
+   //_cpuSim->write(_baseAddr[idx]+_ibWork,_ibHdrAddr);
 }
 
 PpiDmaSim::~PpiDmaSim () { }
@@ -63,8 +65,9 @@ int PpiDmaSim::write(unsigned char *data, uint hdrSize, uint paySize, uint type)
    //desc = addr | (((hdrSize/8)+1) << 18) | (type << 26);
    desc = addr | (((hdrSize/8)) << 18) | (type << 26);
 
-   if ( paySize > 0 ) desc |= 0xC0000000;
-   else desc |= 0x40000000;
+   //if ( paySize > 0 ) desc |= 0xC0000000;
+   //else desc |= 0x40000000;
+   desc |= 0x80000000;
 
    printf("Writing to outbound work\n");
    _cpuSim->write(_baseAddr[_channel]+_obWork,desc);

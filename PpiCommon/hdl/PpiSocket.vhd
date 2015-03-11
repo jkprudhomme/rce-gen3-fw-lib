@@ -139,8 +139,9 @@ architecture structure of PpiSocket is
    signal ibFreeWrite         : sl;
    signal ibFreeDin           : slv(17 downto 4);
    signal ibFreeAFull         : sl;
-   signal counters            : SlVectorArray(3 downto 0, COUNT_WIDTH_C-1 downto 0);
+   signal counters            : SlVectorArray(4 downto 0, COUNT_WIDTH_C-1 downto 0);
    signal debug               : Slv32Array(12 downto 0);
+   signal reqError            : sl;
 
    type RegType is record
       dmaState       : RceDmaStateType;
@@ -240,6 +241,8 @@ begin
                   v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 2); -- ibHeadAxiError
                when x"1C" =>
                   v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 3); -- ibPayAxiError
+               when x"20" =>
+                  v.axilReadSlave.rdata(COUNT_WIDTH_C-1 downto 0) := muxSlVectorArray (counters, 4); -- reqErrors
                when others =>
                   null;
             end case;
@@ -282,13 +285,14 @@ begin
          SYNTH_CNT_G     => "1",
          CNT_RST_EDGE_G  => true,
          CNT_WIDTH_G     => COUNT_WIDTH_C,
-         WIDTH_G         => 4
+         WIDTH_G         => 5
       ) port map (
          dataIn(0)  => obHeadAxiError,
          dataIn(1)  => obPayAxiError,
          dataIn(2)  => ibHeadAxiError,
          dataIn(3)  => ibPayAxiError,
-         rollOverEn => "0000",
+         dataIn(4)  => reqError,
+         rollOverEn => "00000",
          cntRst     => r.countReset,
          dataOut    => open,
          cntOut     => counters,
@@ -390,6 +394,7 @@ begin
          axiClk          => axiClk,
          axiRst          => axiRst,
          obAxiError      => obPayAxiError,
+         reqError        => reqError,
          axiReadMaster   => hpReadMaster,
          axiReadSlave    => hpReadSlave,
          obCompValid     => compValid(0),
