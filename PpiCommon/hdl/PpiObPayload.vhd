@@ -250,9 +250,12 @@ begin
                axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, v.fAxisMaster, PPI_EOH_C,'1');
 
                -- Header only, we are done
-               if v.headOnly = '1' or r.dmaReq.size = 0 then
+               if v.headOnly = '1' then
                   v.state    := DESCA_S;
-                  v.reqError := not v.headOnly; -- Bad request
+
+               -- Zero payload, skip request
+               elsif r.dmaREq.size = 0 then
+                  v.state    := WAIT_S;
 
                -- Payload Enable, start DMA
                else
@@ -274,10 +277,13 @@ begin
 
          -- Wait for DMA to complete
          when WAIT_S =>
-            v.fAxisMaster := dmaAxisMaster;
 
-            -- DMA is done
-            if dmaAck.done = '1' then 
+            if dmaReq.request = '1' then
+               v.fAxisMaster := dmaAxisMaster;
+            end if;
+
+            -- DMA is done or zero payload (no request)
+            if dmaAck.done = '1' or r.dmaReq.request = '0' then
                v.dmaReq.request := '0';
                v.compData(1)    := dmaAck.readError;
                v.rdError        := dmaAck.readError;
