@@ -208,7 +208,7 @@ begin
          AXIS_CONFIG_G    => PPI_AXIS_HEADER_INIT_C,
          AXI_CONFIG_G     => AXI_CONFIG_G,
          AXI_BURST_G      => PPI_AXI_BURST_C,
-         AXI_CACHE_G      => PPI_AXI_CACHE_C
+         AXI_CACHE_G      => PPI_AXI_ACP_CACHE_C
       ) port map (
          axiClk          => axiClk,
          axiRst          => axiRst,
