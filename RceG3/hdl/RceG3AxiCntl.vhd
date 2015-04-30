@@ -15,7 +15,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.all;
 use ieee.std_logic_arith.all;
 use IEEE.numeric_std.all;
 
@@ -33,62 +33,62 @@ entity RceG3AxiCntl is
    generic (
       TPD_G          : time           := 1 ns;
       RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C
-   );
+      );
    port (
 
       -- GP AXI Masters, 0=axiDmaClk, 1=axiClk
-      mGpReadMaster        : in     AxiReadMasterArray(1 downto 0);
-      mGpReadSlave         : out    AxiReadSlaveArray(1 downto 0);
-      mGpWriteMaster       : in     AxiWriteMasterArray(1 downto 0);
-      mGpWriteSlave        : out    AxiWriteSlaveArray(1 downto 0);
+      mGpReadMaster  : in  AxiReadMasterArray(1 downto 0);
+      mGpReadSlave   : out AxiReadSlaveArray(1 downto 0);
+      mGpWriteMaster : in  AxiWriteMasterArray(1 downto 0);
+      mGpWriteSlave  : out AxiWriteSlaveArray(1 downto 0);
 
       -- Fast AXI Busses
-      axiDmaClk            : in     sl;
-      axiDmaRst            : in     sl;
+      axiDmaClk : in sl;
+      axiDmaRst : in sl;
 
       -- Interrupt Control AXI Lite Bus
-      icAxilReadMaster     : out    AxiLiteReadMasterType;
-      icAxilReadSlave      : in     AxiLiteReadSlaveType;
-      icAxilWriteMaster    : out    AxiLiteWriteMasterType;
-      icAxilWriteSlave     : in     AxiLiteWriteSlaveType;
+      icAxilReadMaster  : out AxiLiteReadMasterType;
+      icAxilReadSlave   : in  AxiLiteReadSlaveType;
+      icAxilWriteMaster : out AxiLiteWriteMasterType;
+      icAxilWriteSlave  : in  AxiLiteWriteSlaveType;
 
       -- DMA AXI Lite Busses, dmaAxiClk
-      dmaAxilReadMaster    : out    AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
-      dmaAxilReadSlave     : in     AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
-      dmaAxilWriteMaster   : out    AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
-      dmaAxilWriteSlave    : in     AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilReadMaster  : out AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilReadSlave   : in  AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilWriteMaster : out AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      dmaAxilWriteSlave  : in  AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
 
       -- Slow AXI Busses
-      axiClk               : in     sl;
-      axiClkRst            : in     sl;
+      axiClk    : in sl;
+      axiClkRst : in sl;
 
       -- BSI AXI Lite
-      bsiAxilReadMaster    : out    AxiLiteReadMasterArray(1 downto 0);
-      bsiAxilReadSlave     : in     AxiLiteReadSlaveArray(1 downto 0);
-      bsiAxilWriteMaster   : out    AxiLiteWriteMasterArray(1 downto 0);
-      bsiAxilWriteSlave    : in     AxiLiteWriteSlaveArray(1 downto 0);
+      bsiAxilReadMaster  : out AxiLiteReadMasterArray(1 downto 0);
+      bsiAxilReadSlave   : in  AxiLiteReadSlaveArray(1 downto 0);
+      bsiAxilWriteMaster : out AxiLiteWriteMasterArray(1 downto 0);
+      bsiAxilWriteSlave  : in  AxiLiteWriteSlaveArray(1 downto 0);
 
       -- External AXI Lite (top level, outside DpmCore, DtmCore)
-      extAxilReadMaster    : out    AxiLiteReadMasterType;
-      extAxilReadSlave     : in     AxiLiteReadSlaveType;
-      extAxilWriteMaster   : out    AxiLiteWriteMasterType;
-      extAxilWriteSlave    : in     AxiLiteWriteSlaveType;
+      extAxilReadMaster  : out AxiLiteReadMasterType;
+      extAxilReadSlave   : in  AxiLiteReadSlaveType;
+      extAxilWriteMaster : out AxiLiteWriteMasterType;
+      extAxilWriteSlave  : in  AxiLiteWriteSlaveType;
 
       -- Core AXI Lite (outside RCE, insidde DpmCore, DtmCore)
-      coreAxilReadMaster   : out    AxiLiteReadMasterType;
-      coreAxilReadSlave    : in     AxiLiteReadSlaveType;
-      coreAxilWriteMaster  : out    AxiLiteWriteMasterType;
-      coreAxilWriteSlave   : in     AxiLiteWriteSlaveType;
+      coreAxilReadMaster  : out AxiLiteReadMasterType;
+      coreAxilReadSlave   : in  AxiLiteReadSlaveType;
+      coreAxilWriteMaster : out AxiLiteWriteMasterType;
+      coreAxilWriteSlave  : in  AxiLiteWriteSlaveType;
 
       -- Ethernet Mode
-      armEthMode           : in     slv(31 downto 0);
-      eFuseValue           : out    slv(31 downto 0);
-      deviceDna            : out    slv(63 downto 0);
+      armEthMode : in  slv(31 downto 0);
+      eFuseValue : out slv(31 downto 0);
+      deviceDna  : out slv(63 downto 0);
 
       -- Clock Select Lines
-      clkSelA              : out    slv(1 downto 0);
-      clkSelB              : out    slv(1 downto 0)
-   );
+      clkSelA : out slv(1 downto 0);
+      clkSelB : out slv(1 downto 0)
+      );
 end RceG3AxiCntl;
 
 architecture structure of RceG3AxiCntl is
@@ -97,38 +97,39 @@ architecture structure of RceG3AxiCntl is
    constant GP1_MAST_CNT_C : integer := 5;
 
    -- Gp0 Signals
-   signal midGp0ReadMaster     : AxiLiteReadMasterType;
-   signal midGp0ReadSlave      : AxiLiteReadSlaveType;
-   signal midGp0WriteMaster    : AxiLiteWriteMasterType;
-   signal midGp0WriteSlave     : AxiLiteWriteSlaveType;
-   signal tmpGp0ReadMasters    : AxiLiteReadMasterArray(GP0_MAST_CNT_C-1 downto 0);
-   signal tmpGp0ReadSlaves     : AxiLiteReadSlaveArray(GP0_MAST_CNT_C-1 downto 0);
-   signal tmpGp0WriteMasters   : AxiLiteWriteMasterArray(GP0_MAST_CNT_C-1 downto 0);
-   signal tmpGp0WriteSlaves    : AxiLiteWriteSlaveArray(GP0_MAST_CNT_C-1 downto 0);
+   signal midGp0ReadMaster   : AxiLiteReadMasterType;
+   signal midGp0ReadSlave    : AxiLiteReadSlaveType;
+   signal midGp0WriteMaster  : AxiLiteWriteMasterType;
+   signal midGp0WriteSlave   : AxiLiteWriteSlaveType;
+   signal tmpGp0ReadMasters  : AxiLiteReadMasterArray(GP0_MAST_CNT_C-1 downto 0);
+   signal tmpGp0ReadSlaves   : AxiLiteReadSlaveArray(GP0_MAST_CNT_C-1 downto 0);
+   signal tmpGp0WriteMasters : AxiLiteWriteMasterArray(GP0_MAST_CNT_C-1 downto 0);
+   signal tmpGp0WriteSlaves  : AxiLiteWriteSlaveArray(GP0_MAST_CNT_C-1 downto 0);
 
    -- Gp1 Signals
-   signal midGp1ReadMaster     : AxiLiteReadMasterType;
-   signal midGp1ReadSlave      : AxiLiteReadSlaveType;
-   signal midGp1WriteMaster    : AxiLiteWriteMasterType;
-   signal midGp1WriteSlave     : AxiLiteWriteSlaveType;
-   signal tmpGp1ReadMasters    : AxiLiteReadMasterArray(GP1_MAST_CNT_C-1 downto 0);
-   signal tmpGp1ReadSlaves     : AxiLiteReadSlaveArray(GP1_MAST_CNT_C-1 downto 0);
-   signal tmpGp1WriteMasters   : AxiLiteWriteMasterArray(GP1_MAST_CNT_C-1 downto 0);
-   signal tmpGp1WriteSlaves    : AxiLiteWriteSlaveArray(GP1_MAST_CNT_C-1 downto 0);
+   signal midGp1ReadMaster   : AxiLiteReadMasterType;
+   signal midGp1ReadSlave    : AxiLiteReadSlaveType;
+   signal midGp1WriteMaster  : AxiLiteWriteMasterType;
+   signal midGp1WriteSlave   : AxiLiteWriteSlaveType;
+   signal tmpGp1ReadMasters  : AxiLiteReadMasterArray(GP1_MAST_CNT_C-1 downto 0);
+   signal tmpGp1ReadSlaves   : AxiLiteReadSlaveArray(GP1_MAST_CNT_C-1 downto 0);
+   signal tmpGp1WriteMasters : AxiLiteWriteMasterArray(GP1_MAST_CNT_C-1 downto 0);
+   signal tmpGp1WriteSlaves  : AxiLiteWriteSlaveArray(GP1_MAST_CNT_C-1 downto 0);
 
    -- Local signals
-   signal intReadMaster     : AxiLiteReadMasterType;
-   signal intReadSlave      : AxiLiteReadSlaveType;
-   signal intWriteMaster    : AxiLiteWriteMasterType;
-   signal intWriteSlave     : AxiLiteWriteSlaveType;
-   signal dnaValue          : slv(63 downto 0);
-   signal dnaValid          : sl;
-   signal eFuseUsr          : slv(31 downto 0);
+   signal intReadMaster  : AxiLiteReadMasterType;
+   signal intReadSlave   : AxiLiteReadSlaveType;
+   signal intWriteMaster : AxiLiteWriteMasterType;
+   signal intWriteSlave  : AxiLiteWriteSlaveType;
+   signal dnaValue       : slv(63 downto 0);
+   signal dnaValid       : sl;
+   signal eFuseUsr       : slv(31 downto 0);
 
    type RegType is record
       scratchPad    : slv(31 downto 0);
       clkSelA       : slv(1 downto 0);
       clkSelB       : slv(1 downto 0);
+      heartbeat     : slv(31 downto 0);
       intReadSlave  : AxiLiteReadSlaveType;
       intWriteSlave : AxiLiteWriteSlaveType;
    end record RegType;
@@ -137,9 +138,10 @@ architecture structure of RceG3AxiCntl is
       scratchPad    => (others => '0'),
       clkSelA       => (others => '0'),
       clkSelB       => (others => '1'),
+      heartbeat     => (others => '0'),
       intReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
       intWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C
-   );
+      );
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -163,7 +165,7 @@ architecture structure of RceG3AxiCntl is
       end if;
 
       for i in 0 to DMA_AXIL_COUNT_C-1 loop
-         addr(23 downto 16)        := toSlv(i,8);
+         addr(23 downto 16)        := toSlv(i, 8);
          retConf(i+1).baseAddr     := addr;
          retConf(i+1).addrBits     := 16;
          retConf(i+1).connectivity := x"FFFF";
@@ -180,43 +182,43 @@ begin
    -------------------------------------
    U_Gp0AxiLite : entity work.AxiToAxiLite
       generic map (
-         TPD_G  => TPD_G
-      ) port map (
-         axiClk              => axiDmaClk,
-         axiClkRst           => axiDmaRst,
-         axiReadMaster       => mGpReadMaster(0),
-         axiReadSlave        => mGpReadSlave(0),
-         axiWriteMaster      => mGpWriteMaster(0),
-         axiWriteSlave       => mGpWriteSlave(0),
-         axilReadMaster      => midGp0ReadMaster,
-         axilReadSlave       => midGp0ReadSlave,
-         axilWriteMaster     => midGp0WriteMaster,
-         axilWriteSlave      => midGp0WriteSlave
-      );
+         TPD_G => TPD_G
+         ) port map (
+            axiClk          => axiDmaClk,
+            axiClkRst       => axiDmaRst,
+            axiReadMaster   => mGpReadMaster(0),
+            axiReadSlave    => mGpReadSlave(0),
+            axiWriteMaster  => mGpWriteMaster(0),
+            axiWriteSlave   => mGpWriteSlave(0),
+            axilReadMaster  => midGp0ReadMaster,
+            axilReadSlave   => midGp0ReadSlave,
+            axilWriteMaster => midGp0WriteMaster,
+            axilWriteSlave  => midGp0WriteSlave
+            );
 
    -------------------------------------
    -- GP0 AXI Lite Crossbar
    -- 0x40000000 - 0x7FFFFFFF, axiDmaClk
    -------------------------------------
-   U_Gp0Crossbar : entity work.AxiLiteCrossbar 
+   U_Gp0Crossbar : entity work.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
          NUM_MASTER_SLOTS_G => GP0_MAST_CNT_C,
          DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
          MASTERS_CONFIG_G   => genGp0Config
-      ) port map (
-         axiClk              => axiDmaClk,
-         axiClkRst           => axiDmaRst,
-         sAxiWriteMasters(0) => midGp0WriteMaster,
-         sAxiWriteSlaves(0)  => midGp0WriteSlave,
-         sAxiReadMasters(0)  => midGp0ReadMaster,
-         sAxiReadSlaves(0)   => midGp0ReadSlave,
-         mAxiWriteMasters    => tmpGp0WriteMasters,
-         mAxiWriteSlaves     => tmpGp0WriteSlaves,
-         mAxiReadMasters     => tmpGp0ReadMasters,
-         mAxiReadSlaves      => tmpGp0ReadSlaves
-      );
+         ) port map (
+            axiClk              => axiDmaClk,
+            axiClkRst           => axiDmaRst,
+            sAxiWriteMasters(0) => midGp0WriteMaster,
+            sAxiWriteSlaves(0)  => midGp0WriteSlave,
+            sAxiReadMasters(0)  => midGp0ReadMaster,
+            sAxiReadSlaves(0)   => midGp0ReadSlave,
+            mAxiWriteMasters    => tmpGp0WriteMasters,
+            mAxiWriteSlaves     => tmpGp0WriteSlaves,
+            mAxiReadMasters     => tmpGp0ReadMasters,
+            mAxiReadSlaves      => tmpGp0ReadSlaves
+            );
 
    icAxilWriteMaster    <= tmpGp0WriteMasters(0);
    tmpGp0WriteSlaves(0) <= icAxilWriteSlave;
@@ -235,26 +237,26 @@ begin
    -------------------------------------
    U_Gp1AxiLite : entity work.AxiToAxiLite
       generic map (
-         TPD_G  => TPD_G
-      ) port map (
-         axiClk              => axiClk,
-         axiClkRst           => axiClkRst,
-         axiReadMaster       => mGpReadMaster(1),
-         axiReadSlave        => mGpReadSlave(1),
-         axiWriteMaster      => mGpWriteMaster(1),
-         axiWriteSlave       => mGpWriteSlave(1),
-         axilReadMaster      => midGp1ReadMaster,
-         axilReadSlave       => midGp1ReadSlave,
-         axilWriteMaster     => midGp1WriteMaster,
-         axilWriteSlave      => midGp1WriteSlave
-      );
+         TPD_G => TPD_G
+         ) port map (
+            axiClk          => axiClk,
+            axiClkRst       => axiClkRst,
+            axiReadMaster   => mGpReadMaster(1),
+            axiReadSlave    => mGpReadSlave(1),
+            axiWriteMaster  => mGpWriteMaster(1),
+            axiWriteSlave   => mGpWriteSlave(1),
+            axilReadMaster  => midGp1ReadMaster,
+            axilReadSlave   => midGp1ReadSlave,
+            axilWriteMaster => midGp1WriteMaster,
+            axilWriteSlave  => midGp1WriteSlave
+            );
 
 
    -------------------------------------
    -- GP1 AXI Lite Crossbar
    -- 0x80000000 - 0xBFFFFFFF, axiClk
    -------------------------------------
-   U_Gp1Crossbar : entity work.AxiLiteCrossbar 
+   U_Gp1Crossbar : entity work.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -263,46 +265,46 @@ begin
          MASTERS_CONFIG_G   => (
 
             -- 0x80000000 - 0x8000FFFF : Internal registers
-            0 => (
-              baseAddr     => x"80000000",
-              addrBits     => 16,
-              connectivity => x"FFFF"),
+            0               => (
+               baseAddr     => x"80000000",
+               addrBits     => 16,
+               connectivity => x"FFFF"),
 
             -- 0x84000000 - 0x84000FFF : BSI I2C Slave Registers
-            1 => (
-              baseAddr     => x"84000000",
-              addrBits     => 12,
-              connectivity => x"FFFF"),
+            1               => (
+               baseAddr     => x"84000000",
+               addrBits     => 12,
+               connectivity => x"FFFF"),
 
             -- 0x88000000 - 0x88000FFF : BSI I2C Slave Registers
-            2 => (
-              baseAddr     => x"88000000",
-              addrBits     => 12,
-              connectivity => x"FFFF"),
+            2               => (
+               baseAddr     => x"88000000",
+               addrBits     => 12,
+               connectivity => x"FFFF"),
 
             -- 0xA0000000 - 0xAFFFFFFF : External Register Space
-            3 => (
-              baseAddr     => x"A0000000",
-              addrBits     => 28,
-              connectivity => x"FFFF"),
+            3               => (
+               baseAddr     => x"A0000000",
+               addrBits     => 28,
+               connectivity => x"FFFF"),
 
             -- 0xB0000000 - 0xBFFFFFFF : Core Register Space
-            4 => (
-              baseAddr     => x"B0000000",
-              addrBits     => 28,
-              connectivity => x"FFFF"))
-      ) port map (
-         axiClk              => axiClk,
-         axiClkRst           => axiClkRst,
-         sAxiWriteMasters(0) => midGp1WriteMaster,
-         sAxiWriteSlaves(0)  => midGp1WriteSlave,
-         sAxiReadMasters(0)  => midGp1ReadMaster,
-         sAxiReadSlaves(0)   => midGp1ReadSlave,
-         mAxiWriteMasters    => tmpGp1WriteMasters,
-         mAxiWriteSlaves     => tmpGp1WriteSlaves,
-         mAxiReadMasters     => tmpGp1ReadMasters,
-         mAxiReadSlaves      => tmpGp1ReadSlaves
-      );
+            4               => (
+               baseAddr     => x"B0000000",
+               addrBits     => 28,
+               connectivity => x"FFFF"))
+         ) port map (
+            axiClk              => axiClk,
+            axiClkRst           => axiClkRst,
+            sAxiWriteMasters(0) => midGp1WriteMaster,
+            sAxiWriteSlaves(0)  => midGp1WriteSlave,
+            sAxiReadMasters(0)  => midGp1ReadMaster,
+            sAxiReadSlaves(0)   => midGp1ReadSlave,
+            mAxiWriteMasters    => tmpGp1WriteMasters,
+            mAxiWriteSlaves     => tmpGp1WriteSlaves,
+            mAxiReadMasters     => tmpGp1ReadMasters,
+            mAxiReadSlaves      => tmpGp1ReadSlaves
+            );
 
    intWriteMaster       <= tmpGp1WriteMasters(0);
    tmpGp1WriteSlaves(0) <= intWriteSlave;
@@ -314,15 +316,15 @@ begin
    bsiAxilReadMaster             <= tmpGp1ReadMasters(2 downto 1);
    tmpGp1ReadSlaves(2 downto 1)  <= bsiAxilReadSlave;
 
-   extAxilWriteMaster    <= tmpGp1WriteMasters(3);
-   tmpGp1WriteSlaves(3)  <= extAxilWriteSlave;
-   extAxilReadMaster     <= tmpGp1ReadMasters(3);
-   tmpGp1ReadSlaves(3)   <= extAxilReadSlave;
+   extAxilWriteMaster   <= tmpGp1WriteMasters(3);
+   tmpGp1WriteSlaves(3) <= extAxilWriteSlave;
+   extAxilReadMaster    <= tmpGp1ReadMasters(3);
+   tmpGp1ReadSlaves(3)  <= extAxilReadSlave;
 
-   coreAxilWriteMaster    <= tmpGp1WriteMasters(4);
-   tmpGp1WriteSlaves(4)   <= coreAxilWriteSlave;
-   coreAxilReadMaster     <= tmpGp1ReadMasters(4);
-   tmpGp1ReadSlaves(4)    <= coreAxilReadSlave;
+   coreAxilWriteMaster  <= tmpGp1WriteMasters(4);
+   tmpGp1WriteSlaves(4) <= coreAxilWriteSlave;
+   coreAxilReadMaster   <= tmpGp1ReadMasters(4);
+   tmpGp1ReadSlaves(4)  <= coreAxilReadSlave;
 
 
    -------------------------------------
@@ -345,6 +347,8 @@ begin
    begin
       v := r;
 
+      v.heartbeat := r.heartbeat + 1;
+
       axiSlaveWaitTxn(intWriteMaster, intReadMaster, v.intWriteSlave, v.intReadSlave, axiStatus);
 
       -- Write
@@ -364,7 +368,7 @@ begin
          end case;
 
          -- Send Axi response
-         axiSlaveWriteResponse(v.intWriteSlave );
+         axiSlaveWriteResponse(v.intWriteSlave);
       end if;
 
       -- Read
@@ -396,13 +400,15 @@ begin
                   v.intReadSlave.rdata := eFuseUsr;
                when X"0034" =>
                   v.intReadSlave.rdata := armEthMode;
+               when X"0038" =>
+                  v.intReadSlave.rdata := r.heartbeat;
                when others => null;
             end case;
          else
             for x in 0 to 3 loop
                if (conv_integer(intReadMaster.araddr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
-                  c := BUILD_STAMP_C(conv_integer(intReadMaster.araddr(7 downto 0))+x+1);
-                  v.intReadSlave.rdata(x*8+7 downto x*8) := conv_std_logic_vector(character'pos(c),8);
+                  c                                      := BUILD_STAMP_C(conv_integer(intReadMaster.araddr(7 downto 0))+x+1);
+                  v.intReadSlave.rdata(x*8+7 downto x*8) := conv_std_logic_vector(character'pos(c), 8);
                end if;
             end loop;
          end if;
@@ -436,12 +442,12 @@ begin
          TPD_G           => TPD_G,
          IN_POLARITY_G   => '1',
          SIM_DNA_VALUE_G => X"000000000000000"
-      ) port map (
-         clk      => axiClk,
-         rst      => axiClkRst,
-         dnaValue => dnaValue,
-         dnaValid => dnaValid
-      );
+         ) port map (
+            clk      => axiClk,
+            rst      => axiClkRst,
+            dnaValue => dnaValue,
+            dnaValid => dnaValid
+            );
    deviceDna <= dnaValue;
 
    -------------------------------------
@@ -450,7 +456,7 @@ begin
    U_EFuse : EFUSE_USR
       port map (
          EFUSEUSR => eFuseUsr
-      );
+         );
    eFuseValue <= eFuseUsr;
 
 end architecture structure;
