@@ -17,7 +17,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
-use IEEE.numeric_std.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -28,6 +27,7 @@ use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.Pgp2bPkg.all;
 use work.SsiPkg.all;
+use work.RceG3Pkg.all;
 
 entity PpiPgpLane is
    generic (
@@ -38,7 +38,7 @@ entity PpiPgpLane is
       RX_AXIS_CASCADE_SIZE_G  : integer := 1;
       RX_DATA_ADDR_WIDTH_G    : integer := 9;
       RX_HEADER_ADDR_WIDTH_G  : integer := 9;
-      RX_PPI_MAX_FRAME_SIZE_G : integer := 2048
+      RX_PPI_MAX_FRAME_SIZE_G : integer := 2048;
       TX_PPI_ADDR_WIDTH_G     : integer := 9;
       TX_AXIS_ADDR_WIDTH_G    : integer := 9;
       TX_AXIS_CASCADE_SIZE_G  : integer := 1
@@ -78,11 +78,7 @@ entity PpiPgpLane is
       axilWriteMaster   : in  AxiLiteWriteMasterType;
       axilWriteSlave    : out AxiLiteWriteSlaveType;
       axilReadMaster    : in  AxiLiteReadMasterType;
-      axilReadSlave     : out AxiLiteReadSlaveType;
-
-      -- Status Bus
-      statusWord        : out slv(31 downto 0);
-      statusSend        : out sl
+      axilReadSlave     : out AxiLiteReadSlaveType
    );
 end PpiPgpLane;
 
@@ -114,10 +110,10 @@ begin
          pgpRxClkRst       => pgpRxClkRst,
          pgpRxIn           => pgpRxIn,
          pgpRxOut          => pgpRxOut,
-         statusWord        => statusWord,
-         statusSend        => statusSend,
+         statusWord        => open,
+         statusSend        => open,
          axilClk           => axilClk,
-         axilRst           => axilRst,
+         axilRst           => axilClkRst,
          axilReadMaster    => axilReadMaster,
          axilReadSlave     => axilReadSlave,
          axilWriteMaster   => axilWriteMaster,

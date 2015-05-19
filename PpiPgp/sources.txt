@@ -1,2 +1,2 @@
-hdl/PpiPgpLane.vhd
-hdl/PpiPgpArray.vhd
+vhdl work hdl/PpiPgpLane.vhd
+vhdl work hdl/PpiPgpArray.vhd
