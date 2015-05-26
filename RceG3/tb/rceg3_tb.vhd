@@ -12,10 +12,10 @@ use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.AxiPkg.all;
 
-entity tb is end tb;
+entity rceg3_tb is end rceg3_tb;
 
 -- Define architecture
-architecture tb of tb is
+architecture rceg3_tb of rceg3_tb is
 
    constant RCE_DMA_MODE_C        : RceDmaModeType      := RCE_DMA_AXIS_C;
 

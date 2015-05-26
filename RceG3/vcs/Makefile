@@ -1,4 +1,4 @@
-TOP=tb
+TOP=rceg3_tb
 
 # Set Default Output
 SIM_DIR=$(PWD)/out
@@ -86,7 +86,7 @@ rtl_src:
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3IntCntl.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../hdl/RceG3Top.vhd
 	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../simlink/rtl/RceG3CpuSim.vhd
-	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/tb.vhd
+	cd $(SIM_DIR); vhdlan $(EN64) $(PWD)/../tb/rceg3_tb.vhd
 
 # VHPI Library
 vhpi_src:
