@@ -102,5 +102,5 @@ begin
    coreAxilWriteSlave  <= AXI_LITE_WRITE_SLAVE_INIT_C;
 
 
-end tb;
+end rceg3_tb;
 
