@@ -18,6 +18,7 @@ entity rceg3_tb is end rceg3_tb;
 architecture rceg3_tb of rceg3_tb is
 
    constant RCE_DMA_MODE_C        : RceDmaModeType      := RCE_DMA_AXIS_C;
+   --constant RCE_DMA_MODE_C        : RceDmaModeType      := RCE_DMA_PPI_C;
 
    signal i2cSda                   : sl;
    signal i2cScl                   : sl;
@@ -43,6 +44,7 @@ architecture rceg3_tb of rceg3_tb is
    signal dmaObSlave               : AxiStreamSlaveArray(3 downto 0);
    signal dmaIbMaster              : AxiStreamMasterArray(3 downto 0);
    signal dmaIbSlave               : AxiStreamSlaveArray(3 downto 0);
+   signal dmaState                 : RceDmaStateArray(3 downto 0);
    signal armEthTx                 : ArmEthTxArray(1 downto 0);
    signal armEthRx                 : ArmEthRxArray(1 downto 0);
    signal clkSelA                  : slv(1 downto 0);
@@ -54,8 +56,8 @@ begin
    U_RceG3Top: entity work.RceG3Top
       generic map (
          TPD_G                 => 1 ns,
-         DMA_CLKDIV_G          => 4.5,
-         RCE_DMA_MODE_G        => RCE_DMA_MODE_C
+         RCE_DMA_MODE_G        => RCE_DMA_MODE_C,
+         SIM_MODEL_G           => true
       ) port map (
          i2cSda                    => i2cSda,
          i2cScl                    => i2cScl,
@@ -75,14 +77,15 @@ begin
          coreAxilWriteSlave        => coreAxilWriteSlave,
          dmaClk                    => dmaClk,
          dmaClkRst                 => dmaClkRst,
-         dmaOnline                 => dmaOnline,
-         dmaEnable                 => dmaEnable,
+         dmaState                  => dmaState,
          dmaObMaster               => dmaObMaster,
          dmaObSlave                => dmaObSlave,
          dmaIbMaster               => dmaIbMaster,
          dmaIbSlave                => dmaIbSlave,
+         userInterrupt             => (others=>'0'),
          armEthTx                  => armEthTx,
          armEthRx                  => armEthRx,
+         armEthMode                => x"00000001",
          clkSelA                   => clkSelA,
          clkSelB                   => clkSelB
       );

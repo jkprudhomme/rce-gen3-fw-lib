@@ -1,1 +1,3 @@
+simlink/rtl/RceG3CpuSim.vhd
+simlink/rtl/RceG3SimConfig.vhd
 tb/rceg3_tb.vhd
