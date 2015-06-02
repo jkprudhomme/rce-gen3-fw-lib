@@ -143,6 +143,41 @@ begin
             dmaIbSlave       => dmaIbSlave
          );
    end generate;
+   
+   ------------------------------------
+   -- AXI Streaming DMA Simple Controller
+   -- Custom and SW independent
+   ------------------------------------
+   U_CustomDmaGen : if RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C generate
+
+      U_RceG3DmaCustom : entity work.RceG3DmaCustom
+         generic map (
+            TPD_G            => TPD_G
+         ) port map (
+            axiDmaClk        => axiDmaClk,
+            axiDmaRst        => axiDmaRst,
+            acpWriteSlave    => acpWriteSlave,
+            acpWriteMaster   => acpWriteMaster,
+            acpReadSlave     => acpReadSlave,
+            acpReadMaster    => acpReadMaster,
+            hpWriteSlave     => hpWriteSlave,
+            hpWriteMaster    => hpWriteMaster,
+            hpReadSlave      => hpReadSlave,
+            hpReadMaster     => hpReadMaster,
+            axilReadMaster   => dmaAxilReadMaster,
+            axilReadSlave    => dmaAxilReadSlave,
+            axilWriteMaster  => dmaAxilWriteMaster,
+            axilWriteSlave   => dmaAxilWriteSlave,
+            interrupt        => dmaInterrupt,
+            dmaClk           => dmaClk,
+            dmaClkRst        => dmaClkRst,
+            dmaState         => dmaState,
+            dmaObMaster      => dmaObMaster,
+            dmaObSlave       => dmaObSlave,
+            dmaIbMaster      => dmaIbMaster,
+            dmaIbSlave       => dmaIbSlave
+         );
+   end generate;
 
 end architecture structure;
 
