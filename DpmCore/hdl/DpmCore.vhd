@@ -27,7 +27,8 @@ entity DpmCore is
       TPD_G          : time           := 1 ns;
       ETH_10G_EN_G   : boolean        := false;
       RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C;
-      OLD_BSI_MODE_G : boolean        := false
+      OLD_BSI_MODE_G : boolean        := false;
+      AXI_ST_COUNT_G : natural        := 3
    );
    port (
 
@@ -62,13 +63,13 @@ entity DpmCore is
       extAxilWriteSlave       : in    AxiLiteWriteSlaveType;
 
       -- DMA Interfaces
-      dmaClk                  : in    slv(2 downto 0);
-      dmaClkRst               : in    slv(2 downto 0);
-      dmaState                : out   RceDmaStateArray(2 downto 0);
-      dmaObMaster             : out   AxiStreamMasterArray(2 downto 0);
-      dmaObSlave              : in    AxiStreamSlaveArray(2 downto 0);
-      dmaIbMaster             : in    AxiStreamMasterArray(2 downto 0);
-      dmaIbSlave              : out   AxiStreamSlaveArray(2 downto 0);
+      dmaClk                  : in    slv(AXI_ST_COUNT_G-1 downto 0);
+      dmaClkRst               : in    slv(AXI_ST_COUNT_G-1 downto 0);
+      dmaState                : out   RceDmaStateArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaObMaster             : out   AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaObSlave              : in    AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaIbMaster             : in    AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaIbSlave              : out   AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
 
       -- User Interrupts
       userInterrupt            : in    slv(USER_INT_COUNT_C-1 downto 0)
@@ -100,7 +101,24 @@ architecture STRUCTURE of DpmCore is
    signal armEthMode          : slv(31 downto 0);
 
 begin
-
+   
+   --------------------------------------------------
+   -- Assertions to validate the configuration
+   --------------------------------------------------
+   
+   assert AXI_ST_COUNT_G = 3 or AXI_ST_COUNT_G = 4
+      report "Only AXI_ST_COUNT_G = 3 and AXI_ST_COUNT_G = 4 are supported" 
+      severity failure;
+   assert (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C and AXI_ST_COUNT_G = 4) or RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C
+      report "Only AXI_ST_COUNT_G = 4 is supported when RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C" 
+      severity failure;
+   assert ETH_10G_EN_G = true and RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C
+      report "RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C is not supported when ETH_10G_EN_G = true"
+      severity failure;
+      
+   -- more assertion checks should be added e.g. ETH_10G_EN_G = true only with RCE_DMA_MODE_G = RCE_DMA_PPI_C ???
+   -- my 3rd assertion can be removed wen the above check is added
+   
    --------------------------------------------------
    -- Inputs/Outputs
    --------------------------------------------------
@@ -112,13 +130,13 @@ begin
    sysClk200Rst    <= isysClk200Rst;
 
    -- DMA Interfaces
-   idmaClk(2 downto 0)      <= dmaClk;
-   idmaClkRst(2 downto 0)   <= dmaClkRst;
-   dmaState                 <= idmaState(2 downto 0);
-   dmaObMaster              <= idmaObMaster(2 downto 0);
-   idmaObSlave(2 downto 0)  <= dmaObSlave;
-   idmaIbMaster(2 downto 0) <= dmaIbMaster;
-   dmaIbSlave               <= idmaIbSlave(2 downto 0);
+   idmaClk(2 downto 0)      <= dmaClk(2 downto 0);
+   idmaClkRst(2 downto 0)   <= dmaClkRst(2 downto 0);
+   dmaState(2 downto 0)     <= idmaState(2 downto 0);
+   dmaObMaster(2 downto 0)  <= idmaObMaster(2 downto 0);
+   idmaObSlave(2 downto 0)  <= dmaObSlave(2 downto 0);
+   idmaIbMaster(2 downto 0) <= dmaIbMaster(2 downto 0);
+   dmaIbSlave(2 downto 0)   <= idmaIbSlave(2 downto 0);
 
 
    --------------------------------------------------
@@ -187,10 +205,16 @@ begin
             ethTxM             => ethTxM(0)
          );
 
-      idmaClk(3)         <= isysClk125;
-      idmaClkRst(3)      <= isysClk125Rst;
-      idmaObSlave(3)     <= AXI_STREAM_SLAVE_INIT_C;
-      idmaIbMaster(3)    <= AXI_STREAM_MASTER_INIT_C;
+      --idmaClk(3)         <= isysClk125;
+      --idmaClkRst(3)      <= isysClk125Rst;
+      --idmaObSlave(3)     <= AXI_STREAM_SLAVE_INIT_C;
+      --idmaIbMaster(3)    <= AXI_STREAM_MASTER_INIT_C;
+      
+      idmaClk(3)         <= dmaClk(3);
+      idmaClkRst(3)      <= dmaClkRst(3);
+      idmaObSlave(3)     <= dmaObSlave(3);
+      idmaIbMaster(3)    <= dmaIbMaster(3);
+      
       ethTxP(3 downto 1) <= (others=>'0');
       ethTxM(3 downto 1) <= (others=>'0');
       armEthRx(1)        <= ARM_ETH_RX_INIT_C;
