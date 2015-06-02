@@ -32,7 +32,7 @@ package RceG3Pkg is
    -- DMA Engine Types
    --------------------------------------------------------
 
-   type RceDmaModeType is (RCE_DMA_PPI_C, RCE_DMA_AXIS_C );
+   type RceDmaModeType is (RCE_DMA_PPI_C, RCE_DMA_AXIS_C, RCE_DMA_CUSTOM_C );
 
    type RceDmaStateType is record
       online : sl;
