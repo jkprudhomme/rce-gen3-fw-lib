@@ -3,6 +3,7 @@ vhdl work hdl/RceG3Clocks.vhd
 vhdl work hdl/RceG3Cpu.vhd
 vhdl work hdl/RceG3DmaAxis.vhd
 vhdl work hdl/RceG3DmaPpi.vhd
+vhdl work hdl/RceG3DmaCustom.vhd
 vhdl work hdl/RceG3Dma.vhd
 vhdl work hdl/RceG3AxiCntl.vhd
 vhdl work hdl/RceG3IntCntl.vhd
