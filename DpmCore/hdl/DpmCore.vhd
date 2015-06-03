@@ -112,7 +112,7 @@ begin
    assert (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C and AXI_ST_COUNT_G = 4) or RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C
       report "Only AXI_ST_COUNT_G = 4 is supported when RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C" 
       severity failure;
-   assert ETH_10G_EN_G = true and RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C
+   assert (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C and ETH_10G_EN_G = false) or RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C
       report "RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C is not supported when ETH_10G_EN_G = true"
       severity failure;
       
