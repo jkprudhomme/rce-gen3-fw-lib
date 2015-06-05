@@ -73,7 +73,7 @@ package RceG3Pkg is
    constant RCEG3_AXIS_DMA_CONFIG_C : AxiStreamConfigType := (
       TSTRB_EN_C    => false,
       TDATA_BYTES_C => 8,
-      TDEST_BITS_C  => 4,
+      TDEST_BITS_C  => 8,
       TID_BITS_C    => 0,
       TKEEP_MODE_C  => TKEEP_COMP_C,
       TUSER_BITS_C  => 4,
