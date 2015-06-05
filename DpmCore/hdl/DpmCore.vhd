@@ -204,16 +204,22 @@ begin
             ethTxP             => ethTxP(0),
             ethTxM             => ethTxM(0)
          );
-
-      --idmaClk(3)         <= isysClk125;
-      --idmaClkRst(3)      <= isysClk125Rst;
-      --idmaObSlave(3)     <= AXI_STREAM_SLAVE_INIT_C;
-      --idmaIbMaster(3)    <= AXI_STREAM_MASTER_INIT_C;
       
-      idmaClk(3)         <= dmaClk(3);
-      idmaClkRst(3)      <= dmaClkRst(3);
-      idmaObSlave(3)     <= dmaObSlave(3);
-      idmaIbMaster(3)    <= dmaIbMaster(3);
+      U_CustomDmaGen : if RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C generate
+         idmaClk(3)         <= dmaClk(AXI_ST_COUNT_G-1);
+         idmaClkRst(3)      <= dmaClkRst(AXI_ST_COUNT_G-1);
+         idmaObSlave(3)     <= dmaObSlave(AXI_ST_COUNT_G-1);
+         idmaIbMaster(3)    <= dmaIbMaster(AXI_ST_COUNT_G-1);
+         dmaState(AXI_ST_COUNT_G-1)    <= idmaState(3);
+         dmaObMaster(AXI_ST_COUNT_G-1) <= idmaObMaster(3);
+         dmaIbSlave(AXI_ST_COUNT_G-1)  <= idmaIbSlave(3);
+      end generate;
+      U_NoCustomDmaGen : if RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C generate
+         idmaClk(3)         <= isysClk125;
+         idmaClkRst(3)      <= isysClk125Rst;
+         idmaObSlave(3)     <= AXI_STREAM_SLAVE_INIT_C;
+         idmaIbMaster(3)    <= AXI_STREAM_MASTER_INIT_C;
+      end generate;
       
       ethTxP(3 downto 1) <= (others=>'0');
       ethTxM(3 downto 1) <= (others=>'0');
