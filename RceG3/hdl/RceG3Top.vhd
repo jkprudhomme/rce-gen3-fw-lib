@@ -17,7 +17,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
-use IEEE.numeric_std.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -220,9 +219,9 @@ begin
             sGpAxiClk(0)         => axiDmaClk,
             sGpAxiClk(1)         => axiDmaClk,
             sGpWriteSlave        => open,
-            sGpWriteMaster       => (others=>AXI_WRITE_MASTER_INIT_C),
+            sGpWriteMaster       => AxiWriteMasterArray'(others=>AXI_WRITE_MASTER_INIT_C),
             sGpReadSlave         => open,
-            sGpReadMaster        => (others=>AXI_READ_MASTER_INIT_C),
+            sGpReadMaster        => AxiReadMasterArray'(others=>AXI_READ_MASTER_INIT_C),
             acpAxiClk            => axiDmaClk,
             acpWriteSlave        => acpWriteSlave,
             acpWriteMaster       => acpWriteMaster,
