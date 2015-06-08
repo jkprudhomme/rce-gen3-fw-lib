@@ -24,11 +24,11 @@ use work.AxiStreamPkg.all;
 
 entity DpmCore is
    generic (
-      TPD_G          : time           := 1 ns;
-      ETH_10G_EN_G   : boolean        := false;
-      RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C;
-      OLD_BSI_MODE_G : boolean        := false;
-      AXI_ST_COUNT_G : natural        := 3
+      TPD_G          : time                  := 1 ns;
+      ETH_10G_EN_G   : boolean               := false;
+      RCE_DMA_MODE_G : RceDmaModeType        := RCE_DMA_PPI_C;
+      OLD_BSI_MODE_G : boolean               := false;
+      AXI_ST_COUNT_G : natural range 3 to 4  := 3
    );
    port (
 
@@ -106,9 +106,6 @@ begin
    -- Assertions to validate the configuration
    --------------------------------------------------
    
-   assert AXI_ST_COUNT_G = 3 or AXI_ST_COUNT_G = 4
-      report "Only AXI_ST_COUNT_G = 3 and AXI_ST_COUNT_G = 4 are supported" 
-      severity failure;
    assert (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C and AXI_ST_COUNT_G = 4) or RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C
       report "Only AXI_ST_COUNT_G = 4 is supported when RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C" 
       severity failure;
@@ -117,7 +114,7 @@ begin
       severity failure;
       
    -- more assertion checks should be added e.g. ETH_10G_EN_G = true only with RCE_DMA_MODE_G = RCE_DMA_PPI_C ???
-   -- my 3rd assertion can be removed wen the above check is added
+   -- my 3rd assertion can be removed when the above check is added
    
    --------------------------------------------------
    -- Inputs/Outputs
