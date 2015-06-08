@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
--- Title      : RCE Generation 3 DMA, AXI Streaming
--- Project    : General Purpose Core
+-- Title      : AXI Streaming DMA Core
+-- Project    : CSPAD Concentrator Core
 -------------------------------------------------------------------------------
 -- File       : RceG3DmaCustom.vhd
 -- Author     : M. Kwiatkowski, mkwiatko@slac.stanford.edu
@@ -10,7 +10,7 @@
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
--- 4 AXI Stream DMA based channels for the cspad concentrator.
+-- 4 AXI Stream DMA channels for the cspad concentrator.
 -- Based on RceG3DmaAxis from Ryan Herbst
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 by Ryan Herbst. All rights reserved.
@@ -35,8 +35,9 @@ use work.SsiPkg.all;
 entity RceG3DmaCustom is
    generic (
       TPD_G                   : time               := 1 ns;
-      DMA_BUF_START_ADDR_G    : slv(31 downto 0)   := x"00003C00"; --x"3C000000"
-      DMA_BUF_SIZE_BITS_G     : integer            := 8
+      DMA_BUF_START_ADDR_G    : slv(31 downto 0)   := x"3C000000";
+      DMA_BUF_SIZE_BITS_G     : integer            := 24;
+      MAX_CSPAD_PKT_SIZE_G    : integer            := 1150000
    );
    port (
       -- Clock/Reset
@@ -114,30 +115,42 @@ architecture structure of RceG3DmaCustom is
       DMA_BUF_START_ADDR_G+2**DMA_BUF_SIZE_BITS_G,
       DMA_BUF_START_ADDR_G);
    
+   constant DMA_BUFF_COUNT_C : integer := (2**DMA_BUF_SIZE_BITS_G)/MAX_CSPAD_PKT_SIZE_G;
+   signal wrBuffIndex : IntegerArray(3 downto 0) := (0,0,0,0);
+   signal rdBuffIndex : IntegerArray(3 downto 0) := (0,0,0,0);
+   signal cntUsedBuff : IntegerArray(3 downto 0) := (0,0,0,0);
+   signal buffOffsets : IntegerArray(DMA_BUFF_COUNT_C-1 downto 0);
    
    type BuffAddrArray is array (natural range <>) of slv(DMA_BUF_SIZE_BITS_G-1 downto 0);
-   type UsedMemArray is array (natural range <>) of slv(DMA_BUF_SIZE_BITS_G downto 0);
    
-   signal ibAckSizeD1         : BuffAddrArray(3 downto 0);
-   signal wrAddrOffset        : BuffAddrArray(3 downto 0);
-   signal rdAddrOffset        : BuffAddrArray(3 downto 0);
-   signal cntUsedMem          : UsedMemArray(3 downto 0);
-   signal ibAcqFifoWrCnt      : BuffAddrArray(3 downto 0);
    signal ibAcqFifoOut        : BuffAddrArray(3 downto 0);
    signal ibAcqFifoWrFull     : slv(3 downto 0);
    signal ibAcqFifoEmpty      : slv(3 downto 0);
    signal ibAcqFifoRd         : slv(3 downto 0);
-   signal rdEn                : slv(1 downto 0);
    signal ibAckDoneD1         : slv(3 downto 0);
    signal ibAckRes            : slv(3 downto 0);
+   signal wrPending           : slv(3 downto 0);
    signal wrChannelSel        : IntegerArray(1 downto 0);
+   
+   type StateType is (S_IDLE_C, S_READ_0_C, S_READ_1_C, S_DONE_0_C, S_DONE_1_C);
+   type StateTypeArray is array (natural range <>) of StateType;
+   signal state, nextState : StateTypeArray(1 downto 0);
       
 begin
 
    -- check generic settings
-   assert DMA_BUF_START_ADDR_G+2**DMA_BUF_SIZE_BITS_G*4 <= DMA_BUFF_MAX_ADDR_C
+   assert DMA_BUF_START_ADDR_G+(2**DMA_BUF_SIZE_BITS_G)*4 <= DMA_BUFF_MAX_ADDR_C
       report "RceG3DmaCustom: DMA buffer exceed maximum memory address"
       severity failure;
+   
+   assert DMA_BUFF_COUNT_C >= 2
+      report "RceG3DmaCustom: DMA buffer size is not sufficient for selected MAX_CSPAD_PKT_SIZE_G"
+      severity failure;
+   
+   -- initialize buffer offsets
+   U_BuffOffGen: for i in 0 to DMA_BUFF_COUNT_C-1 generate
+      buffOffsets(i) <= i*MAX_CSPAD_PKT_SIZE_G;
+   end generate;
 
    -- HP for channel all 4 channels
    intWriteSlave <= hpWriteSlave;
@@ -156,7 +169,6 @@ begin
    -- Unused DMA channels
    --dmaState                <= (others=>RCE_DMA_STATE_INIT_C);
    dmaObMaster(3 downto 2) <= (others=>AXI_STREAM_MASTER_INIT_C);
-   dmaIbSlave(3 downto 2)  <= (others=>AXI_STREAM_SLAVE_INIT_C);
 
    -- Terminate Unused AXI-Lite Interfaces
    -- SW independent DMA therefore all unused for now
@@ -189,7 +201,7 @@ begin
             BRAM_EN_G           => true,
             XIL_DEVICE_G        => "7SERIES",
             USE_BUILT_IN_G      => false,
-            GEN_SYNC_FIFO_G     => false,
+            GEN_SYNC_FIFO_G     => true,
             ALTERA_SYN_G        => false,
             ALTERA_RAM_G        => "M9K",
             CASCADE_SIZE_G      => 1,
@@ -205,8 +217,8 @@ begin
             sAxisSlave      => dmaIbSlave(i),
             sAxisCtrl       => open,
             fifoPauseThresh => (others => '1'),
-            mAxisClk        => axiDmaClk,
-            mAxisRst        => axiDmaRst,
+            mAxisClk        => dmaClk(i),
+            mAxisRst        => dmaClkRst(i),
             mAxisMaster     => sAxisMaster(i),
             mAxisSlave      => sAxisSlave(i)
          );
@@ -221,8 +233,8 @@ begin
             AXI_BURST_G       => "01",
             AXI_CACHE_G       => "0000"
          ) port map (
-            axiClk            => axiDmaClk,
-            axiRst            => axiDmaRst,
+            axiClk            => dmaClk(i),
+            axiRst            => dmaClkRst(i),
             -- DMA Control Interface
             dmaReq            => ibReq(i),
             dmaAck            => ibAck(i),
@@ -236,30 +248,42 @@ begin
          );      
       
       -- DMA writer request when SOF
-      ibReq(i).request <= ssiGetUserSof(RCEG3_AXIS_DMA_CONFIG_C, sAxisMaster(i));
+      process (dmaClk(i))
+      begin
+         if rising_edge(dmaClk(i)) then
+            if dmaClkRst(i) = '1' or ibAck(i).done = '1' then
+               wrPending(i) <= '0';
+            elsif ssiGetUserSof(RCEG3_AXIS_DMA_CONFIG_C, sAxisMaster(i)) = '1' then
+               wrPending(i) <= '1';
+            end if;
+         end if;
+      end process;
+      ibReq(i).request <= (ssiGetUserSof(RCEG3_AXIS_DMA_CONFIG_C, sAxisMaster(i)) or wrPending(i)) and not ibAck(i).done;
       ibReq(i).drop <= '0';
       
-      -- Track write address
-      process (axiDmaClk)
+      -- Track write buffer index
+      process (dmaClk(i))
       begin
-         if rising_edge(axiDmaClk) then
-            if axiDmaRst = '1' then
-               wrAddrOffset(i) <= (others=>'0') after TPD_G;
-            elsif ibAck(i).done = '1' then
-               wrAddrOffset(i) <= wrAddrOffset(i) + ibAck(i).size(DMA_BUF_SIZE_BITS_G-1 downto 0) after TPD_G;
+         if rising_edge(dmaClk(i)) then
+            if dmaClkRst(i) = '1' then
+               wrBuffIndex(i) <= 0 after TPD_G;
+            elsif ibAck(i).done = '1' and wrBuffIndex(i) + 1 <= DMA_BUFF_COUNT_C-1 then
+               wrBuffIndex(i) <= wrBuffIndex(i) + 1 after TPD_G;
+            elsif ibAck(i).done = '1' and wrBuffIndex(i) + 1 > DMA_BUFF_COUNT_C-1 then
+               wrBuffIndex(i) <= 0 after TPD_G;
             end if;
          end if;
       end process;
       
-      -- Generate back pressure signals when 2 readers are reading too slow
-      process (axiDmaClk)
+      -- Generate back pressure signals when the reader is too slow
+      process (dmaClk(i))
       begin
-         if rising_edge(axiDmaClk) then
-            if axiDmaRst = '1' then
+         if rising_edge(dmaClk(i)) then
+            if dmaClkRst(i) = '1' then
                dmaState(i).user <= '0' after TPD_G;
                dmaState(i).online <= '0' after TPD_G;
             elsif ibAck(i).done = '1' then
-               if cntUsedMem(i) >= (2**DMA_BUF_SIZE_BITS_G)/2 then
+               if cntUsedBuff(i) >= DMA_BUFF_COUNT_C/2 then
                   dmaState(i).user <= '1' after TPD_G;
                   dmaState(i).online <= '1' after TPD_G;
                else
@@ -270,9 +294,8 @@ begin
          end if;
       end process;
       
-      
-      ibReq(i).address <= CUSTOM_AXIS_DMA_ADDR_C(i) + wrAddrOffset(i);
-      ibReq(i).maxSize <= conv_std_logic_vector(2**DMA_BUF_SIZE_BITS_G-1, 32);
+      ibReq(i).address <= CUSTOM_AXIS_DMA_ADDR_C(i) + buffOffsets(wrBuffIndex(i));
+      ibReq(i).maxSize <= conv_std_logic_vector(MAX_CSPAD_PKT_SIZE_G, 32);
       
       -- FIFO to store acknowledged bytes written by the DMA writer
       U_WrDMA_Acq_FIFO: entity work.Fifo 
@@ -284,18 +307,18 @@ begin
          FWFT_EN_G         => true
       )
       port map ( 
-         rst               => axiDmaRst,
-         wr_clk            => axiDmaClk,
+         rst               => dmaClkRst(i),
+         wr_clk            => dmaClk(i),
          wr_en             => ibAck(i).done,
          din               => ibAck(i).size(DMA_BUF_SIZE_BITS_G-1 downto 0),
-         wr_data_count     => ibAcqFifoWrCnt(i),
+         wr_data_count     => open,
          wr_ack            => open,
          overflow          => open,
          prog_full         => open,
          almost_full       => open,
          full              => ibAcqFifoWrFull(i),
          not_full          => open,
-         rd_clk            => axiDmaClk,
+         rd_clk            => dmaClk(i),
          rd_en             => ibAcqFifoRd(i),
          dout              => ibAcqFifoOut(i),
          rd_data_count     => open,
@@ -312,7 +335,7 @@ begin
             TPD_G                    => TPD_G,
             XIL_DEVICE_G             => "7SERIES",
             USE_BUILT_IN_G           => false,
-            GEN_SYNC_FIFO_G          => true,
+            GEN_SYNC_FIFO_G          => false,
             ALTERA_SYN_G             => false,
             ALTERA_RAM_G             => "M9K",
             ADDR_LSB_G               => 3,
@@ -335,8 +358,8 @@ begin
             RESP_FIFO_ADDR_WIDTH_G   => 4,
             AXI_CONFIG_G             => AXI_HP_INIT_C
          ) port map (
-            sAxiClk         => axiDmaClk,
-            sAxiRst         => axiDmaRst,
+            sAxiClk         => dmaClk(i),
+            sAxiRst         => dmaClkRst(i),
             sAxiWriteMaster => locWriteMaster(i),
             sAxiWriteSlave  => locWriteSlave(i),
             sAxiCtrl        => locWriteCtrl(i),
@@ -362,7 +385,7 @@ begin
             BRAM_EN_G           => true,
             XIL_DEVICE_G        => "7SERIES",
             USE_BUILT_IN_G      => false,
-            GEN_SYNC_FIFO_G     => false,
+            GEN_SYNC_FIFO_G     => true,
             ALTERA_SYN_G        => false,
             ALTERA_RAM_G        => "M9K",
             CASCADE_SIZE_G      => 1,
@@ -372,8 +395,8 @@ begin
             SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
             MASTER_AXI_CONFIG_G => CUSTOM_AXIS_DMA_CONFIG_C
          ) port map (
-            sAxisClk        => axiDmaClk,
-            sAxisRst        => axiDmaRst,
+            sAxisClk        => dmaClk(i),
+            sAxisRst        => dmaClkRst(i),
             sAxisMaster     => mAxisMaster(i),
             sAxisSlave      => mAxisSlave(i),
             sAxisCtrl       => mAxisCtrl(i),
@@ -394,8 +417,8 @@ begin
             AXI_BURST_G      => "01",
             AXI_CACHE_G      => "0000"
          ) port map (
-            axiClk          => axiDmaClk,
-            axiRst          => axiDmaRst,
+            axiClk          => dmaClk(i),
+            axiRst          => dmaClkRst(i),
             dmaReq          => obReq(i),
             dmaAck          => obAck(i),
             axisMaster      => mAxisMaster(i),
@@ -406,66 +429,129 @@ begin
          );
       
       -- one read channel handles data from two write channels
-      process (axiDmaClk)
+      process (state(i), ibAcqFifoEmpty(i*2), ibAcqFifoEmpty(i*2+1), obAck(i).done)
       begin
-         if rising_edge(axiDmaClk) then
-            if axiDmaRst = '1' then
-               wrChannelSel(i) <= 0 after TPD_G;
-            elsif obAck(i).done = '1' then
-               --if wrChannelSel(i) = 0 and ibAcqFifoEmpty(i*2+1) = '0' then
-               if wrChannelSel(i) = 0 then
-                  wrChannelSel(i) <= 1 after TPD_G;
-               --elsif wrChannelSel(i) = 1 and ibAcqFifoEmpty(i*2) = '0' then
-               elsif wrChannelSel(i) = 1 then
-                  wrChannelSel(i) <= 0 after TPD_G;
+         
+         wrChannelSel(i) <= 0;
+         obReq(i).request <= '0';
+         ibAcqFifoRd(i*2) <= '0';
+         ibAcqFifoRd(i*2+1) <= '0';
+         nextState(i) <= state(i);
+         
+         case state(i) is
+
+            when S_IDLE_C =>
+               if ibAcqFifoEmpty(i*2) = '0' then
+                  nextState(i) <= S_READ_0_C;
+                  wrChannelSel(i) <= 0;
+               elsif ibAcqFifoEmpty(i*2+1) = '0' then
+                  nextState(i) <= S_READ_1_C;
+                  wrChannelSel(i) <= 1;
                end if;
+            
+            when S_READ_0_C =>
+               obReq(i).request <= '1';
+               wrChannelSel(i) <= 0;
+               if obAck(i).done = '1' then
+                  obReq(i).request <= '0';
+                  ibAcqFifoRd(i*2) <= '1';
+                  nextState(i) <= S_DONE_0_C;
+               end if;
+            
+            when S_DONE_0_C =>
+               wrChannelSel(i) <= 0;
+               if ibAcqFifoEmpty(i*2+1) = '0' then
+                  nextState(i) <= S_READ_1_C;
+               elsif ibAcqFifoEmpty(i*2) = '0' then
+                  nextState(i) <= S_READ_0_C;
+               else
+                  nextState(i) <= S_IDLE_C;
+               end if;
+            
+            when S_READ_1_C =>
+               obReq(i).request <= '1';
+               wrChannelSel(i) <= 1;
+               if obAck(i).done = '1' then
+                  obReq(i).request <= '0';
+                  ibAcqFifoRd(i*2+1) <= '1';
+                  nextState(i) <= S_DONE_1_C;
+               end if;
+            
+            when S_DONE_1_C =>
+               wrChannelSel(i) <= 1;
+               if ibAcqFifoEmpty(i*2) = '0' then
+                  nextState(i) <= S_READ_0_C;
+               elsif ibAcqFifoEmpty(i*2+1) = '0' then
+                  nextState(i) <= S_READ_1_C;
+               else
+                  nextState(i) <= S_IDLE_C;
+               end if;
+            
+         end case;
+      
+      end process;
+      
+      obReq(i).address <= CUSTOM_AXIS_DMA_ADDR_C(i*2) + buffOffsets(rdBuffIndex(i*2)) when wrChannelSel(i) = 0 else CUSTOM_AXIS_DMA_ADDR_C(i*2+1) + buffOffsets(rdBuffIndex(i*2+1));
+      obReq(i).size(31 downto DMA_BUF_SIZE_BITS_G) <= (others=>'0');
+      obReq(i).size(DMA_BUF_SIZE_BITS_G-1 downto 0) <= ibAcqFifoOut(i*2) when wrChannelSel(i) = 0 else ibAcqFifoOut(i*2+1);
+      obReq(i).firstUser <= "00000010";
+      obReq(i).lastUser <= (others=>'0');
+      obReq(i).dest <= (others=>'0');
+      obReq(i).id <= (others=>'0');
+      
+      process (dmaClk(i))
+      begin
+         if rising_edge(dmaClk(i)) then
+            if dmaClkRst(i) = '1' then
+               state(i) <= S_IDLE_C after TPD_G;
+            else
+               state(i) <= nextState(i) after TPD_G;
             end if;
          end if;
       end process;
       
-      rdEn(i) <= '1' when (ibAcqFifoEmpty(i*2) = '0' or ibAcqFifoEmpty(i*2+1) = '0') and obAck(i).done = '0' else '0';
       
-      -- Track read address separetly for each write channel
+      -- Separetly for each write channel track
+      -- read address and memory buffer usage
       U_DmaRdAddrGen : for j in 0 to 1 generate
          
-         -- Read address register
-         process (axiDmaClk)
+         -- Read buffer index
+         process (dmaClk(i))
          begin
-            if rising_edge(axiDmaClk) then
-               if axiDmaRst = '1' then
-                  rdAddrOffset(i*2+j) <= (others=>'0') after TPD_G;
-               elsif obAck(i).done = '1' and wrChannelSel(i) = j then
-                  rdAddrOffset(i*2+j) <= rdAddrOffset(i*2+j) + ibAcqFifoOut(i*2+j) after TPD_G;
-               end if;
-            end if;
-         end process;
-         ibAcqFifoRd(i*2+j) <= '1' when obAck(i).done = '1' and wrChannelSel(i) = j else '0';
-         
-         -- Count how many unread buffers
-         process (axiDmaClk)
-         begin
-            if rising_edge(axiDmaClk) then
-               if axiDmaRst = '1' then
-                  cntUsedMem(i*2+j) <= (others=>'0') after TPD_G;
-               elsif obAck(i).done = '1' and wrChannelSel(i) = j then   -- add when reader is done
-                  cntUsedMem(i*2+j) <= cntUsedMem(i*2+j) - ibAcqFifoOut(i*2+j) after TPD_G;
-               elsif ibAckRes(i*2+j) = '1' then                         -- subtract when writer is done
-                  cntUsedMem(i*2+j) <= cntUsedMem(i*2+j) + ibAckSizeD1(i*2+j) after TPD_G;
+            if rising_edge(dmaClk(i)) then
+               if dmaClkRst(i) = '1' then
+                  rdBuffIndex(i*2+j) <= 0 after TPD_G;
+               elsif obAck(i).done = '1' and wrChannelSel(i) = j and rdBuffIndex(i*2+j) + 1 <= DMA_BUFF_COUNT_C-1 then
+                  rdBuffIndex(i*2+j) <= rdBuffIndex(i*2+j) + 1 after TPD_G;
+               elsif obAck(i).done = '1' and wrChannelSel(i) = j and rdBuffIndex(i*2+j) + 1 > DMA_BUFF_COUNT_C-1 then
+                  rdBuffIndex(i*2+j) <= 0 after TPD_G;
                end if;
             end if;
          end process;
          
-         -- Decrease buffer counter signal 
+         -- Buffer usage counter
+         process (dmaClk(i))
+         begin
+            if rising_edge(dmaClk(i)) then
+               if dmaClkRst(i) = '1' then
+                  cntUsedBuff(i*2+j) <= 0 after TPD_G;
+               elsif obAck(i).done = '1' and wrChannelSel(i) = j then   -- subtract when reader is done
+                  cntUsedBuff(i*2+j) <= cntUsedBuff(i*2+j) - 1 after TPD_G;
+               elsif ibAckRes(i*2+j) = '1' then                         -- add when writer is done
+                  cntUsedBuff(i*2+j) <= cntUsedBuff(i*2+j) + 1 after TPD_G;
+               end if;
+            end if;
+         end process;
+         
+         -- Memory usage counter signal 
          -- protected against simultaneous arrival of done from both writer and reader
-         process (axiDmaClk)
+         process (dmaClk(i))
          begin
-            if rising_edge(axiDmaClk) then
-               if axiDmaRst = '1' then
+            if rising_edge(dmaClk(i)) then
+               if dmaClkRst(i) = '1' then
                   ibAckDoneD1(i*2+j) <= '0' after TPD_G;
-                  ibAckSizeD1(i*2+j) <= (others=>'0') after TPD_G;
                else
                   ibAckDoneD1(i*2+j) <= ibAck(i*2+j).done after TPD_G;
-                  ibAckSizeD1(i*2+j) <= ibAck(i*2+j).size(DMA_BUF_SIZE_BITS_G-1 downto 0) after TPD_G;
                end if;
             end if;
          end process;
@@ -473,24 +559,15 @@ begin
          ibAckRes(i*2+j) <= (ibAck(i*2+j).done and obAck(i).done) or (ibAckDoneD1(i*2+j) and not obAck(i).done);
       
       end generate;
-      
-      obReq(i).request <= rdEn(i);
-      obReq(i).address <= CUSTOM_AXIS_DMA_ADDR_C(i*2) + rdAddrOffset(i*2) when wrChannelSel(i) = 0 else CUSTOM_AXIS_DMA_ADDR_C(i*2+1) + rdAddrOffset(i*2+1);
-      obReq(i).size(31 downto DMA_BUF_SIZE_BITS_G) <= (others=>'0');
-      obReq(i).size(DMA_BUF_SIZE_BITS_G-1 downto 0) <= ibAcqFifoOut(i*2) when wrChannelSel(i) = 0 else ibAcqFifoOut(i*2+1);
-      obReq(i).firstUser <= "00000010";
-      obReq(i).lastUser <= (others=>'0');
-      obReq(i).dest <= (others=>'0');
-      obReq(i).id <= (others=>'0');
 
 
-         -- Read Path AXI FIFO
+      -- Read Path AXI FIFO
       U_AxiReadPathFifo : entity work.AxiReadPathFifo 
          generic map (
             TPD_G                    => TPD_G,
             XIL_DEVICE_G             => "7SERIES",
             USE_BUILT_IN_G           => false,
-            GEN_SYNC_FIFO_G          => true,
+            GEN_SYNC_FIFO_G          => false,
             ALTERA_SYN_G             => false,
             ALTERA_RAM_G             => "M9K",
             ADDR_LSB_G               => 3,
@@ -509,8 +586,8 @@ begin
             DATA_FIFO_ADDR_WIDTH_G   => 4,
             AXI_CONFIG_G             => AXI_HP_INIT_C
          ) port map (
-            sAxiClk        => axiDmaClk,
-            sAxiRst        => axiDmaRst,
+            sAxiClk        => dmaClk(i),
+            sAxiRst        => dmaClkRst(i),
             sAxiReadMaster => locReadMaster(i),
             sAxiReadSlave  => locReadSlave(i),
             mAxiClk        => axiDmaClk,
