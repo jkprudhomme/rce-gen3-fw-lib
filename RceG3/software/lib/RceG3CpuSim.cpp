@@ -32,7 +32,7 @@ bool RceG3CpuSim::open () {
    uint x;
 
    for(x=0; x<4; x++) {
-      if ( ! _hpSlave[x]->open(x+2) ) return false;
+      if ( ! _hpSlave[x]->open(x+5) ) return false;
    }
    if ( ! _apvSlave->open(4) ) return(false);
 

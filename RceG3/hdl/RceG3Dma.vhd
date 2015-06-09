@@ -153,9 +153,9 @@ begin
       U_RceG3DmaCustom : entity work.RceG3DmaCustom
          generic map (
             TPD_G                   => TPD_G,
-            DMA_BUF_START_ADDR_G    => x"3C000000",      -- set x"00000000" for simulation and x"3C000000" for implementation
-            DMA_BUF_SIZE_BITS_G     => 24,               -- set 24 for implementation
-            MAX_CSPAD_PKT_SIZE_G    => 1150000 
+            DMA_BUF_START_ADDR_G    => x"00000000",      -- set x"00000000" for simulation and x"3C000000" for implementation
+            DMA_BUF_SIZE_BITS_G     => 12,               -- set 24 for implementation
+            MAX_CSPAD_PKT_SIZE_G    => 400 
          ) port map (
             axiDmaClk        => axiDmaClk,
             axiDmaRst        => axiDmaRst,
