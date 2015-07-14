@@ -15,7 +15,7 @@
 #-------------------------------------------------------------------------------
 
 # CPU Clock
-set fclk0Pin [get_pins U_DtmCore/U_RceG3Top/U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
+set fclk0Pin [get_pins U_DtmCore/U_RceG3Top/U_SimModeDis.U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
 create_clock -name fclk0 -period 10 ${fclk0Pin}
 
 # Arm Core Clocks
