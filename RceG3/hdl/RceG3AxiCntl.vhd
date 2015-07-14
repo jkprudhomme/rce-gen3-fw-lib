@@ -439,7 +439,7 @@ begin
    U_DeviceDna : entity work.DeviceDna
       generic map (
          TPD_G           => TPD_G,
-         IN_POLARITY_G   => '1',
+         RST_POLARITY_G  => '1',
          SIM_DNA_VALUE_G => X"000000000000000"
          ) port map (
             clk      => axiClk,
