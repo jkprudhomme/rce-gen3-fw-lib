@@ -51,7 +51,7 @@ create_clock -name eth10GClk -period 6.4 \
 
 # DNA Primitive Clock
 create_generated_clock -divide_by 8 -name dnaClk -source ${sysClk125Pin} \
-    [get_pins  {U_DpmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/BUFR_Inst/O}]
+    [get_pins  {U_DpmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
    
 # Set Asynchronous Paths
 set_clock_groups -asynchronous \

@@ -119,7 +119,7 @@ set_clock_groups -asynchronous \
 #    -to [get_clocks -include_generated_clocks {sysClk200}]
 
 # DNA Primitive Clock
-create_clock -period 64.000 -name dnaClk [get_pins  {U_DtmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/BUFR_Inst/O}]
+create_clock -period 64.000 -name dnaClk [get_pins  {U_DtmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
 set_clock_groups -asynchronous \
     -group [get_clocks dnaClk] \
     -group [get_clocks sysClk125] 
