@@ -23,8 +23,9 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.numeric_std.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -277,7 +278,7 @@ begin
    end process;
 
    -- Async
-   process (ppiClkRst, r, intIbMaster, ppiState, headerAFull, dataAFull ) is
+   process (dataAFull, headerAFull, intIbMaster, ppiClkRst, ppiState, r) is
       variable v : RegType;
    begin
       v := r;
@@ -491,7 +492,7 @@ begin
    end process;
 
    -- Async
-   process (ppiClkRst, rm, headerOut, dataOut, regIbSlave ) is
+   process (dataOut, headerOut, intOverflow, ppiClkRst, regIbSlave, rm) is
       variable v : RegMoveType;
    begin
       v := rm;
@@ -554,7 +555,7 @@ begin
                   axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, v.regIbMaster, PPI_ERR_C, rm.err);
 
                   if rm.byteCnt < 8 then
-                     v.regIbMaster.tKeep(7 downto conv_integer(rm.byteCnt)) := (others=>'0');
+                     v.regIbMaster.tKeep := genTKeep(conv_integer(rm.byteCnt));
                   end if;
 
                   v.state             := LAST_S;

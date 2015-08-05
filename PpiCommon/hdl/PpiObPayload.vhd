@@ -5,7 +5,7 @@
 -- File       : PpiObPayload.vhd
 -- Author     : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created    : 2014-04-25
--- Last update: 2014-05-05
+-- Last update: 2015-05-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ begin
    end process;
 
    -- Async
-   process (r, axiRst, dmaAck, obPendMaster, dmaAxisMaster, intAxisCtrl, compAFull ) is
+   process (axiRst, compAFull, dmaAck, dmaAxisMaster, dmaReq, intAxisCtrl, obPendMaster, r) is
       variable v : RegType;
    begin
       v := r;
