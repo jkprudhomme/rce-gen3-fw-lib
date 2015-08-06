@@ -542,8 +542,8 @@ begin
             end if;
 
          when S_DATA_C =>
-               v.wMaster.wvalid := '1';
-               v.wMaster.wdata  := x"0000" & bsiFifoDout;
+               v.wMaster.wvalid              := '1';
+               v.wMaster.wdata(63 downto 0)  := x"0000" & bsiFifoDout;
 
             if intWriteSlave.wready = '1' and b.wMaster.wvalid = '1' then
                v.wMaster.wvalid := '0';
@@ -571,7 +571,7 @@ begin
       v.wMaster.awsize  := "111";
       v.wMaster.awburst := "01";
       v.wMaster.awcache := "1111";
-      v.wMaster.awlen   := x"0";
+      v.wMaster.awlen   := (others=>'0');
       v.wMaster.awlock  := "00";   -- Unused
       v.wMaster.awprot  := "000";  -- Unused
       v.wMaster.awid    := (others=>'0');
