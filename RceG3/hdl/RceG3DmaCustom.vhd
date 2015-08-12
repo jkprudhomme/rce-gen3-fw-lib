@@ -167,7 +167,7 @@ begin
    interrupt(DMA_INT_COUNT_C-1 downto 0) <= (others=>'0');
 
    -- Unused DMA channels
-   --dmaState                <= (others=>RCE_DMA_STATE_INIT_C);
+   dmaState                <= (others=>RCE_DMA_STATE_INIT_C);
    dmaObMaster(3 downto 2) <= (others=>AXI_STREAM_MASTER_INIT_C);
 
    -- Terminate Unused AXI-Lite Interfaces
@@ -248,17 +248,18 @@ begin
          );      
       
       -- DMA writer request when SOF
+      -- Do not start writer if all buffers are in use
       process (dmaClk(i))
       begin
          if rising_edge(dmaClk(i)) then
             if dmaClkRst(i) = '1' or ibAck(i).done = '1' then
                wrPending(i) <= '0';
-            elsif ssiGetUserSof(RCEG3_AXIS_DMA_CONFIG_C, sAxisMaster(i)) = '1' then
+            elsif ssiGetUserSof(RCEG3_AXIS_DMA_CONFIG_C, sAxisMaster(i)) = '1' and cntUsedBuff(i) < DMA_BUFF_COUNT_C-2 then
                wrPending(i) <= '1';
             end if;
          end if;
       end process;
-      ibReq(i).request <= (ssiGetUserSof(RCEG3_AXIS_DMA_CONFIG_C, sAxisMaster(i)) or wrPending(i)) and not ibAck(i).done;
+      ibReq(i).request <= wrPending(i) and not ibAck(i).done;
       ibReq(i).drop <= '0';
       
       -- Track write buffer index
@@ -271,25 +272,6 @@ begin
                wrBuffIndex(i) <= wrBuffIndex(i) + 1 after TPD_G;
             elsif ibAck(i).done = '1' and wrBuffIndex(i) + 1 > DMA_BUFF_COUNT_C-1 then
                wrBuffIndex(i) <= 0 after TPD_G;
-            end if;
-         end if;
-      end process;
-      
-      -- Generate back pressure signals when the reader is too slow
-      process (dmaClk(i))
-      begin
-         if rising_edge(dmaClk(i)) then
-            if dmaClkRst(i) = '1' then
-               dmaState(i).user <= '0' after TPD_G;
-               dmaState(i).online <= '0' after TPD_G;
-            elsif ibAck(i).done = '1' then
-               if cntUsedBuff(i) >= DMA_BUFF_COUNT_C/2 then
-                  dmaState(i).user <= '1' after TPD_G;
-                  dmaState(i).online <= '1' after TPD_G;
-               else
-                  dmaState(i).user <= '0' after TPD_G;
-                  dmaState(i).online <= '0' after TPD_G;
-               end if;
             end if;
          end if;
       end process;
@@ -557,6 +539,25 @@ begin
          end process;
          
          ibAckRes(i*2+j) <= (ibAck(i*2+j).done and obAck(i).done) or (ibAckDoneD1(i*2+j) and not obAck(i).done);
+         
+         -- Generate back pressure signals when the reader is too slow
+         --process (dmaClk(i))
+         --begin
+         --   if rising_edge(dmaClk(i)) then
+         --      if dmaClkRst(i) = '1' then
+         --         dmaState(i*2+j).user <= '0' after TPD_G;
+         --         dmaState(i*2+j).online <= '0' after TPD_G;
+         --      elsif ibAckRes(i*2+j) = '1' or (obAck(i).done = '1' and wrChannelSel(i) = j) then
+         --         if cntUsedBuff(i*2+j) >= DMA_BUFF_COUNT_C/2 then
+         --            dmaState(i*2+j).user <= '1' after TPD_G;
+         --            dmaState(i*2+j).online <= '1' after TPD_G;
+         --         else
+         --            dmaState(i*2+j).user <= '0' after TPD_G;
+         --            dmaState(i*2+j).online <= '0' after TPD_G;
+         --         end if;
+         --      end if;
+         --   end if;
+         --end process;
       
       end generate;
 
