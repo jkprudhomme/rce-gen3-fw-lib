@@ -52,6 +52,12 @@ entity RceG3DmaAxis is
       hpReadSlave         : in  AxiReadSlaveArray(3 downto 0);
       hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
+      -- User memory access
+      userWriteSlave      : out AxiWriteSlaveType;
+      userWriteMaster     : in  AxiWriteMasterType;
+      userReadSlave       : out AxiReadSlaveType;
+      userReadMaster      : in  AxiReadMasterType;
+
       -- Local AXI Lite Bus
       axilReadMaster      : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
       axilReadSlave       : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
@@ -106,9 +112,15 @@ begin
    intReadSlave(2)  <= acpReadSlave;
    acpReadMaster    <= intReadMaster(2);
 
-   -- HP 2,3 Unused
-   hpWriteMaster(3 downto 2) <= (others=>AXI_WRITE_MASTER_INIT_C);
-   hpReadMaster(3 downto 2)  <= (others=>AXI_READ_MASTER_INIT_C);
+   -- HP 2 goes to user space
+   userWriteSlave   <= hpWriteSlave(2);
+   hpWriteMaster(2) <= userWriteMaster;
+   userReadSlave    <= hpReadSlave(2);
+   hpReadMaster(2)  <= userReadMaster;
+
+   -- HP 3 Unused
+   hpWriteMaster(3) <= AXI_WRITE_MASTER_INIT_C;
+   hpReadMaster(3)  <= AXI_READ_MASTER_INIT_C;
 
    -- Unused Interrupts
    interrupt(DMA_INT_COUNT_C-1 downto 3) <= (others=>'0');

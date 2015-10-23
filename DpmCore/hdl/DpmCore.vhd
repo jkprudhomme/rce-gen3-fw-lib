@@ -21,6 +21,7 @@ use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
+use work.AxiPkg.all;
 
 entity DpmCore is
    generic (
@@ -70,6 +71,12 @@ entity DpmCore is
       dmaObSlave              : in    AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
       dmaIbMaster             : in    AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
       dmaIbSlave              : out   AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
+
+      -- User memory access
+      userWriteSlave          : out   AxiWriteSlaveType;
+      userWriteMaster         : in    AxiWriteMasterType := AXI_WRITE_MASTER_INIT_C;
+      userReadSlave           : out   AxiReadSlaveType;
+      userReadMaster          : in    AxiReadMasterType := AXI_READ_MASTER_INIT_C;
 
       -- User Interrupts
       userInterrupt            : in    slv(USER_INT_COUNT_C-1 downto 0)
@@ -169,6 +176,10 @@ begin
          dmaIbMaster         => idmaIbMaster,
          dmaIbSlave          => idmaIbSlave,
          userInterrupt       => userInterrupt,
+         userWriteSlave      => userWriteSlave,
+         userWriteMaster     => userWriteMaster,
+         userReadSlave       => userReadSlave,
+         userReadMaster      => userReadMaster,
          armEthTx            => armEthTx,
          armEthRx            => armEthRx,
          armEthMode          => armEthMode,

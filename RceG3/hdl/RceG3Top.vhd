@@ -76,6 +76,12 @@ entity RceG3Top is
       -- User Interrupts
       userInterrupt            : in    slv(USER_INT_COUNT_C-1 downto 0);
 
+      -- User memory access
+      userWriteSlave           : out   AxiWriteSlaveType;
+      userWriteMaster          : in    AxiWriteMasterType := AXI_WRITE_MASTER_INIT_C;
+      userReadSlave            : out   AxiReadSlaveType;
+      userReadMaster           : in    AxiReadMasterType := AXI_READ_MASTER_INIT_C;
+
       -- Ethernet
       armEthTx                 : out   ArmEthTxArray(1 downto 0);
       armEthRx                 : in    ArmEthRxArray(1 downto 0);
@@ -372,6 +378,10 @@ begin
          hpWriteMaster        => hpWriteMaster,
          hpReadSlave          => hpReadSlave,
          hpReadMaster         => hpReadMaster,
+         userWriteSlave       => userWriteSlave,
+         userWriteMaster      => userWriteMaster,
+         userReadSlave        => userReadSlave,
+         userReadMaster       => userReadMaster,
          dmaAxilReadMaster    => dmaAxilReadMaster,
          dmaAxilReadSlave     => dmaAxilReadSlave,
          dmaAxilWriteMaster   => dmaAxilWriteMaster,

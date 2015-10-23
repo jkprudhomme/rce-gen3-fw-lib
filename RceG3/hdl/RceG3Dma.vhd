@@ -50,6 +50,12 @@ entity RceG3Dma is
       hpReadSlave         : in  AxiReadSlaveArray(3 downto 0);
       hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
+      -- User memory access
+      userWriteSlave      : out AxiWriteSlaveType;
+      userWriteMaster     : in  AxiWriteMasterType;
+      userReadSlave       : out AxiReadSlaveType;
+      userReadMaster      : in  AxiReadMasterType;
+
       -- Local AXI Lite Bus
       dmaAxilReadMaster   : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
       dmaAxilReadSlave    : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
@@ -107,6 +113,10 @@ begin
             dmaIbMaster      => dmaIbMaster,
             dmaIbSlave       => dmaIbSlave
          );
+
+         userWriteSlave <= AXI_WRITE_SLAVE_INIT_C;
+         userReadSlave  <= AXI_READ_SLAVE_INIT_C;
+
    end generate;
 
 
@@ -129,6 +139,10 @@ begin
             hpWriteMaster    => hpWriteMaster,
             hpReadSlave      => hpReadSlave,
             hpReadMaster     => hpReadMaster,
+            userWriteSlave   => userWriteSlave,  
+            userWriteMaster  => userWriteMaster, 
+            userReadSlave    => userReadSlave,   
+            userReadMaster   => userReadMaster,  
             axilReadMaster   => dmaAxilReadMaster,
             axilReadSlave    => dmaAxilReadSlave,
             axilWriteMaster  => dmaAxilWriteMaster,
