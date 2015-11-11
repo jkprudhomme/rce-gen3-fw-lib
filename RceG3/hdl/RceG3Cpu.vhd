@@ -775,10 +775,10 @@ begin
          S_AXI_GP0_WDATA                  => sGpWriteMaster(0).wdata(31 downto 0),
          S_AXI_GP0_ARCACHE                => sGpReadMaster(0).arcache,
          S_AXI_GP0_ARLEN                  => sGpReadMaster(0).arlen(3 downto 0),
-         S_AXI_GP0_ARQOS                  => "0000",
+         S_AXI_GP0_ARQOS                  => "1111",-- Highest priority
          S_AXI_GP0_AWCACHE                => sGpWriteMaster(0).awcache,
          S_AXI_GP0_AWLEN                  => sGpWriteMaster(0).awlen(3 downto 0),
-         S_AXI_GP0_AWQOS                  => "0000",
+         S_AXI_GP0_AWQOS                  => "1111",-- Highest priority
          S_AXI_GP0_WSTRB                  => sGpWriteMaster(0).wstrb(3 downto 0),
 
          -- S_AXI_GP1
