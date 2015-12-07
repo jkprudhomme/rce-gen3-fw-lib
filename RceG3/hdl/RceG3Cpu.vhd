@@ -112,16 +112,16 @@ architecture Hw of RceG3Cpu is
        ENET1_MDIO_MDC : OUT STD_LOGIC;
        ENET1_MDIO_O : OUT STD_LOGIC;
        ENET1_MDIO_T : OUT STD_LOGIC;
-       ENET1_PTP_DELAY_REQ_RX : OUT STD_LOGIC;
-       ENET1_PTP_DELAY_REQ_TX : OUT STD_LOGIC;
-       ENET1_PTP_PDELAY_REQ_RX : OUT STD_LOGIC;
-       ENET1_PTP_PDELAY_REQ_TX : OUT STD_LOGIC;
-       ENET1_PTP_PDELAY_RESP_RX : OUT STD_LOGIC;
-       ENET1_PTP_PDELAY_RESP_TX : OUT STD_LOGIC;
-       ENET1_PTP_SYNC_FRAME_RX : OUT STD_LOGIC;
-       ENET1_PTP_SYNC_FRAME_TX : OUT STD_LOGIC;
-       ENET1_SOF_RX : OUT STD_LOGIC;
-       ENET1_SOF_TX : OUT STD_LOGIC;
+       --ENET1_PTP_DELAY_REQ_RX : OUT STD_LOGIC;
+       --ENET1_PTP_DELAY_REQ_TX : OUT STD_LOGIC;
+       --ENET1_PTP_PDELAY_REQ_RX : OUT STD_LOGIC;
+       --ENET1_PTP_PDELAY_REQ_TX : OUT STD_LOGIC;
+       --ENET1_PTP_PDELAY_RESP_RX : OUT STD_LOGIC;
+       --ENET1_PTP_PDELAY_RESP_TX : OUT STD_LOGIC;
+       --ENET1_PTP_SYNC_FRAME_RX : OUT STD_LOGIC;
+       --ENET1_PTP_SYNC_FRAME_TX : OUT STD_LOGIC;
+       --ENET1_SOF_RX : OUT STD_LOGIC;
+       --ENET1_SOF_TX : OUT STD_LOGIC;
        ENET1_GMII_TXD : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
        ENET1_GMII_COL : IN STD_LOGIC;
        ENET1_GMII_CRS : IN STD_LOGIC;
@@ -616,16 +616,16 @@ begin
          ENET1_MDIO_MDC                   => armEthTx(1).enetMdioMdc,
          ENET1_MDIO_O                     => armEthTx(1).enetMdioO,
          ENET1_MDIO_T                     => armEthTx(1).enetMdioT,
-         ENET1_PTP_DELAY_REQ_RX           => armEthTx(1).enetPtpDelayReqRx,
-         ENET1_PTP_DELAY_REQ_TX           => armEthTx(1).enetPtpDelayReqTx,
-         ENET1_PTP_PDELAY_REQ_RX          => armEthTx(1).enetPtpPDelayReqRx,
-         ENET1_PTP_PDELAY_REQ_TX          => armEthTx(1).enetPtpPDelayReqTx,
-         ENET1_PTP_PDELAY_RESP_RX         => armEthTx(1).enetPtpPDelayRespRx,
-         ENET1_PTP_PDELAY_RESP_TX         => armEthTx(1).enetPtpPDelayRespTx,
-         ENET1_PTP_SYNC_FRAME_RX          => armEthTx(1).enetPtpSyncFrameRx,
-         ENET1_PTP_SYNC_FRAME_TX          => armEthTx(1).enetPtpSyncFrameTx,
-         ENET1_SOF_RX                     => armEthTx(1).enetSofRx,
-         ENET1_SOF_TX                     => armEthTx(1).enetSofTx,
+         --ENET1_PTP_DELAY_REQ_RX           => armEthTx(1).enetPtpDelayReqRx,
+         --ENET1_PTP_DELAY_REQ_TX           => armEthTx(1).enetPtpDelayReqTx,
+         --ENET1_PTP_PDELAY_REQ_RX          => armEthTx(1).enetPtpPDelayReqRx,
+         --ENET1_PTP_PDELAY_REQ_TX          => armEthTx(1).enetPtpPDelayReqTx,
+         --ENET1_PTP_PDELAY_RESP_RX         => armEthTx(1).enetPtpPDelayRespRx,
+         --ENET1_PTP_PDELAY_RESP_TX         => armEthTx(1).enetPtpPDelayRespTx,
+         --ENET1_PTP_SYNC_FRAME_RX          => armEthTx(1).enetPtpSyncFrameRx,
+         --ENET1_PTP_SYNC_FRAME_TX          => armEthTx(1).enetPtpSyncFrameTx,
+         --ENET1_SOF_RX                     => armEthTx(1).enetSofRx,
+         --ENET1_SOF_TX                     => armEthTx(1).enetSofTx,
          ENET1_GMII_TXD                   => armEthTx(1).enetGmiiTxD,
          ENET1_GMII_COL                   => armEthRx(1).enetGmiiCol,
          ENET1_GMII_CRS                   => armEthRx(1).enetGmiiCrs,
@@ -1097,6 +1097,18 @@ begin
          PS_CLK                           => open,
          PS_PORB                          => open
       );
+
+   -- Some ports have changed in Vivado 2015.3
+   armEthTx(1).enetPtpDelayReqRx    <= '0';
+   armEthTx(1).enetPtpDelayReqTx    <= '0';
+   armEthTx(1).enetPtpPDelayReqRx   <= '0';
+   armEthTx(1).enetPtpPDelayReqTx   <= '0';
+   armEthTx(1).enetPtpPDelayRespRx  <= '0';
+   armEthTx(1).enetPtpPDelayRespTx  <= '0';
+   armEthTx(1).enetPtpSyncFrameRx   <= '0';
+   armEthTx(1).enetPtpSyncFrameTx   <= '0';
+   armEthTx(1).enetSofRx            <= '0';
+   armEthTx(1).enetSofTx            <= '0';
 
    -- Unused AXI Master GP Signals
    U_UnusedMasterGP: for i in 0 to 1 generate

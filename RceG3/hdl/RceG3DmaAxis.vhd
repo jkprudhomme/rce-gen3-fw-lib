@@ -80,23 +80,23 @@ end RceG3DmaAxis;
 
 architecture structure of RceG3DmaAxis is 
 
-   signal locReadMaster    : AxiReadMasterArray(2 downto 0);
-   signal locReadSlave     : AxiReadSlaveArray(2 downto 0);
-   signal locWriteMaster   : AxiWriteMasterArray(2 downto 0);
-   signal locWriteSlave    : AxiWriteSlaveArray(2 downto 0);
-   signal locWriteCtrl     : AxiCtrlArray(2 downto 0);
-   signal intWriteSlave    : AxiWriteSlaveArray(2 downto 0);
-   signal intWriteMaster   : AxiWriteMasterArray(2 downto 0);
-   signal intReadSlave     : AxiReadSlaveArray(2 downto 0);
-   signal intReadMaster    : AxiReadMasterArray(2 downto 0);
-   signal sAxisMaster      : AxiStreamMasterArray(2 downto 0);
-   signal sAxisSlave       : AxiStreamSlaveArray(2 downto 0);
-   signal mAxisMaster      : AxiStreamMasterArray(2 downto 0);
-   signal mAxisSlave       : AxiStreamSlaveArray(2 downto 0);
-   signal mAxisCtrl        : AxiStreamCtrlArray(2 downto 0);
+   signal locReadMaster    : AxiReadMasterArray(3 downto 0);
+   signal locReadSlave     : AxiReadSlaveArray(3 downto 0);
+   signal locWriteMaster   : AxiWriteMasterArray(3 downto 0);
+   signal locWriteSlave    : AxiWriteSlaveArray(3 downto 0);
+   signal locWriteCtrl     : AxiCtrlArray(3 downto 0);
+   signal intWriteSlave    : AxiWriteSlaveArray(3 downto 0);
+   signal intWriteMaster   : AxiWriteMasterArray(3 downto 0);
+   signal intReadSlave     : AxiReadSlaveArray(3 downto 0);
+   signal intReadMaster    : AxiReadMasterArray(3 downto 0);
+   signal sAxisMaster      : AxiStreamMasterArray(3 downto 0);
+   signal sAxisSlave       : AxiStreamSlaveArray(3 downto 0);
+   signal mAxisMaster      : AxiStreamMasterArray(3 downto 0);
+   signal mAxisSlave       : AxiStreamSlaveArray(3 downto 0);
+   signal mAxisCtrl        : AxiStreamCtrlArray(3 downto 0);
 
    -- Caching enabled for ACP port
-   constant AXI_CACHE_C    : Slv4Array(2 downto 0) := ( "0010", "0000", "0000" );
+   constant AXI_CACHE_C    : Slv4Array(3 downto 0) := ( "0000", "0010", "0000", "0000" );
 
 begin
 
@@ -118,37 +118,32 @@ begin
    userReadSlave    <= hpReadSlave(2);
    hpReadMaster(2)  <= userReadMaster;
 
-   -- HP 3 Unused
-   hpWriteMaster(3) <= AXI_WRITE_MASTER_INIT_C;
-   hpReadMaster(3)  <= AXI_READ_MASTER_INIT_C;
+   -- HP for channel 3
+   intWriteSlave(3) <= hpWriteSlave(3);
+   hpWriteMaster(3) <= intWriteMaster(3);
+   intReadSlave(3)  <= hpReadSlave(3);
+   hpReadMaster(3)  <= intReadMaster(3);
 
    -- Unused Interrupts
-   interrupt(DMA_INT_COUNT_C-1 downto 3) <= (others=>'0');
-
-   -- Unused DMA channels
-   dmaState(3)    <= RCE_DMA_STATE_INIT_C;
-   dmaObMaster(3) <= AXI_STREAM_MASTER_INIT_C;
-   dmaIbSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;
+   interrupt(DMA_INT_COUNT_C-1 downto 4) <= (others=>'0');
 
    -- Terminate Unused AXI-Lite Interfaces
-   U_AxiLiteGen : for i in 6 to 8 generate
-      U_AxiLiteEmpty : entity work.AxiLiteEmpty
-         generic map (
-            TPD_G  => TPD_G
-         ) port map (
-            axiClk          => axiDmaClk,
-            axiClkRst       => axiDmaRst,
-            axiReadMaster   => axilReadMaster(i),
-            axiReadSlave    => axilReadSlave(i),
-            axiWriteMaster  => axilWriteMaster(i),
-            axiWriteSlave   => axilWriteSlave(i)
-         );
-   end generate;
+   U_AxiLiteEmpty : entity work.AxiLiteEmpty
+      generic map (
+         TPD_G  => TPD_G
+      ) port map (
+         axiClk          => axiDmaClk,
+         axiClkRst       => axiDmaRst,
+         axiReadMaster   => axilReadMaster(8),
+         axiReadSlave    => axilReadSlave(8),
+         axiWriteMaster  => axilWriteMaster(8),
+         axiWriteSlave   => axilWriteSlave(8)
+      );
 
    ------------------------------------------
    -- DMA Channels
    ------------------------------------------
-   U_DmaChanGen : for i in 0 to 2 generate
+   U_DmaChanGen : for i in 0 to 3 generate
 
       -- DMA Core
       U_AxiStreamDma : entity work.AxiStreamDma
