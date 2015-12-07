@@ -250,17 +250,18 @@ begin
    U_Eth10gGen: if ETH_10G_EN_G = true generate 
       U_ZynqEthernet10G : entity work.ZynqEthernet10G 
          generic map (
-            TPD_G  => TPD_G
+            TPD_G          => TPD_G,
+            RCE_DMA_MODE_G => RCE_DMA_MODE_G
          ) port map (
             sysClk200          => isysClk200,
             sysClk200Rst       => isysClk200Rst,
-            ppiClk             => idmaClk(3),
-            ppiClkRst          => idmaClkRst(3),
-            ppiState           => idmaState(3),
-            ppiIbMaster        => idmaIbMaster(3),
-            ppiIbSlave         => idmaIbSlave(3),
-            ppiObMaster        => idmaObMaster(3),
-            ppiObSlave         => idmaObSlave(3),
+            dmaClk             => idmaClk(3),
+            dmaClkRst          => idmaClkRst(3),
+            dmaState           => idmaState(3),
+            dmaIbMaster        => idmaIbMaster(3),
+            dmaIbSlave         => idmaIbSlave(3),
+            dmaObMaster        => idmaObMaster(3),
+            dmaObSlave         => idmaObSlave(3),
             axilClk            => iaxiClk,
             axilClkRst         => iaxiClkRst,
             axilWriteMaster    => coreAxilWriteMaster,
