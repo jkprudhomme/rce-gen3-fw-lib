@@ -40,7 +40,11 @@ entity XMac is
    );
    port (
 
-      -- PPI Interface
+      -- Clocks
+      sysClk200               : in  sl;
+      sysClk200Rst            : in  sl;
+
+      -- DMA Interface
       xmacRst                 : in  sl;
       dmaClk                  : in  sl;
       dmaClkRst               : in  sl;
