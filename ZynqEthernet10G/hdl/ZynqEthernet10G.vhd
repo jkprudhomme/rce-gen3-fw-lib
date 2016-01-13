@@ -7,7 +7,13 @@
 -- Description:
 -- Wrapper file for Zynq ethernet 10G core.
 -------------------------------------------------------------------------------
--- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
+-- This file is part of 'SLAC RCE 10G Ethernet Core'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'SLAC RCE 10G Ethernet Core', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 09/03/2013: created.
@@ -30,8 +36,10 @@ use work.EthMacPkg.all;
 
 entity ZynqEthernet10G is
    generic (
-      TPD_G          : time           := 1 ns;
-      RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C
+      TPD_G           : time             := 1 ns;
+      RCE_DMA_MODE_G  : RceDmaModeType   := RCE_DMA_PPI_C;
+      USER_ETH_EN_G   : boolean          := false;
+      USER_ETH_TYPE_G : slv(15 downto 0) := x"0000"
    );
    port (
 
@@ -47,6 +55,14 @@ entity ZynqEthernet10G is
       dmaIbSlave              : in  AxiStreamSlaveType;
       dmaObMaster             : in  AxiStreamMasterType;
       dmaObSlave              : out AxiStreamSlaveType;
+
+      -- User interface
+      userEthClk              : out sl;
+      userEthClkRst           : out sl;
+      userEthObMaster         : in  AxiStreamMasterType;
+      userEthObSlave          : out AxiStreamSlaveType;
+      userEthIbMaster         : out AxiStreamMasterType;
+      userEthIbCtrl           : in  AxiStreamCtrlType;
 
       -- AXI Lite Busses
       axilClk                 : in  sl;
@@ -253,25 +269,35 @@ begin
       generic map (
          TPD_G           => TPD_G,
          PAUSE_512BITS_G => 8,
-         VLAN_CNT_G      => 0,
+         VLAN_CNT_G      => 1,
+         VLAN_EN_G       => false,
+         BYP_EN_G        => USER_ETH_EN_G,
+         BYP_ETH_TYPE_G  => USER_ETH_TYPE_G,
          SHIFT_EN_G      => true,
          FILT_EN_G       => true,
          CSUM_EN_G       => true
       ) port map ( 
          ethClk         => ethClk,
          ethClkRst      => ethClkRst,
-         sAxisMaster(0) => macObMaster,
-         sAxisSlave(0)  => macObSlave,
-         mAxisMaster(0) => macIbMaster,
-         mAxisCtrl(0)   => macIbCtrl,
+         sPrimMaster    => macObMaster,
+         sPrimSlave     => macObSlave,
+         mPrimMaster    => macIbMaster,
+         mPrimCtrl      => macIbCtrl,
+         sBypMaster     => userEthObMaster,
+         sBypSlave      => userEthObSlave,
+         mBypMaster     => userEthIbMaster,
+         mBypCtrl       => userEthIbCtrl,
          phyTxd         => xauiTxd,
          phyTxc         => xauiTxc,
          phyRxd         => xauiRxd,
          phyRxc         => xauiRxc,
          phyReady       => phyStatus(7),
-         ethConfig(0)   => macConfig,
-         ethStatus(0)   => macStatus
+         ethConfig      => macConfig,
+         ethStatus      => macStatus
       );
+
+   userEthClk    <= ethClk;
+   userEthClkRst <= ethClkRst;
 
    -------------------------------------------
    -- TX FIFO

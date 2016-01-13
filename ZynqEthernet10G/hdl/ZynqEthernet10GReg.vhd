@@ -7,7 +7,13 @@
 -- Description:
 -- Wrapper file for Zynq ethernet 10G core.
 -------------------------------------------------------------------------------
--- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
+-- This file is part of 'SLAC RCE 10G Ethernet Core'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'SLAC RCE 10G Ethernet Core', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 09/03/2013: created.
@@ -75,6 +81,7 @@ architecture structure of ZynqEthernet10GReg is
       ipCsumEn          : sl;
       tcpCsumEn         : sl;
       udpCsumEn         : sl;
+      dropOnPause       : sl;
       axilReadSlave     : AxiLiteReadSlaveType;
       axilWriteSlave    : AxiLiteWriteSlaveType;
    end record RegType;
@@ -95,6 +102,7 @@ architecture structure of ZynqEthernet10GReg is
       ipCsumEn          => '0',
       tcpCsumEn         => '0',
       udpCsumEn         => '0',
+      dropOnPause       => '0',
       axilReadSlave     => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave    => AXI_LITE_WRITE_SLAVE_INIT_C
    );
@@ -234,6 +242,7 @@ begin
                v.ipCsumEn    := axilWriteMaster.wdata(17);
                v.tcpCsumEn   := axilWriteMaster.wdata(18);
                v.udpCsumEn   := axilWriteMaster.wdata(19);
+               v.dropOnPause := axilWriteMaster.wdata(20);
             when others => null;
          end case;
 
@@ -293,6 +302,7 @@ begin
                      v.axilReadSlave.rdata(17)         := r.ipCsumEn;
                      v.axilReadSlave.rdata(18)         := r.tcpCsumEn;
                      v.axilReadSlave.rdata(19)         := r.udpCsumEn;
+                     v.axilReadSlave.rdata(20)         := r.dropOnPause;
 
                   when others => null;
                end case;
@@ -336,7 +346,7 @@ begin
       generic map (
          TPD_G     => TPD_G,
          STAGES_G  => 2,
-         WIDTH_G   => 89 
+         WIDTH_G   => 90 
       ) port map (
          clk                   => ethClk,
          rst                   => ethClkRst,
@@ -352,7 +362,8 @@ begin
          dataIn(79)            => r.tcpCsumEn,
          dataIn(80)            => r.udpCsumEn,
          dataIn(81)            => r.udpCsumEn,
-         dataIn(88 downto 82)  => r.config,
+         dataIn(82)            => r.dropOnPause,
+         dataIn(89 downto 83)  => r.config,
 
          dataOut(47 downto  0) => macConfig.macAddress,
          dataOut(63 downto 48) => macConfig.pauseTime,
@@ -365,7 +376,8 @@ begin
          dataOut(79)           => macConfig.tcpCsumEn,
          dataOut(80)           => macConfig.udpCsumEn,
          dataOut(81)           => macConfig.udpCsumEn,
-         dataOut(88 downto 82) => phyConfig
+         dataOut(82)           => macConfig.dropOnPause,
+         dataOut(89 downto 83) => phyConfig
       );
 
    macConfig.pauseEnable   <= '1';
