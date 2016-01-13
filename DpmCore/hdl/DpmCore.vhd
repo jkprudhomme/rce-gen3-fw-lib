@@ -7,7 +7,13 @@
 -- Description:
 -- Common top level module for DPM
 -------------------------------------------------------------------------------
--- Copyright (c) 2013 by Ryan Herbst. All rights reserved.
+-- This file is part of 'SLAC RCE DPM Core'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'SLAC RCE DPM Core', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 11/14/2013: created.
@@ -25,11 +31,13 @@ use work.AxiPkg.all;
 
 entity DpmCore is
    generic (
-      TPD_G          : time                  := 1 ns;
-      ETH_10G_EN_G   : boolean               := false;
-      RCE_DMA_MODE_G : RceDmaModeType        := RCE_DMA_PPI_C;
-      OLD_BSI_MODE_G : boolean               := false;
-      AXI_ST_COUNT_G : natural range 3 to 4  := 3
+      TPD_G           : time                  := 1 ns;
+      ETH_10G_EN_G    : boolean               := false;
+      RCE_DMA_MODE_G  : RceDmaModeType        := RCE_DMA_PPI_C;
+      OLD_BSI_MODE_G  : boolean               := false;
+      AXI_ST_COUNT_G  : natural range 3 to 4  := 3;
+      USER_ETH_EN_G   : boolean               := false;
+      USER_ETH_TYPE_G : slv(15 downto 0)      := x"AAAA"
    );
    port (
 
@@ -72,14 +80,22 @@ entity DpmCore is
       dmaIbMaster             : in    AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
       dmaIbSlave              : out   AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
 
-      -- User memory access
+      -- User memory access (sysclk200)
       userWriteSlave          : out   AxiWriteSlaveType;
       userWriteMaster         : in    AxiWriteMasterType := AXI_WRITE_MASTER_INIT_C;
       userReadSlave           : out   AxiReadSlaveType;
       userReadMaster          : in    AxiReadMasterType := AXI_READ_MASTER_INIT_C;
 
+      -- User ethernet
+      userEthClk              : out   sl;
+      userEthClkRst           : out   sl;
+      userEthObMaster         : in    AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+      userEthObSlave          : out   AxiStreamSlaveType;
+      userEthIbMaster         : out   AxiStreamMasterType;
+      userEthIbCtrl           : in    AxiStreamCtrlType   := AXI_STREAM_CTRL_UNUSED_C;
+
       -- User Interrupts
-      userInterrupt            : in    slv(USER_INT_COUNT_C-1 downto 0)
+      userInterrupt           : in    slv(USER_INT_COUNT_C-1 downto 0)
 
    );
 end DpmCore;
@@ -212,7 +228,12 @@ begin
             ethTxP             => ethTxP(0),
             ethTxM             => ethTxM(0)
          );
-      
+     
+      userEthClk      <= '0';
+      userEthClkRst   <= '1';
+      userEthObSlave  <= AXI_STREAM_SLAVE_INIT_C;
+      userEthIbMaster <= AXI_STREAM_MASTER_INIT_C;
+
       U_CustomDmaGen : if RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C generate
          idmaClk(3)         <= dmaClk(AXI_ST_COUNT_G-1);
          idmaClkRst(3)      <= dmaClkRst(AXI_ST_COUNT_G-1);
@@ -262,6 +283,12 @@ begin
             dmaIbSlave         => idmaIbSlave(3),
             dmaObMaster        => idmaObMaster(3),
             dmaObSlave         => idmaObSlave(3),
+            userEthClk         => userEthClk,
+            userEthClkRst      => userEthClkRst,
+            userEthObMaster    => userEthObMaster,
+            userEthObSlave     => userEthObSlave,
+            userEthIbMaster    => userEthIbMaster,
+            userEthIbCtrl      => userEthIbCtrl,
             axilClk            => iaxiClk,
             axilClkRst         => iaxiClkRst,
             axilWriteMaster    => coreAxilWriteMaster,
