@@ -55,6 +55,7 @@ entity ZynqEthernet10GReg is
       phyDebug                : in  slv(5  downto 0);
       phyConfig               : out slv(6  downto 0);
       phyReset                : out sl;
+      ethHeaderSize           : out slv(15 downto 0);
       macConfig               : out EthMacConfigType;
       macStatus               : in  EthMacStatusType
    );
@@ -82,6 +83,7 @@ architecture structure of ZynqEthernet10GReg is
       tcpCsumEn         : sl;
       udpCsumEn         : sl;
       dropOnPause       : sl;
+      ethHeaderSize     : slv(15 downto 0);
       axilReadSlave     : AxiLiteReadSlaveType;
       axilWriteSlave    : AxiLiteWriteSlaveType;
    end record RegType;
@@ -103,6 +105,7 @@ architecture structure of ZynqEthernet10GReg is
       tcpCsumEn         => '0',
       udpCsumEn         => '0',
       dropOnPause       => '0',
+      ethHeaderSize     => x"000F",
       axilReadSlave     => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave    => AXI_LITE_WRITE_SLAVE_INIT_C
    );
@@ -243,6 +246,10 @@ begin
                v.tcpCsumEn   := axilWriteMaster.wdata(18);
                v.udpCsumEn   := axilWriteMaster.wdata(19);
                v.dropOnPause := axilWriteMaster.wdata(20);
+
+            when x"003C" => 
+               v.ethHeaderSize := axilWriteMaster.wdata(15 downto 0);
+
             when others => null;
          end case;
 
@@ -304,6 +311,9 @@ begin
                      v.axilReadSlave.rdata(19)         := r.udpCsumEn;
                      v.axilReadSlave.rdata(20)         := r.dropOnPause;
 
+                  when X"3C" =>
+                     v.axilReadSlave.rdata(15 downto 0) := r.ethHeaderSize;
+
                   when others => null;
                end case;
 
@@ -346,38 +356,40 @@ begin
       generic map (
          TPD_G     => TPD_G,
          STAGES_G  => 2,
-         WIDTH_G   => 90 
+         WIDTH_G   => 106
       ) port map (
-         clk                   => ethClk,
-         rst                   => ethClkRst,
+         clk                    => ethClk,
+         rst                    => ethClkRst,
 
-         dataIn(47 downto  0)  => r.macAddress,
-         dataIn(63 downto 48)  => r.pauseTime,
-         dataIn(67 downto 64)  => r.interFrameGap,
-         dataIn(71 downto 68)  => r.txShift,
-         dataIn(75 downto 72)  => r.rxShift,
-         dataIn(76)            => r.phyReset,
-         dataIn(77)            => r.filtEnable,
-         dataIn(78)            => r.ipCsumEn,
-         dataIn(79)            => r.tcpCsumEn,
-         dataIn(80)            => r.udpCsumEn,
-         dataIn(81)            => r.udpCsumEn,
-         dataIn(82)            => r.dropOnPause,
-         dataIn(89 downto 83)  => r.config,
+         dataIn(47 downto  0)   => r.macAddress,
+         dataIn(63 downto 48)   => r.pauseTime,
+         dataIn(67 downto 64)   => r.interFrameGap,
+         dataIn(71 downto 68)   => r.txShift,
+         dataIn(75 downto 72)   => r.rxShift,
+         dataIn(76)             => r.phyReset,
+         dataIn(77)             => r.filtEnable,
+         dataIn(78)             => r.ipCsumEn,
+         dataIn(79)             => r.tcpCsumEn,
+         dataIn(80)             => r.udpCsumEn,
+         dataIn(81)             => r.udpCsumEn,
+         dataIn(82)             => r.dropOnPause,
+         dataIn(89  downto 83)  => r.config,
+         dataIn(105 downto 90)  => r.ethHeaderSize,
 
-         dataOut(47 downto  0) => macConfig.macAddress,
-         dataOut(63 downto 48) => macConfig.pauseTime,
-         dataOut(67 downto 64) => macConfig.interFrameGap,
-         dataOut(71 downto 68) => macConfig.txShift,
-         dataOut(75 downto 72) => macConfig.rxShift,
-         dataOut(76)           => phyReset,
-         dataOut(77)           => macConfig.filtEnable,
-         dataOut(78)           => macConfig.ipCsumEn,
-         dataOut(79)           => macConfig.tcpCsumEn,
-         dataOut(80)           => macConfig.udpCsumEn,
-         dataOut(81)           => macConfig.udpCsumEn,
-         dataOut(82)           => macConfig.dropOnPause,
-         dataOut(89 downto 83) => phyConfig
+         dataOut(47 downto  0)  => macConfig.macAddress,
+         dataOut(63 downto 48)  => macConfig.pauseTime,
+         dataOut(67 downto 64)  => macConfig.interFrameGap,
+         dataOut(71 downto 68)  => macConfig.txShift,
+         dataOut(75 downto 72)  => macConfig.rxShift,
+         dataOut(76)            => phyReset,
+         dataOut(77)            => macConfig.filtEnable,
+         dataOut(78)            => macConfig.ipCsumEn,
+         dataOut(79)            => macConfig.tcpCsumEn,
+         dataOut(80)            => macConfig.udpCsumEn,
+         dataOut(81)            => macConfig.udpCsumEn,
+         dataOut(82)            => macConfig.dropOnPause,
+         dataOut(89  downto 83) => phyConfig,
+         dataOut(105 downto 90) => ethHeaderSize
       );
 
    macConfig.pauseEnable   <= '1';

@@ -86,7 +86,6 @@ end ZynqEthernet10G;
 
 architecture structure of ZynqEthernet10G is
 
-   constant HEADER_SIZE_C : integer := 16;
    constant AXIS_CONFIG_C : AxiStreamConfigType := ite(RCE_DMA_MODE_G = RCE_DMA_PPI_C, 
                                                        PPI_AXIS_CONFIG_INIT_C,
                                                        RCEG3_AXIS_DMA_CONFIG_C);
@@ -145,6 +144,7 @@ architecture structure of ZynqEthernet10G is
    signal macObSlave        : AxiStreamSlaveType;
    signal ppiIbMaster       : AxiStreamMasterType;
    signal writeCount        : slv(15 downto 0);
+   signal ethHeaderSize     : slv(15 downto 0);
    signal cfgPhyReset       : sl;
    signal onlineSync        : sl;
 
@@ -173,6 +173,7 @@ begin
          phyDebug        => phyDebug,
          phyReset        => cfgPhyReset,
          phyConfig       => phyConfig,
+         ethHeaderSize   => ethHeaderSize,
          macConfig       => macConfig,
          macStatus       => macStatus
       );
@@ -348,7 +349,7 @@ begin
          varMaster.tUser := (others=>'0');
 
          -- Set EOH if neccessary
-         if writeCount = (HEADER_SIZE_C-1) then
+         if writeCount = ethHeaderSize then
             axiStreamSetUserBit(EMAC_AXIS_CONFIG_C, varMaster, PPI_EOH_C, '1');
          end if;
 
@@ -356,6 +357,10 @@ begin
          if macIbMaster.tLast = '1' then
             axiStreamSetUserBit(EMAC_AXIS_CONFIG_C, varMaster, PPI_ERR_C, eofe);
          end if;
+
+         -- Clear SOF
+         axiStreamSetUserBit(EMAC_AXIS_CONFIG_C, varMaster, EMAC_SOF_BIT_C, '0');
+
       end if;
 
       ppiIbMaster <= varMaster;
