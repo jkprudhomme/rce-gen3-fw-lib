@@ -20,7 +20,7 @@
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.all;
 
 use work.StdRtlPkg.all;
 use work.AxiPkg.all;
@@ -37,17 +37,17 @@ package RceG3Pkg is
    -- DMA Engine Types
    --------------------------------------------------------
 
-   type RceDmaModeType is (RCE_DMA_PPI_C, RCE_DMA_AXIS_C, RCE_DMA_CUSTOM_C );
+   type RceDmaModeType is (RCE_DMA_PPI_C, RCE_DMA_AXIS_C, RCE_DMA_CUSTOM_C);
 
    type RceDmaStateType is record
       online : sl;
       user   : sl;
    end record;
 
-   constant RCE_DMA_STATE_INIT_C : RceDmaStateType := ( 
+   constant RCE_DMA_STATE_INIT_C : RceDmaStateType := (
       online => '0',
       user   => '0'
-   );
+      );
 
    type RceDmaStateArray is array (natural range<>) of RceDmaStateType;
 
@@ -56,24 +56,28 @@ package RceG3Pkg is
    --------------------------------------------------------
 
    constant AXI_MAST_GP_INIT_C : AxiConfigType := (
-      ADDR_WIDTH_C      => 32,
-      DATA_BYTES_C      => 4,
-      ID_BITS_C         => 12);
+      ADDR_WIDTH_C => 32,
+      DATA_BYTES_C => 4,
+      ID_BITS_C    => 12,
+      LEN_BITS_C   => 4);
 
    constant AXI_SLAVE_GP_INIT_C : AxiConfigType := (
-      ADDR_WIDTH_C      => 32,
-      DATA_BYTES_C      => 4,
-      ID_BITS_C         => 6);
+      ADDR_WIDTH_C => 32,
+      DATA_BYTES_C => 4,
+      ID_BITS_C    => 6,
+      LEN_BITS_C   => 4);
 
    constant AXI_ACP_INIT_C : AxiConfigType := (
-      ADDR_WIDTH_C      => 32,
-      DATA_BYTES_C      => 8,
-      ID_BITS_C         => 3);
+      ADDR_WIDTH_C => 32,
+      DATA_BYTES_C => 8,
+      ID_BITS_C    => 3,
+      LEN_BITS_C   => 4);
 
    constant AXI_HP_INIT_C : AxiConfigType := (
-      ADDR_WIDTH_C      => 32,
-      DATA_BYTES_C      => 8,
-      ID_BITS_C         => 6);
+      ADDR_WIDTH_C => 32,
+      DATA_BYTES_C => 8,
+      ID_BITS_C    => 6,
+      LEN_BITS_C   => 4);
 
    --------------------------------------------------------
    -- AXIS Configuration Constants
@@ -109,11 +113,11 @@ package RceG3Pkg is
       enetPtpSyncFrameTx  : sl;
       enetSofRx           : sl;
       enetSofTx           : sl;
-      enetGmiiTxD         : slv(7 downto 0);  
+      enetGmiiTxD         : slv(7 downto 0);
    end record;
 
    -- Initialization constants
-   constant ARM_ETH_TX_INIT_C : ArmEthTxType := ( 
+   constant ARM_ETH_TX_INIT_C : ArmEthTxType := (
       enetGmiiTxEn        => '0',
       enetGmiiTxEr        => '0',
       enetMdioMdc         => '0',
@@ -129,8 +133,8 @@ package RceG3Pkg is
       enetPtpSyncFrameTx  => '0',
       enetSofRx           => '0',
       enetSofTx           => '0',
-      enetGmiiTxD         => (others=>'0')
-   );
+      enetGmiiTxD         => (others => '0')
+      );
 
    -- Array
    type ArmEthTxArray is array (natural range<>) of ArmEthTxType;
@@ -145,11 +149,11 @@ package RceG3Pkg is
       enetGmiiTxClk : sl;
       enetMdioI     : sl;
       enetExtInitN  : sl;
-      enetGmiiRxd   : slv(7 downto 0);  
+      enetGmiiRxd   : slv(7 downto 0);
    end record;
 
    -- Initialization constants
-   constant ARM_ETH_RX_INIT_C : ArmEthRxType := ( 
+   constant ARM_ETH_RX_INIT_C : ArmEthRxType := (
       enetGmiiCol   => '0',
       enetGmiiCrs   => '0',
       enetGmiiRxClk => '0',
@@ -158,8 +162,8 @@ package RceG3Pkg is
       enetGmiiTxClk => '0',
       enetMdioI     => '0',
       enetExtInitN  => '0',
-      enetGmiiRxd   => (others=>'0')
-   );
+      enetGmiiRxd   => (others => '0')
+      );
 
    -- Array
    type ArmEthRxArray is array (natural range<>) of ArmEthRxType;
