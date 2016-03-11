@@ -102,6 +102,9 @@ architecture structure of PpiPgpArray is
    signal locObMaster : AxiStreamMasterArray(NUM_LANES_G-1 downto 0);
    signal locObSlave  : AxiStreamSlaveArray(NUM_LANES_G-1 downto 0);
 
+
+   signal intIbMaster : AxiStreamMasterType;
+
 begin
 
    -------------------------------------------------------------------------------------------------
@@ -150,10 +153,27 @@ begin
             axisRst      => ppiClkRst,
             sAxisMasters => locIbMaster,
             sAxisSlaves  => locIbSlave,
-            mAxisMaster  => ppiIbMaster,
+            mAxisMaster  => intIbMaster,
             mAxisSlave   => ppiIbSlave
 
             );
+
+   ppiIbMaster <= intIbMaster;
+
+   -- Error checking
+   U_PpiMonitor: entity work.PpiMonitor
+      generic map (
+         TPD_G        => TPD_G,
+         DEST_CNT_G   => NUM_LANES_G,
+         SUB_CNT_G    => 4
+      ) port map (
+         ppiClk          => ppiClk,
+         ppiClkRst       => ppiClkRst,
+         ppiIbMaster     => intIbMaster,
+         ppiIbSlave      => ppiIbSlave,
+         errorDet        => open,
+         errorDetCnt     => open
+      );
 
    -- PGP Lane Controllers
    U_LaneGen : for i in 0 to NUM_LANES_G-1 generate

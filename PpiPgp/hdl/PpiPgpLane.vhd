@@ -40,7 +40,7 @@ entity PpiPgpLane is
       TPD_G                   : time    := 1 ns;
       AXI_CLK_FREQ_G          : real    := 125.0E+6;
       RX_AXIS_ADDR_WIDTH_G    : integer := 9;
-      RX_AXIS_PAUSE_THRESH_G  : integer := 500;
+      RX_AXIS_PAUSE_THRESH_G  : integer := 350;
       RX_AXIS_CASCADE_SIZE_G  : integer := 1;
       RX_DATA_ADDR_WIDTH_G    : integer := 9;
       RX_HEADER_ADDR_WIDTH_G  : integer := 9;
@@ -127,13 +127,9 @@ begin
       );
 
    -- Inbound
-   U_AxisToPpi: entity work.AxisToPpi
+   U_PgpToPpi: entity work.PgpToPpi
       generic map (
          TPD_G                => TPD_G,
-         AXIS_CONFIG_G        => SSI_PGP2B_CONFIG_C,
-         AXIS_READY_EN_G      => false,
-         AXIS_ERROR_EN_G      => true,
-         AXIS_ERROR_BIT_G     => SSI_EOFE_C,
          AXIS_ADDR_WIDTH_G    => RX_AXIS_ADDR_WIDTH_G,
          AXIS_PAUSE_THRESH_G  => RX_AXIS_PAUSE_THRESH_G,
          AXIS_CASCADE_SIZE_G  => RX_AXIS_CASCADE_SIZE_G,
@@ -149,7 +145,6 @@ begin
          axisIbClk        => pgpRxClk,
          axisIbClkRst     => pgpRxClkRst,
          axisIbMaster     => pgpRxMasterMuxed,
-         axisIbSlave      => open,
          axisIbCtrl       => ipgpRxCtrl,
          rxFrameCntEn     => open,
          rxOverflow       => open
@@ -158,9 +153,9 @@ begin
    pgpRxCtrl <= (others=>ipgpRxCtrl);
 
    -- Outbound 
-   U_PpiToAxis : entity work.PpiToAxis
+   U_PpiToPgp : entity work.PpiToPgp
       generic map (
-         AXIS_CONFIG_G        => SSI_PGP2B_CONFIG_C,
+         TPD_G                => TPD_G,
          PPI_ADDR_WIDTH_G     => TX_PPI_ADDR_WIDTH_G,
          AXIS_ADDR_WIDTH_G    => TX_AXIS_ADDR_WIDTH_G,
          AXIS_CASCADE_SIZE_G  => TX_AXIS_CASCADE_SIZE_G
