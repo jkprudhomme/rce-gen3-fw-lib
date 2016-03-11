@@ -138,7 +138,23 @@ architecture structure of PpiObPayload is
    -- Attribute for XST
    attribute use_dsp48      : string;
    attribute use_dsp48 of r : signal is "yes";     
-   
+
+   attribute dont_touch : string;
+
+   attribute dont_touch of r             : signal is "true";
+   attribute dont_touch of dmaReq        : signal is "true";
+   attribute dont_touch of dmaAck        : signal is "true";
+   attribute dont_touch of intAxisMaster : signal is "true";
+   attribute dont_touch of intAxisSlave  : signal is "true";
+   attribute dont_touch of intAxisCtrl   : signal is "true";
+   attribute dont_touch of dmaAxisMaster : signal is "true";
+   attribute dont_touch of compWrite     : signal is "true";
+   attribute dont_touch of compDin       : signal is "true";
+   attribute dont_touch of compDout      : signal is "true";
+   attribute dont_touch of compAFull     : signal is "true";
+   attribute dont_touch of intReadMaster : signal is "true";
+   attribute dont_touch of intReadSlave  : signal is "true";
+
 begin
 
    -- Sync
