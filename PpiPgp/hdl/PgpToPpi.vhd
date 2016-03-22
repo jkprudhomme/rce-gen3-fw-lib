@@ -13,6 +13,7 @@
 --    Bit  24    = Inbound overflow occured
 --    Bits 25    = Header only frame
 --    Bits 26    = End of Frame
+--    Bits 27    = Pause occured
 --    Bits 63:32 = Length in bytes
 -------------------------------------------------------------------------------
 -- This file is part of 'SLAC RCE PPI Core'.
@@ -152,6 +153,7 @@ architecture structure of PgpToPpi is
       state       : MoveStateType;
       byteCnt     : slv(BYTE_COUNT_BITS_C-1 downto 0);
       overflow    : sl;
+      pause       : sl;
       err         : sl;
       dataRead    : sl;
       headerRead  : sl;
@@ -162,6 +164,7 @@ architecture structure of PgpToPpi is
       state          => IDLE_S,
       byteCnt        => (others=>'0'),
       overflow       => '0',
+      pause          => '0',
       err            => '0',
       dataRead       => '0',
       headerRead     => '0',
@@ -178,6 +181,7 @@ architecture structure of PgpToPpi is
    signal regIbSlave      : AxiStreamSlaveType;
    signal iaxisIbCtrl     : AxiStreamCtrlType;
    signal intOverflow     : sl;
+   signal intPause        : sl;
    signal headerAFull     : sl;
    signal headerRead      : sl;
    signal dataAFull       : sl;
@@ -233,6 +237,23 @@ begin
          rst     => ppiClkRst,
          dataIn  => iaxisIbCtrl.overflow,
          dataOut => intOverflow
+      );
+
+   -- Generate pause pulse in ppi clock domain
+   U_SyncPause : entity work.SynchronizerOneShot 
+      generic map (
+         RELEASE_DELAY_G => 3,
+         BYPASS_SYNC_G   => false,
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         IN_POLARITY_G   => '1',
+         OUT_POLARITY_G  => '1',
+         RST_ASYNC_G     => false
+      ) port map (
+         clk     => ppiClk,
+         rst     => ppiClkRst,
+         dataIn  => iaxisIbCtrl.pause,
+         dataOut => intPause
       );
 
    rxOverflow <= intOverflow;
@@ -441,7 +462,7 @@ begin
    end process;
 
    -- Async
-   process (dataOut, headerOut, intOverflow, ppiClkRst, regIbSlave, rm) is
+   process (dataOut, headerOut, intOverflow, intPause, ppiClkRst, regIbSlave, rm) is
       variable v : RegMoveType;
    begin
       v := rm;
@@ -451,6 +472,10 @@ begin
 
       if intOverflow = '1' then
          v.overflow := '1';
+      end if;
+
+      if intPause = '1' then
+         v.pause := '1';
       end if;
 
       case rm.state is
@@ -472,11 +497,13 @@ begin
 
             v.regIbMaster.tData(BYTE_COUNT_BITS_C+31 downto 32) := headerOut.byteCnt;
 
+            v.regIbMaster.tData(27) := rm.pause;
             v.regIbMaster.tData(26) := headerOut.eof;
             v.regIbMaster.tData(24) := rm.overflow;
             v.regIbMaster.tValid    := '1';
             v.headerRead            := '1';
             v.byteCnt               := headerOut.byteCnt;
+            v.pause                 := '0';
             v.state                 := DATA_S;
 
             -- Full frame fits in header

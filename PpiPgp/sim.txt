@@ -1,2 +1,3 @@
 tb/pgp_ppi_test.vhd
 tb/interleave_test.vhd
+tb/fe_emulate.vhd
