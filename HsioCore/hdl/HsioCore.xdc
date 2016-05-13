@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------
 #-- Title         : Common DTM Core Constraints
-#-- File          : DtmCore.xdc
+#-- File          : HsioCore.xdc
 #-- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 #-- Created       : 11/14/2013
 #-------------------------------------------------------------------------------
@@ -21,18 +21,18 @@
 #-------------------------------------------------------------------------------
 
 # CPU Clock
-set fclk0Pin [get_pins U_DtmCore/U_RceG3Top/U_SimModeDis.U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
+set fclk0Pin [get_pins U_HsioCore/U_RceG3Top/U_SimModeDis.U_RceG3Cpu/U_PS7/inst/PS7_i/FCLKCLK[0]]
 create_clock -name fclk0 -period 10 ${fclk0Pin}
 
 # Arm Core Clocks
 create_generated_clock -name dmaClk -source ${fclk0Pin} \
-    -multiply_by 2 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]
+    -multiply_by 2 [get_pins U_HsioCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT0]
 
 create_generated_clock -name sysClk200 -source ${fclk0Pin} \
-    -multiply_by 2 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]
+    -multiply_by 2 [get_pins U_HsioCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT1]
 
 create_generated_clock -name sysClk125 -source ${fclk0Pin} \
-    -multiply_by 5 -divide_by 4 [get_pins U_DtmCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]
+    -multiply_by 5 -divide_by 4 [get_pins U_HsioCore/U_RceG3Top/U_RceG3Clocks/U_ClockGen/CLKOUT2]
 
 # Arm Core clocks are treated as asynchronous to each other
 set_clock_groups -asynchronous \
@@ -42,14 +42,14 @@ set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks sysClk125] \
 
 # Local 1G Ethernet Clocks
-set eth_txoutclk_pin [get_pins U_DtmCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
+set eth_txoutclk_pin [get_pins U_HsioCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
 create_clock -name eth_txoutclk -period 16 ${eth_txoutclk_pin}
 
 create_generated_clock -name intEthClk0 -source ${eth_txoutclk_pin} \
-    -multiply_by 2 [get_pins U_DtmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]
+    -multiply_by 2 [get_pins U_HsioCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]
 
 create_generated_clock -name intEthClk1 -source ${eth_txoutclk_pin} \
-    -multiply_by 1 [get_pins U_DtmCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]
+    -multiply_by 1 [get_pins U_HsioCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]
 
 create_clock -add -name rgmii_rxc0 -period 8.000 [get_ports ethRxClk[0]]
 create_clock -add -name rgmii_rxc1 -period 8.000 [get_ports ethRxClk[1]]
@@ -69,35 +69,35 @@ set sysClk200Pin [get_pins -of_objects [get_clocks sysClk200]]
 #
 #create_generated_clock -name extEthClk125A -source ${sysClk200Pin} \
 #    -multiply_by 5 -divide_by 8 \
-#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
+#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
 #
 #create_generated_clock -name extEthClk125B -source ${sysClk200Pin} \
 #    -multiply_by 5 -divide_by 8 \
-#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
+#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
 #
 #create_generated_clock -name extEthClk25A -source ${sysClk200Pin} \
 #    -divide_by 8 \
-#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
+#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
 #
 #create_generated_clock -name extEthClk25B -source ${sysClk200Pin} \
 #    -divide_by 8 \
-#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
+#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
 #
 #create_generated_clock -name extEthClk10A -source ${sysClk200Pin} \
 #    -divide_by 20 \
-#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
+#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
 #
 #create_generated_clock -name extEthClk10B -source ${sysClk200Pin} \
 #    -divide_by 20 \
-#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
+#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
 #
 #create_generated_clock -name extEthClk2_5A -source [get_pins -of_objects [get_clocks extEthClk10]] \
 #    -divide_by 4 \
-#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
+#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
 #
 #create_generated_clock -name extEthClk2_5B -source [get_pins -of_objects [get_clocks extEthClk10]] \
 #    -divide_by 4 \
-#    [get_pins U_DtmCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
+#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
 #
 #set_max_delay 10 -datapath_only -from [get_clocks -include_generated_clocks {ethRxClk0}] \
 #    -to [get_clocks -include_generated_clocks {sysClk200}]
@@ -106,7 +106,7 @@ set sysClk200Pin [get_pins -of_objects [get_clocks sysClk200]]
 #    -to [get_clocks -include_generated_clocks {sysClk200}]
 
 # DNA Primitive Clock
-create_clock -period 64.000 -name dnaClk [get_pins  {U_DtmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
+create_clock -period 64.000 -name dnaClk [get_pins  {U_HsioCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
 set_clock_groups -asynchronous \
     -group [get_clocks dnaClk] \
     -group [get_clocks sysClk125] 
