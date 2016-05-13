@@ -3,7 +3,7 @@
 -- File       : DtmCore.vhd
 -- Author     : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created    : 2013-11-14
--- Last update: 2014-01-17
+-- Last update: 2016-05-13
 -------------------------------------------------------------------------------
 -- Description:
 -- Common top level module for DTM
@@ -31,7 +31,7 @@ use work.AxiStreamPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity DtmCore is
+entity HsioCore is
    generic (
       TPD_G          : time           := 1 ns;
       RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C
@@ -94,9 +94,9 @@ entity DtmCore is
       userInterrupt            : in    slv(USER_INT_COUNT_C-1 downto 0)
 
    );
-end DtmCore;
+end HsioCore;
 
-architecture STRUCTURE of DtmCore is
+architecture STRUCTURE of HsioCore is
 
    signal iaxiClk             : sl;
    signal iaxiClkRst          : sl;
@@ -111,32 +111,13 @@ architecture STRUCTURE of DtmCore is
    signal idmaObSlave         : AxiStreamSlaveArray(3 downto 0);
    signal idmaIbMaster        : AxiStreamMasterArray(3 downto 0);
    signal idmaIbSlave         : AxiStreamSlaveArray(3 downto 0);
-   signal coreAxilReadMaster  : AxiLiteReadMasterType;
-   signal coreAxilReadSlave   : AxiLiteReadSlaveType;
-   signal coreAxilWriteMaster : AxiLiteWriteMasterType;
-   signal coreAxilWriteSlave  : AxiLiteWriteSlaveType;
-   signal pcieAxilReadMaster  : AxiLiteReadMasterType;
-   signal pcieAxilReadSlave   : AxiLiteReadSlaveType;
-   signal pcieAxilWriteMaster : AxiLiteWriteMasterType;
-   signal pcieAxilWriteSlave  : AxiLiteWriteSlaveType;
    signal armEthTx            : ArmEthTxArray(1 downto 0);
    signal armEthRx            : ArmEthRxArray(1 downto 0);
    signal armEthMode          : slv(31 downto 0);
-   signal iethRxP             : sl;
-   signal iethRxM             : sl;
-   signal iethTxP             : sl;
-   signal iethTxM             : sl;
-   signal ipciRxP             : sl;
-   signal ipciRxM             : sl;
-   signal ipciTxP             : sl;
-   signal ipciTxM             : sl;
 
    attribute KEEP_HIERARCHY : string;
    attribute KEEP_HIERARCHY of
-      U_RceG3Top,
-      U_AxiCrossbar,
-      U_ZynqPcieMaster,
-      U_ZynqEthernet : label is "TRUE";   
+      U_RceG3Top : label is "TRUE";   
    
 begin
 
@@ -181,10 +162,8 @@ begin
          extAxilReadSlave    => extAxilReadSlave ,
          extAxilWriteMaster  => extAxilWriteMaster,
          extAxilWriteSlave   => extAxilWriteSlave ,
-         coreAxilReadMaster  => coreAxilReadMaster,
-         coreAxilReadSlave   => coreAxilReadSlave,
-         coreAxilWriteMaster => coreAxilWriteMaster,
-         coreAxilWriteSlave  => coreAxilWriteSlave,
+         coreAxilReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
+         coreAxilWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
          dmaClk              => idmaClk,
          dmaClkRst           => idmaClkRst,
          dmaState            => idmaState,
@@ -203,61 +182,6 @@ begin
    -- Hard code to 250Mhz
    clkSelA <= '1';
    clkSelB <= '1';
-
-
-   -------------------------------------
-   -- AXI Lite Crossbar
-   -- Base: 0xB0000000 - 0xBFFFFFFF
-   -------------------------------------
-   U_AxiCrossbar : entity work.AxiLiteCrossbar 
-      generic map (
-         TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => 1,
-         DEC_ERROR_RESP_G   => AXI_RESP_OK_C,
-         MASTERS_CONFIG_G   => (
-
-            -- Channel 1 = 0xBC000000 - 0xBC00FFFF : PCI Express Registers
-            0 => ( baseAddr     => x"BC000000",
-                   addrBits     => 16,
-                   connectivity => x"FFFF")
-         )
-      ) port map (
-         axiClk              => iaxiClk,
-         axiClkRst           => iaxiClkRst,
-         sAxiWriteMasters(0) => coreAxilWriteMaster,
-         sAxiWriteSlaves(0)  => coreAxilWriteSlave,
-         sAxiReadMasters(0)  => coreAxilReadMaster,
-         sAxiReadSlaves(0)   => coreAxilReadSlave,
-         mAxiWriteMasters(0) => pcieAxilWriteMaster,
-         mAxiWriteSlaves(0)  => pcieAxilWriteSlave,
-         mAxiReadMasters(0)  => pcieAxilReadMaster,
-         mAxiReadSlaves(0)   => pcieAxilReadSlave
-      );
-
-
-   --------------------------------------------------
-   -- PCI Express : 0xBC00_0000 - 0xBC00_FFFF
-   --------------------------------------------------
-   U_ZynqPcieMaster : entity work.ZynqPcieMaster 
-      generic map (
-         HSIO_MODE_G => true,
-      ) port map (
-         axiClk          => iaxiClk,
-         axiClkRst       => iaxiClkRst,
-         axiReadMaster   => pcieAxilReadMaster,
-         axiReadSlave    => pcieAxilReadSlave,
-         axiWriteMaster  => pcieAxilWriteMaster,
-         axiWriteSlave   => pcieAxilWriteSlave,
-         pciRefClkP      => pciRefClkP,
-         pciRefClkM      => pciRefClkM,
-         pcieResetL      => pciResetL,
-         pcieRxP         => '0',
-         pcieRxM         => '0',
-         pcieTxP         => ipciTxP,
-         pcieTxM         => ipciTxM
-      );
-
 
    --------------------------------------------------
    -- Ethernet

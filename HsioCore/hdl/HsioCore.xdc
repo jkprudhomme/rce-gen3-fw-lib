@@ -41,69 +41,10 @@ set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks sysClk200] \
     -group [get_clocks -include_generated_clocks sysClk125] \
 
-# Local 1G Ethernet Clocks
-set eth_txoutclk_pin [get_pins U_HsioCore/U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
-create_clock -name eth_txoutclk -period 16 ${eth_txoutclk_pin}
-
-create_generated_clock -name intEthClk0 -source ${eth_txoutclk_pin} \
-    -multiply_by 2 [get_pins U_HsioCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT0]
-
-create_generated_clock -name intEthClk1 -source ${eth_txoutclk_pin} \
-    -multiply_by 1 [get_pins U_HsioCore/U_ZynqEthernet/mmcm_adv_inst/CLKOUT1]
 
 create_clock -add -name rgmii_rxc0 -period 8.000 [get_ports ethRxClk[0]]
 create_clock -add -name rgmii_rxc1 -period 8.000 [get_ports ethRxClk[1]]
 
-
-set_clock_groups -asynchronous \
-    -group [get_clocks -include_generated_clocks fclk0] \
-    -group [get_clocks -include_generated_clocks eth_txoutclk]
-
-set sysClk200Pin [get_pins -of_objects [get_clocks sysClk200]]
-
-# External 1G Ethernet Clocks
-#create_clock -name ethRxClk0 -period 8 [get_ports ethRxClk[0]]
-#create_clock -name ethRxClk1 -period 8 [get_ports ethRxClk[1]]
-#
-#set sysClk200Pin [get_pins -of_objects [get_clocks sysClk200]]
-#
-#create_generated_clock -name extEthClk125A -source ${sysClk200Pin} \
-#    -multiply_by 5 -divide_by 8 \
-#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
-#
-#create_generated_clock -name extEthClk125B -source ${sysClk200Pin} \
-#    -multiply_by 5 -divide_by 8 \
-#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT0]
-#
-#create_generated_clock -name extEthClk25A -source ${sysClk200Pin} \
-#    -divide_by 8 \
-#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
-#
-#create_generated_clock -name extEthClk25B -source ${sysClk200Pin} \
-#    -divide_by 8 \
-#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT1]
-#
-#create_generated_clock -name extEthClk10A -source ${sysClk200Pin} \
-#    -divide_by 20 \
-#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
-#
-#create_generated_clock -name extEthClk10B -source ${sysClk200Pin} \
-#    -divide_by 20 \
-#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/mmcm_adv_inst/CLKOUT2]
-#
-#create_generated_clock -name extEthClk2_5A -source [get_pins -of_objects [get_clocks extEthClk10]] \
-#    -divide_by 4 \
-#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[0].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
-#
-#create_generated_clock -name extEthClk2_5B -source [get_pins -of_objects [get_clocks extEthClk10]] \
-#    -divide_by 4 \
-#    [get_pins U_HsioCore/U_HsioEnGen.U_GmiiToRgmii/U_CoreGen[1].GmiiToRgmiiCore_Inst/U0/i_GmiiToRgmiiCore_clocking/clk10_div_buf/O]
-#
-#set_max_delay 10 -datapath_only -from [get_clocks -include_generated_clocks {ethRxClk0}] \
-#    -to [get_clocks -include_generated_clocks {sysClk200}]
-#
-#set_max_delay 10 -datapath_only -from [get_clocks -include_generated_clocks {ethRxClk1}] \
-#    -to [get_clocks -include_generated_clocks {sysClk200}]
 
 # DNA Primitive Clock
 create_clock -period 64.000 -name dnaClk [get_pins  {U_HsioCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
@@ -111,22 +52,14 @@ set_clock_groups -asynchronous \
     -group [get_clocks dnaClk] \
     -group [get_clocks sysClk125] 
 
-# PCI-Express Timing
-set_false_path -through [get_pins  -hier -filter {name =~ *pcie_block_i/PLPHYLNKUPN*}]
-set_false_path -through [get_pins  -hier -filter {name =~ *pcie_block_i/PLRECEIVEDHOTRST*}]
-set_false_path -through [get_nets  -hier -filter {name =~ *pipe_wrapper_i/user_resetdone*}]
-set_false_path -through [get_nets  -hier -filter {name =~ *pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/*}]
-set_false_path -through [get_cells -hier -filter {name =~ *pipe_wrapper_i/pipe_reset.pipe_reset_i/cpllreset_reg*}]
-set_false_path -to      [get_pins  -hier -filter {name =~ *pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/S*}]
-set_false_path -through [get_nets  -hier -filter {name =~ *pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_sel*}]
 
 # GMII To RGMII 
-# Set the select line for the clock muxes so that the timing analysis is done on the fastest clock
-set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE0}]
-set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S0}]
 
-set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/CE1}]
-set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk_25m_2_5m/S1}]
+# Set the select line for the clock muxes so that the timing analysis is done on the fastest clock
+set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk/CE0}]
+set_case_analysis 0 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk/S0}]
+set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk/CE1}]
+set_case_analysis 1 [get_pins -hier -filter {name =~ *i_bufgmux_gmii_clk/S1}]
 
 # GMII To RGMII 
 # False path constraints to async inputs coming directly to synchronizer
@@ -134,29 +67,20 @@ set_false_path -to [get_pins -of [get_cells -hier -filter { name =~ *i_MANAGEMEN
 set_false_path -to [get_pins -hier -filter {name =~ *reset_sync*/PRE }]
 set_false_path -to [get_pins -hier -filter {name =~ *idelayctrl_reset_gen/*reset_sync*/PRE }]
 
-# GMII To RGMII 
 # False path constraints from Control Register outputs
 set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/DUPLEX_MODE_REG*/C }]
 set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/SPEED_SELECTION_REG*/C }]
 
 # GMII-To-RGMII IODELAY Groups
-set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
-set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[1]*GmiiToRgmiiCore_core/*delay_rgmii_rx_ctl}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[1]*GmiiToRgmiiCore_core/*delay_rgmii_rxd*}]
-set_property ODELAY_VALUE  "26"  [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*oddr_rgmii_txc              }]
-set_property ODELAY_VALUE  "0"   [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*oddr_rgmii_tx_ctl           }]
-set_property ODELAY_VALUE  "0"   [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_core/*oddr_rgmii_txd*             }]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*GmiiToRgmiiCore_core/*oddr_rgmii_txc }]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*GmiiToRgmiiCore_core/*oddr_rgmii_tx_ctl }]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*GmiiToRgmiiCore_core/*oddr_rgmii_txd* }]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[1]*GmiiToRgmiiCore_core/*oddr_rgmii_txc }]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[1]*GmiiToRgmiiCore_core/*oddr_rgmii_tx_ctl }]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[1]*GmiiToRgmiiCore_core/*oddr_rgmii_txd* }]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[0]*i_GmiiToRgmiiCore_idelayctrl}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *U_CoreGen[1]*i_GmiiToRgmiiCore_idelayctrl}]
+set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rx_ctl}]
+set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rx_ctl}]
+set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rxd*}]
+set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rxd*}]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rx_ctl}]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rxd*}]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *i_GmiiToRgmiiCore_idelayctrl}]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rx_ctl}]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rxd*}]
 
 # Identify RGMII Rx Pads only.  
 # Receiver clock period constraints: please do not relax
@@ -185,7 +109,7 @@ set_multicycle_path -from [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -to $rx_clk0
 
 # Identify RGMII Tx Pads only.  
 set ip_gtx_clk     [get_clocks -include_generated_clocks -of_objects [get_pins -of [get_cells -hier -filter {name =~ *i_bufgmux_gmii_clk}] -filter {name =~ *O}]]
-create_generated_clock -add -name rgmii_tx_clk -divide_by 1 -source [get_pins -of [get_cells -hier -filter {name =~ *rgmii_txc_out}] -filter {name =~ *C}] -master_clock [get_clocks gmii_clk_125m_*] [get_ports ethTxClk[0]]
+create_generated_clock -add -name rgmii_tx_clk -divide_by 1 -source [get_pins -of [get_cells -hier -filter {name =~ *GmiiToRgmiiCore*rgmii_txc_out}] -filter {name =~ *C}] -master_clock [get_clocks gmii_clk_125m_*] [get_ports ethTxClk[0]]
 
 
 set_false_path -rise_from $ip_gtx_clk -fall_to [get_clocks rgmii_tx_clk] -setup
@@ -222,7 +146,7 @@ set_multicycle_path -from [get_clocks GmiiToRgmiiCore_rgmii_rx_clk2] -to $rx_clk
 set_multicycle_path -from [get_clocks GmiiToRgmiiCore_rgmii_rx_clk2] -to $rx_clk1 -hold -1
 
 # Identify RGMII Tx Pads only.  
-create_generated_clock -add -name rgmii_tx_clk2 -divide_by 1 -source [get_pins -of [get_cells -hier -filter {name =~ *rgmii_txc_out}] -filter {name =~ *C}] -master_clock [get_clocks gmii_clk_125m_*] [get_ports ethTxClk[1]]
+create_generated_clock -add -name rgmii_tx_clk2 -divide_by 1 -source [get_pins -of [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave*rgmii_txc_out}] -filter {name =~ *C}] -master_clock [get_clocks gmii_clk_125m_*] [get_ports ethTxClk[1]]
 
 
 set_false_path -rise_from $ip_gtx_clk -fall_to [get_clocks rgmii_tx_clk2] -setup
@@ -250,31 +174,16 @@ set_property PACKAGE_PIN T15  [get_ports led[1]]
 set_property PACKAGE_PIN AB13 [get_ports i2cScl]
 set_property PACKAGE_PIN AA10 [get_ports i2cSda]
 
-set_property PACKAGE_PIN U6  [get_ports pciRefClkP]
-set_property PACKAGE_PIN U5  [get_ports pciRefClkM]
-#set_property PACKAGE_PIN T4  [get_ports pciRxP]
-#set_property PACKAGE_PIN T3  [get_ports pciRxM]
-#set_property PACKAGE_PIN U2  [get_ports pciTxP]
-#set_property PACKAGE_PIN U1  [get_ports pciTxM]
-set_property PACKAGE_PIN T14 [get_ports pciResetL]
-
-set_property PACKAGE_PIN AA6 [get_ports ethRxP]
-set_property PACKAGE_PIN AA5 [get_ports ethRxM]
-set_property PACKAGE_PIN AB4 [get_ports ethTxP]
-set_property PACKAGE_PIN AB3 [get_ports ethTxM]
-#set_property PACKAGE_PIN V4 [get_ports ethRxP]
-#set_property PACKAGE_PIN V3 [get_ports ethRxM]
-#set_property PACKAGE_PIN W2 [get_ports ethTxP]
-#set_property PACKAGE_PIN W1 [get_ports ethTxM]
-
-set_property PACKAGE_PIN W2  [get_ports dtmToRtmHsP]
-set_property PACKAGE_PIN W1  [get_ports dtmToRtmHsM]
-set_property PACKAGE_PIN V4  [get_ports rtmToDtmHsP]
-set_property PACKAGE_PIN V3  [get_ports rtmToDtmHsM]
-#set_property PACKAGE_PIN AB4 [get_ports dtmToRtmHsP]
-#set_property PACKAGE_PIN AB3 [get_ports dtmToRtmHsM]
-#set_property PACKAGE_PIN AA6 [get_ports rtmToDtmHsP]
-#set_property PACKAGE_PIN AA5 [get_ports rtmToDtmHsM]
+#SFP
+#set_property PACKAGE_PIN W2 [get_ports dtmToRtmHsP]
+#set_property PACKAGE_PIN W1 [get_ports dtmToRtmHsM]
+#set_property PACKAGE_PIN V4 [get_ports rtmToDtmHsP]
+#set_property PACKAGE_PIN V3 [get_ports rtmToDtmHsM]
+#HSIO traces
+set_property PACKAGE_PIN AB4 [get_ports dtmToRtmHsP]
+set_property PACKAGE_PIN AB3 [get_ports dtmToRtmHsM]
+set_property PACKAGE_PIN AA6 [get_ports rtmToDtmHsP]
+set_property PACKAGE_PIN AA5 [get_ports rtmToDtmHsM]
 
 set_property PACKAGE_PIN W6  [get_ports locRefClkP]
 set_property PACKAGE_PIN W5  [get_ports locRefClkM]
@@ -332,16 +241,6 @@ set_property PACKAGE_PIN AB22 [get_ports odpmFbM[0]]
 set_property PACKAGE_PIN W18 [get_ports clkSelA]
 set_property PACKAGE_PIN V17 [get_ports clkSelB]
 
-set_property PACKAGE_PIN N17  [get_ports plSpareP[4]]
-set_property PACKAGE_PIN N18  [get_ports plSpareM[4]]
-set_property PACKAGE_PIN N20  [get_ports plSpareP[3]]
-set_property PACKAGE_PIN P20  [get_ports plSpareM[3]]
-set_property PACKAGE_PIN AA17 [get_ports plSpareP[2]]
-set_property PACKAGE_PIN AB17 [get_ports plSpareM[2]]
-set_property PACKAGE_PIN AA15 [get_ports plSpareP[1]]
-set_property PACKAGE_PIN AB15 [get_ports plSpareM[1]]
-set_property PACKAGE_PIN V15  [get_ports plSpareP[0]]
-set_property PACKAGE_PIN W15  [get_ports plSpareM[0]]
 
 set_property PACKAGE_PIN AA12 [get_ports bpClkIn[5]]
 set_property PACKAGE_PIN Y16  [get_ports bpClkIn[4]]
@@ -401,7 +300,6 @@ set_property PACKAGE_PIN N5 [get_ports ethResetL[0]]
 set_property IOSTANDARD LVCMOS25 [get_ports i2cScl]
 set_property IOSTANDARD LVCMOS25 [get_ports i2cSda]
 
-set_property IOSTANDARD LVCMOS25 [get_ports pciResetL]
 
 set_property IOSTANDARD LVCMOS25 [get_ports clkSelA]
 set_property IOSTANDARD LVCMOS25 [get_ports clkSelB]
@@ -444,6 +342,4 @@ set_property IOSTANDARD LVCMOS25        [get_ports led]
 #set_property IOSTANDARD LVDS_25 [get_ports dtmToRtmLsP]
 #set_property IOSTANDARD LVDS_25 [get_ports dtmToRtmLsM]
 
-#set_property IOSTANDARD LVDS_25 [get_ports plSpareP]
-#set_property IOSTANDARD LVDS_25 [get_ports plSpareM]
 
