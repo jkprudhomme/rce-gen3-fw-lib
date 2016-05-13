@@ -108,7 +108,7 @@ architecture mapping of GmiiToRgmiiDual is
       duplexStatus : slv(1 downto 0);
    signal speedMode,
       clockSpeed : Slv2Array(1 downto 0);
-   
+   signal ref_clk, gmii_clk_125m, gmii_clk_25m, gmii_clk_2_5m: sl;   
    attribute mark_debug : string;
    attribute mark_debug of ethMioI,
       ethMioO,
@@ -120,61 +120,112 @@ architecture mapping of GmiiToRgmiiDual is
       
 begin
 
-   U_CoreGen: for i in 0 to 0 generate
 
       GmiiToRgmiiCore_Inst : GmiiToRgmiiCore
          port map(
             --Clocks and Resets
             clkin             => sysClk200,
-            ref_clk_out       => open,
-            gmii_clk_125m_out => open,
-            gmii_clk_25m_out  => open,
-            gmii_clk_2_5m_out => open,
+            ref_clk_out       => ref_clk,
+            gmii_clk_125m_out => gmii_clk_125m,
+            gmii_clk_25m_out  => gmii_clk_25m,
+            gmii_clk_2_5m_out => gmii_clk_2_5m,
             tx_reset          => sysClk200Rst,
             rx_reset          => sysClk200Rst,
             -- RGMII_TX Signals
-            rgmii_txc         => ethTxClk(i),
-            rgmii_tx_ctl      => ethTxCtrl(i),
-            rgmii_txd(0)      => ethTxDataA(i),
-            rgmii_txd(1)      => ethTxDataB(i),
-            rgmii_txd(2)      => ethTxDataC(i),
-            rgmii_txd(3)      => ethTxDataD(i),
+            rgmii_txc         => ethTxClk(0),
+            rgmii_tx_ctl      => ethTxCtrl(0),
+            rgmii_txd(0)      => ethTxDataA(0),
+            rgmii_txd(1)      => ethTxDataB(0),
+            rgmii_txd(2)      => ethTxDataC(0),
+            rgmii_txd(3)      => ethTxDataD(0),
             -- RGMII_TX Signals
-            rgmii_rxc         => ethRxClk(i),
-            rgmii_rx_ctl      => ethRxCtrl(i),
-            rgmii_rxd(0)      => ethRxDataA(i),
-            rgmii_rxd(1)      => ethRxDataB(i),
-            rgmii_rxd(2)      => ethRxDataC(i),
-            rgmii_rxd(3)      => ethRxDataD(i),
+            rgmii_rxc         => ethRxClk(0),
+            rgmii_rx_ctl      => ethRxCtrl(0),
+            rgmii_rxd(0)      => ethRxDataA(0),
+            rgmii_rxd(1)      => ethRxDataB(0),
+            rgmii_rxd(2)      => ethRxDataC(0),
+            rgmii_rxd(3)      => ethRxDataD(0),
             -- RGMII_MIO Signals
-            mdio_phy_mdc      => ethMdc(i),
-            mdio_phy_i        => ethMioI(i),
-            mdio_phy_o        => ethMioO(i),
-            mdio_phy_t        => ethMioT(i),
+            mdio_phy_mdc      => ethMdc(0),
+            mdio_phy_i        => ethMioI(0),
+            mdio_phy_o        => ethMioO(0),
+            mdio_phy_t        => ethMioT(0),
             -- GMII_TX Signals
-            gmii_tx_clk       => armEthRx(i).enetGmiiTxClk,
-            gmii_tx_en        => armEthTx(i).enetGmiiTxEn,
-            gmii_tx_er        => armEthTx(i).enetGmiiTxEr,
-            gmii_txd          => armEthTx(i).enetGmiiTxD,
+            gmii_tx_clk       => armEthRx(0).enetGmiiTxClk,
+            gmii_tx_en        => armEthTx(0).enetGmiiTxEn,
+            gmii_tx_er        => armEthTx(0).enetGmiiTxEr,
+            gmii_txd          => armEthTx(0).enetGmiiTxD,
             -- GMII_RX Signals
-            gmii_rx_clk       => armEthRx(i).enetGmiiRxClk,
-            gmii_rx_dv        => armEthRx(i).enetGmiiRxDv,
-            gmii_rx_er        => armEthRx(i).enetGmiiRxEr,
-            gmii_rxd          => armEthRx(i).enetGmiiRxd,
+            gmii_rx_clk       => armEthRx(0).enetGmiiRxClk,
+            gmii_rx_dv        => armEthRx(0).enetGmiiRxDv,
+            gmii_rx_er        => armEthRx(0).enetGmiiRxEr,
+            gmii_rxd          => armEthRx(0).enetGmiiRxd,
             -- GMII_MIO Signals
-            mdio_gem_mdc      => armEthTx(i).enetMdioMdc,
-            mdio_gem_i        => armEthRx(i).enetMdioI,
-            mdio_gem_o        => armEthTx(i).enetMdioO,
-            mdio_gem_t        => armEthTx(i).enetMdioT,
+            mdio_gem_mdc      => armEthTx(0).enetMdioMdc,
+            mdio_gem_i        => armEthRx(0).enetMdioI,
+            mdio_gem_o        => armEthTx(0).enetMdioO,
+            mdio_gem_t        => armEthTx(0).enetMdioT,
             -- GMII_MISC Signals
-            gmii_crs          => armEthRx(i).enetGmiiCrs,
-            gmii_col          => armEthRx(i).enetGmiiCol,
+            gmii_crs          => armEthRx(0).enetGmiiCrs,
+            gmii_col          => armEthRx(0).enetGmiiCol,
             -- Status Signals         
-            link_status       => linkStatus(i),
-            clock_speed       => clockSpeed(i),
-            duplex_status     => duplexStatus(i),
-            speed_mode        => speedMode(i));
+            link_status       => linkStatus(0),
+            clock_speed       => clockSpeed(0),
+            duplex_status     => duplexStatus(0),
+            speed_mode        => speedMode(0));
 
+      GmiiToRgmiiSlave_Inst : entity work.GmiiToRgmiiSlave
+        PORT MAP (
+            tx_reset => sysClk200Rst,
+            rx_reset => sysClk200Rst,
+            ref_clk_in => ref_clk,
+            gmii_clk_125m_in => gmii_clk_125m,
+            gmii_clk_25m_in => gmii_clk_25m,
+            gmii_clk_2_5m_in => gmii_clk_2_5m,
+            -- RGMII_TX Signals
+            rgmii_txc         => ethTxClk(1),
+            rgmii_tx_ctl      => ethTxCtrl(1),
+            rgmii_txd(0)      => ethTxDataA(1),
+            rgmii_txd(1)      => ethTxDataB(1),
+            rgmii_txd(2)      => ethTxDataC(1),
+            rgmii_txd(3)      => ethTxDataD(1),
+            -- RGMII_TX Signals
+            rgmii_rxc         => ethRxClk(1),
+            rgmii_rx_ctl      => ethRxCtrl(1),
+            rgmii_rxd(0)      => ethRxDataA(1),
+            rgmii_rxd(1)      => ethRxDataB(1),
+            rgmii_rxd(2)      => ethRxDataC(1),
+            rgmii_rxd(3)      => ethRxDataD(1),
+            -- RGMII_MIO Signals
+            mdio_phy_mdc      => ethMdc(1),
+            mdio_phy_i        => ethMioI(1),
+            mdio_phy_o        => ethMioO(1),
+            mdio_phy_t        => ethMioT(1),
+            -- GMII_TX Signals
+            gmii_tx_clk       => armEthRx(1).enetGmiiTxClk,
+            gmii_tx_en        => armEthTx(1).enetGmiiTxEn,
+            gmii_tx_er        => armEthTx(1).enetGmiiTxEr,
+            gmii_txd          => armEthTx(1).enetGmiiTxD,
+            -- GMII_RX Signals
+            gmii_rx_clk       => armEthRx(1).enetGmiiRxClk,
+            gmii_rx_dv        => armEthRx(1).enetGmiiRxDv,
+            gmii_rx_er        => armEthRx(1).enetGmiiRxEr,
+            gmii_rxd          => armEthRx(1).enetGmiiRxd,
+            -- GMII_MIO Signals
+            mdio_gem_mdc      => armEthTx(1).enetMdioMdc,
+            mdio_gem_i        => armEthRx(1).enetMdioI,
+            mdio_gem_o        => armEthTx(1).enetMdioO,
+            mdio_gem_t        => armEthTx(1).enetMdioT,
+            -- GMII_MISC Signals
+            gmii_crs          => armEthRx(1).enetGmiiCrs,
+            gmii_col          => armEthRx(1).enetGmiiCol,
+            -- Status Signals         
+            link_status       => linkStatus(1),
+            clock_speed       => clockSpeed(1),
+            duplex_status     => duplexStatus(1),
+            speed_mode        => speedMode(1));
+
+   U_CoreGen: for i in 0 to 1 generate
       IOBUF_inst : IOBUF
          port map (
             O  => ethMioI(i),   -- Buffer output
@@ -189,15 +240,21 @@ begin
 
    end generate;
 
-   armEthRx(1)     <= ARM_ETH_RX_INIT_C;
-   ethTxCtrl(1)    <= '0';
-   ethTxClk(1)     <= '0';
-   ethTxDataA(1)   <= '0';
-   ethTxDataB(1)   <= '0';
-   ethTxDataC(1)   <= '0';
-   ethTxDataD(1)   <= '0';
-   ethMdc(1)       <= '0';
-   ethResetL(1)    <= '1';
+   --armEthRx(1)     <= ARM_ETH_RX_INIT_C;
+   --ethTxCtrl(1)    <= '0';
+   --ethTxClk(1)     <= '0';
+   --ethTxDataA(1)   <= '0';
+   --ethTxDataB(1)   <= '0';
+   --ethTxDataC(1)   <= '0';
+   --ethTxDataD(1)   <= '0';
+   --ethMdc(1)       <= '0';
+   ----ethResetL(1)    <= '1';
+   --PwrUpRst_Inst : entity work.PwrUpRst
+   --   generic map(
+   --      OUT_POLARITY_G => '0')
+   --   port map (
+   --      clk    => sysClk200,
+   --      rstOut => ethResetL(1));
 
 end mapping;
 
