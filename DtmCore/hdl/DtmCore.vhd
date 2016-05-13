@@ -35,8 +35,7 @@ entity DtmCore is
    generic (
       TPD_G          : time           := 1 ns;
       RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C;
-      OLD_BSI_MODE_G : boolean        := false;
-      HSIO_MODE_G    : boolean        := false
+      OLD_BSI_MODE_G : boolean        := false
    );
    port (
 
@@ -44,7 +43,7 @@ entity DtmCore is
       i2cSda                  : inout sl;
       i2cScl                  : inout sl;
 
-      -- PCI Exress, Unused when HSIO_MODE_G = true
+      -- PCI Exress
       pciRefClkP              : in    sl;
       pciRefClkM              : in    sl;
       pciRxP                  : in    sl;
@@ -53,7 +52,7 @@ entity DtmCore is
       pciTxM                  : out   sl;
       pciResetL               : out   sl;
 
-      -- COB Ethernet, Unused when HSIO_MODE_G = true
+      -- COB Ethernet
       ethRxP                  : in    sl;
       ethRxM                  : in    sl;
       ethTxP                  : out   sl;
@@ -139,14 +138,6 @@ architecture STRUCTURE of DtmCore is
    signal armEthTx            : ArmEthTxArray(1 downto 0);
    signal armEthRx            : ArmEthRxArray(1 downto 0);
    signal armEthMode          : slv(31 downto 0);
-   signal iethRxP             : sl;
-   signal iethRxM             : sl;
-   signal iethTxP             : sl;
-   signal iethTxM             : sl;
-   signal ipciRxP             : sl;
-   signal ipciRxM             : sl;
-   signal ipciTxP             : sl;
-   signal ipciTxM             : sl;
 
    attribute KEEP_HIERARCHY : string;
    attribute KEEP_HIERARCHY of
@@ -258,7 +249,7 @@ begin
    --------------------------------------------------
    U_ZynqPcieMaster : entity work.ZynqPcieMaster 
       generic map (
-         HSIO_MODE_G => HSIO_MODE_G
+         HSIO_MODE_G => false
       ) port map (
          axiClk          => iaxiClk,
          axiClkRst       => iaxiClkRst,
@@ -269,42 +260,16 @@ begin
          pciRefClkP      => pciRefClkP,
          pciRefClkM      => pciRefClkM,
          pcieResetL      => pciResetL,
-         pcieRxP         => ipciRxP,
-         pcieRxM         => ipciRxM,
-         pcieTxP         => ipciTxP,
-         pcieTxM         => ipciTxM
+         pcieRxP         => pciRxP,
+         pcieRxM         => pciRxM,
+         pcieTxP         => pciTxP,
+         pcieTxM         => pciTxM
       );
-
-   U_HsioPciDisGen : if HSIO_MODE_G = false generate
-      ipciRxP <= pciRxP;
-      ipciRxM <= pciRxM;
-      pciTxP  <= ipciTxP;
-      pciTxM  <= ipciTxM;
-   end generate;
-
-   U_HsioPciEnGen : if HSIO_MODE_G = true generate
-      ipciRxP <= '0';
-      ipciRxM <= '0';
-   end generate;
 
 
    --------------------------------------------------
    -- Ethernet
    --------------------------------------------------
-   U_HsioEthDisGen : if HSIO_MODE_G = false generate
-      iethRxP  <= ethRxP;
-      iethRxM  <= ethRxM;
-      ethTxP   <= iethTxP;
-      ethTxM   <= iethTxM;
-   end generate;
-
-   U_HsioEthEnGen : if HSIO_MODE_G = true generate
-      iethRxP <= pciRxP;
-      iethRxM <= pciRxM;
-      pciTxP  <= iethTxP;
-      pciTxM  <= iethTxM;
-   end generate;
-
    U_ZynqEthernet : entity work.ZynqEthernet 
       port map (
          sysClk125          => isysClk125,
@@ -312,49 +277,18 @@ begin
          sysClk200Rst       => isysClk200Rst,
          armEthTx           => armEthTx(0),
          armEthRx           => armEthRx(0),
-         ethRxP             => iethRxP,
-         ethRxM             => iethRxM,
-         ethTxP             => iethTxP,
-         ethTxM             => iethTxM
+         ethRxP             => ethRxP,
+         ethRxM             => ethRxM,
+         ethTxP             => ethTxP,
+         ethTxM             => ethTxM
       );
 
-      armEthRx(1)     <= ARM_ETH_RX_INIT_C;
---   end generate;
-
---   U_HsioEnGen : if HSIO_MODE_G = true generate
---      ethTxP <= '1';
---      ethTxM <= '0';
---
---      U_GmiiToRgmii : entity work.GmiiToRgmiiDual 
---         port map (
---            sysClk200     => isysClk200,
---            sysClk200Rst  => isysClk200Rst,
---            armEthTx      => armEthTx,
---            armEthRx      => armEthRx,
---            ethRxCtrl     => ethRxCtrl,
---            ethRxClk      => ethRxClk,
---            ethRxDataA    => ethRxDataA,
---            ethRxDataB    => ethRxDataB,
---            ethRxDataC    => ethRxDataC,
---            ethRxDataD    => ethRxDataD,
---            ethTxCtrl     => ethTxCtrl,
---            ethTxClk      => ethTxClk,
---            ethTxDataA    => ethTxDataA,
---            ethTxDataB    => ethTxDataB,
---            ethTxDataC    => ethTxDataC,
---            ethTxDataD    => ethTxDataD,
---            ethMdc        => ethMdc,
---            ethMio        => ethMio,
---            ethResetL     => ethResetL
---         );
---   end generate;
-
+   armEthRx(1)     <= ARM_ETH_RX_INIT_C;
    armEthMode      <= x"00000001"; -- 1 Gig on lane 0
    idmaClk(3)      <= isysClk125;
    idmaClkRst(3)   <= isysClk125Rst;
    idmaObSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;
    idmaIbMaster(3) <= AXI_STREAM_MASTER_INIT_C;
-
 
    --------------------------------------------------
    -- Unused
