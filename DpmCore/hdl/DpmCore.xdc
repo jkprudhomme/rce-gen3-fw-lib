@@ -38,7 +38,6 @@ set_clock_groups -asynchronous \
 
 # Local 1G Ethernet Clocks
 set eth_txoutclk_pin [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/U0/gtwizard_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
-#set eth_txoutclk_pin [get_pins U_DpmCore/U_Eth1gGen.U_ZynqEthernet/core_wrapper/transceiver_inst/gtwizard_inst/GTWIZARD_i/gt0_GTWIZARD_i/gtxe2_i/TXOUTCLK]
 create_clock -name eth_txoutclk -period 16 $eth_txoutclk_pin
 
 create_generated_clock -name intEthClk0 \
@@ -51,6 +50,10 @@ create_generated_clock -name intEthClk1 \
 
 # Local 10G Ethernet Clock
 create_clock -name ethRefClk -period 6.4 [get_ports ethRefClkP]
+
+set_clock_groups -asynchronous \
+    -group [get_clocks -include_generated_clocks fclk0] \
+    -group [get_clocks -include_generated_clocks ethRefClk]
 
 create_clock -name eth10GClk -period 6.4 \
    [get_pins U_DpmCore/U_Eth10gGen.U_ZynqEthernet10G/U_ZynqXaui/U0/xaui_block_i/gt_wrapper_i/gt0_zynq_10g_xaui_gt_wrapper_i/gtxe2_i/TXOUTCLK]
@@ -71,14 +74,6 @@ set_clock_groups -asynchronous \
 set_clock_groups -asynchronous \
     -group [get_clocks dnaClk] \
     -group [get_clocks sysClk125]    
-
-# set_clock_groups -asynchronous -group ${sysClk125Group} -group [get_clocks {eth10GClk}]
-# set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk0Group}
-# set_clock_groups -asynchronous -group ${sysClk125Group} -group ${intEthClk1Group}
-
-# set_clock_groups -asynchronous -group ${sysClk200Group} -group [get_clocks {eth10GClk}]
-# set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk0Group}
-# set_clock_groups -asynchronous -group ${sysClk200Group} -group ${intEthClk1Group}
 
 # StdLib
 set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
