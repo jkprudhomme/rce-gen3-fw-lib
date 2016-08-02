@@ -72,15 +72,17 @@ set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/DUPLEX_MODE_
 set_false_path -from [get_pins -hier -filter {name =~ *i_MANAGEMENT/SPEED_SELECTION_REG*/C }]
 
 # GMII-To-RGMII IODELAY Groups
-set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rx_ctl}]
-set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rx_ctl}]
-set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rxd*}]
-set_property IDELAY_VALUE  "16"               [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rxd*}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rx_ctl}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rxd*}]
+set_property IDELAY_VALUE  "16"   [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rx_ctl          }]
+set_property IDELAY_VALUE  "16"   [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rxd*            }]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rx_ctl          }]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiCore_Inst/*delay_rgmii_rxd*            }]
 set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *i_GmiiToRgmiiCore_idelayctrl}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rx_ctl}]
-set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rxd*}]
+
+set_property IDELAY_VALUE  "16"   [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rx_ctl          }]
+set_property IDELAY_VALUE  "16"   [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rxd*            }]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rx_ctl          }]
+set_property IODELAY_GROUP "GmiiToRgmiiGrpA" [get_cells -hier -filter {name =~ *GmiiToRgmiiSlave_Inst/*delay_rgmii_rxd*            }]
+
 
 # Identify RGMII Rx Pads only.  
 # Receiver clock period constraints: please do not relax
@@ -94,10 +96,10 @@ create_clock -name GmiiToRgmiiCore_rgmii_rx_clk -period 8
 # This prevents setup/hold analysis being performed on false inputs,
 # eg, the configuration_vector inputs.
 
-set_input_delay -clock [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -max -1.7 [get_ports {ethRxDataA[0] ethRxDataB[0] ethRxDataC[0] ethRxDataD[0] ethRxCtrl[0]}]
-set_input_delay -clock [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -min -2.5 [get_ports {ethRxDataA[0] ethRxDataB[0] ethRxDataC[0] ethRxDataD[0] ethRxCtrl[0]}]
-set_input_delay -clock [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -clock_fall -max -1.7 -add_delay [get_ports {ethRxDataA[0] ethRxDataB[0] ethRxDataC[0] ethRxDataD[0] ethRxCtrl[0]}]
-set_input_delay -clock [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -clock_fall -min -2.5 -add_delay [get_ports {ethRxDataA[0] ethRxDataB[0] ethRxDataC[0] ethRxDataD[0] ethRxCtrl[0]}]
+set_input_delay -clock [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -max -1.5 [get_ports {ethRxDataA[0] ethRxDataB[0] ethRxDataC[0] ethRxDataD[0] ethRxCtrl[0]}]
+set_input_delay -clock [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -min -2.8 [get_ports {ethRxDataA[0] ethRxDataB[0] ethRxDataC[0] ethRxDataD[0] ethRxCtrl[0]}]
+set_input_delay -clock [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -clock_fall -max -1.5 -add_delay [get_ports {ethRxDataA[0] ethRxDataB[0] ethRxDataC[0] ethRxDataD[0] ethRxCtrl[0]}]
+set_input_delay -clock [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -clock_fall -min -2.8 -add_delay [get_ports {ethRxDataA[0] ethRxDataB[0] ethRxDataC[0] ethRxDataD[0] ethRxCtrl[0]}]
 
 set_false_path -rise_from [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -fall_to $rx_clk0 -setup
 set_false_path -fall_from [get_clocks GmiiToRgmiiCore_rgmii_rx_clk] -rise_to $rx_clk0 -setup
