@@ -3,7 +3,7 @@
 -- File       : DtmCore.vhd
 -- Author     : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created    : 2013-11-14
--- Last update: 2016-05-13
+-- Last update: 2016-08-02
 -------------------------------------------------------------------------------
 -- Description:
 -- Common top level module for DTM
@@ -82,13 +82,13 @@ entity HsioCore is
       extAxilWriteSlave       : in    AxiLiteWriteSlaveType;
 
       -- DMA Interfaces
-      dmaClk                  : in    slv(2 downto 0);
-      dmaClkRst               : in    slv(2 downto 0);
-      dmaState                : out   RceDmaStateArray(2 downto 0);
-      dmaObMaster             : out   AxiStreamMasterArray(2 downto 0);
-      dmaObSlave              : in    AxiStreamSlaveArray(2 downto 0);
-      dmaIbMaster             : in    AxiStreamMasterArray(2 downto 0);
-      dmaIbSlave              : out   AxiStreamSlaveArray(2 downto 0);
+      dmaClk                  : in    slv(3 downto 0);
+      dmaClkRst               : in    slv(3 downto 0);
+      dmaState                : out   RceDmaStateArray(3 downto 0);
+      dmaObMaster             : out   AxiStreamMasterArray(3 downto 0);
+      dmaObSlave              : in    AxiStreamSlaveArray(3 downto 0);
+      dmaIbMaster             : in    AxiStreamMasterArray(3 downto 0);
+      dmaIbSlave              : out   AxiStreamSlaveArray(3 downto 0);
 
       -- User Interrupts
       userInterrupt            : in    slv(USER_INT_COUNT_C-1 downto 0)
@@ -132,13 +132,13 @@ begin
    sysClk200Rst    <= isysClk200Rst;
 
    -- DMA Interfaces
-   idmaClk(2 downto 0)      <= dmaClk;
-   idmaClkRst(2 downto 0)   <= dmaClkRst;
-   dmaState                 <= idmaState(2 downto 0);
-   dmaObMaster              <= idmaObMaster(2 downto 0);
-   idmaObSlave(2 downto 0)  <= dmaObSlave;
-   idmaIbMaster(2 downto 0) <= dmaIbMaster;
-   dmaIbSlave               <= idmaIbSlave(2 downto 0);
+   idmaClk(3 downto 0)      <= dmaClk;
+   idmaClkRst(3 downto 0)   <= dmaClkRst;
+   dmaState                 <= idmaState(3 downto 0);
+   dmaObMaster              <= idmaObMaster(3 downto 0);
+   idmaObSlave(3 downto 0)  <= dmaObSlave;
+   idmaIbMaster(3 downto 0) <= dmaIbMaster;
+   dmaIbSlave               <= idmaIbSlave(3 downto 0);
 
 
    --------------------------------------------------
@@ -210,10 +210,10 @@ begin
       );
 
    armEthMode      <= x"00000001"; -- 1 Gig on lane 0
-   idmaClk(3)      <= isysClk125;
-   idmaClkRst(3)   <= isysClk125Rst;
-   idmaObSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;
-   idmaIbMaster(3) <= AXI_STREAM_MASTER_INIT_C;
+--    idmaClk(3)      <= isysClk125;
+--    idmaClkRst(3)   <= isysClk125Rst;
+--    idmaObSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;
+--    idmaIbMaster(3) <= AXI_STREAM_MASTER_INIT_C;
 
    --------------------------------------------------
    -- Unused
