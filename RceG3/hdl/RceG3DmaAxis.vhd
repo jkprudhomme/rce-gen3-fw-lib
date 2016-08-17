@@ -5,7 +5,7 @@
 -- File       : RceG3DmaAxis.vhd
 -- Author     : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created    : 2014-04-25
--- Last update: 2014-05-05
+-- Last update: 2016-08-17
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -38,71 +38,71 @@ use work.AxiDmaPkg.all;
 
 entity RceG3DmaAxis is
    generic (
-      TPD_G            : time     := 1 ns
-   );
+      TPD_G : time := 1 ns
+      );
    port (
 
       -- Clock/Reset
-      axiDmaClk           : in  sl;
-      axiDmaRst           : in  sl;
+      axiDmaClk : in sl;
+      axiDmaRst : in sl;
 
       -- AXI ACP Slave
-      acpWriteSlave       : in  AxiWriteSlaveType;
-      acpWriteMaster      : out AxiWriteMasterType;
-      acpReadSlave        : in  AxiReadSlaveType;
-      acpReadMaster       : out AxiReadMasterType;
+      acpWriteSlave  : in  AxiWriteSlaveType;
+      acpWriteMaster : out AxiWriteMasterType;
+      acpReadSlave   : in  AxiReadSlaveType;
+      acpReadMaster  : out AxiReadMasterType;
 
       -- AXI HP Slave
-      hpWriteSlave        : in  AxiWriteSlaveArray(3 downto 0);
-      hpWriteMaster       : out AxiWriteMasterArray(3 downto 0);
-      hpReadSlave         : in  AxiReadSlaveArray(3 downto 0);
-      hpReadMaster        : out AxiReadMasterArray(3 downto 0);
+      hpWriteSlave  : in  AxiWriteSlaveArray(3 downto 0);
+      hpWriteMaster : out AxiWriteMasterArray(3 downto 0);
+      hpReadSlave   : in  AxiReadSlaveArray(3 downto 0);
+      hpReadMaster  : out AxiReadMasterArray(3 downto 0);
 
       -- User memory access
-      userWriteSlave      : out AxiWriteSlaveType;
-      userWriteMaster     : in  AxiWriteMasterType;
-      userReadSlave       : out AxiReadSlaveType;
-      userReadMaster      : in  AxiReadMasterType;
+      userWriteSlave  : out AxiWriteSlaveType;
+      userWriteMaster : in  AxiWriteMasterType;
+      userReadSlave   : out AxiReadSlaveType;
+      userReadMaster  : in  AxiReadMasterType;
 
       -- Local AXI Lite Bus
-      axilReadMaster      : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
-      axilReadSlave       : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
-      axilWriteMaster     : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
-      axilWriteSlave      : out AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+      axilReadMaster  : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      axilReadSlave   : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
+      axilWriteMaster : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
+      axilWriteSlave  : out AxiLiteWriteSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
 
       -- Interrupts
-      interrupt           : out slv(DMA_INT_COUNT_C-1 downto 0);
+      interrupt : out slv(DMA_INT_COUNT_C-1 downto 0);
 
       -- External DMA Interfaces
-      dmaClk              : in  slv(3 downto 0);
-      dmaClkRst           : in  slv(3 downto 0);
-      dmaState            : out RceDmaStateArray(3 downto 0);
-      dmaObMaster         : out AxiStreamMasterArray(3 downto 0);
-      dmaObSlave          : in  AxiStreamSlaveArray(3 downto 0);
-      dmaIbMaster         : in  AxiStreamMasterArray(3 downto 0);
-      dmaIbSlave          : out AxiStreamSlaveArray(3 downto 0)
-   );
+      dmaClk      : in  slv(3 downto 0);
+      dmaClkRst   : in  slv(3 downto 0);
+      dmaState    : out RceDmaStateArray(3 downto 0);
+      dmaObMaster : out AxiStreamMasterArray(3 downto 0);
+      dmaObSlave  : in  AxiStreamSlaveArray(3 downto 0);
+      dmaIbMaster : in  AxiStreamMasterArray(3 downto 0);
+      dmaIbSlave  : out AxiStreamSlaveArray(3 downto 0)
+      );
 end RceG3DmaAxis;
 
-architecture structure of RceG3DmaAxis is 
+architecture structure of RceG3DmaAxis is
 
-   signal locReadMaster    : AxiReadMasterArray(3 downto 0);
-   signal locReadSlave     : AxiReadSlaveArray(3 downto 0);
-   signal locWriteMaster   : AxiWriteMasterArray(3 downto 0);
-   signal locWriteSlave    : AxiWriteSlaveArray(3 downto 0);
-   signal locWriteCtrl     : AxiCtrlArray(3 downto 0);
-   signal intWriteSlave    : AxiWriteSlaveArray(3 downto 0);
-   signal intWriteMaster   : AxiWriteMasterArray(3 downto 0);
-   signal intReadSlave     : AxiReadSlaveArray(3 downto 0);
-   signal intReadMaster    : AxiReadMasterArray(3 downto 0);
-   signal sAxisMaster      : AxiStreamMasterArray(3 downto 0);
-   signal sAxisSlave       : AxiStreamSlaveArray(3 downto 0);
-   signal mAxisMaster      : AxiStreamMasterArray(3 downto 0);
-   signal mAxisSlave       : AxiStreamSlaveArray(3 downto 0);
-   signal mAxisCtrl        : AxiStreamCtrlArray(3 downto 0);
+   signal locReadMaster  : AxiReadMasterArray(3 downto 0);
+   signal locReadSlave   : AxiReadSlaveArray(3 downto 0);
+   signal locWriteMaster : AxiWriteMasterArray(3 downto 0);
+   signal locWriteSlave  : AxiWriteSlaveArray(3 downto 0);
+   signal locWriteCtrl   : AxiCtrlArray(3 downto 0);
+   signal intWriteSlave  : AxiWriteSlaveArray(3 downto 0);
+   signal intWriteMaster : AxiWriteMasterArray(3 downto 0);
+   signal intReadSlave   : AxiReadSlaveArray(3 downto 0);
+   signal intReadMaster  : AxiReadMasterArray(3 downto 0);
+   signal sAxisMaster    : AxiStreamMasterArray(3 downto 0);
+   signal sAxisSlave     : AxiStreamSlaveArray(3 downto 0);
+   signal mAxisMaster    : AxiStreamMasterArray(3 downto 0);
+   signal mAxisSlave     : AxiStreamSlaveArray(3 downto 0);
+   signal mAxisCtrl      : AxiStreamCtrlArray(3 downto 0);
 
    -- Caching enabled for ACP port
-   constant AXI_CACHE_C    : Slv4Array(3 downto 0) := ( "0000", "0010", "0000", "0000" );
+   constant AXI_CACHE_C : Slv4Array(3 downto 0) := ("0000", "0010", "0000", "0000");
 
 begin
 
@@ -131,20 +131,20 @@ begin
    hpReadMaster(3)  <= intReadMaster(3);
 
    -- Unused Interrupts
-   interrupt(DMA_INT_COUNT_C-1 downto 4) <= (others=>'0');
+   interrupt(DMA_INT_COUNT_C-1 downto 4) <= (others => '0');
 
    -- Terminate Unused AXI-Lite Interfaces
    U_AxiLiteEmpty : entity work.AxiLiteEmpty
       generic map (
-         TPD_G  => TPD_G
-      ) port map (
-         axiClk          => axiDmaClk,
-         axiClkRst       => axiDmaRst,
-         axiReadMaster   => axilReadMaster(8),
-         axiReadSlave    => axilReadSlave(8),
-         axiWriteMaster  => axilWriteMaster(8),
-         axiWriteSlave   => axilWriteSlave(8)
-      );
+         TPD_G => TPD_G)
+      port map (
+         axiClk         => axiDmaClk,
+         axiClkRst      => axiDmaRst,
+         axiReadMaster  => axilReadMaster(8),
+         axiReadSlave   => axilReadSlave(8),
+         axiWriteMaster => axilWriteMaster(8),
+         axiWriteSlave  => axilWriteSlave(8)
+         );
 
    ------------------------------------------
    -- DMA Channels
@@ -155,7 +155,7 @@ begin
       U_AxiStreamDma : entity work.AxiStreamDma
          generic map (
             TPD_G             => TPD_G,
-            FREE_ADDR_WIDTH_G => 12, -- 4096 entries
+            FREE_ADDR_WIDTH_G => 12,    -- 4096 entries
             AXIL_COUNT_G      => 2,
             AXIL_BASE_ADDR_G  => x"00000000",
             AXI_READY_EN_G    => false,
@@ -164,33 +164,34 @@ begin
             AXI_CONFIG_G      => AXI_HP_INIT_C,
             AXI_BURST_G       => "01",
             AXI_CACHE_G       => AXI_CACHE_C(i)
-         ) port map (
-            axiClk          => axiDmaClk,
-            axiRst          => axiDmaRst,
-            axilReadMaster  => axilReadMaster((i*2)+1 downto i*2),
-            axilReadSlave   => axilReadSlave((i*2)+1 downto i*2),
-            axilWriteMaster => axilWriteMaster((i*2)+1 downto i*2),
-            axilWriteSlave  => axilWriteSlave((i*2)+1 downto i*2),
-            interrupt       => interrupt(i),
-            online          => dmaState(i).online,
-            acknowledge     => dmaState(i).user,
-            sAxisMaster     => sAxisMaster(i),
-            sAxisSlave      => sAxisSlave(i),
-            mAxisMaster     => mAxisMaster(i),
-            mAxisSlave      => mAxisSlave(i),
-            mAxisCtrl       => mAxisCtrl(i),
-            axiReadMaster   => locReadMaster(i),
-            axiReadSlave    => locReadSlave(i),
-            axiWriteMaster  => locWriteMaster(i),
-            axiWriteSlave   => locWriteSlave(i),
-            axiWriteCtrl    => locWriteCtrl(i)
-         );
+            ) port map (
+               axiClk          => axiDmaClk,
+               axiRst          => axiDmaRst,
+               axilReadMaster  => axilReadMaster((i*2)+1 downto i*2),
+               axilReadSlave   => axilReadSlave((i*2)+1 downto i*2),
+               axilWriteMaster => axilWriteMaster((i*2)+1 downto i*2),
+               axilWriteSlave  => axilWriteSlave((i*2)+1 downto i*2),
+               interrupt       => interrupt(i),
+               online          => dmaState(i).online,
+               acknowledge     => dmaState(i).user,
+               sAxisMaster     => sAxisMaster(i),
+               sAxisSlave      => sAxisSlave(i),
+               mAxisMaster     => mAxisMaster(i),
+               mAxisSlave      => mAxisSlave(i),
+               mAxisCtrl       => mAxisCtrl(i),
+               axiReadMaster   => locReadMaster(i),
+               axiReadSlave    => locReadSlave(i),
+               axiWriteMaster  => locWriteMaster(i),
+               axiWriteSlave   => locWriteSlave(i),
+               axiWriteCtrl    => locWriteCtrl(i)
+               );
 
 
       -- Inbound AXI Stream FIFO
-      U_IbFifo : entity work.AxiStreamFifo 
+      U_IbFifo : entity work.AxiStreamFifo
          generic map (
             TPD_G               => TPD_G,
+            INT_PIPE_STAGES_G   => 1,
             PIPE_STAGES_G       => 1,
             SLAVE_READY_EN_G    => true,
             VALID_THOLD_G       => 1,
@@ -206,23 +207,24 @@ begin
             FIFO_PAUSE_THRESH_G => 500,
             SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
             MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C
-         ) port map (
-            sAxisClk        => dmaClk(i),
-            sAxisRst        => dmaClkRst(i),
-            sAxisMaster     => dmaIbMaster(i),
-            sAxisSlave      => dmaIbSlave(i),
-            sAxisCtrl       => open,
-            fifoPauseThresh => (others => '1'),
-            mAxisClk        => axiDmaClk,
-            mAxisRst        => axiDmaRst,
-            mAxisMaster     => sAxisMaster(i),
-            mAxisSlave      => sAxisSlave(i)
-         );
+            ) port map (
+               sAxisClk        => dmaClk(i),
+               sAxisRst        => dmaClkRst(i),
+               sAxisMaster     => dmaIbMaster(i),
+               sAxisSlave      => dmaIbSlave(i),
+               sAxisCtrl       => open,
+               fifoPauseThresh => (others => '1'),
+               mAxisClk        => axiDmaClk,
+               mAxisRst        => axiDmaRst,
+               mAxisMaster     => sAxisMaster(i),
+               mAxisSlave      => sAxisSlave(i)
+               );
 
       -- Outbound AXI Stream FIFO
-      U_ObFifo : entity work.AxiStreamFifo 
+      U_ObFifo : entity work.AxiStreamFifo
          generic map (
             TPD_G               => TPD_G,
+            INT_PIPE_STAGES_G   => 1,
             PIPE_STAGES_G       => 1,
             SLAVE_READY_EN_G    => false,
             VALID_THOLD_G       => 1,
@@ -238,54 +240,54 @@ begin
             FIFO_PAUSE_THRESH_G => 475,
             SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
             MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C
-         ) port map (
-            sAxisClk        => axiDmaClk,
-            sAxisRst        => axiDmaRst,
-            sAxisMaster     => mAxisMaster(i),
-            sAxisSlave      => mAxisSlave(i),
-            sAxisCtrl       => mAxisCtrl(i),
-            fifoPauseThresh => (others => '1'),
-            mAxisClk        => dmaClk(i),
-            mAxisRst        => dmaClkRst(i),
-            mAxisMaster     => dmaObMaster(i),
-            mAxisSlave      => dmaObSlave(i)
-         );
+            ) port map (
+               sAxisClk        => axiDmaClk,
+               sAxisRst        => axiDmaRst,
+               sAxisMaster     => mAxisMaster(i),
+               sAxisSlave      => mAxisSlave(i),
+               sAxisCtrl       => mAxisCtrl(i),
+               fifoPauseThresh => (others => '1'),
+               mAxisClk        => dmaClk(i),
+               mAxisRst        => dmaClkRst(i),
+               mAxisMaster     => dmaObMaster(i),
+               mAxisSlave      => dmaObSlave(i)
+               );
 
 
       -- Read Path AXI FIFO
-      U_AxiReadPathFifo : entity work.AxiReadPathFifo 
+      U_AxiReadPathFifo : entity work.AxiReadPathFifo
          generic map (
-            TPD_G                    => TPD_G,
-            XIL_DEVICE_G             => "7SERIES",
-            USE_BUILT_IN_G           => false,
-            GEN_SYNC_FIFO_G          => true,
-            ALTERA_SYN_G             => false,
-            ALTERA_RAM_G             => "M9K",
-            ADDR_LSB_G               => 3,
-            ID_FIXED_EN_G            => true,
-            SIZE_FIXED_EN_G          => true,
-            BURST_FIXED_EN_G         => true,
-            LEN_FIXED_EN_G           => false,
-            LOCK_FIXED_EN_G          => true,
-            PROT_FIXED_EN_G          => true,
-            CACHE_FIXED_EN_G         => true,
-            ADDR_BRAM_EN_G           => false, 
-            ADDR_CASCADE_SIZE_G      => 1,
-            ADDR_FIFO_ADDR_WIDTH_G   => 4,
-            DATA_BRAM_EN_G           => false,
-            DATA_CASCADE_SIZE_G      => 1,
-            DATA_FIFO_ADDR_WIDTH_G   => 4,
-            AXI_CONFIG_G             => AXI_HP_INIT_C
-         ) port map (
-            sAxiClk        => axiDmaClk,
-            sAxiRst        => axiDmaRst,
-            sAxiReadMaster => locReadMaster(i),
-            sAxiReadSlave  => locReadSlave(i),
-            mAxiClk        => axiDmaClk,
-            mAxiRst        => axiDmaRst,
-            mAxiReadMaster => intReadMaster(i),
-            mAxiReadSlave  => intReadSlave(i)
-         );
+            TPD_G                  => TPD_G,
+            XIL_DEVICE_G           => "7SERIES",
+            USE_BUILT_IN_G         => false,
+            GEN_SYNC_FIFO_G        => true,
+            ALTERA_SYN_G           => false,
+            ALTERA_RAM_G           => "M9K",
+            ADDR_LSB_G             => 3,
+            ID_FIXED_EN_G          => true,
+            SIZE_FIXED_EN_G        => true,
+            BURST_FIXED_EN_G       => true,
+            LEN_FIXED_EN_G         => false,
+            LOCK_FIXED_EN_G        => true,
+            PROT_FIXED_EN_G        => true,
+            CACHE_FIXED_EN_G       => true,
+            ADDR_BRAM_EN_G         => false,
+            ADDR_CASCADE_SIZE_G    => 1,
+            ADDR_FIFO_ADDR_WIDTH_G => 4,
+            DATA_BRAM_EN_G         => false,
+            DATA_CASCADE_SIZE_G    => 1,
+            DATA_FIFO_ADDR_WIDTH_G => 4,
+            AXI_CONFIG_G           => AXI_HP_INIT_C
+            ) port map (
+               sAxiClk        => axiDmaClk,
+               sAxiRst        => axiDmaRst,
+               sAxiReadMaster => locReadMaster(i),
+               sAxiReadSlave  => locReadSlave(i),
+               mAxiClk        => axiDmaClk,
+               mAxiRst        => axiDmaRst,
+               mAxiReadMaster => intReadMaster(i),
+               mAxiReadSlave  => intReadSlave(i)
+               );
 
 
       -- Write Path AXI FIFO
@@ -305,7 +307,7 @@ begin
             LOCK_FIXED_EN_G          => true,
             PROT_FIXED_EN_G          => true,
             CACHE_FIXED_EN_G         => true,
-            ADDR_BRAM_EN_G           => true, 
+            ADDR_BRAM_EN_G           => true,
             ADDR_CASCADE_SIZE_G      => 1,
             ADDR_FIFO_ADDR_WIDTH_G   => 9,
             DATA_BRAM_EN_G           => true,
@@ -316,17 +318,17 @@ begin
             RESP_CASCADE_SIZE_G      => 1,
             RESP_FIFO_ADDR_WIDTH_G   => 4,
             AXI_CONFIG_G             => AXI_HP_INIT_C
-         ) port map (
-            sAxiClk         => axiDmaClk,
-            sAxiRst         => axiDmaRst,
-            sAxiWriteMaster => locWriteMaster(i),
-            sAxiWriteSlave  => locWriteSlave(i),
-            sAxiCtrl        => locWriteCtrl(i),
-            mAxiClk         => axiDmaClk,
-            mAxiRst         => axiDmaRst,
-            mAxiWriteMaster => intWriteMaster(i),
-            mAxiWriteSlave  => intWriteSlave(i)
-         );
+            ) port map (
+               sAxiClk         => axiDmaClk,
+               sAxiRst         => axiDmaRst,
+               sAxiWriteMaster => locWriteMaster(i),
+               sAxiWriteSlave  => locWriteSlave(i),
+               sAxiCtrl        => locWriteCtrl(i),
+               mAxiClk         => axiDmaClk,
+               mAxiRst         => axiDmaRst,
+               mAxiWriteMaster => intWriteMaster(i),
+               mAxiWriteSlave  => intWriteSlave(i)
+               );
    end generate;
 
 end structure;
