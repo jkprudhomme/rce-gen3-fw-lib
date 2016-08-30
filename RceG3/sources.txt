@@ -1,7 +1,7 @@
 vhdl work hdl/RceG3Bsi.vhd
 vhdl work hdl/RceG3Clocks.vhd
 vhdl work hdl/RceG3Cpu.vhd
-#vhdl work simlink/rtl/RceG3CpuSim.vhd
+vhdl work simlink/rtl/RceG3CpuSim.vhd
 vhdl work hdl/RceG3DmaAxis.vhd
 vhdl work hdl/RceG3DmaPpi.vhd
 vhdl work hdl/RceG3DmaCustom.vhd
