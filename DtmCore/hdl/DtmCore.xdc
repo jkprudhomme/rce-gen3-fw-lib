@@ -95,8 +95,8 @@ set_false_path -through [get_cells -hier -filter {name =~ *pipe_wrapper_i/pipe_r
 set_false_path -to      [get_pins  -hier -filter {name =~ *pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/S*}]
 set_false_path -through [get_nets  -hier -filter {name =~ *pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_sel*}]
 
-# StdLib
-set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
+# # StdLib
+# set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
 
 #########################################################
 # Pin Locations. All Defined Here

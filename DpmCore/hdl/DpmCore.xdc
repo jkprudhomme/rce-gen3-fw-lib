@@ -75,8 +75,8 @@ set_clock_groups -asynchronous \
     -group [get_clocks dnaClk] \
     -group [get_clocks sysClk125]    
 
-# StdLib
-set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
+# # StdLib
+# set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
 
 #########################################################
 # Pin Locations. All Defined Here
