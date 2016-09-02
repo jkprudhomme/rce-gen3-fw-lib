@@ -361,7 +361,8 @@ begin
          AXIS_CONFIG_G    => PPI_AXIS_CONFIG_INIT_C,
          AXI_CONFIG_G     => AXI_RD_CONFIG_G,
          AXI_BURST_G      => PPI_AXI_BURST_C,
-         AXI_CACHE_G      => PPI_AXI_ACP_CACHE_C
+         AXI_CACHE_G      => PPI_AXI_ACP_CACHE_C,
+         MAX_PEND_G       => 1
       ) port map (
          axiClk          => axiClk,
          axiRst          => axiRst,

@@ -378,7 +378,8 @@ begin
          AXIS_CONFIG_G    => PPI_AXIS_CONFIG_INIT_C,
          AXI_CONFIG_G     => AXI_CONFIG_G,
          AXI_BURST_G      => PPI_AXI_BURST_C,
-         AXI_CACHE_G      => PPI_AXI_HP_CACHE_C
+         AXI_CACHE_G      => PPI_AXI_HP_CACHE_C,
+         MAX_PEND_G       => 1600
       ) port map (
          axiClk          => axiClk,
          axiRst          => axiRst,
@@ -444,7 +445,7 @@ begin
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 475,
+         FIFO_PAUSE_THRESH_G => 300,
          SLAVE_AXI_CONFIG_G  => PPI_AXIS_CONFIG_INIT_C,
          MASTER_AXI_CONFIG_G => PPI_AXIS_CONFIG_INIT_C
       ) port map (
