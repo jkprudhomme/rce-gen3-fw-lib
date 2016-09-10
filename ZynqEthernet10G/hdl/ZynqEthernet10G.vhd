@@ -275,11 +275,10 @@ begin
          BYP_EN_G        => USER_ETH_EN_G,
          BYP_ETH_TYPE_G  => USER_ETH_TYPE_G,
          SHIFT_EN_G      => true,
-         FILT_EN_G       => true,
-         CSUM_EN_G       => true
+         FILT_EN_G       => true
       ) port map ( 
          ethClk         => ethClk,
-         ethClkRst      => ethClkRst,
+         ethRst         => ethClkRst,
          sPrimMaster    => macObMaster,
          sPrimSlave     => macObSlave,
          mPrimMaster    => macIbMaster,
