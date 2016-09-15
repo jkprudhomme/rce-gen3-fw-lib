@@ -287,14 +287,23 @@ begin
          sBypSlave      => userEthObSlave,
          mBypMaster     => userEthIbMaster,
          mBypCtrl       => userEthIbCtrl,
-         phyTxd         => xauiTxd,
-         phyTxc         => xauiTxc,
-         phyRxd         => xauiRxd,
-         phyRxc         => xauiRxc,
+         xlgmiiRxd   => (others => '0'),
+         xlgmiiRxc   => (others => '0'),
+         xlgmiiTxd   => open,
+         xlgmiiTxc   => open,
+         xgmiiRxd    => xauiRxd,
+         xgmiiRxc    => xauiRxc,
+         xgmiiTxd    => xauiTxd,
+         xgmiiTxc    => xauiTxc,
+         gmiiRxDv    => '0',
+         gmiiRxEr    => '0',
+         gmiiRxd     => (others => '0'),
+         gmiiTxEn    => open,
+         gmiiTxEr    => open,
+         gmiiTxd     => open,          
          phyReady       => phyStatus(7),
          ethConfig      => macConfig,
-         ethStatus      => macStatus
-      );
+         ethStatus      => macStatus);
 
    userEthClk    <= ethClk;
    userEthClkRst <= ethClkRst;
