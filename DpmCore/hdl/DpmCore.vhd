@@ -1,11 +1,15 @@
 -------------------------------------------------------------------------------
--- Title         : Common DPM Core Module
--- File          : DpmCore.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 11/14/2013
+-- Title      : 
 -------------------------------------------------------------------------------
--- Description:
--- Common top level module for DPM
+-- File       : DpmCore.vhd
+-- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
+-- Company    : SLAC National Accelerator Laboratory
+-- Created    : 2013-11-14
+-- Last update: 2016-09-22
+-- Platform   : 
+-- Standard   : VHDL'93/02
+-------------------------------------------------------------------------------
+-- Description: Common top level module for DPM
 -------------------------------------------------------------------------------
 -- This file is part of 'SLAC RCE DPM Core'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -15,14 +19,13 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 11/14/2013: created.
--------------------------------------------------------------------------------
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
 
-library UNISIM;
-use UNISIM.VCOMPONENTS.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+
+library unisim;
+use unisim.vcomponents.all;
+
 use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
@@ -31,73 +34,61 @@ use work.AxiPkg.all;
 
 entity DpmCore is
    generic (
-      TPD_G           : time                  := 1 ns;
-      ETH_10G_EN_G    : boolean               := false;
-      RCE_DMA_MODE_G  : RceDmaModeType        := RCE_DMA_PPI_C;
-      OLD_BSI_MODE_G  : boolean               := false;
-      AXI_ST_COUNT_G  : natural range 3 to 4  := 3;
-      USER_ETH_EN_G   : boolean               := false;
-      USER_ETH_TYPE_G : slv(15 downto 0)      := x"AAAA"
-   );
+      TPD_G           : time                 := 1 ns;
+      ETH_10G_EN_G    : boolean              := false;
+      RCE_DMA_MODE_G  : RceDmaModeType       := RCE_DMA_PPI_C;
+      OLD_BSI_MODE_G  : boolean              := false;
+      AXI_ST_COUNT_G  : natural range 3 to 4 := 3;
+      USER_ETH_EN_G   : boolean              := false;
+      USER_ETH_TYPE_G : slv(15 downto 0)     := x"AAAA");
    port (
-
       -- I2C
-      i2cSda                  : inout sl;
-      i2cScl                  : inout sl;
-
+      i2cSda             : inout sl;
+      i2cScl             : inout sl;
       -- Ethernet
-      ethRxP                  : in    slv(3 downto 0);
-      ethRxM                  : in    slv(3 downto 0);
-      ethTxP                  : out   slv(3 downto 0);
-      ethTxM                  : out   slv(3 downto 0);
-      ethRefClkP              : in    sl;
-      ethRefClkM              : in    sl;
-
+      ethRxP             : in    slv(3 downto 0);
+      ethRxM             : in    slv(3 downto 0);
+      ethTxP             : out   slv(3 downto 0);
+      ethTxM             : out   slv(3 downto 0);
+      ethRefClkP         : in    sl;
+      ethRefClkM         : in    sl;
       -- Clock Select
-      clkSelA                 : out   slv(1 downto 0);
-      clkSelB                 : out   slv(1 downto 0);
-
-      -- Clocks
-      sysClk125               : out   sl;
-      sysClk125Rst            : out   sl;
-      sysClk200               : out   sl;
-      sysClk200Rst            : out   sl;
-
-      -- External Axi Bus, 0xA0000000 - 0xAFFFFFFF
-      axiClk                  : out   sl;
-      axiClkRst               : out   sl;
-      extAxilReadMaster       : out   AxiLiteReadMasterType;
-      extAxilReadSlave        : in    AxiLiteReadSlaveType;
-      extAxilWriteMaster      : out   AxiLiteWriteMasterType;
-      extAxilWriteSlave       : in    AxiLiteWriteSlaveType;
-
+      clkSelA            : out   slv(1 downto 0);
+      clkSelB            : out   slv(1 downto 0);
+      -- Clocks and Resets
+      sysClk125          : out   sl;
+      sysClk125Rst       : out   sl;
+      sysClk200          : out   sl;
+      sysClk200Rst       : out   sl;
+      -- External AXI-Lite Interface [0xA0000000:0xAFFFFFFF]
+      axiClk             : out   sl;
+      axiClkRst          : out   sl;
+      extAxilReadMaster  : out   AxiLiteReadMasterType;
+      extAxilReadSlave   : in    AxiLiteReadSlaveType;
+      extAxilWriteMaster : out   AxiLiteWriteMasterType;
+      extAxilWriteSlave  : in    AxiLiteWriteSlaveType;
       -- DMA Interfaces
-      dmaClk                  : in    slv(AXI_ST_COUNT_G-1 downto 0);
-      dmaClkRst               : in    slv(AXI_ST_COUNT_G-1 downto 0);
-      dmaState                : out   RceDmaStateArray(AXI_ST_COUNT_G-1 downto 0);
-      dmaObMaster             : out   AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
-      dmaObSlave              : in    AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
-      dmaIbMaster             : in    AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
-      dmaIbSlave              : out   AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
-
-      -- User memory access (sysclk200)
-      userWriteSlave          : out   AxiWriteSlaveType;
-      userWriteMaster         : in    AxiWriteMasterType := AXI_WRITE_MASTER_INIT_C;
-      userReadSlave           : out   AxiReadSlaveType;
-      userReadMaster          : in    AxiReadMasterType := AXI_READ_MASTER_INIT_C;
-
-      -- User ethernet
-      userEthClk              : out   sl;
-      userEthClkRst           : out   sl;
-      userEthObMaster         : in    AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
-      userEthObSlave          : out   AxiStreamSlaveType;
-      userEthIbMaster         : out   AxiStreamMasterType;
-      userEthIbCtrl           : in    AxiStreamCtrlType   := AXI_STREAM_CTRL_UNUSED_C;
-
+      dmaClk             : in    slv(AXI_ST_COUNT_G-1 downto 0);
+      dmaClkRst          : in    slv(AXI_ST_COUNT_G-1 downto 0);
+      dmaState           : out   RceDmaStateArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaObMaster        : out   AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaObSlave         : in    AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaIbMaster        : in    AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaIbSlave         : out   AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
+      -- User memory access (sysclk200 domain)
+      userWriteSlave     : out   AxiWriteSlaveType;
+      userWriteMaster    : in    AxiWriteMasterType  := AXI_WRITE_MASTER_INIT_C;
+      userReadSlave      : out   AxiReadSlaveType;
+      userReadMaster     : in    AxiReadMasterType   := AXI_READ_MASTER_INIT_C;
+      -- User Ethernet
+      userEthClk         : in    sl                  := '0';
+      userEthClkRst      : in    sl                  := '0';
+      userEthObMaster    : in    AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+      userEthObSlave     : out   AxiStreamSlaveType;
+      userEthIbMaster    : out   AxiStreamMasterType;
+      userEthIbSlave     : in    AxiStreamSlaveType  := AXI_STREAM_SLAVE_FORCE_C;
       -- User Interrupts
-      userInterrupt           : in    slv(USER_INT_COUNT_C-1 downto 0)
-
-   );
+      userInterrupt      : in    slv(USER_INT_COUNT_C-1 downto 0));
 end DpmCore;
 
 architecture STRUCTURE of DpmCore is
@@ -124,30 +115,30 @@ architecture STRUCTURE of DpmCore is
    signal armEthMode          : slv(31 downto 0);
 
 begin
-   
+
    --------------------------------------------------
    -- Assertions to validate the configuration
    --------------------------------------------------
    
    assert (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C and AXI_ST_COUNT_G = 4) or RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C
-      report "Only AXI_ST_COUNT_G = 4 is supported when RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C" 
+      report "Only AXI_ST_COUNT_G = 4 is supported when RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C"
       severity failure;
    assert (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C and ETH_10G_EN_G = false) or RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C
       report "RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C is not supported when ETH_10G_EN_G = true"
       severity failure;
-      
+
    -- more assertion checks should be added e.g. ETH_10G_EN_G = true only with RCE_DMA_MODE_G = RCE_DMA_PPI_C ???
    -- my 3rd assertion can be removed when the above check is added
-   
+
    --------------------------------------------------
    -- Inputs/Outputs
    --------------------------------------------------
-   axiClk          <= iaxiClk;
-   axiClkRst       <= iaxiClkRst;
-   sysClk125       <= isysClk125;
-   sysClk125Rst    <= isysClk125Rst;
-   sysClk200       <= isysClk200;
-   sysClk200Rst    <= isysClk200Rst;
+   axiClk       <= iaxiClk;
+   axiClkRst    <= iaxiClkRst;
+   sysClk125    <= isysClk125;
+   sysClk125Rst <= isysClk125Rst;
+   sysClk200    <= isysClk200;
+   sysClk200Rst <= isysClk200Rst;
 
    -- DMA Interfaces
    idmaClk(2 downto 0)      <= dmaClk(2 downto 0);
@@ -158,16 +149,15 @@ begin
    idmaIbMaster(2 downto 0) <= dmaIbMaster(2 downto 0);
    dmaIbSlave(2 downto 0)   <= idmaIbSlave(2 downto 0);
 
-
    --------------------------------------------------
    -- RCE Core
    --------------------------------------------------
-   U_RceG3Top: entity work.RceG3Top
+   U_RceG3Top : entity work.RceG3Top
       generic map (
          TPD_G          => TPD_G,
          RCE_DMA_MODE_G => RCE_DMA_MODE_G,
-         OLD_BSI_MODE_G => OLD_BSI_MODE_G
-      ) port map (
+         OLD_BSI_MODE_G => OLD_BSI_MODE_G) 
+      port map (
          i2cSda              => i2cSda,
          i2cScl              => i2cScl,
          sysClk125           => isysClk125,
@@ -177,9 +167,9 @@ begin
          axiClk              => iaxiClk,
          axiClkRst           => iaxiClkRst,
          extAxilReadMaster   => extAxilReadMaster,
-         extAxilReadSlave    => extAxilReadSlave ,
+         extAxilReadSlave    => extAxilReadSlave,
          extAxilWriteMaster  => extAxilWriteMaster,
-         extAxilWriteSlave   => extAxilWriteSlave ,
+         extAxilWriteSlave   => extAxilWriteSlave,
          coreAxilReadMaster  => coreAxilReadMaster,
          coreAxilReadSlave   => coreAxilReadSlave,
          coreAxilWriteMaster => coreAxilWriteMaster,
@@ -200,9 +190,7 @@ begin
          armEthRx            => armEthRx,
          armEthMode          => armEthMode,
          clkSelA             => open,
-         clkSelB             => open
-      );
-
+         clkSelB             => open);
 
    -- Osc 0 = 156.25
    clkSelA(0) <= '0';
@@ -215,98 +203,100 @@ begin
    --------------------------------------------------
    -- Ethernet
    --------------------------------------------------
-   U_Eth1gGen: if ETH_10G_EN_G = false generate 
-      U_ZynqEthernet : entity work.ZynqEthernet 
+   U_Eth1gGen : if ETH_10G_EN_G = false generate
+      U_ZynqEthernet : entity work.ZynqEthernet
          port map (
-            sysClk125          => isysClk125,
-            sysClk200          => isysClk200,
-            sysClk200Rst       => isysClk200Rst,
-            armEthTx           => armEthTx(0),
-            armEthRx           => armEthRx(0),
-            ethRxP             => ethRxP(0),
-            ethRxM             => ethRxM(0),
-            ethTxP             => ethTxP(0),
-            ethTxM             => ethTxM(0)
-         );
-     
-      userEthClk      <= '0';
-      userEthClkRst   <= '1';
+            sysClk125    => isysClk125,
+            sysClk200    => isysClk200,
+            sysClk200Rst => isysClk200Rst,
+            armEthTx     => armEthTx(0),
+            armEthRx     => armEthRx(0),
+            ethRxP       => ethRxP(0),
+            ethRxM       => ethRxM(0),
+            ethTxP       => ethTxP(0),
+            ethTxM       => ethTxM(0));
+
       userEthObSlave  <= AXI_STREAM_SLAVE_INIT_C;
       userEthIbMaster <= AXI_STREAM_MASTER_INIT_C;
 
-      U_CustomDmaGen : if RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C generate
-         idmaClk(3)         <= dmaClk(AXI_ST_COUNT_G-1);
-         idmaClkRst(3)      <= dmaClkRst(AXI_ST_COUNT_G-1);
-         idmaObSlave(3)     <= dmaObSlave(AXI_ST_COUNT_G-1);
-         idmaIbMaster(3)    <= dmaIbMaster(AXI_ST_COUNT_G-1);
+      U_CustomDmaGen : if (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C) generate
+         idmaClk(3)                    <= dmaClk(AXI_ST_COUNT_G-1);
+         idmaClkRst(3)                 <= dmaClkRst(AXI_ST_COUNT_G-1);
+         idmaObSlave(3)                <= dmaObSlave(AXI_ST_COUNT_G-1);
+         idmaIbMaster(3)               <= dmaIbMaster(AXI_ST_COUNT_G-1);
          dmaState(AXI_ST_COUNT_G-1)    <= idmaState(3);
          dmaObMaster(AXI_ST_COUNT_G-1) <= idmaObMaster(3);
          dmaIbSlave(AXI_ST_COUNT_G-1)  <= idmaIbSlave(3);
       end generate;
-      U_NoCustomDmaGen : if RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C generate
-         idmaClk(3)         <= isysClk125;
-         idmaClkRst(3)      <= isysClk125Rst;
-         idmaObSlave(3)     <= AXI_STREAM_SLAVE_INIT_C;
-         idmaIbMaster(3)    <= AXI_STREAM_MASTER_INIT_C;
+      U_NoCustomDmaGen : if (RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C) generate
+         idmaClk(3)      <= isysClk125;
+         idmaClkRst(3)   <= isysClk125Rst;
+         idmaObSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;
+         idmaIbMaster(3) <= AXI_STREAM_MASTER_INIT_C;
       end generate;
-      
-      ethTxP(3 downto 1) <= (others=>'0');
-      ethTxM(3 downto 1) <= (others=>'0');
+
+      ethTxP(3 downto 1) <= (others => '0');
+      ethTxM(3 downto 1) <= (others => '0');
       armEthRx(1)        <= ARM_ETH_RX_INIT_C;
-      armEthMode         <= x"00000001"; -- 1 Gig on lane 0
+      armEthMode         <= x"00000001";  -- 1 Gig on lane 0
 
       U_AxiLiteEmpty : entity work.AxiLiteEmpty
          generic map (
-            TPD_G  => TPD_G
-         ) port map (
-            axiClk          => iaxiClk,
-            axiClkRst       => iaxiClkRst,
-            axiReadMaster   => coreAxilReadMaster,
-            axiReadSlave    => coreAxilReadSlave,
-            axiWriteMaster  => coreAxilWriteMaster,
-            axiWriteSlave   => coreAxilWriteSlave
-         );
+            TPD_G => TPD_G) 
+         port map (
+            axiClk         => iaxiClk,
+            axiClkRst      => iaxiClkRst,
+            axiReadMaster  => coreAxilReadMaster,
+            axiReadSlave   => coreAxilReadSlave,
+            axiWriteMaster => coreAxilWriteMaster,
+            axiWriteSlave  => coreAxilWriteSlave);
    end generate;
 
-   U_Eth10gGen: if ETH_10G_EN_G = true generate 
-      U_ZynqEthernet10G : entity work.ZynqEthernet10G 
+   U_Eth10gGen : if ETH_10G_EN_G = true generate
+      U_ZynqEthernet10G : entity work.ZynqEthernet10G
          generic map (
-            TPD_G          => TPD_G,
-            RCE_DMA_MODE_G => RCE_DMA_MODE_G
-         ) port map (
-            sysClk200          => isysClk200,
-            sysClk200Rst       => isysClk200Rst,
-            dmaClk             => idmaClk(3),
-            dmaClkRst          => idmaClkRst(3),
-            dmaState           => idmaState(3),
-            dmaIbMaster        => idmaIbMaster(3),
-            dmaIbSlave         => idmaIbSlave(3),
-            dmaObMaster        => idmaObMaster(3),
-            dmaObSlave         => idmaObSlave(3),
-            userEthClk         => userEthClk,
-            userEthClkRst      => userEthClkRst,
-            userEthObMaster    => userEthObMaster,
-            userEthObSlave     => userEthObSlave,
-            userEthIbMaster    => userEthIbMaster,
-            userEthIbCtrl      => userEthIbCtrl,
-            axilClk            => iaxiClk,
-            axilClkRst         => iaxiClkRst,
-            axilWriteMaster    => coreAxilWriteMaster,
-            axilWriteSlave     => coreAxilWriteSlave,
-            axilReadMaster     => coreAxilReadMaster,
-            axilReadSlave      => coreAxilReadSlave,
-            ethRefClkP         => ethRefClkP,
-            ethRefClkM         => ethRefClkM,
-            ethRxP             => ethRxP,
-            ethRxM             => ethRxM,
-            ethTxP             => ethTxP,
-            ethTxM             => ethTxM
-         );
+            TPD_G           => TPD_G,
+            RCE_DMA_MODE_G  => RCE_DMA_MODE_G,
+            USER_ETH_EN_G   => USER_ETH_EN_G,
+            USER_ETH_TYPE_G => USER_ETH_TYPE_G)         
+         port map (
+            -- Clocks
+            sysClk200       => isysClk200,
+            sysClk200Rst    => isysClk200Rst,
+            -- PPI Interface
+            dmaClk          => idmaClk(3),
+            dmaClkRst       => idmaClkRst(3),
+            dmaState        => idmaState(3),
+            dmaIbMaster     => idmaIbMaster(3),
+            dmaIbSlave      => idmaIbSlave(3),
+            dmaObMaster     => idmaObMaster(3),
+            dmaObSlave      => idmaObSlave(3),
+            -- User interface
+            userEthClk      => userEthClk,
+            userEthClkRst   => userEthClkRst,
+            userEthObMaster => userEthObMaster,
+            userEthObSlave  => userEthObSlave,
+            userEthIbMaster => userEthIbMaster,
+            userEthIbSlave  => userEthIbSlave,
+            -- AXI-Lite Buses
+            axilClk         => iaxiClk,
+            axilClkRst      => iaxiClkRst,
+            axilWriteMaster => coreAxilWriteMaster,
+            axilWriteSlave  => coreAxilWriteSlave,
+            axilReadMaster  => coreAxilReadMaster,
+            axilReadSlave   => coreAxilReadSlave,
+            -- Ref Clock
+            ethRefClkP      => ethRefClkP,
+            ethRefClkM      => ethRefClkM,
+            -- Ethernet Lines
+            ethRxP          => ethRxP,
+            ethRxM          => ethRxM,
+            ethTxP          => ethTxP,
+            ethTxM          => ethTxM);
 
-      armEthRx   <= (others=>ARM_ETH_RX_INIT_C);
-      armEthMode <= x"03030303"; -- XAUI on lanes 3:0
+      armEthRx   <= (others => ARM_ETH_RX_INIT_C);
+      armEthMode <= x"03030303";        -- XAUI on lanes 3:0
 
    end generate;
 
 end architecture STRUCTURE;
-
