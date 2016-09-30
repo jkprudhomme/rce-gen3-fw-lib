@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-09-03
--- Last update: 2016-09-22
+-- Last update: 2016-09-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -79,7 +79,6 @@ end ZynqEthernet10G;
 
 architecture structure of ZynqEthernet10G is
 
-   constant HEADER_SIZE_C : positive := 16;
    constant AXIS_CONFIG_C : AxiStreamConfigType := ite((RCE_DMA_MODE_G = RCE_DMA_PPI_C),
                                                        PPI_AXIS_CONFIG_INIT_C,
                                                        RCEG3_AXIS_DMA_CONFIG_C);
@@ -119,12 +118,12 @@ architecture structure of ZynqEthernet10G is
 
 
    type RegType is record
-      wrCnt    : natural range 0 to HEADER_SIZE_C;
+      wrCnt    : slv(15 downto 0);
       rxSlave  : AxiStreamSlaveType;
       ibMaster : AxiStreamMasterType;
    end record RegType;
    constant REG_INIT_C : RegType := (
-      wrCnt    => 0,
+      wrCnt    => (others => '0'),
       rxSlave  => AXI_STREAM_SLAVE_INIT_C,
       ibMaster => AXI_STREAM_MASTER_INIT_C);      
 
@@ -154,7 +153,6 @@ architecture structure of ZynqEthernet10G is
    signal rxSlave  : AxiStreamSlaveType;
    signal ibSlave  : AxiStreamSlaveType;
 
-   signal writeCount    : slv(15 downto 0);
    signal ethHeaderSize : slv(15 downto 0);
    signal cfgPhyReset   : sl;
    signal onlineSync    : sl;
@@ -331,7 +329,7 @@ begin
    --------------
    -- PPI support
    --------------
-   comb : process (ibSlave, r, rxMaster, sysClk200Rst) is
+   comb : process (ethHeaderSize, ibSlave, r, rxMaster, sysClk200Rst) is
       variable v    : RegType;
       variable eofe : sl;
    begin
@@ -351,13 +349,11 @@ begin
          -- Move the data
          v.ibMaster       := rxMaster;
          -- Increment the counter
-         if (r.wrCnt /= HEADER_SIZE_C) then
-            v.wrCnt := r.wrCnt + 1;
-         end if;
+         v.wrCnt          := r.wrCnt + 1;
          -- Check for EOF
          if (rxMaster.tLast = '1') then
             -- Reset the counter
-            v.wrCnt := 0;
+            v.wrCnt := (others => '0');
          end if;
          -- Get EOFE bit
          eofe := axiStreamGetUserBit(AXIS_CONFIG_C, rxMaster, EMAC_EOFE_BIT_C);
@@ -366,13 +362,15 @@ begin
             -- Reset tUser field
             v.ibMaster.tUser := (others => '0');
             -- Set EOH if necessary
-            if (r.wrCnt = (HEADER_SIZE_C-1)) then
+            if (r.wrCnt = ethHeaderSize) then
                axiStreamSetUserBit(AXIS_CONFIG_C, v.ibMaster, PPI_EOH_C, '1');
             end if;
             -- Update ERR bit with EOFE
             if (rxMaster.tLast = '1') then
                axiStreamSetUserBit(AXIS_CONFIG_C, v.ibMaster, PPI_ERR_C, eofe);
             end if;
+            -- Clear SOF
+            axiStreamSetUserBit(AXIS_CONFIG_C, v.ibMaster, EMAC_SOF_BIT_C, '0');
          end if;
       end if;
 
