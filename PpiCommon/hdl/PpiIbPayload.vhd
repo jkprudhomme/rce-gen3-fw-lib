@@ -522,6 +522,7 @@ begin
          USE_BUILT_IN_G     => false,
          XIL_DEVICE_G       => "7SERIES",
          SYNC_STAGES_G      => 3,
+         PIPE_STAGES_G      => 1,
          DATA_WIDTH_G       => COMP_BITS_C,
          ADDR_WIDTH_G       => 9,
          INIT_G             => "0",
