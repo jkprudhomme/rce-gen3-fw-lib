@@ -166,8 +166,8 @@ architecture structure of PpiSocket is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   attribute dont_touch : string;
-   attribute dont_touch of debug : signal is "true";
+   -- attribute dont_touch : string;
+   -- attribute dont_touch of debug : signal is "true";
 
    COMPONENT ppi_debug
      PORT (

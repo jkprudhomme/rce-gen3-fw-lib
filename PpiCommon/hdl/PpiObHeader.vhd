@@ -111,16 +111,15 @@ architecture structure of PpiObHeader is
    signal intReadMaster : AxiReadMasterType;
    signal intReadSlave  : AxiReadSlaveType;
 
-   attribute dont_touch : string;
-
-   attribute dont_touch of r             : signal is "true";
-   attribute dont_touch of dmaReq        : signal is "true";
-   attribute dont_touch of dmaAck        : signal is "true";
-   attribute dont_touch of intAxisMaster : signal is "true";
-   attribute dont_touch of intAxisSlave  : signal is "true";
-   attribute dont_touch of intAxisCtrl   : signal is "true";
-   attribute dont_touch of intReadMaster : signal is "true";
-   attribute dont_touch of intReadSlave  : signal is "true";
+   -- attribute dont_touch : string;
+   -- attribute dont_touch of r             : signal is "true";
+   -- attribute dont_touch of dmaReq        : signal is "true";
+   -- attribute dont_touch of dmaAck        : signal is "true";
+   -- attribute dont_touch of intAxisMaster : signal is "true";
+   -- attribute dont_touch of intAxisSlave  : signal is "true";
+   -- attribute dont_touch of intAxisCtrl   : signal is "true";
+   -- attribute dont_touch of intReadMaster : signal is "true";
+   -- attribute dont_touch of intReadSlave  : signal is "true";
 
 begin
 
@@ -226,7 +225,7 @@ begin
          AXI_CONFIG_G     => AXI_CONFIG_G,
          AXI_BURST_G      => PPI_AXI_BURST_C,
          AXI_CACHE_G      => PPI_AXI_ACP_CACHE_C,
-         MAX_PEND_G       => 1600
+         PEND_THRESH_G    => 512-- 512 = 4 outstanding transactions
       ) port map (
          axiClk          => axiClk,
          axiRst          => axiRst,
@@ -293,7 +292,7 @@ begin
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 300,
+         FIFO_PAUSE_THRESH_G => 300,-- 1800 byte buffer before pause and 1696 byte of buffer before FIFO FULL
          SLAVE_AXI_CONFIG_G  => PPI_AXIS_HEADER_INIT_C,
          MASTER_AXI_CONFIG_G => PPI_AXIS_HEADER_INIT_C
       ) port map (

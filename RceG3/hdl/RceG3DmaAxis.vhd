@@ -164,8 +164,7 @@ begin
             AXI_CONFIG_G      => AXI_HP_INIT_C,
             AXI_BURST_G       => "01",
             AXI_CACHE_G       => AXI_CACHE_C(i),
-            --MAX_PEND_G        => 1600
-            MAX_PEND_G        => 0
+            PEND_THRESH_G     => 512 -- 512 = 4 outstanding transactions
             ) port map (
                axiClk          => axiDmaClk,
                axiRst          => axiDmaRst,
@@ -206,7 +205,7 @@ begin
             CASCADE_SIZE_G      => 1,
             FIFO_ADDR_WIDTH_G   => 9,
             FIFO_FIXED_THRESH_G => true,
-            FIFO_PAUSE_THRESH_G => 500,
+            FIFO_PAUSE_THRESH_G => 500,-- Unused
             SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
             MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C
             ) port map (
@@ -239,7 +238,7 @@ begin
             CASCADE_SIZE_G      => 1,
             FIFO_ADDR_WIDTH_G   => 9,
             FIFO_FIXED_THRESH_G => true,
-            FIFO_PAUSE_THRESH_G => 300, -- 1800 byte buffer
+            FIFO_PAUSE_THRESH_G => 300, -- 1800 byte buffer before pause and 1696 byte of buffer before FIFO FULL
             SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
             MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C
             ) port map (

@@ -139,21 +139,20 @@ architecture structure of PpiObPayload is
    attribute use_dsp48      : string;
    attribute use_dsp48 of r : signal is "yes";     
 
-   attribute dont_touch : string;
-
-   attribute dont_touch of r             : signal is "true";
-   attribute dont_touch of dmaReq        : signal is "true";
-   attribute dont_touch of dmaAck        : signal is "true";
-   attribute dont_touch of intAxisMaster : signal is "true";
-   attribute dont_touch of intAxisSlave  : signal is "true";
-   attribute dont_touch of intAxisCtrl   : signal is "true";
-   attribute dont_touch of dmaAxisMaster : signal is "true";
-   attribute dont_touch of compWrite     : signal is "true";
-   attribute dont_touch of compDin       : signal is "true";
-   attribute dont_touch of compDout      : signal is "true";
-   attribute dont_touch of compAFull     : signal is "true";
-   attribute dont_touch of intReadMaster : signal is "true";
-   attribute dont_touch of intReadSlave  : signal is "true";
+   -- attribute dont_touch : string;
+   -- attribute dont_touch of r             : signal is "true";
+   -- attribute dont_touch of dmaReq        : signal is "true";
+   -- attribute dont_touch of dmaAck        : signal is "true";
+   -- attribute dont_touch of intAxisMaster : signal is "true";
+   -- attribute dont_touch of intAxisSlave  : signal is "true";
+   -- attribute dont_touch of intAxisCtrl   : signal is "true";
+   -- attribute dont_touch of dmaAxisMaster : signal is "true";
+   -- attribute dont_touch of compWrite     : signal is "true";
+   -- attribute dont_touch of compDin       : signal is "true";
+   -- attribute dont_touch of compDout      : signal is "true";
+   -- attribute dont_touch of compAFull     : signal is "true";
+   -- attribute dont_touch of intReadMaster : signal is "true";
+   -- attribute dont_touch of intReadSlave  : signal is "true";
 
 begin
 
@@ -182,6 +181,12 @@ begin
       v.obPayloadDebug(0)(5)          := r.compEnable;
       v.obPayloadDebug(0)(6)          := r.headOnly;
 
+      -- Check for handshaking
+      if (dmaAck.done = '1') and (r.dmaReq.request = '1') then
+         -- Reset the flags
+         v.dmaReq.request := '0';
+      end if;       
+      
       -- Determine completion enable
       if obPendMaster.tLast = '1' then
          if axiStreamGetUserField(PPI_AXIS_CONFIG_INIT_C, obPendMaster)(1 downto 0) = 3 then
@@ -299,14 +304,12 @@ begin
 
          -- Wait for DMA to complete
          when WAIT_S =>
+            
+            -- Move the data
+            v.fAxisMaster := dmaAxisMaster;
+            -- Check for tLast (higher latency than dmaAck.done)
+            if dmaAxisMaster.tLast = '1' then
 
-            if dmaReq.request = '1' then
-               v.fAxisMaster := dmaAxisMaster;
-            end if;
-
-            -- DMA is done or zero payload (no request)
-            if dmaAck.done = '1' or r.dmaReq.request = '0' then
-               v.dmaReq.request := '0';
                v.compData(1)    := dmaAck.readError;
                v.rdError        := dmaAck.readError;
 
@@ -379,7 +382,7 @@ begin
          AXI_CONFIG_G     => AXI_CONFIG_G,
          AXI_BURST_G      => PPI_AXI_BURST_C,
          AXI_CACHE_G      => PPI_AXI_HP_CACHE_C,
-         MAX_PEND_G       => 1600
+         PEND_THRESH_G    => 512-- 512 = 4 outstanding transactions
       ) port map (
          axiClk          => axiClk,
          axiRst          => axiRst,
@@ -446,7 +449,7 @@ begin
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 300,
+         FIFO_PAUSE_THRESH_G => 300,-- 1800 byte buffer before pause and 1696 byte of buffer before FIFO FULL
          SLAVE_AXI_CONFIG_G  => PPI_AXIS_CONFIG_INIT_C,
          MASTER_AXI_CONFIG_G => PPI_AXIS_CONFIG_INIT_C
       ) port map (
@@ -475,7 +478,6 @@ begin
          USE_BUILT_IN_G     => false,
          XIL_DEVICE_G       => "7SERIES",
          SYNC_STAGES_G      => 3,
-         PIPE_STAGES_G      => 1,
          DATA_WIDTH_G       => COMP_BITS_C,
          ADDR_WIDTH_G       => 9,
          INIT_G             => "0",

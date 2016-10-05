@@ -89,7 +89,17 @@ architecture structure of PpiIbPayload is
    constant CHAN_BITS_C : integer := bitSize(PPI_COMP_CNT_C-1);
    constant COMP_BITS_C : integer := CHAN_BITS_C + 31;
 
-   type StateType is (IDLE_S, CODE_S, READ_A_S, READ_B_S, READ_C_S, WAIT_S, FREE_S, DUMP_S, COMP_S, ERR_S);
+   type StateType is (
+      IDLE_S, 
+      CODE_S, 
+      READ_A_S, 
+      READ_B_S, 
+      READ_C_S, 
+      WAIT_S, 
+      FREE_S, 
+      DUMP_S, 
+      COMP_S, 
+      ERR_S);
 
    type RegType is record
       state          : StateType;
@@ -151,6 +161,9 @@ architecture structure of PpiIbPayload is
    signal intWriteCtrl    : AxiCtrlType;
    signal intReadMaster   : AxiReadMasterType;
    signal intReadSlave    : AxiReadSlaveType;
+   
+   -- attribute dont_touch      : string;
+   -- attribute dont_touch of r : signal is "true";   
 
 begin
 
@@ -362,7 +375,7 @@ begin
          AXI_CONFIG_G     => AXI_RD_CONFIG_G,
          AXI_BURST_G      => PPI_AXI_BURST_C,
          AXI_CACHE_G      => PPI_AXI_ACP_CACHE_C,
-         MAX_PEND_G       => 1
+         PEND_THRESH_G    => 0
       ) port map (
          axiClk          => axiClk,
          axiRst          => axiRst,
@@ -431,7 +444,7 @@ begin
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 475,
+         FIFO_PAUSE_THRESH_G => 475,-- Unused
          SLAVE_AXI_CONFIG_G  => PPI_AXIS_CONFIG_INIT_C,
          MASTER_AXI_CONFIG_G => PPI_AXIS_CONFIG_INIT_C
       ) port map (
@@ -522,7 +535,6 @@ begin
          USE_BUILT_IN_G     => false,
          XIL_DEVICE_G       => "7SERIES",
          SYNC_STAGES_G      => 3,
-         PIPE_STAGES_G      => 1,
          DATA_WIDTH_G       => COMP_BITS_C,
          ADDR_WIDTH_G       => 9,
          INIT_G             => "0",
