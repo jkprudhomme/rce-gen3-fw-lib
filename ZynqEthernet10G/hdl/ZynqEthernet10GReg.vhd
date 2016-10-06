@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-09-03
--- Last update: 2016-09-22
+-- Last update: 2016-10-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -47,6 +47,8 @@ entity ZynqEthernet10GReg is
       axilReadMaster  : in  AxiLiteReadMasterType;
       axilReadSlave   : out AxiLiteReadSlaveType;
       -- Config/Status signals
+      dmaClk          : in  sl;
+      dmaClkRst       : in  sl;
       ethClk          : in  sl;
       ethClkRst       : in  sl;
       phyStatus       : in  slv(7 downto 0);
@@ -54,6 +56,8 @@ entity ZynqEthernet10GReg is
       phyConfig       : out slv(6 downto 0);
       phyReset        : out sl;
       ethHeaderSize   : out slv(15 downto 0);
+      txShift         : out slv(3 downto 0);
+      rxShift         : out slv(3 downto 0);
       macConfig       : out EthMacConfigType;
       macStatus       : in  EthMacStatusType);
 end ZynqEthernet10GReg;
@@ -208,6 +212,13 @@ begin
             when x"0004" =>
                v.phyReset := axilWriteMaster.wdata(0);
 
+            -- Config Vector 0x8
+            -- 0   = Loopback
+            -- 1   = Power Down
+            -- 2   = Reset Local Fault
+            -- 3   = Reset Rx Link Status
+            -- 4   = Test Enable
+            -- 6:5 = Test Pattern               
             when x"0008" =>
                v.config := axilWriteMaster.wdata(6 downto 0);
 
@@ -281,12 +292,22 @@ begin
                   when X"18" =>
                      v.axilReadSlave.rdata(15 downto 0) := r.macAddress(47 downto 32);
 
+                  -- Status Vector 0x20
+                  -- 0   = Tx Local Fault
+                  -- 1   = Rx Local Fault
+                  -- 5:2 = Sync Status
+                  -- 6   = Alignment
+                  -- 7   = Rx Link Status
                   when X"20" =>
                      v.axilReadSlave.rdata(7 downto 0) := phyStatus;
 
+                  -- Debug  Vector 0x24
+                  -- 5   = Align Status
+                  -- 4:1 = Sync Status
+                  -- 0   = TX Phase Complete                     
                   when X"24" =>
                      v.axilReadSlave.rdata(5 downto 0) := phyDebug;
-
+                     
                   when X"28" =>
                      v.axilReadSlave.rdata(0) := r.byteSwap;
 
@@ -346,42 +367,51 @@ begin
       
    end process;
 
-   U_ConfigSync : entity work.SynchronizerVector
+   U_SyncETH : entity work.SynchronizerVector
       generic map (
          TPD_G    => TPD_G,
          STAGES_G => 2,
-         WIDTH_G  => 105) 
+         WIDTH_G  => 77) 
       port map (
-         clk                    => ethClk,
-         rst                    => ethClkRst,
+         clk                   => ethClk,
+         rst                   => ethClkRst,
          -- Input Data
-         dataIn(47 downto 0)    => r.macAddress,
-         dataIn(63 downto 48)   => r.pauseTime,
-         dataIn(67 downto 64)   => r.interFrameGap,
-         dataIn(71 downto 68)   => r.txShift,
-         dataIn(75 downto 72)   => r.rxShift,
-         dataIn(76)             => r.phyReset,
-         dataIn(77)             => r.filtEnable,
-         dataIn(78)             => r.ipCsumEn,
-         dataIn(79)             => r.tcpCsumEn,
-         dataIn(80)             => r.udpCsumEn,
-         dataIn(81)             => r.dropOnPause,
-         dataIn(88 downto 82)   => r.config,
-         dataIn(104 downto 89)  => r.ethHeaderSize,
+         dataIn(47 downto 0)   => r.macAddress,
+         dataIn(63 downto 48)  => r.pauseTime,
+         dataIn(70 downto 64)  => r.config,
+         dataIn(71)            => r.phyReset,
+         dataIn(72)            => r.filtEnable,
+         dataIn(73)            => r.dropOnPause,
+         dataIn(74)            => r.ipCsumEn,
+         dataIn(75)            => r.tcpCsumEn,
+         dataIn(76)            => r.udpCsumEn,
          -- Output Data
-         dataOut(47 downto 0)   => macConfig.macAddress,
-         dataOut(63 downto 48)  => macConfig.pauseTime,
-         dataOut(67 downto 64)  => macConfig.interFrameGap,
-         dataOut(71 downto 68)  => macConfig.txShift,
-         dataOut(75 downto 72)  => macConfig.rxShift,
-         dataOut(76)            => phyReset,
-         dataOut(77)            => macConfig.filtEnable,
-         dataOut(78)            => macConfig.ipCsumEn,
-         dataOut(79)            => macConfig.tcpCsumEn,
-         dataOut(80)            => macConfig.udpCsumEn,
-         dataOut(81)            => macConfig.dropOnPause,
-         dataOut(88 downto 82)  => phyConfig,
-         dataOut(104 downto 89) => ethHeaderSize);
+         dataOut(47 downto 0)  => macConfig.macAddress,
+         dataOut(63 downto 48) => macConfig.pauseTime,
+         dataOut(70 downto 64) => phyConfig,
+         dataOut(71)           => phyReset,
+         dataOut(72)           => macConfig.filtEnable,
+         dataOut(73)           => macConfig.dropOnPause,
+         dataOut(74)           => macConfig.ipCsumEn,
+         dataOut(75)           => macConfig.tcpCsumEn,
+         dataOut(76)           => macConfig.udpCsumEn);
+
+   U_SyncPPI : entity work.SynchronizerVector
+      generic map (
+         TPD_G    => TPD_G,
+         STAGES_G => 2,
+         WIDTH_G  => 24) 
+      port map (
+         clk                   => dmaClk,
+         rst                   => dmaClkRst,
+         -- Input Data
+         dataIn(15 downto 0)   => r.ethHeaderSize,
+         dataIn(19 downto 16)  => r.txShift,
+         dataIn(23 downto 20)  => r.rxShift,
+         -- Output Data
+         dataOut(15 downto 0)  => ethHeaderSize,
+         dataOut(19 downto 16) => txShift,
+         dataOut(23 downto 20) => rxShift);         
 
    macConfig.pauseEnable <= '1';
 
