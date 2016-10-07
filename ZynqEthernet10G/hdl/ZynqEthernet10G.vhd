@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-09-03
--- Last update: 2016-10-06
+-- Last update: 2016-10-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -34,7 +34,6 @@ use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.PpiPkg.all;
 use work.RceG3Pkg.all;
-use work.SsiPkg.all;
 
 entity ZynqEthernet10G is
    generic (
@@ -79,8 +78,6 @@ entity ZynqEthernet10G is
 end ZynqEthernet10G;
 
 architecture mapping of ZynqEthernet10G is
-
-   constant AXIS_CONFIG_C : AxiStreamConfigType := ite((RCE_DMA_MODE_G = RCE_DMA_PPI_C), PPI_AXIS_CONFIG_INIT_C, RCEG3_AXIS_DMA_CONFIG_C);
 
    component zynq_10g_xaui
       port (
@@ -157,10 +154,12 @@ architecture mapping of ZynqEthernet10G is
    signal obMacPrimMaster : AxiStreamMasterType;
    signal obMacPrimSlave  : AxiStreamSlaveType;
 
-   signal rxMaster : AxiStreamMasterType;
-   signal rxSlave  : AxiStreamSlaveType;
-   signal txMaster : AxiStreamMasterType;
-   signal txSlave  : AxiStreamSlaveType;
+   signal rxMaster  : AxiStreamMasterType;
+   signal rxSlave   : AxiStreamSlaveType;
+   signal txMaster  : AxiStreamMasterType;
+   signal txSlave   : AxiStreamSlaveType;
+   signal dmaMaster : AxiStreamMasterType;
+   signal dmaSlave  : AxiStreamSlaveType;
 
    signal ethHeaderSize : slv(15 downto 0);
    signal txShift       : slv(3 downto 0);
@@ -269,16 +268,16 @@ begin
          -- Non-VLAN Configurations
          FILT_EN_G         => true,
          PRIM_COMMON_CLK_G => false,
-         PRIM_CONFIG_G     => AXIS_CONFIG_C,
+         PRIM_CONFIG_G     => RCEG3_AXIS_DMA_CONFIG_C,
          BYP_EN_G          => USER_ETH_EN_G,
          BYP_ETH_TYPE_G    => USER_ETH_TYPE_G,
          BYP_COMMON_CLK_G  => false,
-         BYP_CONFIG_G      => AXIS_CONFIG_C,
+         BYP_CONFIG_G      => RCEG3_AXIS_DMA_CONFIG_C,
          -- VLAN Configurations
          VLAN_EN_G         => false,
          VLAN_CNT_G        => 1,
          VLAN_COMMON_CLK_G => false,
-         VLAN_CONFIG_G     => AXIS_CONFIG_C)           
+         VLAN_CONFIG_G     => RCEG3_AXIS_DMA_CONFIG_C)           
       port map (
          -- Core Clock and Reset
          ethClk          => ethClk,
@@ -324,7 +323,7 @@ begin
          generic map (
             TPD_G          => TPD_G,
             PIPE_STAGES_G  => 1,
-            AXIS_CONFIG_G  => AXIS_CONFIG_C,
+            AXIS_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
             ADD_VALID_EN_G => true) 
          port map (
             axisClk     => sysClk200,
@@ -348,7 +347,7 @@ begin
          generic map (
             TPD_G         => TPD_G,
             PIPE_STAGES_G => 1,
-            AXIS_CONFIG_G => AXIS_CONFIG_C) 
+            AXIS_CONFIG_G => PPI_AXIS_CONFIG_INIT_C) 
          port map (
             axisClk     => sysClk200,
             axisRst     => sysClk200Rst,
@@ -395,38 +394,42 @@ begin
                v.wrCnt := (others => '0');
             end if;
             -- Get EOFE bit
-            eofe                := axiStreamGetUserBit(AXIS_CONFIG_C, rxMaster, EMAC_EOFE_BIT_C);
+            eofe                := axiStreamGetUserBit(RCEG3_AXIS_DMA_CONFIG_C, rxMaster, EMAC_EOFE_BIT_C);
             -- Reset tUser field
             v.dmaIbMaster.tUser := (others => '0');
             -- Set EOH if necessary
             if (r.wrCnt = ethHeaderSize) then
-               axiStreamSetUserBit(AXIS_CONFIG_C, v.dmaIbMaster, PPI_EOH_C, '1');
+               axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, v.dmaIbMaster, PPI_EOH_C, '1');
             end if;
             -- Update ERR bit with EOFE
             if (rxMaster.tLast = '1') then
-               axiStreamSetUserBit(AXIS_CONFIG_C, v.dmaIbMaster, PPI_ERR_C, eofe);
+               axiStreamSetUserBit(PPI_AXIS_CONFIG_INIT_C, v.dmaIbMaster, PPI_ERR_C, eofe);
             end if;
-            -- Clear SOF
-            axiStreamSetUserBit(AXIS_CONFIG_C, v.dmaIbMaster, EMAC_SOF_BIT_C, '0');
          end if;
 
          -- Check for TX data and ready to move
          if (txMaster.tValid = '1') and (v.ibMacPrimMaster.tValid = '0') then
             -- Accept the data
-            v.txSlave.tReady  := '1';
+            v.txSlave.tReady        := '1';
             -- Move the data
-            v.ibMacPrimMaster := txMaster;
+            v.ibMacPrimMaster       := txMaster;
+            -- Get PPI_ERR bit
+            eofe                    := axiStreamGetUserBit(PPI_AXIS_CONFIG_INIT_C, txMaster, PPI_ERR_C);
+            -- Reset tUser field
+            v.ibMacPrimMaster.tUser := (others => '0');
             -- Check for SOF
             if r.sof = '1' then
                -- Reset the flag
                v.sof := '0';
-               -- Insert the SOF bit after the AxiStreamShift
-               ssiSetUserSof(AXIS_CONFIG_C, v.ibMacPrimMaster, '1');
+               -- Insert the EMAC_SOF_BIT_C bit after the AxiStreamShift
+               axiStreamSetUserBit(RCEG3_AXIS_DMA_CONFIG_C, v.ibMacPrimMaster, EMAC_SOF_BIT_C, '1', 0);
             end if;
             -- Check for EOF
             if (txMaster.tLast = '1') then
                -- Set the flag
                v.sof := '1';
+               -- Insert the EMAC_EOFE_BIT_C bit
+               axiStreamSetUserBit(RCEG3_AXIS_DMA_CONFIG_C, v.ibMacPrimMaster, EMAC_EOFE_BIT_C, eofe);
             end if;
          end if;
 
