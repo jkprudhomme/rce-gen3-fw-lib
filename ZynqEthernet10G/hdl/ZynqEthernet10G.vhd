@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-09-03
--- Last update: 2016-10-07
+-- Last update: 2016-10-09
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -195,11 +195,12 @@ begin
          ethClkRst       => ethClkRst,
          phyStatus       => phyStatus,
          phyDebug        => phyDebug,
-         phyReset        => cfgPhyReset,
          phyConfig       => phyConfig,
+         phyReset        => cfgPhyReset,
          ethHeaderSize   => ethHeaderSize,
          txShift         => txShift,
          rxShift         => rxShift,
+         macConfig       => macConfig,
          macStatus       => macStatus);
 
    -------
