@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-09-03
--- Last update: 2016-10-09
+-- Last update: 2016-10-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -259,26 +259,33 @@ begin
    U_EthMacTop : entity work.EthMacTop
       generic map (
          -- Simulation Generics
-         TPD_G             => TPD_G,
+         TPD_G               => TPD_G,
          -- MAC Configurations
-         PAUSE_EN_G        => true,
-         PAUSE_512BITS_G   => 8,
-         PHY_TYPE_G        => "XGMII",
-         DROP_ERR_PKT_G    => true,
-         JUMBO_G           => true,
+         PAUSE_EN_G          => true,
+         PAUSE_512BITS_G     => 8,
+         PHY_TYPE_G          => "XGMII",
+         DROP_ERR_PKT_G      => true,
+         JUMBO_G             => true,
+         -- RX FIFO Configurations
+         INT_PIPE_STAGES_G   => 1,
+         PIPE_STAGES_G       => 1,
+         FIFO_ADDR_WIDTH_G   => 10,
+         CASCADE_SIZE_G      => 2,
+         FIFO_PAUSE_THRESH_G => 1000,
+         CASCADE_PAUSE_SEL_G => 0,
          -- Non-VLAN Configurations
-         FILT_EN_G         => true,
-         PRIM_COMMON_CLK_G => false,
-         PRIM_CONFIG_G     => RCEG3_AXIS_DMA_CONFIG_C,
-         BYP_EN_G          => USER_ETH_EN_G,
-         BYP_ETH_TYPE_G    => USER_ETH_TYPE_G,
-         BYP_COMMON_CLK_G  => false,
-         BYP_CONFIG_G      => RCEG3_AXIS_DMA_CONFIG_C,
+         FILT_EN_G           => true,
+         PRIM_COMMON_CLK_G   => false,
+         PRIM_CONFIG_G       => RCEG3_AXIS_DMA_CONFIG_C,
+         BYP_EN_G            => USER_ETH_EN_G,
+         BYP_ETH_TYPE_G      => USER_ETH_TYPE_G,
+         BYP_COMMON_CLK_G    => false,
+         BYP_CONFIG_G        => RCEG3_AXIS_DMA_CONFIG_C,
          -- VLAN Configurations
-         VLAN_EN_G         => false,
-         VLAN_CNT_G        => 1,
-         VLAN_COMMON_CLK_G => false,
-         VLAN_CONFIG_G     => RCEG3_AXIS_DMA_CONFIG_C)           
+         VLAN_EN_G           => false,
+         VLAN_CNT_G          => 1,
+         VLAN_COMMON_CLK_G   => false,
+         VLAN_CONFIG_G       => RCEG3_AXIS_DMA_CONFIG_C)           
       port map (
          -- Core Clock and Reset
          ethClk          => ethClk,
@@ -305,7 +312,7 @@ begin
          -- Configuration and status
          phyReady        => phyStatus(7),
          ethConfig       => macConfig,
-         ethStatus       => macStatus);
+         ethStatus       => macStatus);     
 
    BYPASS_SHIFT : if (RCE_DMA_MODE_G /= RCE_DMA_PPI_C) generate
       dmaIbMaster     <= obMacPrimMaster;
