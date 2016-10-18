@@ -270,7 +270,7 @@ begin
          INT_PIPE_STAGES_G   => 1,
          PIPE_STAGES_G       => 1,
          FIFO_ADDR_WIDTH_G   => 10,
-         CASCADE_SIZE_G      => 2,
+         CASCADE_SIZE_G      => 4,
          FIFO_PAUSE_THRESH_G => 1000,
          CASCADE_PAUSE_SEL_G => 0,
          -- Non-VLAN Configurations
