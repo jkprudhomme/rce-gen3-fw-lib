@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-10-18
--- Last update: 2016-10-20
+-- Last update: 2016-10-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -287,7 +287,7 @@ begin
                      v.txMaster.tData  := r.tData(r.cnt);
                      -- Check for SOF
                      if (r.cnt = 0) then
-                        axiStreamSetUserBit(RCEG3_AXIS_DMA_CONFIG_C, v.txMaster, EMAC_SOF_BIT_C, '1', 0);
+                        axiStreamSetUserBit(EMAC_AXIS_CONFIG_C, v.txMaster, EMAC_SOF_BIT_C, '1', 0);
                      end if;
                      -- Increment the counter
                      v.cnt := r.cnt + 1;
@@ -310,13 +310,13 @@ begin
                -- Check if moving data
                if (obMacPrimMaster.tValid = '1') and (v.ethUdpObMaster.tValid = '0') then
                   -- Check if moving cached data
-                  if (r.cnt < 5) then
+                  if (r.cnt < 3) then
                      -- Move the data
                      v.ethUdpObMaster.tValid := '1';
                      v.ethUdpObMaster.tData  := r.tData(r.cnt);
                      -- Check for SOF
                      if (r.cnt = 0) then
-                        axiStreamSetUserBit(RCEG3_AXIS_DMA_CONFIG_C, v.ethUdpObMaster, EMAC_SOF_BIT_C, '1', 0);
+                        axiStreamSetUserBit(EMAC_AXIS_CONFIG_C, v.ethUdpObMaster, EMAC_SOF_BIT_C, '1', 0);
                      end if;
                      -- Increment the counter
                      v.cnt := r.cnt + 1;
