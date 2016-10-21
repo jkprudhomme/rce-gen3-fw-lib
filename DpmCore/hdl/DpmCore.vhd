@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-11-14
--- Last update: 2016-10-20
+-- Last update: 2016-10-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ entity DpmCore is
       userEthVlanObMasters : out   AxiStreamMasterArray(VLAN_SIZE_G-1 downto 0);
       userEthVlanObSlaves  : in    AxiStreamSlaveArray(VLAN_SIZE_G-1 downto 0)  := (others => AXI_STREAM_SLAVE_FORCE_C);
       -- User Interrupts
-      userInterrupt        : in    slv(USER_INT_COUNT_C-1 downto 0));
+      userInterrupt        : in    slv(USER_INT_COUNT_C-1 downto 0)             := (others => '0'));
 end DpmCore;
 
 architecture STRUCTURE of DpmCore is
