@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-09-03
--- Last update: 2016-10-20
+-- Last update: 2016-10-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -137,7 +137,6 @@ begin
          statusIn(7)           => macStatus.txNotReadyCnt,
          statusIn(15 downto 8) => phyStatus,
          statusIn(16)          => macStatus.rxFifoDropCnt,
-         statusIn(31 downto 17)=> (others => '0'),
          statusOut             => open,
          cntRstIn              => r.countReset,
          rollOverEnIn          => ROLL_OVER_C,
@@ -150,132 +149,63 @@ begin
          rdRst                 => axilClkRst);
 
    comb : process (axilClkRst, axilReadMaster, axilWriteMaster, phyDebug, phyStatus, r, statusCnt) is
-      variable v         : RegType;
-      variable axiStatus : AxiLiteStatusType;
+      variable v      : RegType;
+      variable axilEp : AxiLiteEndpointType;
    begin
+      -- Latch the current value
       v := r;
 
-      axiSlaveWaitTxn(axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave, axiStatus);
+      ------------------------      
+      -- AXI-Lite Transactions
+      ------------------------      
 
-      -- Write
-      if (axiStatus.writeEnable = '1') then
-
-         case (axilWriteMaster.awaddr(15 downto 0)) is
-
-            when x"0000" =>
-               v.countReset := axilWriteMaster.wdata(0);
-
-            when x"0004" =>
-               v.phyReset := axilWriteMaster.wdata(0);
-
-            -- Config Vector 0x8
-            -- 0   = Loopback
-            -- 1   = Power Down
-            -- 2   = Reset Local Fault
-            -- 3   = Reset Rx Link Status
-            -- 4   = Test Enable
-            -- 6:5 = Test Pattern               
-            when x"0008" =>
-               v.config := axilWriteMaster.wdata(6 downto 0);
-
-            when x"0010" =>
-               v.pauseTime := axilWriteMaster.wdata(15 downto 0);
-
-            when x"0014" =>
-               v.macAddress(31 downto 0) := axilWriteMaster.wdata;
-
-            when x"0018" =>
-               v.macAddress(47 downto 32) := axilWriteMaster.wdata(15 downto 0);
-
-            when x"001C" =>
-               v.ipAddr := axilWriteMaster.wdata;
-
-            when x"0038" =>
-               v.txShift     := axilWriteMaster.wdata(3 downto 0);
-               v.rxShift     := axilWriteMaster.wdata(7 downto 4);
-               v.filtEnable  := axilWriteMaster.wdata(16);
-               v.ipCsumEn    := axilWriteMaster.wdata(17);
-               v.tcpCsumEn   := axilWriteMaster.wdata(18);
-               v.udpCsumEn   := axilWriteMaster.wdata(19);
-               v.dropOnPause := axilWriteMaster.wdata(20);
-
-            when x"003C" =>
-               v.ethHeaderSize := axilWriteMaster.wdata(15 downto 0);
-
-            when others => null;
-         end case;
-
-         -- Send Axi response
-         axiSlaveWriteResponse(v.axilWriteSlave);
-
-      end if;
-
-      -- Read
-      if (axiStatus.readEnable = '1') then
+      -- Determine the transaction type
+      axiSlaveWaitTxn(axilEp, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
+      
+      -- Reset data bus on AXI-Lite ACK (Makes easier to read from CPU memDump)
+      if (axilReadMaster.rready = '1') then
          v.axilReadSlave.rdata := (others => '0');
-         if (axilReadMaster.araddr(15 downto 8) = x"00") then
+      end if;      
 
-            case axilReadMaster.araddr(7 downto 0) is
+      axiSlaveRegister(axilEp, x"000", 0, v.countReset);
+      axiSlaveRegister(axilEp, x"004", 0, v.phyReset);
+      axiSlaveRegister(axilEp, x"008", 0, v.config);
+      -- 0x00C is unmapped
+      axiSlaveRegister(axilEp, x"010", 0, v.pauseTime);
+      axiSlaveRegister(axilEp, x"014", 0, v.macAddress);                     --48-bit
+      axiSlaveRegister(axilEp, x"01C", 0, v.ipAddr);
+      axiSlaveRegisterR(axilEp, x"020", 0, phyStatus);
+      axiSlaveRegisterR(axilEp, x"024", 0, phyDebug);
+      -- 0x0034:0x028 are unmapped
+      axiSlaveRegister(axilEp, x"038", 0, v.txShift);
+      axiSlaveRegister(axilEp, x"038", 4, v.rxShift);
+      axiSlaveRegister(axilEp, x"038", 16, v.filtEnable);
+      axiSlaveRegister(axilEp, x"038", 17, v.ipCsumEn);
+      axiSlaveRegister(axilEp, x"038", 18, v.tcpCsumEn);
+      axiSlaveRegister(axilEp, x"038", 19, v.udpCsumEn);
+      axiSlaveRegister(axilEp, x"038", 20, v.dropOnPause);
+      axiSlaveRegister(axilEp, x"03C", 0, v.ethHeaderSize);
+      -- 0x00FC:0x040 are unmapped
+      axiSlaveRegisterR(axilEp, x"100", 0, muxSlVectorArray(statusCnt, 0));  -- rxCountEn
+      axiSlaveRegisterR(axilEp, x"104", 0, muxSlVectorArray(statusCnt, 1));  -- txCountEn
+      axiSlaveRegisterR(axilEp, x"108", 0, muxSlVectorArray(statusCnt, 2));  -- rxpauseCnt
+      axiSlaveRegisterR(axilEp, x"10C", 0, muxSlVectorArray(statusCnt, 3));  -- txPauseCnt
+      axiSlaveRegisterR(axilEp, x"110", 0, muxSlVectorArray(statusCnt, 4));  -- rxOverflow
+      axiSlaveRegisterR(axilEp, x"114", 0, muxSlVectorArray(statusCnt, 5));  -- rxCrcErrorCnt
+      axiSlaveRegisterR(axilEp, x"118", 0, muxSlVectorArray(statusCnt, 6));  -- txUnderRunCnt
+      axiSlaveRegisterR(axilEp, x"11C", 0, muxSlVectorArray(statusCnt, 7));  -- txNotReadyCnt
+      axiSlaveRegisterR(axilEp, x"120", 0, muxSlVectorArray(statusCnt, 8));  -- phyStatus(0) = TX Local Fault
+      axiSlaveRegisterR(axilEp, x"124", 0, muxSlVectorArray(statusCnt, 9));  -- phyStatus(1) = RX Local Fault
+      axiSlaveRegisterR(axilEp, x"128", 0, muxSlVectorArray(statusCnt, 10));  -- phyStatus(2) = Sync Status(0)
+      axiSlaveRegisterR(axilEp, x"12C", 0, muxSlVectorArray(statusCnt, 11));  -- phyStatus(3) = Sync Status(1)
+      axiSlaveRegisterR(axilEp, x"130", 0, muxSlVectorArray(statusCnt, 12));  -- phyStatus(4) = Sync Status(2)
+      axiSlaveRegisterR(axilEp, x"134", 0, muxSlVectorArray(statusCnt, 13));  -- phyStatus(5) = Sync Status(3)
+      axiSlaveRegisterR(axilEp, x"138", 0, muxSlVectorArray(statusCnt, 14));  -- phyStatus(6) = Alignment
+      axiSlaveRegisterR(axilEp, x"13C", 0, muxSlVectorArray(statusCnt, 15));  -- phyStatus(7) = RX Link Status
+      axiSlaveRegisterR(axilEp, x"140", 0, muxSlVectorArray(statusCnt, 16));  -- rxFifoDropCnt
 
-               when X"00" =>
-                  v.axilReadSlave.rdata(0) := r.countReset;
-
-               when X"04" =>
-                  v.axilReadSlave.rdata(0) := r.phyReset;
-
-               when X"08" =>
-                  v.axilReadSlave.rdata(6 downto 0) := r.config;
-
-               when X"10" =>
-                  v.axilReadSlave.rdata(15 downto 0) := r.pauseTime;
-
-               when X"14" =>
-                  v.axilReadSlave.rdata := r.macAddress(31 downto 0);
-
-               when X"18" =>
-                  v.axilReadSlave.rdata(15 downto 0) := r.macAddress(47 downto 32);
-                  
-               when X"1C" =>
-                  v.axilReadSlave.rdata := r.ipAddr;
-
-               -- Status Vector 0x20
-               -- 0   = Tx Local Fault
-               -- 1   = Rx Local Fault
-               -- 5:2 = Sync Status
-               -- 6   = Alignment
-               -- 7   = Rx Link Status
-               when X"20" =>
-                  v.axilReadSlave.rdata(7 downto 0) := phyStatus;
-
-               -- Debug  Vector 0x24
-               -- 5   = Align Status
-               -- 4:1 = Sync Status
-               -- 0   = TX Phase Complete                     
-               when X"24" =>
-                  v.axilReadSlave.rdata(5 downto 0) := phyDebug;
-                  
-               when x"38" =>
-                  v.axilReadSlave.rdata(3 downto 0) := r.txShift;
-                  v.axilReadSlave.rdata(7 downto 4) := r.rxShift;
-                  v.axilReadSlave.rdata(16)         := r.filtEnable;
-                  v.axilReadSlave.rdata(17)         := r.ipCsumEn;
-                  v.axilReadSlave.rdata(18)         := r.tcpCsumEn;
-                  v.axilReadSlave.rdata(19)         := r.udpCsumEn;
-                  v.axilReadSlave.rdata(20)         := r.dropOnPause;
-
-               when X"3C" =>
-                  v.axilReadSlave.rdata(15 downto 0) := r.ethHeaderSize;
-
-               when others => null;
-            end case;
-            
-         else
-            v.axilReadSlave.rdata := muxSlVectorArray(statusCnt, conv_integer(axilReadMaster.araddr(6 downto 2)));
-         end if;
-
-         -- Send Axi Response
-         axiSlaveReadResponse(v.axilReadSlave);
-      end if;
+      -- Close out the transaction
+      axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_OK_C);  -- Always return "OK" response for ZYNQ CPU 
 
       -- Reset
       if (axilClkRst = '1') then
