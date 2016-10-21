@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-09-03
--- Last update: 2016-10-14
+-- Last update: 2016-10-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -37,44 +37,62 @@ use work.RceG3Pkg.all;
 
 entity ZynqEthernet10G is
    generic (
-      TPD_G           : time             := 1 ns;
-      RCE_DMA_MODE_G  : RceDmaModeType   := RCE_DMA_PPI_C;
-      USER_ETH_EN_G   : boolean          := false;
-      USER_ETH_TYPE_G : slv(15 downto 0) := x"0000");
+      -- Generic Configurations
+      TPD_G              : time                  := 1 ns;
+      RCE_DMA_MODE_G     : RceDmaModeType        := RCE_DMA_PPI_C;
+      -- User ETH Configurations
+      UDP_SERVER_EN_G    : boolean               := false;
+      UDP_SERVER_SIZE_G  : positive              := 1;
+      UDP_SERVER_PORTS_G : PositiveArray         := (0 => 8192);
+      BYP_EN_G           : boolean               := false;
+      BYP_ETH_TYPE_G     : slv(15 downto 0)      := x"AAAA";
+      VLAN_EN_G          : boolean               := false;
+      VLAN_SIZE_G        : positive range 1 to 8 := 1;
+      VLAN_VID_G         : Slv12Array            := (0 => x"001"));   
    port (
       -- Clocks
-      sysClk200       : in  sl;
-      sysClk200Rst    : in  sl;
+      sysClk200            : in  sl;
+      sysClk200Rst         : in  sl;
       -- PPI Interface
-      dmaClk          : out sl;
-      dmaClkRst       : out sl;
-      dmaState        : in  RceDmaStateType;
-      dmaIbMaster     : out AxiStreamMasterType;
-      dmaIbSlave      : in  AxiStreamSlaveType;
-      dmaObMaster     : in  AxiStreamMasterType;
-      dmaObSlave      : out AxiStreamSlaveType;
-      -- User interface
-      userEthClk      : in  sl;
-      userEthClkRst   : in  sl;
-      userEthObMaster : in  AxiStreamMasterType;
-      userEthObSlave  : out AxiStreamSlaveType;
-      userEthIbMaster : out AxiStreamMasterType;
-      userEthIbSlave  : in  AxiStreamSlaveType;
+      dmaClk               : out sl;
+      dmaClkRst            : out sl;
+      dmaState             : in  RceDmaStateType;
+      dmaIbMaster          : out AxiStreamMasterType;
+      dmaIbSlave           : in  AxiStreamSlaveType;
+      dmaObMaster          : in  AxiStreamMasterType;
+      dmaObSlave           : out AxiStreamSlaveType;
+      -- User ETH interface
+      userEthClk           : out sl;
+      userEthClkRst        : out sl;
+      userEthIpAddr        : out slv(31 downto 0);
+      userEthMacAddr       : out slv(47 downto 0);
+      userEthUdpIbMaster   : in  AxiStreamMasterType;
+      userEthUdpIbSlave    : out AxiStreamSlaveType;
+      userEthUdpObMaster   : out AxiStreamMasterType;
+      userEthUdpObSlave    : in  AxiStreamSlaveType;
+      userEthBypIbMaster   : in  AxiStreamMasterType;
+      userEthBypIbSlave    : out AxiStreamSlaveType;
+      userEthBypObMaster   : out AxiStreamMasterType;
+      userEthBypObSlave    : in  AxiStreamSlaveType;
+      userEthVlanIbMasters : in  AxiStreamMasterArray(VLAN_SIZE_G-1 downto 0);
+      userEthVlanIbSlaves  : out AxiStreamSlaveArray(VLAN_SIZE_G-1 downto 0);
+      userEthVlanObMasters : out AxiStreamMasterArray(VLAN_SIZE_G-1 downto 0);
+      userEthVlanObSlaves  : in  AxiStreamSlaveArray(VLAN_SIZE_G-1 downto 0);
       -- AXI-Lite Buses
-      axilClk         : in  sl;
-      axilClkRst      : in  sl;
-      axilWriteMaster : in  AxiLiteWriteMasterType;
-      axilWriteSlave  : out AxiLiteWriteSlaveType;
-      axilReadMaster  : in  AxiLiteReadMasterType;
-      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilClk              : in  sl;
+      axilClkRst           : in  sl;
+      axilWriteMaster      : in  AxiLiteWriteMasterType;
+      axilWriteSlave       : out AxiLiteWriteSlaveType;
+      axilReadMaster       : in  AxiLiteReadMasterType;
+      axilReadSlave        : out AxiLiteReadSlaveType;
       -- Ref Clock
-      ethRefClkP      : in  sl;
-      ethRefClkM      : in  sl;
+      ethRefClkP           : in  sl;
+      ethRefClkM           : in  sl;
       -- Ethernet Lines
-      ethRxP          : in  slv(3 downto 0);
-      ethRxM          : in  slv(3 downto 0);
-      ethTxP          : out slv(3 downto 0);
-      ethTxM          : out slv(3 downto 0));
+      ethRxP               : in  slv(3 downto 0);
+      ethRxM               : in  slv(3 downto 0);
+      ethTxP               : out slv(3 downto 0);
+      ethTxM               : out slv(3 downto 0));
 end ZynqEthernet10G;
 
 architecture mapping of ZynqEthernet10G is
@@ -114,20 +132,20 @@ architecture mapping of ZynqEthernet10G is
    end component;
 
    type RegType is record
-      sof             : sl;
-      wrCnt           : slv(15 downto 0);
-      rxSlave         : AxiStreamSlaveType;
-      txSlave         : AxiStreamSlaveType;
-      dmaIbMaster     : AxiStreamMasterType;
-      ibMacPrimMaster : AxiStreamMasterType;
+      sof          : sl;
+      wrCnt        : slv(15 downto 0);
+      rxSlave      : AxiStreamSlaveType;
+      txSlave      : AxiStreamSlaveType;
+      dmaIbMaster  : AxiStreamMasterType;
+      ibPrimMaster : AxiStreamMasterType;
    end record RegType;
    constant REG_INIT_C : RegType := (
-      sof             => '1',
-      wrCnt           => (others => '0'),
-      rxSlave         => AXI_STREAM_SLAVE_INIT_C,
-      txSlave         => AXI_STREAM_SLAVE_INIT_C,
-      dmaIbMaster     => AXI_STREAM_MASTER_INIT_C,
-      ibMacPrimMaster => AXI_STREAM_MASTER_INIT_C);      
+      sof          => '1',
+      wrCnt        => (others => '0'),
+      rxSlave      => AXI_STREAM_SLAVE_INIT_C,
+      txSlave      => AXI_STREAM_SLAVE_INIT_C,
+      dmaIbMaster  => AXI_STREAM_MASTER_INIT_C,
+      ibPrimMaster => AXI_STREAM_MASTER_INIT_C);      
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -154,6 +172,11 @@ architecture mapping of ZynqEthernet10G is
    signal obMacPrimMaster : AxiStreamMasterType;
    signal obMacPrimSlave  : AxiStreamSlaveType;
 
+   signal ibPrimMaster : AxiStreamMasterType;
+   signal ibPrimSlave  : AxiStreamSlaveType;
+   signal obPrimMaster : AxiStreamMasterType;
+   signal obPrimSlave  : AxiStreamSlaveType;
+
    signal rxMaster  : AxiStreamMasterType;
    signal rxSlave   : AxiStreamSlaveType;
    signal txMaster  : AxiStreamMasterType;
@@ -173,8 +196,11 @@ architecture mapping of ZynqEthernet10G is
 begin
 
    -- Select DMA clock
-   dmaClk    <= sysClk200;
-   dmaClkRst <= sysClk200Rst;
+   dmaClk         <= sysClk200;
+   dmaClkRst      <= sysClk200Rst;
+   userEthClk     <= ethClk;
+   userEthClkRst  <= ethClkRst;
+   userEthMacAddr <= macConfig.macAddress;
 
    -----------------
    -- Register Space
@@ -201,7 +227,8 @@ begin
          txShift         => txShift,
          rxShift         => rxShift,
          macConfig       => macConfig,
-         macStatus       => macStatus);
+         macStatus       => macStatus,
+         ipAddr          => userEthIpAddr);
 
    -------
    -- XAUI
@@ -275,50 +302,88 @@ begin
          CASCADE_PAUSE_SEL_G => 0,
          -- Non-VLAN Configurations
          FILT_EN_G           => true,
-         PRIM_COMMON_CLK_G   => false,
-         PRIM_CONFIG_G       => RCEG3_AXIS_DMA_CONFIG_C,
-         BYP_EN_G            => USER_ETH_EN_G,
-         BYP_ETH_TYPE_G      => USER_ETH_TYPE_G,
-         BYP_COMMON_CLK_G    => false,
-         BYP_CONFIG_G        => RCEG3_AXIS_DMA_CONFIG_C,
+         PRIM_COMMON_CLK_G   => true,
+         PRIM_CONFIG_G       => EMAC_AXIS_CONFIG_C,
+         BYP_EN_G            => BYP_EN_G,
+         BYP_ETH_TYPE_G      => BYP_ETH_TYPE_G,
+         BYP_COMMON_CLK_G    => true,
+         BYP_CONFIG_G        => EMAC_AXIS_CONFIG_C,
          -- VLAN Configurations
-         VLAN_EN_G           => false,
-         VLAN_CNT_G          => 1,
-         VLAN_COMMON_CLK_G   => false,
-         VLAN_CONFIG_G       => RCEG3_AXIS_DMA_CONFIG_C)           
+         VLAN_EN_G           => VLAN_EN_G,
+         VLAN_SIZE_G         => VLAN_SIZE_G,
+         VLAN_VID_G          => VLAN_VID_G,
+         VLAN_COMMON_CLK_G   => true,
+         VLAN_CONFIG_G       => EMAC_AXIS_CONFIG_C)           
       port map (
          -- Core Clock and Reset
+         ethClk           => ethClk,
+         ethRst           => ethClkRst,
+         -- Primary Interface
+         primClk          => ethClk,
+         primRst          => ethClkRst,
+         ibMacPrimMaster  => ibMacPrimMaster,
+         ibMacPrimSlave   => ibMacPrimSlave,
+         obMacPrimMaster  => obMacPrimMaster,
+         obMacPrimSlave   => obMacPrimSlave,
+         -- Bypass interface
+         bypClk           => ethClk,
+         bypRst           => ethClkRst,
+         ibMacBypMaster   => userEthBypIbMaster,
+         ibMacBypSlave    => userEthBypIbSlave,
+         obMacBypMaster   => userEthBypObMaster,
+         obMacBypSlave    => userEthBypObSlave,
+         -- VLAN Interfaces
+         vlanClk          => ethClk,
+         vlanRst          => ethClkRst,
+         ibMacVlanMasters => userEthVlanIbMasters,
+         ibMacVlanSlaves  => userEthVlanIbSlaves,
+         obMacVlanMasters => userEthVlanObMasters,
+         obMacVlanSlaves  => userEthVlanObSlaves,
+         -- XGMII PHY Interface
+         xgmiiRxd         => xauiRxd,
+         xgmiiRxc         => xauiRxc,
+         xgmiiTxd         => xauiTxd,
+         xgmiiTxc         => xauiTxc,
+         -- Configuration and status
+         phyReady         => phyStatus(7),
+         ethConfig        => macConfig,
+         ethStatus        => macStatus);     
+
+   ------------------
+   -- ETH USER Router
+   ------------------
+   U_ZynqUserEthRouter : entity work.ZynqUserEthRouter
+      generic map (
+         TPD_G              => TPD_G,
+         UDP_SERVER_EN_G    => UDP_SERVER_EN_G,
+         UDP_SERVER_SIZE_G  => UDP_SERVER_SIZE_G,
+         UDP_SERVER_PORTS_G => UDP_SERVER_PORTS_G)
+      port map (
+         -- MAC Interface (ethClk domain)
          ethClk          => ethClk,
          ethRst          => ethClkRst,
-         -- Primary Interface
-         primClk         => sysClk200,
-         primRst         => sysClk200Rst,
          ibMacPrimMaster => ibMacPrimMaster,
          ibMacPrimSlave  => ibMacPrimSlave,
          obMacPrimMaster => obMacPrimMaster,
          obMacPrimSlave  => obMacPrimSlave,
-         -- Bypass interface
-         bypClk          => userEthClk,
-         bypRst          => userEthClkRst,
-         ibMacBypMaster  => userEthObMaster,
-         ibMacBypSlave   => userEthObSlave,
-         obMacBypMaster  => userEthIbMaster,
-         obMacBypSlave   => userEthIbSlave,
-         -- XGMII PHY Interface
-         xgmiiRxd        => xauiRxd,
-         xgmiiRxc        => xauiRxc,
-         xgmiiTxd        => xauiTxd,
-         xgmiiTxc        => xauiTxc,
-         -- Configuration and status
-         phyReady        => phyStatus(7),
-         ethConfig       => macConfig,
-         ethStatus       => macStatus);     
+         -- User ETH Interface (ethClk domain)
+         ethUdpObMaster  => userEthUdpObMaster,
+         ethUdpObSlave   => userEthUdpObSlave,
+         ethUdpIbMaster  => userEthUdpIbMaster,
+         ethUdpIbSlave   => userEthUdpIbSlave,
+         -- CPU Interface (axisClk domain)
+         axisClk         => sysClk200,
+         axisRst         => sysClk200Rst,
+         ibPrimMaster    => ibPrimMaster,
+         ibPrimSlave     => ibPrimSlave,
+         obPrimMaster    => obPrimMaster,
+         obPrimSlave     => obPrimSlave);
 
    BYPASS_SHIFT : if (RCE_DMA_MODE_G /= RCE_DMA_PPI_C) generate
-      dmaIbMaster     <= obMacPrimMaster;
-      obMacPrimSlave  <= dmaIbSlave;
-      ibMacPrimMaster <= dmaObMaster;
-      dmaObSlave      <= ibMacPrimSlave;
+      dmaIbMaster  <= obPrimMaster;
+      obPrimSlave  <= dmaIbSlave;
+      ibPrimMaster <= dmaObMaster;
+      dmaObSlave   <= ibPrimSlave;
    end generate;
 
    GEN_SHIFT : if (RCE_DMA_MODE_G = RCE_DMA_PPI_C) generate
@@ -339,8 +404,8 @@ begin
             axiStart    => '1',
             axiShiftDir => '0',         -- 0 = left (lsb to msb)
             axiShiftCnt => rxShift,
-            sAxisMaster => obMacPrimMaster,
-            sAxisSlave  => obMacPrimSlave,
+            sAxisMaster => obPrimMaster,
+            sAxisSlave  => obPrimSlave,
             mAxisMaster => rxMaster,
             mAxisSlave  => rxSlave);         
 
@@ -370,8 +435,7 @@ begin
       --------------
       -- PPI support
       --------------
-      comb : process (dmaIbSlave, ethHeaderSize, ibMacPrimSlave, r, rxMaster, sysClk200Rst,
-                      txMaster) is
+      comb : process (dmaIbSlave, ethHeaderSize, ibPrimSlave, r, rxMaster, sysClk200Rst, txMaster) is
          variable v    : RegType;
          variable eofe : sl;
       begin
@@ -384,8 +448,8 @@ begin
          if dmaIbSlave.tReady = '1' then
             v.dmaIbMaster.tValid := '0';
          end if;
-         if ibMacPrimSlave.tReady = '1' then
-            v.ibMacPrimMaster.tValid := '0';
+         if ibPrimSlave.tReady = '1' then
+            v.ibPrimMaster.tValid := '0';
          end if;
 
          -- Check for RX data and ready to move
@@ -416,28 +480,28 @@ begin
          end if;
 
          -- Check for TX data and ready to move
-         if (txMaster.tValid = '1') and (v.ibMacPrimMaster.tValid = '0') then
+         if (txMaster.tValid = '1') and (v.ibPrimMaster.tValid = '0') then
             -- Accept the data
-            v.txSlave.tReady        := '1';
+            v.txSlave.tReady     := '1';
             -- Move the data
-            v.ibMacPrimMaster       := txMaster;
+            v.ibPrimMaster       := txMaster;
             -- Get PPI_ERR bit
-            eofe                    := axiStreamGetUserBit(PPI_AXIS_CONFIG_INIT_C, txMaster, PPI_ERR_C);
+            eofe                 := axiStreamGetUserBit(PPI_AXIS_CONFIG_INIT_C, txMaster, PPI_ERR_C);
             -- Reset tUser field
-            v.ibMacPrimMaster.tUser := (others => '0');
+            v.ibPrimMaster.tUser := (others => '0');
             -- Check for SOF
             if r.sof = '1' then
                -- Reset the flag
                v.sof := '0';
                -- Insert the EMAC_SOF_BIT_C bit after the AxiStreamShift
-               axiStreamSetUserBit(RCEG3_AXIS_DMA_CONFIG_C, v.ibMacPrimMaster, EMAC_SOF_BIT_C, '1', 0);
+               axiStreamSetUserBit(RCEG3_AXIS_DMA_CONFIG_C, v.ibPrimMaster, EMAC_SOF_BIT_C, '1', 0);
             end if;
             -- Check for EOF
             if (txMaster.tLast = '1') then
                -- Set the flag
                v.sof := '1';
                -- Insert the EMAC_EOFE_BIT_C bit
-               axiStreamSetUserBit(RCEG3_AXIS_DMA_CONFIG_C, v.ibMacPrimMaster, EMAC_EOFE_BIT_C, eofe);
+               axiStreamSetUserBit(RCEG3_AXIS_DMA_CONFIG_C, v.ibPrimMaster, EMAC_EOFE_BIT_C, eofe);
             end if;
          end if;
 
@@ -450,10 +514,10 @@ begin
          rin <= v;
 
          -- Outputs        
-         rxSlave         <= v.rxSlave;
-         txSlave         <= v.txSlave;
-         dmaIbMaster     <= r.dmaIbMaster;
-         ibMacPrimMaster <= r.ibMacPrimMaster;
+         rxSlave      <= v.rxSlave;
+         txSlave      <= v.txSlave;
+         dmaIbMaster  <= r.dmaIbMaster;
+         ibPrimMaster <= r.ibPrimMaster;
          
       end process comb;
 

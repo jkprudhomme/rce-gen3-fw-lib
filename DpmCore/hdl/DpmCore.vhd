@@ -5,7 +5,7 @@
 -- Author     : Ryan Herbst <rherbst@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-11-14
--- Last update: 2016-09-22
+-- Last update: 2016-10-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -34,61 +34,77 @@ use work.AxiPkg.all;
 
 entity DpmCore is
    generic (
-      TPD_G           : time                 := 1 ns;
-      ETH_10G_EN_G    : boolean              := false;
-      RCE_DMA_MODE_G  : RceDmaModeType       := RCE_DMA_PPI_C;
-      OLD_BSI_MODE_G  : boolean              := false;
-      AXI_ST_COUNT_G  : natural range 3 to 4 := 3;
-      USER_ETH_EN_G   : boolean              := false;
-      USER_ETH_TYPE_G : slv(15 downto 0)     := x"AAAA");
+      TPD_G              : time                  := 1 ns;
+      ETH_10G_EN_G       : boolean               := false;
+      RCE_DMA_MODE_G     : RceDmaModeType        := RCE_DMA_PPI_C;
+      OLD_BSI_MODE_G     : boolean               := false;
+      AXI_ST_COUNT_G     : natural range 3 to 4  := 3;
+      UDP_SERVER_EN_G    : boolean               := false;
+      UDP_SERVER_SIZE_G  : positive              := 1;
+      UDP_SERVER_PORTS_G : PositiveArray         := (0 => 8192);
+      BYP_EN_G           : boolean               := false;
+      BYP_ETH_TYPE_G     : slv(15 downto 0)      := x"AAAA";
+      VLAN_EN_G          : boolean               := false;
+      VLAN_SIZE_G        : positive range 1 to 8 := 1;
+      VLAN_VID_G         : Slv12Array            := (0 => x"001"));       
    port (
       -- I2C
-      i2cSda             : inout sl;
-      i2cScl             : inout sl;
+      i2cSda               : inout sl;
+      i2cScl               : inout sl;
       -- Ethernet
-      ethRxP             : in    slv(3 downto 0);
-      ethRxM             : in    slv(3 downto 0);
-      ethTxP             : out   slv(3 downto 0);
-      ethTxM             : out   slv(3 downto 0);
-      ethRefClkP         : in    sl;
-      ethRefClkM         : in    sl;
+      ethRxP               : in    slv(3 downto 0);
+      ethRxM               : in    slv(3 downto 0);
+      ethTxP               : out   slv(3 downto 0);
+      ethTxM               : out   slv(3 downto 0);
+      ethRefClkP           : in    sl;
+      ethRefClkM           : in    sl;
       -- Clock Select
-      clkSelA            : out   slv(1 downto 0);
-      clkSelB            : out   slv(1 downto 0);
+      clkSelA              : out   slv(1 downto 0);
+      clkSelB              : out   slv(1 downto 0);
       -- Clocks and Resets
-      sysClk125          : out   sl;
-      sysClk125Rst       : out   sl;
-      sysClk200          : out   sl;
-      sysClk200Rst       : out   sl;
+      sysClk125            : out   sl;
+      sysClk125Rst         : out   sl;
+      sysClk200            : out   sl;
+      sysClk200Rst         : out   sl;
       -- External AXI-Lite Interface [0xA0000000:0xAFFFFFFF]
-      axiClk             : out   sl;
-      axiClkRst          : out   sl;
-      extAxilReadMaster  : out   AxiLiteReadMasterType;
-      extAxilReadSlave   : in    AxiLiteReadSlaveType;
-      extAxilWriteMaster : out   AxiLiteWriteMasterType;
-      extAxilWriteSlave  : in    AxiLiteWriteSlaveType;
+      axiClk               : out   sl;
+      axiClkRst            : out   sl;
+      extAxilReadMaster    : out   AxiLiteReadMasterType;
+      extAxilReadSlave     : in    AxiLiteReadSlaveType;
+      extAxilWriteMaster   : out   AxiLiteWriteMasterType;
+      extAxilWriteSlave    : in    AxiLiteWriteSlaveType;
       -- DMA Interfaces
-      dmaClk             : in    slv(AXI_ST_COUNT_G-1 downto 0);
-      dmaClkRst          : in    slv(AXI_ST_COUNT_G-1 downto 0);
-      dmaState           : out   RceDmaStateArray(AXI_ST_COUNT_G-1 downto 0);
-      dmaObMaster        : out   AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
-      dmaObSlave         : in    AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
-      dmaIbMaster        : in    AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
-      dmaIbSlave         : out   AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaClk               : in    slv(AXI_ST_COUNT_G-1 downto 0);
+      dmaClkRst            : in    slv(AXI_ST_COUNT_G-1 downto 0);
+      dmaState             : out   RceDmaStateArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaObMaster          : out   AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaObSlave           : in    AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaIbMaster          : in    AxiStreamMasterArray(AXI_ST_COUNT_G-1 downto 0);
+      dmaIbSlave           : out   AxiStreamSlaveArray(AXI_ST_COUNT_G-1 downto 0);
       -- User memory access (sysclk200 domain)
-      userWriteSlave     : out   AxiWriteSlaveType;
-      userWriteMaster    : in    AxiWriteMasterType  := AXI_WRITE_MASTER_INIT_C;
-      userReadSlave      : out   AxiReadSlaveType;
-      userReadMaster     : in    AxiReadMasterType   := AXI_READ_MASTER_INIT_C;
-      -- User Ethernet
-      userEthClk         : in    sl                  := '0';
-      userEthClkRst      : in    sl                  := '0';
-      userEthObMaster    : in    AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
-      userEthObSlave     : out   AxiStreamSlaveType;
-      userEthIbMaster    : out   AxiStreamMasterType;
-      userEthIbSlave     : in    AxiStreamSlaveType  := AXI_STREAM_SLAVE_FORCE_C;
+      userWriteSlave       : out   AxiWriteSlaveType;
+      userWriteMaster      : in    AxiWriteMasterType                           := AXI_WRITE_MASTER_INIT_C;
+      userReadSlave        : out   AxiReadSlaveType;
+      userReadMaster       : in    AxiReadMasterType                            := AXI_READ_MASTER_INIT_C;
+      -- User ETH interface (userEthClk domain)
+      userEthClk           : out   sl;
+      userEthClkRst        : out   sl;
+      userEthIpAddr        : out   slv(31 downto 0);
+      userEthMacAddr       : out   slv(47 downto 0);
+      userEthUdpIbMaster   : in    AxiStreamMasterType                          := AXI_STREAM_MASTER_INIT_C;
+      userEthUdpIbSlave    : out   AxiStreamSlaveType;
+      userEthUdpObMaster   : out   AxiStreamMasterType;
+      userEthUdpObSlave    : in    AxiStreamSlaveType                           := AXI_STREAM_SLAVE_FORCE_C;
+      userEthBypIbMaster   : in    AxiStreamMasterType                          := AXI_STREAM_MASTER_INIT_C;
+      userEthBypIbSlave    : out   AxiStreamSlaveType;
+      userEthBypObMaster   : out   AxiStreamMasterType;
+      userEthBypObSlave    : in    AxiStreamSlaveType                           := AXI_STREAM_SLAVE_FORCE_C;
+      userEthVlanIbMasters : in    AxiStreamMasterArray(VLAN_SIZE_G-1 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
+      userEthVlanIbSlaves  : out   AxiStreamSlaveArray(VLAN_SIZE_G-1 downto 0);
+      userEthVlanObMasters : out   AxiStreamMasterArray(VLAN_SIZE_G-1 downto 0);
+      userEthVlanObSlaves  : in    AxiStreamSlaveArray(VLAN_SIZE_G-1 downto 0)  := (others => AXI_STREAM_SLAVE_FORCE_C);
       -- User Interrupts
-      userInterrupt      : in    slv(USER_INT_COUNT_C-1 downto 0));
+      userInterrupt        : in    slv(USER_INT_COUNT_C-1 downto 0));
 end DpmCore;
 
 architecture STRUCTURE of DpmCore is
@@ -216,8 +232,16 @@ begin
             ethTxP       => ethTxP(0),
             ethTxM       => ethTxM(0));
 
-      userEthObSlave  <= AXI_STREAM_SLAVE_INIT_C;
-      userEthIbMaster <= AXI_STREAM_MASTER_INIT_C;
+      userEthClk           <= '0';
+      userEthClkRst        <= '0';
+      userEthIpAddr        <= (others => '0');
+      userEthMacAddr       <= (others => '0');
+      userEthUdpIbSlave    <= AXI_STREAM_SLAVE_FORCE_C;
+      userEthUdpObMaster   <= AXI_STREAM_MASTER_INIT_C;
+      userEthBypIbSlave    <= AXI_STREAM_SLAVE_FORCE_C;
+      userEthBypObMaster   <= AXI_STREAM_MASTER_INIT_C;
+      userEthVlanIbSlaves  <= (others => AXI_STREAM_SLAVE_FORCE_C);
+      userEthVlanObMasters <= (others => AXI_STREAM_MASTER_INIT_C);
 
       U_CustomDmaGen : if (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C) generate
          idmaClk(3)                    <= dmaClk(AXI_ST_COUNT_G-1);
@@ -255,44 +279,60 @@ begin
    U_Eth10gGen : if ETH_10G_EN_G = true generate
       U_ZynqEthernet10G : entity work.ZynqEthernet10G
          generic map (
-            TPD_G           => TPD_G,
-            RCE_DMA_MODE_G  => RCE_DMA_MODE_G,
-            USER_ETH_EN_G   => USER_ETH_EN_G,
-            USER_ETH_TYPE_G => USER_ETH_TYPE_G)         
+            TPD_G              => TPD_G,
+            RCE_DMA_MODE_G     => RCE_DMA_MODE_G,
+            UDP_SERVER_EN_G    => UDP_SERVER_EN_G,
+            UDP_SERVER_SIZE_G  => UDP_SERVER_SIZE_G,
+            UDP_SERVER_PORTS_G => UDP_SERVER_PORTS_G,
+            BYP_EN_G           => BYP_EN_G,
+            BYP_ETH_TYPE_G     => BYP_ETH_TYPE_G,
+            VLAN_EN_G          => VLAN_EN_G,
+            VLAN_SIZE_G        => VLAN_SIZE_G,
+            VLAN_VID_G         => VLAN_VID_G)
          port map (
             -- Clocks
-            sysClk200       => isysClk200,
-            sysClk200Rst    => isysClk200Rst,
+            sysClk200            => isysClk200,
+            sysClk200Rst         => isysClk200Rst,
             -- PPI Interface
-            dmaClk          => idmaClk(3),
-            dmaClkRst       => idmaClkRst(3),
-            dmaState        => idmaState(3),
-            dmaIbMaster     => idmaIbMaster(3),
-            dmaIbSlave      => idmaIbSlave(3),
-            dmaObMaster     => idmaObMaster(3),
-            dmaObSlave      => idmaObSlave(3),
-            -- User interface
-            userEthClk      => userEthClk,
-            userEthClkRst   => userEthClkRst,
-            userEthObMaster => userEthObMaster,
-            userEthObSlave  => userEthObSlave,
-            userEthIbMaster => userEthIbMaster,
-            userEthIbSlave  => userEthIbSlave,
+            dmaClk               => idmaClk(3),
+            dmaClkRst            => idmaClkRst(3),
+            dmaState             => idmaState(3),
+            dmaIbMaster          => idmaIbMaster(3),
+            dmaIbSlave           => idmaIbSlave(3),
+            dmaObMaster          => idmaObMaster(3),
+            dmaObSlave           => idmaObSlave(3),
+            -- User ETH interface (userEthClk domain)
+            userEthClk           => userEthClk,
+            userEthClkRst        => userEthClkRst,
+            userEthIpAddr        => userEthIpAddr,
+            userEthMacAddr       => userEthMacAddr,
+            userEthUdpObMaster   => userEthUdpObMaster,
+            userEthUdpObSlave    => userEthUdpObSlave,
+            userEthUdpIbMaster   => userEthUdpIbMaster,
+            userEthUdpIbSlave    => userEthUdpIbSlave,
+            userEthBypObMaster   => userEthBypObMaster,
+            userEthBypObSlave    => userEthBypObSlave,
+            userEthBypIbMaster   => userEthBypIbMaster,
+            userEthBypIbSlave    => userEthBypIbSlave,
+            userEthVlanObMasters => userEthVlanObMasters,
+            userEthVlanObSlaves  => userEthVlanObSlaves,
+            userEthVlanIbMasters => userEthVlanIbMasters,
+            userEthVlanIbSlaves  => userEthVlanIbSlaves,
             -- AXI-Lite Buses
-            axilClk         => iaxiClk,
-            axilClkRst      => iaxiClkRst,
-            axilWriteMaster => coreAxilWriteMaster,
-            axilWriteSlave  => coreAxilWriteSlave,
-            axilReadMaster  => coreAxilReadMaster,
-            axilReadSlave   => coreAxilReadSlave,
+            axilClk              => iaxiClk,
+            axilClkRst           => iaxiClkRst,
+            axilWriteMaster      => coreAxilWriteMaster,
+            axilWriteSlave       => coreAxilWriteSlave,
+            axilReadMaster       => coreAxilReadMaster,
+            axilReadSlave        => coreAxilReadSlave,
             -- Ref Clock
-            ethRefClkP      => ethRefClkP,
-            ethRefClkM      => ethRefClkM,
+            ethRefClkP           => ethRefClkP,
+            ethRefClkM           => ethRefClkM,
             -- Ethernet Lines
-            ethRxP          => ethRxP,
-            ethRxM          => ethRxM,
-            ethTxP          => ethTxP,
-            ethTxM          => ethTxM);
+            ethRxP               => ethRxP,
+            ethRxM               => ethRxM,
+            ethTxP               => ethTxP,
+            ethTxM               => ethTxM);
 
       armEthRx   <= (others => ARM_ETH_RX_INIT_C);
       armEthMode <= x"03030303";        -- XAUI on lanes 3:0

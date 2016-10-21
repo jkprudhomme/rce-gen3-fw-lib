@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-10-18
--- Last update: 2016-10-18
+-- Last update: 2016-10-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -56,10 +56,10 @@ entity ZynqUserEthRouter is
       -- CPU Interface (axisClk domain)
       axisClk         : in  sl;
       axisRst         : in  sl;
-      ibPrimMaster    : in AxiStreamMasterType;
-      ibPrimSlave     : out  AxiStreamSlaveType;
-      obPrimMaster    : out  AxiStreamMasterType;
-      obPrimSlave     : in AxiStreamSlaveType); 
+      ibPrimMaster    : in  AxiStreamMasterType;
+      ibPrimSlave     : out AxiStreamSlaveType;
+      obPrimMaster    : out AxiStreamMasterType;
+      obPrimSlave     : in  AxiStreamSlaveType); 
 end ZynqUserEthRouter;
 
 architecture rtl of ZynqUserEthRouter is
@@ -70,8 +70,8 @@ architecture rtl of ZynqUserEthRouter is
       USER_S);      
 
    type RegType is record
-      cnt            : natural range 0 to 5;
-      tData          : Slv64Array(4 downto 0);
+      cnt            : natural range 0 to 3;
+      tData          : Slv128Array(2 downto 0);
       txMaster       : AxiStreamMasterType;
       ethUdpObMaster : AxiStreamMasterType;
       obMacPrimSlave : AxiStreamSlaveType;
@@ -98,7 +98,7 @@ architecture rtl of ZynqUserEthRouter is
    
 begin
 
-   U_RxFifo : entity work.AxiStreamFifo
+   U_RxFifo : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -113,7 +113,7 @@ begin
          FIFO_ADDR_WIDTH_G   => 4,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
-         MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C)        
+         MASTER_AXI_CONFIG_G => EMAC_AXIS_CONFIG_C)        
       port map (
          sAxisClk    => axisClk,
          sAxisRst    => axisRst,
@@ -124,7 +124,7 @@ begin
          mAxisMaster => rxMaster,
          mAxisSlave  => rxSlave); 
 
-   U_TxFifo : entity work.AxiStreamFifo
+   U_TxFifo : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -138,7 +138,7 @@ begin
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 4,
          -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
+         SLAVE_AXI_CONFIG_G  => EMAC_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C)        
       port map (
          sAxisClk    => ethClk,
@@ -193,30 +193,43 @@ begin
          -- Reset the flags
          v.obMacPrimSlave := AXI_STREAM_SLAVE_INIT_C;
          if (txSlave.tReady = '1') then
-            v.txMaster := AXI_STREAM_MASTER_INIT_C;
+            v.txMaster.tValid := '0';
+            v.txMaster.tLast  := '0';
+            v.txMaster.tUser  := (others => '0');
+            v.txMaster.tKeep  := (others => '1');
          end if;
          if (ethUdpObSlave.tReady = '1') then
-            v.ethUdpObMaster := AXI_STREAM_MASTER_INIT_C;
+            v.ethUdpObMaster.tValid := '0';
+            v.ethUdpObMaster.tLast  := '0';
+            v.ethUdpObMaster.tUser  := (others => '0');
+            v.ethUdpObMaster.tKeep  := (others => '1');
          end if;
 
+         -------------------------------------------------------------------------------------------------------
+         -- IPv4/EtherType/UDP data fields:
+         -- https://docs.google.com/spreadsheets/d/1_1M1keasfq8RLmRYHkO0IlRhMq5YZTgJ7OGrWvkib8I/edit?usp=sharing
+         -------------------------------------------------------------------------------------------------------
+
          -- Check for IPv4 EtherType
-         if (r.tData(1)(47 downto 32) = IPV4_TYPE_C) then
+         if (r.tData(0)(111 downto 96) = IPV4_TYPE_C) then
             ipv4 := true;
          else
             ipv4 := false;
          end if;
 
          -- Check for UDP Protocol
-         if (r.tData(2)(63 downto 56) = UDP_C) then
+         if (r.tData(1)(63 downto 56) = UDP_C) then
             udpType := true;
          else
             udpType := false;
          end if;
 
-         -- Check if matches one of the User's UDP ports
+         -- Convert to little endianness 
          udpNum(15 downto 8) := obMacPrimMaster.tData(39 downto 32);
          udpNum(7 downto 0)  := obMacPrimMaster.tData(47 downto 40);
-         udpPort             := false;
+
+         -- Check if matches one of the User's UDP ports
+         udpPort := false;
          for i in (UDP_SERVER_SIZE_G-1) downto 0 loop
             if (udpNum = UDP_SERVER_PORTS_G(i)) then
                udpPort := true;
@@ -246,7 +259,7 @@ begin
                      -- Save the data
                      v.tData(r.cnt) := obMacPrimMaster.tData;
                      -- Check the counter
-                     if (r.cnt = 4) then
+                     if (r.cnt = 2) then
                         -- Reset the counter
                         v.cnt := 0;
                         -- Check for CPU ETH data
@@ -268,7 +281,7 @@ begin
                -- Check if moving data
                if (obMacPrimMaster.tValid = '1') and (v.txMaster.tValid = '0') then
                   -- Check if moving cached data
-                  if (r.cnt < 5) then
+                  if (r.cnt < 3) then
                      -- Move the data
                      v.txMaster.tValid := '1';
                      v.txMaster.tData  := r.tData(r.cnt);
