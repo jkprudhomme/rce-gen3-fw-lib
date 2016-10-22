@@ -118,7 +118,7 @@ begin
    ------------------------------------
    -- FIFO
    ------------------------------------
-   U_OutFifo : entity work.AxiStreamFifo 
+   U_OutFifo : entity work.AxiStreamFifoV2
       generic map (
          TPD_G                => TPD_G,
          INT_PIPE_STAGES_G    => 1,

@@ -199,13 +199,14 @@ begin
 
 
    -- Inbound FIFO
-   U_IbFifo : entity work.AxiStreamFifo 
+   U_IbFifo : entity work.AxiStreamFifoV2 
       generic map (
          TPD_G               => TPD_G,
          INT_PIPE_STAGES_G   => 1,
          PIPE_STAGES_G       => 1,
          SLAVE_READY_EN_G    => true,
-         VALID_THOLD_G       => 1,
+         VALID_THOLD_G       => (2**AXI_CONFIG_G.LEN_BITS_C),
+         VALID_BURST_MODE_G  => true,
          BRAM_EN_G           => true,
          XIL_DEVICE_G        => "7SERIES",
          USE_BUILT_IN_G      => false,
