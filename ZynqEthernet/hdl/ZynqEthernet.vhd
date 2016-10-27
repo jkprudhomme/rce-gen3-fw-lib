@@ -77,11 +77,11 @@ architecture structure of ZynqEthernet is
    signal cplllock       : sl;
    signal resetdone       : sl;
    
-   attribute dont_touch                  : string;
-   attribute dont_touch of r             : signal is "true";
-   attribute dont_touch of status_vector : signal is "true";
-   attribute dont_touch of cplllock      : signal is "true";
-   attribute dont_touch of resetdone     : signal is "true";
+   -- attribute dont_touch                  : string;
+   -- attribute dont_touch of r             : signal is "true";
+   -- attribute dont_touch of status_vector : signal is "true";
+   -- attribute dont_touch of cplllock      : signal is "true";
+   -- attribute dont_touch of resetdone     : signal is "true";
 
 begin
 
