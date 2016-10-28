@@ -155,7 +155,7 @@ begin
             AXI_BURST_G       => "01",
             AXI_CACHE_G       => AXI_CACHE_C(i),
             PEND_THRESH_G     => 512,   -- 512 = 4 outstanding transactions
-            BYP_SHIFT_G       => true)  -- DMA driver enforces alignment, which means shift not required
+            BYP_SHIFT_G       => ite((i=3),false,true))  -- APP DMA driver enforces alignment, which means shift not required
          port map (
             axiClk          => axiDmaClk,
             axiRst          => axiDmaRst,
