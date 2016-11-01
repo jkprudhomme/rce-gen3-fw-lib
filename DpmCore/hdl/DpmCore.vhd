@@ -232,8 +232,8 @@ begin
             ethTxP       => ethTxP(0),
             ethTxM       => ethTxM(0));
 
-      userEthClk           <= '0';
-      userEthClkRst        <= '0';
+      userEthClk           <= isysClk125;
+      userEthClkRst        <= isysClk125Rst;
       userEthIpAddr        <= (others => '0');
       userEthMacAddr       <= (others => '0');
       userEthUdpIbSlave    <= AXI_STREAM_SLAVE_FORCE_C;
