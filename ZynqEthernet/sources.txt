@@ -1,3 +1,0 @@
-vhdl work hdl/ZynqEthernet.vhd
-
-vhdl work hdl/zynq_gige_block_00000001.dcp

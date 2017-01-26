@@ -1,2 +1,0 @@
-coregen/GmiiToRgmiiCore/GmiiToRgmiiCore.xci
-coregen/GmiiToRgmiiCore/GmiiToRgmiiSlave.xci

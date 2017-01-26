@@ -1,8 +1,0 @@
-vhdl work hdl/CobOpCodeSink8Bit.vhd
-vhdl work hdl/CobOpCodeSource8Bit.vhd
-vhdl work hdl/CobDataSink10b.vhd
-vhdl work hdl/CobDataSource10b.vhd
-vhdl work hdl/DpmTimingSink.vhd
-vhdl work hdl/DtmTimingSource.vhd
-vhdl work hdl/DpmTimingSinkV2.vhd
-vhdl work hdl/DtmTimingSourceV2.vhd

@@ -1,5 +1,0 @@
-vhdl work hdl/PgpToPpi.vhd
-vhdl work hdl/PpiToPgp.vhd
-vhdl work hdl/PpiPgpLane.vhd
-vhdl work hdl/PpiPgpLane.vhd
-vhdl work hdl/PpiPgpArray.vhd

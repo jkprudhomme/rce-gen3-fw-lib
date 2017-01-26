@@ -1,2 +1,0 @@
-vhdl work hdl/GmiiToRgmiiDual.vhd
-vhdl work hdl/HsioCore.vhd

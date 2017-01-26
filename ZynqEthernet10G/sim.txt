@@ -1,1 +1,0 @@
-#vhdl work tb/traffic_test.vhd

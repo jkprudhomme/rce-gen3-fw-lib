@@ -1,1 +1,0 @@
-coregen/zynq_10g_xaui/zynq_10g_xaui.xci

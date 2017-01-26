@@ -1,3 +1,0 @@
-vhdl work tb/pgp_ppi_test.vhd
-vhdl work tb/interleave_test.vhd
-vhdl work tb/fe_emulate.vhd

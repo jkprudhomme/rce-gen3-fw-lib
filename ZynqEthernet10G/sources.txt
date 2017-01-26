@@ -1,3 +1,0 @@
-vhdl work hdl/ZynqEthernet10GReg.vhd
-vhdl work hdl/ZynqUserEthRouter.vhd
-vhdl work hdl/ZynqEthernet10G.vhd
