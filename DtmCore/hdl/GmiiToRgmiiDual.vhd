@@ -108,15 +108,6 @@ architecture mapping of GmiiToRgmiiDual is
       duplexStatus : slv(1 downto 0);
    signal speedMode,
       clockSpeed : Slv2Array(1 downto 0);
-   
-   attribute mark_debug : string;
-   attribute mark_debug of ethMioI,
-      ethMioO,
-      ethMioT,
-      linkStatus,
-      duplexStatus,
-      speedMode,
-      clockSpeed : signal is "TRUE";
       
 begin
 

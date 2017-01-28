@@ -113,15 +113,6 @@ architecture mapping of GmiiToRgmiiSwitch is
       duplexStatus : sl;
    signal speedMode,
       clockSpeed : slv(1 downto 0);
-   
-   attribute mark_debug : string;
-   attribute mark_debug of ethMioI,
-      ethMioO,
-      ethMioT,
-      linkStatus,
-      duplexStatus,
-      speedMode,
-      clockSpeed : signal is "TRUE";
       
    attribute KEEP_HIERARCHY : string;
    attribute KEEP_HIERARCHY of

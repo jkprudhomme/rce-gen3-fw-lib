@@ -183,9 +183,6 @@ architecture structure of ZynqPcieMaster is
    signal cfgDeviceNumberSync   : slv(4 downto 0);
    signal cfgFunctionNumberSync : slv(2 downto 0);
 
-   attribute mark_debug                 : string;
-   attribute mark_debug of axiClkRstInt : signal is "true";
-
    attribute INIT                 : string;
    attribute INIT of axiClkRstInt : signal is "1";
 
