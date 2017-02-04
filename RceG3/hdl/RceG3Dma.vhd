@@ -62,7 +62,7 @@ entity RceG3Dma is
       userReadSlave       : out AxiReadSlaveType;
       userReadMaster      : in  AxiReadMasterType;
 
-      -- Local AXI Lite Bus
+      -- Local AXI Lite Bus, 0x600n0000
       dmaAxilReadMaster   : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
       dmaAxilReadSlave    : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
       dmaAxilWriteMaster  : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
@@ -163,14 +163,49 @@ begin
             dmaIbSlave       => dmaIbSlave
          );
    end generate;
+
+   U_AxisV2DmaGen : if RCE_DMA_MODE_G = RCE_DMA_AXISV2_C generate
+
+      U_RceG3DmaAxisV2 : entity work.RceG3DmaAxisV2
+         generic map (
+            TPD_G            => TPD_G
+         ) port map (
+            axiDmaClk        => axiDmaClk,
+            axiDmaRst        => axiDmaRst,
+            acpWriteSlave    => acpWriteSlave,
+            acpWriteMaster   => acpWriteMaster,
+            acpReadSlave     => acpReadSlave,
+            acpReadMaster    => acpReadMaster,
+            hpWriteSlave     => hpWriteSlave,
+            hpWriteMaster    => hpWriteMaster,
+            hpReadSlave      => hpReadSlave,
+            hpReadMaster     => hpReadMaster,
+            userWriteSlave   => userWriteSlave,  
+            userWriteMaster  => userWriteMaster, 
+            userReadSlave    => userReadSlave,   
+            userReadMaster   => userReadMaster,  
+            axilReadMaster   => dmaAxilReadMaster,
+            axilReadSlave    => dmaAxilReadSlave,
+            axilWriteMaster  => dmaAxilWriteMaster,
+            axilWriteSlave   => dmaAxilWriteSlave,
+            interrupt        => dmaInterrupt,
+            dmaClk           => dmaClk,
+            dmaClkRst        => dmaClkRst,
+            dmaState         => dmaState,
+            dmaObMaster      => dmaObMaster,
+            dmaObSlave       => dmaObSlave,
+            dmaIbMaster      => dmaIbMaster,
+            dmaIbSlave       => dmaIbSlave
+         );
+   end generate;
    
    ------------------------------------
    -- AXI Streaming DMA Simple Controller
-   -- Custom and fully HW path
+   -- 4x2 Queue and fully HW path
    ------------------------------------
-   U_CustomDmaGen : if RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C generate
+   U_Queue4x2DmaGen : if RCE_DMA_MODE_G = RCE_DMA_Q4X2_C generate
 
-      U_RceG3DmaCustom : entity work.RceG3DmaCustom
+      U_RceG3DmaQueue4x2 : entity work.RceG3DmaQueue4x2
          generic map (
             TPD_G                   => TPD_G,
             DMA_BUF_START_ADDR_G    => x"3C000000",      -- set x"00000000" for simulation and x"3C000000" for implementation

@@ -136,11 +136,11 @@ begin
    -- Assertions to validate the configuration
    --------------------------------------------------
    
-   assert (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C and AXI_ST_COUNT_G = 4) or RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C
-      report "Only AXI_ST_COUNT_G = 4 is supported when RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C"
+   assert (RCE_DMA_MODE_G = RCE_DMA_Q4X2_C and AXI_ST_COUNT_G = 4) or RCE_DMA_MODE_G /= RCE_DMA_Q4X2_C
+      report "Only AXI_ST_COUNT_G = 4 is supported when RCE_DMA_MODE_G = RCE_DMA_Q4X2_C"
       severity failure;
-   assert (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C and ETH_10G_EN_G = false) or RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C
-      report "RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C is not supported when ETH_10G_EN_G = true"
+   assert (RCE_DMA_MODE_G = RCE_DMA_Q4X2_C and ETH_10G_EN_G = false) or RCE_DMA_MODE_G /= RCE_DMA_Q4X2_C
+      report "RCE_DMA_MODE_G = RCE_DMA_Q4X2_C is not supported when ETH_10G_EN_G = true"
       severity failure;
 
    -- more assertion checks should be added e.g. ETH_10G_EN_G = true only with RCE_DMA_MODE_G = RCE_DMA_PPI_C ???
@@ -243,7 +243,7 @@ begin
       userEthVlanIbSlaves  <= (others => AXI_STREAM_SLAVE_FORCE_C);
       userEthVlanObMasters <= (others => AXI_STREAM_MASTER_INIT_C);
 
-      U_CustomDmaGen : if (RCE_DMA_MODE_G = RCE_DMA_CUSTOM_C) generate
+      U_Q4X2DmaGen : if (RCE_DMA_MODE_G = RCE_DMA_Q4X2_C) generate
          idmaClk(3)                    <= dmaClk(AXI_ST_COUNT_G-1);
          idmaClkRst(3)                 <= dmaClkRst(AXI_ST_COUNT_G-1);
          idmaObSlave(3)                <= dmaObSlave(AXI_ST_COUNT_G-1);
@@ -252,7 +252,7 @@ begin
          dmaObMaster(AXI_ST_COUNT_G-1) <= idmaObMaster(3);
          dmaIbSlave(AXI_ST_COUNT_G-1)  <= idmaIbSlave(3);
       end generate;
-      U_NoCustomDmaGen : if (RCE_DMA_MODE_G /= RCE_DMA_CUSTOM_C) generate
+      U_NoQ4X2DmaGen : if (RCE_DMA_MODE_G /= RCE_DMA_Q4X2_C) generate
          idmaClk(3)      <= isysClk125;
          idmaClkRst(3)   <= isysClk125Rst;
          idmaObSlave(3)  <= AXI_STREAM_SLAVE_INIT_C;

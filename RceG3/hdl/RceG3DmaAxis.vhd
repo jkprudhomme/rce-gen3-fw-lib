@@ -58,7 +58,7 @@ entity RceG3DmaAxis is
       userWriteMaster : in  AxiWriteMasterType;
       userReadSlave   : out AxiReadSlaveType;
       userReadMaster  : in  AxiReadMasterType;
-      -- Local AXI Lite Bus
+      -- Local AXI Lite Bus, 0x600n0000
       axilReadMaster  : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
       axilReadSlave   : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
       axilWriteMaster : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);

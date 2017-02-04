@@ -2,7 +2,7 @@
 -- Title      : AXI Streaming DMA Core
 -- Project    : CSPAD Concentrator Core
 -------------------------------------------------------------------------------
--- File       : RceG3DmaCustom.vhd
+-- File       : RceG3DmaQueue4x2.vhd
 -- Author     : M. Kwiatkowski, mkwiatko@slac.stanford.edu
 -- Created    : 2015-05-22
 -- Last update: 2015-05-22
@@ -38,7 +38,7 @@ use work.AxiPkg.all;
 use work.AxiDmaPkg.all;
 use work.SsiPkg.all;
 
-entity RceG3DmaCustom is
+entity RceG3DmaQueue4x2 is
    generic (
       TPD_G                   : time               := 1 ns;
       DMA_BUF_START_ADDR_G    : slv(31 downto 0)   := x"3C000000";
@@ -62,7 +62,7 @@ entity RceG3DmaCustom is
       hpReadSlave         : in  AxiReadSlaveArray(3 downto 0);
       hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
-      -- Local AXI Lite Bus
+      -- Local AXI Lite Bus, 0x600n0000
       axilReadMaster      : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
       axilReadSlave       : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
       axilWriteMaster     : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
@@ -80,9 +80,9 @@ entity RceG3DmaCustom is
       dmaIbMaster         : in  AxiStreamMasterArray(3 downto 0);
       dmaIbSlave          : out AxiStreamSlaveArray(3 downto 0)
    );
-end RceG3DmaCustom;
+end RceG3DmaQueue4x2;
 
-architecture structure of RceG3DmaCustom is 
+architecture structure of RceG3DmaQueue4x2 is 
 
    signal locReadMaster    : AxiReadMasterArray(3 downto 0);
    signal locReadSlave     : AxiReadSlaveArray(3 downto 0);
@@ -146,11 +146,11 @@ begin
 
    -- check generic settings
    assert DMA_BUF_START_ADDR_G+(2**DMA_BUF_SIZE_BITS_G)*4 <= DMA_BUFF_MAX_ADDR_C
-      report "RceG3DmaCustom: DMA buffer exceed maximum memory address"
+      report "RceG3DmaQueue4x2: DMA buffer exceed maximum memory address"
       severity failure;
    
    assert DMA_BUFF_COUNT_C >= 2
-      report "RceG3DmaCustom: DMA buffer size is not sufficient for selected MAX_CSPAD_PKT_SIZE_G"
+      report "RceG3DmaQueue4x2: DMA buffer size is not sufficient for selected MAX_CSPAD_PKT_SIZE_G"
       severity failure;
    
    -- initialize buffer offsets

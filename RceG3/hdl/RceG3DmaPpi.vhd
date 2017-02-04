@@ -59,7 +59,7 @@ entity RceG3DmaPpi is
       hpReadSlave         : in  AxiReadSlaveArray(3 downto 0);
       hpReadMaster        : out AxiReadMasterArray(3 downto 0);
 
-      -- Local AXI Lite Bus
+      -- Local AXI Lite Bus, 0x500n0000
       axilReadMaster      : in  AxiLiteReadMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
       axilReadSlave       : out AxiLiteReadSlaveArray(DMA_AXIL_COUNT_C-1 downto 0);
       axilWriteMaster     : in  AxiLiteWriteMasterArray(DMA_AXIL_COUNT_C-1 downto 0);
