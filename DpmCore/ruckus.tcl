@@ -1,6 +1,11 @@
 # Load RUCKUS environment and library
 source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 
+# Check for valid FPGA 
+if { $::env(PRJ_PART) != "XC7Z045FFG900-2" } {
+   puts "\n\nERROR: PRJ_PART was not defined as XC7Z045FFG900-2 in the Makefile\n\n"; exit -1
+}
+
 # Load the dependent source code
 loadRuckusTcl "$::DIR_PATH/../CobTiming"
 loadRuckusTcl "$::DIR_PATH/../PpiCommon"
