@@ -118,15 +118,15 @@ begin
    U_DmaTest: entity work.AxiStreamDmaV2 
       generic map (
          TPD_G             => TPD_G,
-         READ_AWIDTH_G     => 12,
-         WRITE_AWIDTH_G    => 12,
+         DESC_AWIDTH_G     => 12,
          AXIL_BASE_ADDR_G  => x"60000000",
          AXI_READY_EN_G    => true,
          --AXIS_READY_EN_G   : boolean              := false;
          --AXIS_CONFIG_G     : AxiStreamConfigType  := AXI_STREAM_CONFIG_INIT_C;
          AXI_DESC_CONFIG_G => AXI_ACP_INIT_C,
          AXI_DESC_BURST_G  => "01",
-         AXI_DESC_CACHE_G  => "1111",
+         --AXI_DESC_CACHE_G  => "1111",
+         AXI_DESC_CACHE_G  => "0000",
          AXI_DMA_CONFIG_G  => AXI_HP_INIT_C,
          AXI_DMA_BURST_G   => "01",
          AXI_DMA_CACHE_G   => "0000")

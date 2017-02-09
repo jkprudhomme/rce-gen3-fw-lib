@@ -236,7 +236,7 @@ begin
 
       armInterrupt(GROUP_COUNT_C-1 downto 0) <= r.intOutput;
 
-      if RCE_DMA_MODE_G = RCE_DMA_AXIS_C then
+      if RCE_DMA_MODE_G /= RCE_DMA_PPI_C then
          armInterrupt(15 downto 12) <= dmaInterrupt(3 downto 0) after TPD_G;
       end if;
       
