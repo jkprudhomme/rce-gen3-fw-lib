@@ -37,6 +37,7 @@ use work.RceG3Version.all;
 entity RceG3AxiCntl is
    generic (
       TPD_G          : time           := 1 ns;
+      BUILD_INFO_G   : BuildInfoType;
       RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C
       );
    port (
@@ -100,6 +101,9 @@ architecture structure of RceG3AxiCntl is
 
    constant GP0_MAST_CNT_C : integer := DMA_AXIL_COUNT_C + 1;
    constant GP1_MAST_CNT_C : integer := 5;
+
+   constant BUILD_INFO_C       : BuildInfoRetType    := toBuildInfo(BUILD_INFO_G);
+   constant BUILD_STRING_ROM_C : Slv32Array(0 to 63) := BUILD_INFO_C.buildString;
 
    -- Gp0 Signals
    signal midGp0ReadMaster   : AxiLiteReadMasterType;
@@ -385,7 +389,7 @@ begin
             -- Decode address and assign read data
             case intReadMaster.araddr(15 downto 0) is
                when X"0000" =>
-                  v.intReadSlave.rdata := FPGA_VERSION_C;
+                  v.intReadSlave.rdata := BUILD_INFO_C.fwVersion;
                when X"0004" =>
                   v.intReadSlave.rdata := r.scratchPad;
                when X"0008" =>
@@ -407,15 +411,20 @@ begin
                   v.intReadSlave.rdata := armEthMode;
                when X"0038" =>
                   v.intReadSlave.rdata := r.heartbeat;
+               when X"0100" =>
+                  v.intReadSlave.rdata := BUILD_INFO_C.gitHash(31 downto 0);
+               when X"0104" =>
+                  v.intReadSlave.rdata := BUILD_INFO_C.gitHash(63 downto 32);
+               when X"0108" =>
+                  v.intReadSlave.rdata := BUILD_INFO_C.gitHash(95 downto 64);
+               when X"010C" =>
+                  v.intReadSlave.rdata := BUILD_INFO_C.gitHash(127 downto 96);
+               when X"0110" =>
+                  v.intReadSlave.rdata := BUILD_INFO_C.gitHash(159 downto 128);
                when others => null;
             end case;
-         else
-            for x in 0 to 3 loop
-               if (conv_integer(intReadMaster.araddr(7 downto 0))+x+1) <= BUILD_STAMP_C'length then
-                  c                                      := BUILD_STAMP_C(conv_integer(intReadMaster.araddr(7 downto 0))+x+1);
-                  v.intReadSlave.rdata(x*8+7 downto x*8) := conv_std_logic_vector(character'pos(c), 8);
-               end if;
-            end loop;
+         elsif intReadMaster.araddr(15 downto 8) = x"10" then
+            v.intReadSlave.rdata := BUILD_STRING_ROM_C(conv_integer(intReadMaster.araddr(7 downto 2)));
          end if;
 
          -- Send Axi Response

@@ -23,7 +23,7 @@ USE ieee.std_logic_1164.ALL;
 
 package RceG3Version is
 
-constant RCE_G3_VERSION_C : std_logic_vector(31 downto 0) := x"00000012";
+constant RCE_G3_VERSION_C : std_logic_vector(31 downto 0) := x"00000013";
 
 end RceG3Version;
 
@@ -36,5 +36,6 @@ end RceG3Version;
 -- 05/08/2014 (0x00000010): Complete PPI re-write
 -- 08/01/2014 (0x00000011): Added E-Fuse
 -- 08/19/2014 (0x00000012): Added Ethernet Mode, Added E-Fuse and EthMode to BSI
+-- 02/22/2017 (0x00000013): Added new build system fields to version registers.
 ----------------------------------------------------------------------------------
 

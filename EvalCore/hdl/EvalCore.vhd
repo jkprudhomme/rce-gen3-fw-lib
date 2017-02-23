@@ -31,6 +31,7 @@ use work.AxiStreamPkg.all;
 entity EvalCore is
    generic (
       TPD_G          : time           := 1 ns;
+      BUILD_INFO_G   : BuildInfoType;
       RCE_DMA_MODE_G : RceDmaModeType := RCE_DMA_PPI_C;
       OLD_BSI_MODE_G : boolean        := false
    );
@@ -93,6 +94,7 @@ begin
    U_RceG3Top: entity work.RceG3Top
       generic map (
          TPD_G           => TPD_G,
+         BUILD_INFO_G    => BUILD_INFO_G,
          RCE_DMA_MODE_G  => RCE_DMA_MODE_G,
          OLD_BSI_MODE_G  => OLD_BSI_MODE_G,
          DMA_CLKDIV_G    => 10.0,

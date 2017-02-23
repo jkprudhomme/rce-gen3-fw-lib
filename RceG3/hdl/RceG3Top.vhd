@@ -36,6 +36,7 @@ use work.AxiPkg.all;
 entity RceG3Top is
    generic (
       TPD_G                 : time                  := 1 ns;
+      BUILD_INFO_G          : BuildInfoType;
       DMA_CLKDIV_EN_G       : boolean               := false;
       DMA_CLKDIV_G          : real                  := 5.0;
       RCE_DMA_MODE_G        : RceDmaModeType        := RCE_DMA_PPI_C;
@@ -302,6 +303,7 @@ begin
    U_RceG3AxiCntl: entity work.RceG3AxiCntl 
       generic map (
          TPD_G            => TPD_G,
+         BUILD_INFO_G     => BUILD_INFO_G,
          RCE_DMA_MODE_G   => RCE_DMA_MODE_G
       ) port map (
          mGpReadMaster        => mGpReadMaster,
