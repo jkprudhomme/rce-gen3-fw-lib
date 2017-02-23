@@ -129,7 +129,7 @@ architecture structure of RceG3AxiCntl is
    signal intReadSlave   : AxiLiteReadSlaveType;
    signal intWriteMaster : AxiLiteWriteMasterType;
    signal intWriteSlave  : AxiLiteWriteSlaveType;
-   signal dnaValue       : slv(63 downto 0);
+   signal dnaValue       : slv(127 downto 0);
    signal dnaValid       : sl;
    signal eFuseUsr       : slv(31 downto 0);
 
@@ -461,7 +461,7 @@ begin
             dnaValue => dnaValue,
             dnaValid => dnaValid
             );
-   deviceDna <= dnaValue;
+   deviceDna <= dnaValue(63 downto 0);
 
    -------------------------------------
    -- EFuse
