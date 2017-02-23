@@ -410,15 +410,15 @@ begin
                   v.intReadSlave.rdata := armEthMode;
                when X"0038" =>
                   v.intReadSlave.rdata := r.heartbeat;
-               when X"0100" =>
+               when X"0040" =>
                   v.intReadSlave.rdata := BUILD_INFO_C.gitHash(31 downto 0);
-               when X"0104" =>
+               when X"0044" =>
                   v.intReadSlave.rdata := BUILD_INFO_C.gitHash(63 downto 32);
-               when X"0108" =>
+               when X"0048" =>
                   v.intReadSlave.rdata := BUILD_INFO_C.gitHash(95 downto 64);
-               when X"010C" =>
+               when X"004C" =>
                   v.intReadSlave.rdata := BUILD_INFO_C.gitHash(127 downto 96);
-               when X"0110" =>
+               when X"0050" =>
                   v.intReadSlave.rdata := BUILD_INFO_C.gitHash(159 downto 128);
                when others => null;
             end case;
