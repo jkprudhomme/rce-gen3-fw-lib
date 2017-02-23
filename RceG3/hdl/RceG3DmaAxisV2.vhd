@@ -290,17 +290,13 @@ begin
       generic map (
          TPD_G             => TPD_G,
          DESC_AWIDTH_G     => 12,
-         AXIL_BASE_ADDR_G  => x"00060000",
+         AXIL_BASE_ADDR_G  => x"60000000",
          AXI_ERROR_RESP_G  => AXI_RESP_OK_C,
          AXI_READY_EN_G    => false,
          AXIS_READY_EN_G   => false,
          AXIS_CONFIG_G     => RCEG3_AXIS_DMA_CONFIG_C,
          AXI_DESC_CONFIG_G => AXI_ACP_INIT_C,
-         AXI_DESC_BURST_G  => "01",
-         AXI_DESC_CACHE_G  => "1111",
          AXI_DMA_CONFIG_G  => AXI_HP_INIT_C,
-         AXI_DMA_BURST_G   => "01",
-         AXI_DMA_CACHE_G   => "0000",
          CHAN_COUNT_G      => 3,
          RD_PIPE_STAGES_G  => 1,
          RD_PEND_THRESH_G  => 512)
