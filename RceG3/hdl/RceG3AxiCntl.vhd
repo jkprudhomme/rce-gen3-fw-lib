@@ -31,7 +31,6 @@ use work.RceG3Pkg.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiPkg.all;
-use work.Version.all;
 use work.RceG3Version.all;
 
 entity RceG3AxiCntl is
