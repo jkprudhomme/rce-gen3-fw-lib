@@ -422,7 +422,7 @@ begin
                   v.intReadSlave.rdata := BUILD_INFO_C.gitHash(159 downto 128);
                when others => null;
             end case;
-         elsif intReadMaster.araddr(15 downto 8) = x"10" then
+         else
             v.intReadSlave.rdata := BUILD_STRING_ROM_C(conv_integer(intReadMaster.araddr(7 downto 2)));
          end if;
 
