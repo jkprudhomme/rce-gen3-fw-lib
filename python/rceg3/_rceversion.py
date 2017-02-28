@@ -51,12 +51,12 @@ class RceVersion(pr.Device):
     dev.add(pyrogue.Variable(name='serialNumber', description='Serial Number',
                              offset=0x84000140, bitSize=64, bitOffset=0, base='hex', mode='RO'))
 
-    dev.add(pyrogue.Variable(name='atcaSlot', description='ATCA Slot',
-                             offset=0x84000148, bitSize=8, bitOffset=16, base='hex', mode='RO'))
+#    dev.add(pyrogue.Variable(name='atcaSlot', description='ATCA Slot',
+#                             offset=0x84000148, bitSize=8, bitOffset=16, base='hex', mode='RO'))
 
-    dev.add(pyrogue.Variable(name='cobBay', description='COB Bay',
-                             offset=0x84000148, bitSize=8, bitOffset=8, base='hex', mode='RO'))
+#    dev.add(pyrogue.Variable(name='cobBay', description='COB Bay',
+#                             offset=0x84000148, bitSize=8, bitOffset=8, base='hex', mode='RO'))
 
-    dev.add(pyrogue.Variable(name='cobElement', description='COB Element',
-                             offset=0x84000148, bitSize=8, bitOffset=0, base='hex', mode='RO'))
+#    dev.add(pyrogue.Variable(name='cobElement', description='COB Element',
+#                             offset=0x84000148, bitSize=8, bitOffset=0, base='hex', mode='RO'))
 
