@@ -1,0 +1,6 @@
+# Compiled source files
+*.o
+*.pyc
+*.db
+*.swp
+*._*
