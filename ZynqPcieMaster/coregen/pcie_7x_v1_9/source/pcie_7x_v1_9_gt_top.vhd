@@ -996,7 +996,7 @@ gt_power_down(15 downto 14) <= pipe_tx7_powerdown;
     end if;
   end process;
  
-  process(pipe_clk_int)
+  process(pipe_clk_int,reg_clock_locked)
   begin
     if (reg_clock_locked = '0') then
         phy_rdy_n_int <= '0' after (TCQ)*1 ps;
