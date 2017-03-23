@@ -59,8 +59,12 @@ create_clock -name eth10GClk -period 6.4 \
    [get_pins U_DpmCore/U_Eth10gGen.U_ZynqEthernet10G/U_ZynqXaui/U0/xaui_block_i/gt_wrapper_i/gt0_zynq_10g_xaui_gt_wrapper_i/gtxe2_i/TXOUTCLK]
 
 # DNA Primitive Clock
-create_generated_clock -divide_by 8 -name dnaClk -source ${sysClk125Pin} \
-    [get_pins  {U_DpmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
+create_generated_clock -name dnaClk  [get_pins {U_DpmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}] 
+create_generated_clock -name dnaClkL [get_pins {U_DpmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/DNA_CLK_INV_BUFR/O}] 
+set_clock_groups -asynchronous \
+    -group [get_clocks dnaClk] \
+    -group [get_clocks dnaClkL] \
+    -group [get_clocks sysClk125] 
    
 # Set Asynchronous Paths
 set_clock_groups -asynchronous \
@@ -69,11 +73,7 @@ set_clock_groups -asynchronous \
 
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks fclk0] \
-    -group [get_clocks -include_generated_clocks eth10GClk]
-    
-set_clock_groups -asynchronous \
-    -group [get_clocks dnaClk] \
-    -group [get_clocks sysClk125]    
+    -group [get_clocks -include_generated_clocks eth10GClk] 
 
 # # StdLib
 # set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
