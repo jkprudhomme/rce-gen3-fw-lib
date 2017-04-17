@@ -77,20 +77,10 @@ end RceG3DmaAxis;
 
 architecture mapping of RceG3DmaAxis is
 
-   signal locReadMaster  : AxiReadMasterArray(3 downto 0);
-   signal locReadSlave   : AxiReadSlaveArray(3 downto 0);
-   signal locWriteMaster : AxiWriteMasterArray(3 downto 0);
-   signal locWriteSlave  : AxiWriteSlaveArray(3 downto 0);
-   signal locWriteCtrl   : AxiCtrlArray(3 downto 0);
    signal intWriteSlave  : AxiWriteSlaveArray(3 downto 0);
    signal intWriteMaster : AxiWriteMasterArray(3 downto 0);
    signal intReadSlave   : AxiReadSlaveArray(3 downto 0);
    signal intReadMaster  : AxiReadMasterArray(3 downto 0);
-   signal sAxisMaster    : AxiStreamMasterArray(3 downto 0);
-   signal sAxisSlave     : AxiStreamSlaveArray(3 downto 0);
-   signal mAxisMaster    : AxiStreamMasterArray(3 downto 0);
-   signal mAxisSlave     : AxiStreamSlaveArray(3 downto 0);
-   signal mAxisCtrl      : AxiStreamCtrlArray(3 downto 0);
 
    -- Caching enabled for ACP port
    constant AXI_CACHE_C : Slv4Array(3 downto 0) := ("0000", "0010", "0000", "0000");
@@ -140,179 +130,31 @@ begin
    -- DMA Channels
    ------------------------------------------
    U_DmaChanGen : for i in 0 to 3 generate
-
-      -- DMA Core
-      U_AxiStreamDma : entity work.AxiStreamDma
+      U_RxG3DmaAxiChan: entity work.RceG3DmaAxisChan
          generic map (
-            TPD_G             => TPD_G,
-            FREE_ADDR_WIDTH_G => 12,    -- 4096 entries
-            AXIL_COUNT_G      => 2,
-            AXIL_BASE_ADDR_G  => x"00000000",
-            AXI_READY_EN_G    => false,
-            AXIS_READY_EN_G   => false,
-            AXIS_CONFIG_G     => RCEG3_AXIS_DMA_CONFIG_C,
-            AXI_CONFIG_G      => AXI_HP_INIT_C,
-            AXI_BURST_G       => "01",
-            AXI_CACHE_G       => AXI_CACHE_C(i),
-            PEND_THRESH_G     => 512,   -- 512 = 4 outstanding transactions
-            BYP_SHIFT_G       => ite((i=3),false,true))  -- APP DMA driver enforces alignment, which means shift not required
+            TPD_G        => TPD_G,
+            AXI_CACHE_G  => AXI_CACHE_C(i),
+            BYP_SHIFT_G  => ite((i=3),false,true),  -- APP DMA driver enforces alignment, which means shift not required
+            AXI_CONFIG_G => ite((i=2),AXI_ACP_INIT_C,AXI_HP_INIT_C))
          port map (
-            axiClk          => axiDmaClk,
-            axiRst          => axiDmaRst,
-            axilReadMaster  => axilReadMaster((i*2)+1 downto i*2),
-            axilReadSlave   => axilReadSlave((i*2)+1 downto i*2),
-            axilWriteMaster => axilWriteMaster((i*2)+1 downto i*2),
-            axilWriteSlave  => axilWriteSlave((i*2)+1 downto i*2),
-            interrupt       => interrupt(i),
-            online          => dmaState(i).online,
-            acknowledge     => dmaState(i).user,
-            sAxisMaster     => sAxisMaster(i),
-            sAxisSlave      => sAxisSlave(i),
-            mAxisMaster     => mAxisMaster(i),
-            mAxisSlave      => mAxisSlave(i),
-            mAxisCtrl       => mAxisCtrl(i),
-            axiReadMaster   => locReadMaster(i),
-            axiReadSlave    => locReadSlave(i),
-            axiWriteMaster  => locWriteMaster(i),
-            axiWriteSlave   => locWriteSlave(i),
-            axiWriteCtrl    => locWriteCtrl(i));
-
-      -- Inbound AXI Stream FIFO
-      U_IbFifo : entity work.AxiStreamFifoV2
-         generic map (
-            TPD_G               => TPD_G,
-            INT_PIPE_STAGES_G   => 1,
-            PIPE_STAGES_G       => 1,
-            SLAVE_READY_EN_G    => true,
-            VALID_THOLD_G       => 1,
-            BRAM_EN_G           => true,
-            XIL_DEVICE_G        => "7SERIES",
-            USE_BUILT_IN_G      => false,
-            GEN_SYNC_FIFO_G     => false,
-            ALTERA_SYN_G        => false,
-            ALTERA_RAM_G        => "M9K",
-            CASCADE_SIZE_G      => 1,
-            FIFO_ADDR_WIDTH_G   => 9,
-            FIFO_FIXED_THRESH_G => true,
-            FIFO_PAUSE_THRESH_G => 500,  -- Unused
-            SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
-            MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C) 
-         port map (
-            sAxisClk        => dmaClk(i),
-            sAxisRst        => dmaClkRst(i),
-            sAxisMaster     => dmaIbMaster(i),
-            sAxisSlave      => dmaIbSlave(i),
-            sAxisCtrl       => open,
-            fifoPauseThresh => (others => '1'),
-            mAxisClk        => axiDmaClk,
-            mAxisRst        => axiDmaRst,
-            mAxisMaster     => sAxisMaster(i),
-            mAxisSlave      => sAxisSlave(i));
-
-      -- Outbound AXI Stream FIFO
-      U_ObFifo : entity work.AxiStreamFifoV2
-         generic map (
-            TPD_G               => TPD_G,
-            INT_PIPE_STAGES_G   => 1,
-            PIPE_STAGES_G       => 1,
-            SLAVE_READY_EN_G    => false,
-            VALID_THOLD_G       => 1,
-            BRAM_EN_G           => true,
-            XIL_DEVICE_G        => "7SERIES",
-            USE_BUILT_IN_G      => false,
-            GEN_SYNC_FIFO_G     => false,
-            ALTERA_SYN_G        => false,
-            ALTERA_RAM_G        => "M9K",
-            CASCADE_SIZE_G      => 1,
-            FIFO_ADDR_WIDTH_G   => 9,
-            FIFO_FIXED_THRESH_G => true,
-            FIFO_PAUSE_THRESH_G => 300,  -- 1800 byte buffer before pause and 1696 byte of buffer before FIFO FULL
-            SLAVE_AXI_CONFIG_G  => RCEG3_AXIS_DMA_CONFIG_C,
-            MASTER_AXI_CONFIG_G => RCEG3_AXIS_DMA_CONFIG_C) 
-         port map (
-            sAxisClk        => axiDmaClk,
-            sAxisRst        => axiDmaRst,
-            sAxisMaster     => mAxisMaster(i),
-            sAxisSlave      => mAxisSlave(i),
-            sAxisCtrl       => mAxisCtrl(i),
-            fifoPauseThresh => (others => '1'),
-            mAxisClk        => dmaClk(i),
-            mAxisRst        => dmaClkRst(i),
-            mAxisMaster     => dmaObMaster(i),
-            mAxisSlave      => dmaObSlave(i));
-
-      -- Read Path AXI FIFO
-      U_AxiReadPathFifo : entity work.AxiReadPathFifo
-         generic map (
-            TPD_G                  => TPD_G,
-            XIL_DEVICE_G           => "7SERIES",
-            USE_BUILT_IN_G         => false,
-            GEN_SYNC_FIFO_G        => true,
-            ALTERA_SYN_G           => false,
-            ALTERA_RAM_G           => "M9K",
-            ADDR_LSB_G             => 3,
-            ID_FIXED_EN_G          => true,
-            SIZE_FIXED_EN_G        => true,
-            BURST_FIXED_EN_G       => true,
-            LEN_FIXED_EN_G         => false,
-            LOCK_FIXED_EN_G        => true,
-            PROT_FIXED_EN_G        => true,
-            CACHE_FIXED_EN_G       => true,
-            ADDR_BRAM_EN_G         => false,
-            ADDR_CASCADE_SIZE_G    => 1,
-            ADDR_FIFO_ADDR_WIDTH_G => 4,
-            DATA_BRAM_EN_G         => false,
-            DATA_CASCADE_SIZE_G    => 1,
-            DATA_FIFO_ADDR_WIDTH_G => 4,
-            AXI_CONFIG_G           => AXI_HP_INIT_C) 
-         port map (
-            sAxiClk        => axiDmaClk,
-            sAxiRst        => axiDmaRst,
-            sAxiReadMaster => locReadMaster(i),
-            sAxiReadSlave  => locReadSlave(i),
-            mAxiClk        => axiDmaClk,
-            mAxiRst        => axiDmaRst,
-            mAxiReadMaster => intReadMaster(i),
-            mAxiReadSlave  => intReadSlave(i));
-
-      -- Write Path AXI FIFO
-      U_AxiWritePathFifo : entity work.AxiWritePathFifo
-         generic map (
-            TPD_G                    => TPD_G,
-            XIL_DEVICE_G             => "7SERIES",
-            USE_BUILT_IN_G           => false,
-            GEN_SYNC_FIFO_G          => true,
-            ALTERA_SYN_G             => false,
-            ALTERA_RAM_G             => "M9K",
-            ADDR_LSB_G               => 3,
-            ID_FIXED_EN_G            => true,
-            SIZE_FIXED_EN_G          => true,
-            BURST_FIXED_EN_G         => true,
-            LEN_FIXED_EN_G           => false,
-            LOCK_FIXED_EN_G          => true,
-            PROT_FIXED_EN_G          => true,
-            CACHE_FIXED_EN_G         => true,
-            ADDR_BRAM_EN_G           => true,
-            ADDR_CASCADE_SIZE_G      => 1,
-            ADDR_FIFO_ADDR_WIDTH_G   => 9,
-            DATA_BRAM_EN_G           => true,
-            DATA_CASCADE_SIZE_G      => 1,
-            DATA_FIFO_ADDR_WIDTH_G   => 9,
-            DATA_FIFO_PAUSE_THRESH_G => 456,
-            RESP_BRAM_EN_G           => false,
-            RESP_CASCADE_SIZE_G      => 1,
-            RESP_FIFO_ADDR_WIDTH_G   => 4,
-            AXI_CONFIG_G             => AXI_HP_INIT_C) 
-         port map (
-            sAxiClk         => axiDmaClk,
-            sAxiRst         => axiDmaRst,
-            sAxiWriteMaster => locWriteMaster(i),
-            sAxiWriteSlave  => locWriteSlave(i),
-            sAxiCtrl        => locWriteCtrl(i),
-            mAxiClk         => axiDmaClk,
-            mAxiRst         => axiDmaRst,
-            mAxiWriteMaster => intWriteMaster(i),
-            mAxiWriteSlave  => intWriteSlave(i));
+            axiDmaClk        => axiDmaClk,
+            axiDmaRst        => axiDmaRst,
+            axiReadMaster    => intReadMaster(i),
+            axiReadSlave     => intReadSlave(i),
+            axiWriteMaster   => intWriteMaster(i),
+            axiWriteSlave    => intWriteSlave(i),
+            axilReadMaster   => axilReadMaster((i*2)+1 downto i*2),
+            axilReadSlave    => axilReadSlave((i*2)+1 downto i*2),
+            axilWriteMaster  => axilWriteMaster((i*2)+1 downto i*2),
+            axilWriteSlave   => axilWriteSlave((i*2)+1 downto i*2),
+            interrupt        => interrupt(i),
+            dmaClk           => dmaClk(i),
+            dmaClkRst        => dmaClkRst(i),
+            dmaState         => dmaState(i),
+            dmaObMaster      => dmaObMaster(i),
+            dmaObSlave       => dmaObSlave(i),
+            dmaIbMaster      => dmaIbMaster(i),
+            dmaIbSlave       => dmaIbSlave(i));
    end generate;
 
 end mapping;
