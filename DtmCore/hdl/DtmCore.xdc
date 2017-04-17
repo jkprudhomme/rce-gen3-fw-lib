@@ -81,11 +81,13 @@ set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks pci_txoutclk]
 
 # DNA Primitive Clock
-create_clock -period 64.000 -name dnaClk [get_pins  {U_DtmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
+create_generated_clock -name dnaClk  [get_pins {U_DtmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}] 
+create_generated_clock -name dnaClkL [get_pins {U_DtmCore/U_RceG3Top/U_RceG3AxiCntl/U_DeviceDna/GEN_7SERIES.DeviceDna7Series_Inst/DNA_CLK_INV_BUFR/O}] 
 set_clock_groups -asynchronous \
     -group [get_clocks dnaClk] \
+    -group [get_clocks dnaClkL] \
     -group [get_clocks sysClk125] 
-
+    
 # PCI-Express Timing
 set_false_path -through [get_pins  -hier -filter {name =~ *pcie_block_i/PLPHYLNKUPN*}]
 set_false_path -through [get_pins  -hier -filter {name =~ *pcie_block_i/PLRECEIVEDHOTRST*}]
